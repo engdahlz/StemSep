@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stemsep"
+version = "3.0.0"
+description = "Audio stem separation application using state-of-the-art AI models"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+
+dependencies = [
+    "torch",
+    "librosa",
+    "soundfile",
+    "numpy",
+    "pydub",
+]
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "."
+
+[tool.pylance]
+include = ["src", "tests"]
+
+[tool.pyright]
+include = ["src", "tests"]
+extraPaths = ["src"]
+pythonVersion = "3.9"
+typeCheckingMode = "basic"

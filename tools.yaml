@@ -1,0 +1,6 @@
+# tools.yaml
+# MCP Toolbox Configuration
+# See https://googleapis.github.io/genai-toolbox/getting-started/configure/ for documentation
+
+sources: {}
+tools: {}

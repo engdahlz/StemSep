@@ -1,0 +1,194 @@
+import { useState, useMemo } from 'react'
+import { Download, Check, Loader2, Info, Search, Upload, Trash2, Filter, Download as DownloadAll } from 'lucide-react'
+import { Button } from './ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Progress } from './ui/progress'
+
+interface ModelInfo {
+  id: string
+  name: string
+  architecture: string
+  version: string
+  category: string
+  description: string
+  sdr: number
+  fullness: number
+  bleedless: number
+  vram_required: number
+  speed: string
+  stems: string[]
+  file_size: number
+  downloaded: boolean
+  downloading: boolean
+  downloadProgress: number
+  recommended: boolean
+}
+
+// Load models from models_registry_v3.json structure
+const AVAILABLE_MODELS: ModelInfo[] = [
+  {
+    id: 'bs_roformer_2025_07',
+    name: 'BS-Roformer 2025.07',
+    architecture: 'BS-Roformer',
+    version: '2025.07',
+    category: 'primary',
+    description: 'Best overall quality (vocals/instrumental). Adjusted chunk_size for 8GB GPUs.',
+    sdr: 12.98,
+    fullness: 32.31,
+    bleedless: 38.15,
+    vram_required: 8.0,
+    speed: 'slow',
+    stems: ['vocals', 'instrumental'],
+    file_size: 104857600,
+    downloaded: false,
+    downloading: false,
+    downloadProgress: 0,
+    recommended: true,
+  },
+  {
+    id: 'mel_roformer_kim_inst',
+    name: 'Mel-Roformer Kim Inst',
+    architecture: 'Mel-Roformer',
+    version: 'kim_v1',
+    category: 'primary',
+    description: 'BEST BLEEDLESS instrumental separation per community leaderboard. Top-tier quality.',
+    sdr: 17.32,
+    fullness: 27.44,
+    bleedless: 46.56,
+    vram_required: 8.0,
+    speed: 'medium',
+    stems: ['vocals', 'instrumental'],
+    file_size: 94371840,
+    downloaded: false,
+    downloading: false,
+    downloadProgress: 0,
+    recommended: true,
+  },
+  {
+    id: 'mdx23c_8kfft_hq',
+    name: 'MDX23C 8KFFT HQ',
+    architecture: 'MDX23C',
+    version: '1.0',
+    category: 'primary',
+    description: 'Fast and efficient. Segment size: 2752 (or 1024 if slow).',
+    sdr: 8.2,
+    fullness: 8.0,
+    bleedless: 8.1,
+    vram_required: 6.0,
+    speed: 'fast',
+    stems: ['vocals', 'instrumental'],
+    file_size: 85983232,
+    downloaded: false,
+    downloading: false,
+    downloadProgress: 0,
+    recommended: false,
+  },
+]
+
+export function ModelsPage() {
+  const [models, setModels] = useState(AVAILABLE_MODELS)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+
+  const handleDownload = async (modelId: string) => {
+    setDownloadingId(modelId)
+    
+    // Simulate download (will connect to Python backend)
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    setModels(prev => prev.map(m => 
+      m.id === modelId ? { ...m, downloaded: true } : m
+    ))
+    setDownloadingId(null)
+  }
+
+  return (
+    <div className="h-full overflow-auto p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Models</h1>
+          <p className="text-muted-foreground">
+            Download and manage separation models
+          </p>
+        </div>
+
+        {/* Models Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {models.map((model) => (
+            <Card key={model.id} className="relative transition-all duration-200 hover:brightness-105 hover:shadow-lg">
+              {model.recommended && (
+                <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-semibold">
+                  RECOMMENDED
+                </div>
+              )}
+              
+              <CardHeader>
+                <CardTitle className="flex items-start justify-between pr-24">
+                  {model.name}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {model.architecture}
+                </p>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                {/* Stems */}
+                <div>
+                  <p className="text-sm font-semibold mb-2">Output Stems:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {model.stems.map((stem) => (
+                      <span
+                        key={stem}
+                        className="px-2 py-1 bg-secondary rounded text-xs"
+                      >
+                        {stem}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Size */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Size:</span>
+                  <span className="font-semibold">{model.size}</span>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  {model.downloaded ? (
+                    <Button variant="secondary" className="flex-1" disabled>
+                      <Check className="mr-2 h-4 w-4" />
+                      Downloaded
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleDownload(model.id)}
+                      disabled={downloadingId === model.id}
+                      className="flex-1"
+                    >
+                      {downloadingId === model.id ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Downloading...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="mr-2 h-4 w-4" />
+                          Download
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  
+                  <Button variant="outline" size="icon">
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,115 @@
+MIT License
+
+Copyright (c) 2025 StemSep
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+
+THIRD-PARTY LICENSES
+
+This software incorporates code from or is based on the following projects:
+
+1. BS-Roformer Model
+   - Original work by lj1995 and contributors
+   - License: Apache 2.0
+   - Source: https://github.com/lj1995/VoiceConversionArchitecture
+
+2. Mel-Roformer Model
+   - Original work by Gabox, Kim, and MVSep team
+   - License: See individual model licenses on Hugging Face
+   - Source: https://huggingface.co/
+
+3. MDX23C Model
+   - Original work by democrac不为 and Facebook Research
+   - License: Apache 2.0
+   - Source: https://github.com/facebookresearch/demucs
+
+4. SCNet Model
+   - Original work by ZFTurbo
+   - License: See model license
+   - Source: https://github.com/ZFTurbo
+
+5. Demucs
+   - Original work by Facebook Research
+   - License: BSD 3-Clause
+   - Source: https://github.com/facebookresearch/demucs
+
+6. CustomTkinter
+   - License: MIT
+   - Source: https://github.com/TomSchimansky/CustomTkinter
+
+7. LibROSA
+   - License: BSD 3-Clause
+   - Source: https://librosa.org/
+
+8. PyTorch
+   - License: BSD 3-Clause
+   - Source: https://pytorch.org/
+
+9. SoundFile
+   - License: BSD 3-Clause
+   - Source: https://github.com/bastibe/python-soundfile
+
+For the full license text of these dependencies, please refer to their
+respective repositories and documentation.
+
+================================================================================
+
+MODEL LICENSES
+
+The AI models used by this software are distributed under various licenses.
+Users must comply with each model's individual license terms:
+
+- Model weights may have restrictions on commercial use
+- Some models may require attribution
+- Check each model's Hugging Face page for specific license terms
+
+This software is a tool that downloads and uses these models. The software
+itself does not redistribute model weights - users must download them
+separately from their official sources.
+
+================================================================================
+
+AUDIO FILE HANDLING
+
+This software does not embed or redistribute copyrighted audio content.
+Users are responsible for ensuring they have rights to any audio files
+they process with this software.
+
+The separated stems are the result of AI processing, not copies of the
+original copyrighted material. However, copyright law regarding AI-generated
+or AI-separated content is evolving. Users should consult legal counsel
+for commercial use of separated stems.
+
+================================================================================
+
+DISCLAIMER
+
+This software is provided "as is" without warranty of any kind.
+The authors are not responsible for any copyright infringement,
+audio quality issues, or other problems arising from the use of this software.
+
+Users are responsible for:
+- Ensuring they have rights to process audio files
+- Complying with local copyright laws
+- Following model license terms
+- Using the software in accordance with applicable laws
+
+By using this software, you agree to these terms and conditions.

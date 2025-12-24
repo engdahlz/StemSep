@@ -1,0 +1,112 @@
+{
+  "name": "electron-poc",
+  "version": "1.0.0",
+  "description": "StemSep Electron POC with shadcn/ui",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:electron": "node build-electron.mjs",
+    "electron:dev": "concurrently \"npm run dev\" \"npm run build:electron && start_electron.bat\"",
+    "electron:start": "npm run build:electron && electron .",
+    "electron:build": "npm run build && npm run build:electron && electron-builder",
+    "test": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/chokidar": "^1.7.5",
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.22",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "concurrently": "^9.2.1",
+    "electron": "^33.0.0",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.27.0",
+    "jsdom": "^27.2.0",
+    "lucide-react": "^0.554.0",
+    "postcss": "^8.5.6",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4.1.17",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2",
+    "vitest": "^4.0.10"
+  },
+  "dependencies": {
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-slider": "^1.3.6",
+    "chokidar": "^5.0.0",
+    "date-fns": "^3.6.0",
+    "immer": "^10.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "sonner": "^2.0.7",
+    "wavesurfer.js": "^7.11.1",
+    "zustand": "^5.0.8"
+  },
+  "build": {
+    "appId": "com.stemsep.v3",
+    "productName": "StemSep V3",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "dist-renderer/**/*"
+    ],
+    "extraResources": [
+      "python-bridge.py",
+      {
+        "from": "../StemSepApp",
+        "to": "StemSepApp",
+        "filter": [
+          "assets/**/*",
+          "src/**/*",
+          "bin/**/*",
+          "README.md",
+          "LICENSE",
+          "CHANGELOG.md",
+          "QUICKSTART.md",
+          "MANUAL.md",
+          "requirements.txt",
+          "pyproject.toml",
+          "setup.py"
+        ]
+      },
+      {
+        "from": "../StemSepApp/.venv",
+        "to": ".venv",
+        "filter": [
+          "**/*",
+          "!**/Scripts/pip*",
+          "!**/Scripts/easy_install*",
+          "!**/Scripts/wheel*",
+          "!**/__pycache__/**",
+          "!**/*.pdb",
+          "!**/*.lib",
+          "!**/Lib/site-packages/torch/include/**",
+          "!**/Lib/site-packages/**/test/**",
+          "!**/Lib/site-packages/**/tests/**",
+          "!**/Lib/site-packages/**/docs/**",
+          "!**/Lib/site-packages/**/doc/**",
+          "!**/Lib/site-packages/**/examples/**",
+          "!**/Lib/site-packages/**/.pytest_cache/**",
+          "!**/Lib/site-packages/pip/**",
+          "!**/Lib/site-packages/setuptools/**"
+        ]
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  }
+}

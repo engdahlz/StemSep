@@ -1,0 +1,68 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.env/
+.venv/
+venv/
+ENV/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+build/
+dist/
+*.spec
+
+# Logs and runtime
+logs/
+output/
+temp/
+temp_models/
+.stemsep/
+*.log
+
+# Credentials / secrets (never commit)
+gcp-oauth.keys.json
+gcp-oauth.keys.*.json
+*.private.json
+
+# IDE/settings
+.vscode/
+.idea/
+
+# Audio/model cache
+models/
+!StemSepApp/src/models/
+!StemSepApp/src/models/**
+StemSepApp/src/models/**/__pycache__/
+models_cache/
+models_test/
+*.ckpt
+*.pth
+*.pt
+*.onnx
+*.weights
+
+# Windows noise
+Thumbs.db
+Desktop.ini
+
+# PyInstaller temp
+*.manifest
+*.dll
+
+# Coverage
+htmlcov/
+.coverage*
+
+saved_output/
+test_output/

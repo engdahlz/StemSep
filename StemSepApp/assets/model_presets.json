@@ -1,0 +1,296 @@
+{
+  "version": "1.0",
+  "presets": [
+    {
+      "id": "fastest_cpu",
+      "name": "Fastest (CPU)",
+      "workflow": "single",
+      "description": "Very fast separation using MDX-Net HQ_5.",
+      "models": ["uvr-mdx-net-inst-hq-5"],
+      "settings": {
+        "overlap": 2,
+        "segment_size": 262144
+      }
+    },
+    {
+      "id": "vocals_fast",
+      "name": "Vocals Fast",
+      "workflow": "single",
+      "description": "Fast vocal separation using a registered model ID.",
+      "models": ["becruily-vocal"],
+      "settings": {
+        "overlap": 2,
+        "segment_size": 262144
+      }
+    },
+    {
+      "id": "vocals_best",
+      "name": "Vocals Best",
+      "workflow": "ensemble",
+      "description": "High quality vocal separation (Fullness & Bleedless balanced)",
+      "settings": {
+        "overlap": 4,
+        "algorithm": "average"
+      },
+      "models": ["bs-roformer-viperx-1297", "gabox-voc-fv6"]
+    },
+    {
+      "id": "instrumental",
+      "name": "Instrumental",
+      "workflow": "single",
+      "description": "Standard instrumental separation using dedicated inst model.",
+      "models": ["unwa-inst-v1e"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 352800
+      }
+    },
+    {
+      "id": "instrumental_best",
+      "name": "Instrumental Best",
+      "workflow": "single",
+      "description": "Cleanest instrumental separation (Gabox Fv7z)",
+      "models": ["gabox-inst-fv7z"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 352800
+      }
+    },
+    {
+      "id": "karaoke_best",
+      "name": "Karaoke Best",
+      "workflow": "single",
+      "description": "Best karaoke separation (Becruily)",
+      "models": ["bs-roformer-karaoke-becruily"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 160000
+      }
+    },
+    {
+      "id": "best_quality_vocals",
+      "name": "Best Quality Vocals",
+      "workflow": "single",
+      "description": "Uses Unwa Big Beta 6X for state-of-the-art vocal separation.",
+      "models": ["unwa-big-beta-6x"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 352800
+      }
+    },
+    {
+      "id": "cleanest_vocals",
+      "name": "Cleanest Vocals (Minimal Bleed)",
+      "workflow": "single",
+      "description": "Uses Unwa Kim FT2 Bleedless for maximum vocal cleanliness.",
+      "models": ["unwa-kim-ft2-bleedless"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 352800
+      }
+    },
+    {
+      "id": "piano_separation",
+      "name": "Piano Separation",
+      "description": "Uses SCNet Large for optimal piano extraction.",
+      "model_id": "scnet-large",
+      "settings": {}
+    },
+    {
+      "id": "drums_separation",
+      "name": "Drums Separation",
+      "workflow": "single",
+      "description": "Uses Mel-Roformer DrumSep for detailed drum kit separation.",
+      "models": ["mel-roformer-drumsep-4stem"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 352800
+      }
+    },
+    {
+      "id": "de_reverb",
+      "name": "De-Reverb",
+      "workflow": "single",
+      "description": "Removes reverb using best-in-class Mel-Roformer De-reverb by anvuew v2.",
+      "models": ["mel-roformer-dereverb-anvuew-v2"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 352800
+      }
+    },
+    {
+      "id": "crowd_removal",
+      "name": "Crowd/SFX Removal",
+      "workflow": "single",
+      "description": "Removes crowd noise and sound effects from audio.",
+      "models": ["mel-roformer-decrowd"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 352800
+      }
+    },
+    {
+      "id": "guitar_piano",
+      "name": "Guitar/Piano Separation",
+      "workflow": "single",
+      "description": "Uses BS-Roformer SW 6-stem for high-quality guitar and piano extraction.",
+      "models": ["bs-roformer-sw-6stem"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 352800
+      }
+    },
+    {
+      "id": "vocals_bleedless",
+      "name": "Vocals Bleedless",
+      "workflow": "single",
+      "description": "Minimal instrumental bleed. Cleanest possible isolation.",
+      "models": ["unwa-kim-ft2-bleedless"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 352800
+      }
+    },
+    {
+      "id": "vocals_fullness",
+      "name": "Vocals Fullness",
+      "workflow": "single",
+      "description": "Maximum vocal richness and frequency preservation.",
+      "models": ["unwa-revive-3e"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "phase_swap": {
+        "enabled": true,
+        "reference_model": "unwa-kim-ft2-bleedless",
+        "low_hz": 500,
+        "high_hz": 5000,
+        "high_freq_weight": 0.8,
+        "description": "Uses clean Bleedless reference for noise reduction"
+      }
+    },
+    {
+      "id": "instrumental_bleedless",
+      "name": "Instrumental Bleedless",
+      "workflow": "single",
+      "description": "Minimal vocal bleed. Ultra-clean instrumentals.",
+      "models": ["gabox-inst-fv7z"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 352800
+      }
+    },
+    {
+      "id": "instrumental_fullness",
+      "name": "Instrumental Fullness",
+      "workflow": "single",
+      "description": "Maximum frequency richness. Sounds closest to original mix minus vocals.",
+      "models": ["unwa-inst-v1e"],
+      "settings": {
+        "overlap": 4,
+        "segment_size": 485100
+      },
+      "phase_swap": {
+        "enabled": true,
+        "reference_model": "becruily-vocal",
+        "low_hz": 200,
+        "high_hz": 500,
+        "high_freq_weight": 2.0,
+        "description": "Golden Pair: Becruily Vocal reference removes V1e noise while preserving fullness"
+      }
+    }
+  ],
+  "ensembles": [
+    {
+      "id": "ensemble-vocal-ultimate",
+      "name": "Vocal Ultimate",
+      "description": "Big Beta 6X provides detail, voc_fv4 provides cleanliness. Best for RVC.",
+      "algorithm": "max",
+      "models": [
+        {
+          "model_id": "unwa-big-beta-6x",
+          "weight": 1.0
+        },
+        {
+          "model_id": "gabox-voc-fv4",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "ensemble-instrumental-ultimate",
+      "name": "Instrumental Ultimate",
+      "description": "V1e provides fullness, Becruily Inst retrieves instruments V1e misses.",
+      "algorithm": "max",
+      "models": [
+        {
+          "model_id": "unwa-inst-v1e",
+          "weight": 1.0
+        },
+        {
+          "model_id": "becruily-inst",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "ensemble-max-detail",
+      "name": "Max Detail Recovery",
+      "description": "V1e + Resurrection Inst combination - top tier for recovering details.",
+      "algorithm": "max",
+      "models": [
+        {
+          "model_id": "unwa-inst-v1e",
+          "weight": 1.0
+        },
+        {
+          "model_id": "unwa-bs-resurrection-inst",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "ensemble-bleedless-ultimate",
+      "name": "Ultimate Bleedless",
+      "description": "Combines top bleedless models using min_spec for maximum cleanliness.",
+      "algorithm": "min",
+      "stems": ["vocals", "instrumental"],
+      "models": [
+        {
+          "model_id": "unwa-inst-fno",
+          "weight": 1.0
+        },
+        {
+          "model_id": "gabox-inst-fv7z",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "ensemble-fullness-ultimate",
+      "name": "Ultimate Fullness",
+      "description": "Combines full-bodied models using max_spec for maximum frequency retention.",
+      "algorithm": "max",
+      "stems": ["vocals", "instrumental"],
+      "models": [
+        {
+          "model_id": "unwa-inst-v1e-plus",
+          "weight": 1.0
+        },
+        {
+          "model_id": "gabox-inst-v6n",
+          "weight": 1.0
+        }
+      ],
+      "phase_swap": {
+        "enabled": true,
+        "reference_model": "mel-band-roformer-kim",
+        "low_hz": 200,
+        "high_hz": 500,
+        "high_freq_weight": 0.8,
+        "description": "Aggressive Phase Fix for max_spec ensemble"
+      }
+    }
+  ]
+}

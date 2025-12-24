@@ -1,0 +1,1030 @@
+{
+    "models": [
+        {
+            "id": "bs-roformer-viperx-1297",
+            "name": "BS-Roformer-Viperx-1297",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "BS-Roformer",
+            "description": "Vocals / Instrumental",
+            "links": {
+                "checkpoint": "https://huggingface.co/bvl/bs-roformer-viperx-1297/resolve/main/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+                "config": "https://huggingface.co/bvl/bs-roformer-viperx-1297/resolve/main/model_bs_roformer_ep_317_sdr_12.9755.yaml"
+            },
+            "vram_required": 8.0,
+            "sdr": 12.97,
+            "fullness": 9.5,
+            "bleedless": 9.0
+        },
+        {
+            "id": "bs-roformer-viperx-1296",
+            "name": "BS-Roformer-Viperx-1296",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "BS-Roformer",
+            "description": "Vocals",
+            "links": {
+                "checkpoint": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_368_sdr_12.9628.ckpt",
+                "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_bs_roformer_ep_368_sdr_12.9628.yaml"
+            },
+            "vram_required": 8.0,
+            "sdr": 12.96,
+            "fullness": 9.5,
+            "bleedless": 9.0
+        },
+        {
+            "id": "mel-band-roformer-kim",
+            "name": "Mel-Band-Roformer Kim",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "description": "Vocals (Standard)",
+            "links": {
+                "checkpoint": "https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 12.5,
+            "fullness": 9.0,
+            "bleedless": 9.8
+        },
+        {
+            "id": "unwa-big-beta-6x",
+            "name": "Unwa Big Beta 6X",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "description": "Vocals (Balanserad)",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta6x.ckpt",
+                "config": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta6x.yaml"
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "unwa-big-beta-5e",
+            "name": "Unwa Big Beta 5e",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "description": "Vocals (Fullness)",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta5e.ckpt",
+                "config": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta5e.yaml"
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "unwa-kim-ft2",
+            "name": "Unwa Kim FT2",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "description": "Vocals",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft2_bleedless.ckpt",
+                "config": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft2_bleedless.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 12.5,
+            "fullness": 9.0,
+            "bleedless": 9.8
+        },
+        {
+            "id": "unwa-kim-ft2-bleedless",
+            "name": "Unwa Kim FT2 Bleedless",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "description": "Vocals (Bleedless)",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft2_bleedless.ckpt",
+                "config": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft2_bleedless.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 12.5,
+            "fullness": 9.0,
+            "bleedless": 9.8
+        },
+        {
+            "id": "unwa-ft3-preview",
+            "name": "Unwa FT3 Preview",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "description": "Vocals",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft3_prev.ckpt",
+                "config": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "unwa-revive-2",
+            "name": "Unwa Revive 2",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "BS-Roformer",
+            "description": "Vocals",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-Revive/resolve/main/bs_roformer_revive2.ckpt",
+                "config": "https://huggingface.co/pcunwa/BS-Roformer-Revive/resolve/main/model.yaml"
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "unwa-revive-3e",
+            "name": "Unwa Revive 3e",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "BS-Roformer",
+            "description": "Vocals (Fullness)",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "unwa-resurrection-voc",
+            "name": "Unwa Resurrection Voc",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "BS-Roformer",
+            "description": "Vocals",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "gabox-voc-fv4",
+            "name": "Gabox Voc FV4",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "description": "Vocals (RVC/Anime)",
+            "links": {
+                "checkpoint": "https://huggingface.co/melbandroformers/vocals/resolve/main/voc_gabox.ckpt",
+                "config": "https://huggingface.co/melbandroformers/vocals/resolve/main/config_voc_gabox.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "gabox-voc-fv5",
+            "name": "Gabox Voc FV5",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "description": "Vocals",
+            "links": {
+                "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/voc_gaboxFv1.ckpt",
+                "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/config_voc_gaboxFv1.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "gabox-voc-fv6",
+            "name": "Gabox Voc FV6",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "description": "Vocals",
+            "links": {
+                "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_fv6.ckpt",
+                "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/config_voc_gaboxFv1.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "amane-full-scratch",
+            "name": "Amane Full Scratch",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "gabox-voc-gabox2",
+            "name": "Gabox Voc Gabox2",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "description": "Vocals",
+            "links": {
+                "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.ckpt",
+                "config": "https://huggingface.co/melbandroformers/vocals/resolve/main/config_voc_gabox.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "anvuew-vocals",
+            "name": "Anvuew Vocals",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "BS-Roformer",
+            "description": "Vocals",
+            "links": {
+                "checkpoint": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
+                "config": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/config_dereverb-echo_128_4_4_mel_band_roformer.yaml"
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "becruily-vocal",
+            "name": "Becruily Vocal",
+            "type": "Roformer - S\u00e5ng (Vocals)",
+            "architecture": "Mel-Roformer",
+            "description": "Vocals (Screams)",
+            "links": {
+                "checkpoint": "https://huggingface.co/becruily/mel-band-roformer-vocals/resolve/main/mel_band_roformer_vocals_becruily.ckpt",
+                "config": "https://huggingface.co/becruily/mel-band-roformer-vocals/resolve/main/config_vocals_becruily.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "unwa-inst-v1e",
+            "name": "Unwa Inst V1e",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst (Standard)",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/melband_roformer_inst_v1.ckpt",
+                "config": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/config_melbandroformer_inst.yaml",
+                "repository": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/tree/main"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "unwa-inst-v1e+",
+            "name": "Unwa Inst V1e+",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst (Fullness)",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/melband_roformer_inst_v1e_plus.ckpt",
+                "config": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/config_melbandroformer_inst.yaml",
+                "repository": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/tree/main"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "unwa-resurrection-inst",
+            "name": "Unwa Resurrection Inst",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "BS-Roformer",
+            "description": "Inst (Resurrection)",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/resolve/main/BS-Roformer-Resurrection-Inst.ckpt",
+                "config": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/resolve/main/BS-Roformer-Resurrection-Inst-Config.yaml",
+                "repository": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/tree/main"
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "unwa-inst-v2",
+            "name": "Unwa Inst V2",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst (Less Noise)",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/melband_roformer_inst_v2.ckpt",
+                "config": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/config_melbandroformer_inst.yaml",
+                "repository": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/tree/main"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "unwa-inst-fno",
+            "name": "Unwa Inst FNO",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "BS-Roformer",
+            "description": "Inst (Exp)",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/bs_roformer_inst_fno.ckpt",
+                "config": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/config_bs_roformer_inst_fno.yaml",
+                "repository": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/tree/main"
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "gabox-inst-fv7z",
+            "name": "Gabox Inst Fv7z",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst (Bleedless)",
+            "links": {
+                "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/INSTV7N.ckpt",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "gabox-inst-fv8b",
+            "name": "Gabox Inst Fv8b",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst (Clean)",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "gabox-inst-v6n",
+            "name": "Gabox Inst V6N",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst (Noisy)",
+            "links": {
+                "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/INSTV6N.ckpt",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "gabox-inst-fv4-noise",
+            "name": "Gabox Inst Fv4 Noise",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst (Noisy/Full)",
+            "links": {
+                "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/INSTV5N.ckpt",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "gabox-resurrection",
+            "name": "Gabox Resurrection",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "BS-Roformer",
+            "description": "Inst (Fullness+)",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "gabox-inst-experimental",
+            "name": "Gabox Inst Experimental",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst",
+            "links": {
+                "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/vocfv7beta2.ckpt",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "becruily-inst",
+            "name": "Becruily Inst",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst (Vocal Chops)",
+            "links": {
+                "checkpoint": "https://huggingface.co/becruily/mel-band-roformer-instrumental/resolve/main/mel_band_roformer_instrumental_becruily.ckpt",
+                "config": "https://huggingface.co/becruily/mel-band-roformer-instrumental/resolve/main/config_instrumental_becruily.yaml",
+                "repository": "https://huggingface.co/becruily/mel-band-roformer-instrumental/tree/main"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "mesk-rifforge",
+            "name": "Mesk Rifforge",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst (Metal)",
+            "links": {
+                "checkpoint": "https://huggingface.co/meskvlla33/rifforge/resolve/main/rifforge_full_sdr_14.2436.ckpt",
+                "config": "https://huggingface.co/meskvlla33/rifforge/resolve/main/config_rifforge_full_mesk.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "neo-instvfx",
+            "name": "Neo InstVFX",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst (Vocal Chops)",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "amane-inst-fullness",
+            "name": "Amane Inst Fullness",
+            "type": "Roformer - Instrumental (Instrumental)",
+            "architecture": "Mel-Roformer",
+            "description": "Inst",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "mel-band-karaoke-aufr33",
+            "name": "Mel-Band-Karaoke (Aufr33)",
+            "type": "Karaoke / Backing Vocals / \u00d6vriga Separationer",
+            "architecture": "Mel-Roformer",
+            "description": "Karaoke",
+            "links": {
+                "checkpoint": "https://huggingface.co/jarredou/aufr33-viperx-karaoke-melroformer-model/resolve/main/mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
+                "config": "https://huggingface.co/jarredou/aufr33-viperx-karaoke-melroformer-model/resolve/main/config_mel_band_roformer_karaoke.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "mel-band-karaoke-becruily",
+            "name": "Mel-Band-Karaoke (Becruily)",
+            "type": "Karaoke / Backing Vocals / \u00d6vriga Separationer",
+            "architecture": "Mel-Roformer",
+            "description": "Lead/Backing",
+            "links": {
+                "checkpoint": "https://huggingface.co/becruily/mel-band-roformer-karaoke/resolve/main/mel_band_roformer_karaoke_becruily.ckpt",
+                "config": "https://huggingface.co/becruily/mel-band-roformer-karaoke/resolve/main/config_mel_band_roformer_karaoke.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "sucial-male-female",
+            "name": "Sucial Male/Female",
+            "type": "Karaoke / Backing Vocals / \u00d6vriga Separationer",
+            "architecture": "BS-Roformer",
+            "description": "Man/Kvinna",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "bs-roformer-karaoke-becruily",
+            "name": "BS-Roformer Karaoke (Becruily)",
+            "type": "Karaoke / Backing Vocals / \u00d6vriga Separationer",
+            "architecture": "BS-Roformer",
+            "description": "Lead/Backing",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "anvuew-karaoke",
+            "name": "BS-Roformer Karaoke (Anvuew)",
+            "type": "Karaoke / Backing Vocals / \u00d6vriga Separationer",
+            "architecture": "BS-Roformer",
+            "description": "Karaoke",
+            "links": {
+                "checkpoint": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.ckpt",
+                "config": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/model.yaml"
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "viperx-karaoke-1297",
+            "name": "Mel-Band-Roformer Karaoke (Viperx 1297)",
+            "type": "Karaoke / Backing Vocals / \u00d6vriga Separationer",
+            "architecture": "Mel-Roformer",
+            "description": "Karaoke",
+            "links": {
+                "checkpoint": "https://huggingface.co/jarredou/aufr33-viperx-karaoke-melroformer-model/resolve/main/mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
+                "config": "https://huggingface.co/jarredou/aufr33-viperx-karaoke-melroformer-model/resolve/main/config_mel_band_roformer_karaoke.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 12.97,
+            "fullness": 9.5,
+            "bleedless": 9.0
+        },
+        {
+            "id": "duality-v1-unwa",
+            "name": "Duality V1 (Unwa)",
+            "type": "Karaoke / Backing Vocals / \u00d6vriga Separationer",
+            "architecture": "Mel-Roformer",
+            "description": "Voc+Inst (2-stem)",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/melband_roformer_instvoc_duality_v1.ckpt",
+                "config": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/config_melbandroformer_instvoc_duality.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "duality-v2-unwa",
+            "name": "Duality V2 (Unwa)",
+            "type": "Karaoke / Backing Vocals / \u00d6vriga Separationer",
+            "architecture": "Mel-Roformer",
+            "description": "Voc+Inst (2-stem)",
+            "links": {
+                "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/melband_roformer_instvoc_duality_v2.ckpt",
+                "config": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/config_melbandroformer_instvoc_duality.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "mdx23c-drumsep-6stem",
+            "name": "MDX23C-DrumSep-6stem",
+            "type": "Trummor / Bas / Gitarr / \u00d6vrigt (Stem Separation)",
+            "architecture": "MDX23C",
+            "description": "6-Stem Drums",
+            "links": {
+                "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/MDX23C_models/MDX23C-DrumSep-aufr33-jarredou.ckpt",
+                "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml"
+            },
+            "vram_required": 4.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "mdx23c-drumsep-5stem",
+            "name": "MDX23C-DrumSep-5stem",
+            "type": "Trummor / Bas / Gitarr / \u00d6vrigt (Stem Separation)",
+            "architecture": "MDX23C",
+            "description": "5-Stem Drums",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 4.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "bs-roformer-1053",
+            "name": "BS-Roformer 1053",
+            "type": "Trummor / Bas / Gitarr / \u00d6vrigt (Stem Separation)",
+            "architecture": "BS-Roformer",
+            "description": "Drums+Bass",
+            "links": {
+                "checkpoint": "https://huggingface.co/bvl/bs-roformer-viperx-1053/resolve/main/model_bs_roformer_ep_937_sdr_10.5309.ckpt",
+                "config": "https://huggingface.co/bvl/bs-roformer-viperx-1053/resolve/main/model_bs_roformer_ep_937_sdr_10.5309.yaml"
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "amane-4-stems-large",
+            "name": "Amane 4-Stems Large",
+            "type": "Trummor / Bas / Gitarr / \u00d6vrigt (Stem Separation)",
+            "architecture": "Mel-Roformer",
+            "description": "4-Stem",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "amane-4-stems-xl",
+            "name": "Amane 4-Stems XL",
+            "type": "Trummor / Bas / Gitarr / \u00d6vrigt (Stem Separation)",
+            "architecture": "Mel-Roformer",
+            "description": "4-Stem",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "bs-roformer-4-stems",
+            "name": "BS-Roformer 4-Stems",
+            "type": "Trummor / Bas / Gitarr / \u00d6vrigt (Stem Separation)",
+            "architecture": "BS-Roformer",
+            "description": "4-Stem",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "becruily-guitar",
+            "name": "Becruily Guitar",
+            "type": "Trummor / Bas / Gitarr / \u00d6vrigt (Stem Separation)",
+            "architecture": "Mel-Roformer",
+            "description": "Gitarr",
+            "links": {
+                "checkpoint": "https://huggingface.co/becruily/mel-band-roformer-guitar/resolve/main/becruily_guitar.ckpt",
+                "config": "https://huggingface.co/becruily/mel-band-roformer-guitar/resolve/main/config_guitar_becruily.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "drypd-side-extraction",
+            "name": "DryPD Side Extraction",
+            "type": "Trummor / Bas / Gitarr / \u00d6vrigt (Stem Separation)",
+            "architecture": "SCNet",
+            "description": "Side (Diff)",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 10.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "mel-band-crowd",
+            "name": "Mel-Band-Crowd",
+            "type": "Restaurering / De-Noise / De-Reverb",
+            "architecture": "Mel-Roformer",
+            "description": "Publikborttagning",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "anvuew-dereverb-v2",
+            "name": "Anvuew DeReverb V2",
+            "type": "Restaurering / De-Noise / De-Reverb",
+            "architecture": "Mel-Roformer",
+            "description": "De-Reverb",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "anvuew-dereverb-room",
+            "name": "Anvuew DeReverb Room",
+            "type": "Restaurering / De-Noise / De-Reverb",
+            "architecture": "BS-Roformer",
+            "description": "De-Reverb (Mono)",
+            "links": {
+                "checkpoint": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew.ckpt",
+                "config": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew.yaml"
+            },
+            "vram_required": 8.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "anvuew-dereverb-mono",
+            "name": "Anvuew DeReverb Mono",
+            "type": "Restaurering / De-Noise / De-Reverb",
+            "architecture": "Mel-Roformer",
+            "description": "De-Reverb (Mono)",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "sucial-dereverb-fused",
+            "name": "Sucial DeReverb Fused",
+            "type": "Restaurering / De-Noise / De-Reverb",
+            "architecture": "Mel-Roformer",
+            "description": "De-Reverb (Large)",
+            "links": {
+                "checkpoint": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/fused_dereverb_echo.ckpt",
+                "config": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/configs/fused_dereverb_echo.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "aufr33-denoise-aggressive",
+            "name": "Aufr33 Denoise Aggressive",
+            "type": "Restaurering / De-Noise / De-Reverb",
+            "architecture": "Mel-Roformer",
+            "description": "De-Noise",
+            "links": {
+                "checkpoint": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/resolve/main/denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt",
+                "config": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/resolve/main/model_mel_band_roformer_denoise.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "aufr33-denoise-std",
+            "name": "Aufr33 Denoise Std",
+            "type": "Restaurering / De-Noise / De-Reverb",
+            "architecture": "Mel-Roformer",
+            "description": "De-Noise",
+            "links": {
+                "checkpoint": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/resolve/main/denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt",
+                "config": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/resolve/main/model_mel_band_roformer_denoise.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "gabox-denoise-debleed",
+            "name": "Gabox Denoise/Debleed",
+            "type": "Restaurering / De-Noise / De-Reverb",
+            "architecture": "Mel-Roformer",
+            "description": "De-Noise (Inst)",
+            "links": {
+                "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/denoisedebleed.ckpt",
+                "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml"
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "unwa-debleed",
+            "name": "Unwa Debleed",
+            "type": "Restaurering / De-Noise / De-Reverb",
+            "architecture": "Mel-Roformer",
+            "description": "De-Bleed (Inst)",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 6.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "lew-apollo-universal",
+            "name": "Lew Apollo Universal",
+            "type": "Restaurering / De-Noise / De-Reverb",
+            "architecture": "Apollo",
+            "description": "Upscaling",
+            "links": {
+                "checkpoint": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/apollo_model.ckpt",
+                "config": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/apollo_model.yaml"
+            },
+            "vram_required": 4.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "lew-apollo-vocal",
+            "name": "Lew Apollo Vocal",
+            "type": "Restaurering / De-Noise / De-Reverb",
+            "architecture": "Apollo",
+            "description": "Restoration",
+            "links": {
+                "checkpoint": "https://huggingface.co/baicai1145/Apollo-vocal-msst/resolve/main/apollo_vocal_msst.ckpt",
+                "config": "https://huggingface.co/baicai1145/Apollo-vocal-msst/resolve/main/config.yaml",
+                "repository": "https://huggingface.co/baicai1145/Apollo-vocal-msst/tree/main"
+            },
+            "vram_required": 4.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "mdx23c-instvoc-hq",
+            "name": "MDX23C-InstVoc-HQ",
+            "type": "\u00c4ldre MDX23C & SCNet & Bandit",
+            "architecture": "MDX23C",
+            "description": "Vocals/Inst",
+            "links": {
+                "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/MDX23C_models/MDX23C-8KFFT-InstVoc_HQ.ckpt",
+                "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml"
+            },
+            "vram_required": 4.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "mdx23c-d1581",
+            "name": "MDX23C-D1581",
+            "type": "\u00c4ldre MDX23C & SCNet & Bandit",
+            "architecture": "MDX23C",
+            "description": "Vocals/Inst",
+            "links": {
+                "checkpoint": "",
+                "config": ""
+            },
+            "vram_required": 4.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "scnet-musdb18",
+            "name": "SCNet-MUSDB18",
+            "type": "\u00c4ldre MDX23C & SCNet & Bandit",
+            "architecture": "SCNet",
+            "description": "4-Stem",
+            "links": {
+                "checkpoint": "https://github.com/starrytong/SCNet/releases/download/v1.0.0/scnet_checkpoint_musdb18.ckpt",
+                "config": "https://raw.githubusercontent.com/starrytong/SCNet/main/configs/scnet.yaml"
+            },
+            "vram_required": 10.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "bandit-plus",
+            "name": "BandIt Plus",
+            "type": "\u00c4ldre MDX23C & SCNet & Bandit",
+            "architecture": "BandIt",
+            "description": "SFX",
+            "links": {
+                "checkpoint": "https://zenodo.org/record/10963739/files/bandit_plus.ckpt",
+                "config": "https://raw.githubusercontent.com/karnwatcharasupat/bandit/main/expt/bandit_plus/hparams.yaml"
+            },
+            "vram_required": 4.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "mdx-net-hq4",
+            "name": "MDX-Net HQ4",
+            "type": "\u00c4ldre MDX23C & SCNet & Bandit",
+            "architecture": "MDX-Net",
+            "description": "Inst",
+            "links": {
+                "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/MDXNet_models/UVR-MDX-NET-Inst_HQ_4.onnx",
+                "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml"
+            },
+            "vram_required": 4.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "mdx-net-hq5",
+            "name": "MDX-Net HQ5",
+            "type": "\u00c4ldre MDX23C & SCNet & Bandit",
+            "architecture": "MDX-Net",
+            "description": "Inst",
+            "links": {
+                "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/MDXNet_models/UVR-MDX-NET-Inst_HQ_5.onnx",
+                "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml"
+            },
+            "vram_required": 4.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "scnet-large",
+            "name": "SCNet Large",
+            "type": "SCNet - Instrumental",
+            "architecture": "SCNet",
+            "description": "High quality instrumental separation",
+            "links": {
+                "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/SCnet_models/SCNet-large_starrytong_fixed.ckpt",
+                "config": "https://raw.githubusercontent.com/starrytong/SCNet/main/conf/config.yaml"
+            },
+            "vram_required": 12.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        },
+        {
+            "id": "mdx23c-drumsep-6stem",
+            "name": "MDX23C DrumSep 6-Stem",
+            "type": "MDX23C - Drums",
+            "architecture": "MDX23C",
+            "description": "6-stem drum separation",
+            "links": {
+                "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/MDX23C-DrumSep-aufr33-jarredou.ckpt",
+                "config": ""
+            },
+            "vram_required": 4.0,
+            "sdr": 0.0,
+            "fullness": null,
+            "bleedless": null
+        }
+    ]
+}

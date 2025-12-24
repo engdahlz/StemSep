@@ -1,0 +1,756 @@
+{
+    "version": "1.2",
+    "recipes": [
+        {
+            "id": "recipe_inst_ultimate_max",
+            "name": "Ultimate Instrumental (Max Spec)",
+            "description": "Combines Unwa V1e + Gabox Fv7z + Viperx 1297 using Max Spec. Good detail, but can be noisy.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "unwa-inst-v1e",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "gabox-inst-fv7z",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "max_spec",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_inst_fno_becruily",
+            "name": "Ultimate Inst (FNO + Becruily)",
+            "description": "Modern ensemble: Unwa Inst FNO + Becruily Inst + Unwa V1e. High fullness and bleedless.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "unwa-inst-fno",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "becruily-inst",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "unwa-inst-v1e",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "max_spec",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_inst_phase_fix",
+            "name": "Instrumental Phase Fixer (Unwa + Kim)",
+            "description": "Takes the full body from Unwa V1e and fixes the phase using Kim Mel-Band.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "unwa-inst-v1e",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "mel-band-roformer-kim",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "phase_fix",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_gabox_phase_fix",
+            "name": "Gabox Resurrection (Phase Fix)",
+            "description": "The best of both worlds: Gabox Resurrection's fullness with ViperX 1297's clean phase.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "gabox-resurrection",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "phase_fix",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_vocal_denoise",
+            "name": "Vocal Clarity (De-Noise)",
+            "description": "Averaging ensemble of Unwa BigBeta 5e and Gabox Voc FV4 to reduce artifacts and noise.",
+            "type": "ensemble",
+            "target": "vocals",
+            "steps": [
+                {
+                    "model_id": "unwa-big-beta-5e",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "gabox-voc-fv4",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "average",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_vocal_max_spec",
+            "name": "Vocal Max Spec (Unwa + Becruily)",
+            "description": "Combines Unwa Big Beta 5e and Becruily Vocal using Max Spec for maximum vocal fullness.",
+            "type": "ensemble",
+            "target": "vocals",
+            "steps": [
+                {
+                    "model_id": "unwa-big-beta-5e",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "becruily-vocal",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "max_spec",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_karaoke_fusion",
+            "name": "Karaoke Ultimate (BS Fusion)",
+            "description": "Fuses BS-Roformer Karaoke (Becruily) with Anvuew Karaoke for best lead/backing separation.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "bs-roformer-karaoke-becruily",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "anvuew-karaoke",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "average",
+            "defaults": {
+                "overlap": 2
+            }
+        },
+        {
+            "id": "recipe_metal_special",
+            "name": "Metal Instrumental",
+            "description": "Optimized for Heavy Metal. Combines Mesk Rifforge with Demucs for punchy drums and aggressive guitars.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "mesk-rifforge",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "htdemucs",
+                    "weight": 0.8
+                }
+            ],
+            "algorithm": "average",
+            "defaults": {
+                "overlap": 2
+            }
+        },
+        {
+            "id": "pipeline_super_clean_vocal",
+            "name": "Super Clean Vocals (Pipeline)",
+            "description": "1. De-Reverb (VR). 2. Separate Vocals (Roformer). Best for live recordings and studio acapellas.",
+            "type": "pipeline",
+            "target": "vocals",
+            "steps": [
+                {
+                    "step_name": "dereverb",
+                    "model_id": "uvr-deecho-dereverb"
+                },
+                {
+                    "step_name": "separation",
+                    "model_id": "bs-roformer-viperx-1297",
+                    "input_source": "dereverb.vocals"
+                }
+            ]
+        },
+        {
+            "id": "recipe_hybrid_inst",
+            "name": "Hybrid Ultimate Inst (Frequency Split)",
+            "description": "Combines the warm low-end of SCNet XL with the crisp high-end of Roformer. Best of both worlds.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "scnet-xl",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "mel-band-roformer-kim",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "frequency_split",
+            "defaults": {
+                "overlap": 4,
+                "split_freq": 1000
+            }
+        },
+        {
+            "id": "recipe_guitar_extraction",
+            "name": "Guitar Extraction",
+            "description": "Extracts acoustic and electric guitars using Becruily Mel-Band and HTDemucs 6-Stem.",
+            "type": "ensemble",
+            "target": "guitar",
+            "steps": [
+                {
+                    "model_id": "becruily-guitar",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "htdemucs_6s",
+                    "weight": 0.8
+                }
+            ],
+            "algorithm": "max_spec",
+            "defaults": {
+                "overlap": 2
+            }
+        },
+        {
+            "id": "recipe_piano_solo",
+            "name": "Piano Solo",
+            "description": "Extracts piano using HTDemucs 6-Stem model.",
+            "type": "ensemble",
+            "target": "piano",
+            "steps": [
+                {
+                    "model_id": "htdemucs_6s",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "average",
+            "defaults": {
+                "overlap": 2
+            }
+        },
+        {
+            "id": "chain_ultra_clean_vocal",
+            "name": "Ultra-Clean Vocals (Chained)",
+            "description": "Chained workflow: 1. Vocal Isolation → 2. De-Reverb → 3. Karaoke (lead isolation). Based on NotebookLM recommendations.",
+            "type": "chained",
+            "target": "vocals",
+            "steps": [
+                {
+                    "step": 1,
+                    "name": "isolation",
+                    "model_id": "bs-roformer-viperx-1297",
+                    "output": "vocals"
+                },
+                {
+                    "step": 2,
+                    "name": "dereverb",
+                    "model_id": "anvuew-dereverb-v2",
+                    "input_from": "isolation.vocals",
+                    "output": "vocals"
+                },
+                {
+                    "step": 3,
+                    "name": "lead_isolation",
+                    "model_id": "becruily-karaoke",
+                    "input_from": "dereverb.vocals",
+                    "output": "lead_vocal"
+                }
+            ],
+            "warning": "Produces very clean but potentially thin vocals. Best for studio acapellas.",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "chain_isolated_drums",
+            "name": "Isolated Drums (Chained)",
+            "description": "Chained workflow: 1. Remove vocals → 2. Extract drums → 3. Split drum components. Based on NotebookLM recommendations.",
+            "type": "chained",
+            "target": "drums",
+            "steps": [
+                {
+                    "step": 1,
+                    "name": "remove_vocals",
+                    "model_id": "unwa-inst-v1e",
+                    "output": "instrumental"
+                },
+                {
+                    "step": 2,
+                    "name": "extract_drums",
+                    "model_id": "htdemucs",
+                    "input_from": "remove_vocals.instrumental",
+                    "output": "drums"
+                },
+                {
+                    "step": 3,
+                    "name": "split_drums",
+                    "model_id": "mdx23c-drumsep-jarredou",
+                    "input_from": "extract_drums.drums",
+                    "output": [
+                        "kick",
+                        "snare",
+                        "hihat",
+                        "toms",
+                        "cymbals"
+                    ]
+                }
+            ],
+            "warning": "Multi-step workflow, slower but cleaner drum isolation.",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_demudder_metal",
+            "name": "Demudder (Metal/Rock)",
+            "description": "Phase Rotate demudder for dense tracks. Fills spectral holes in instrumentals. Best for Metal, Rock, EDM.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "post_processing": "demudder_phase_rotate",
+            "steps": [
+                {
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "average",
+            "warning": "May cause OOM on AMD/Intel 4GB GPUs. Not recommended for acoustic tracks.",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_notebook_fullness_inst",
+            "name": "Fullness Inst (NotebookLM)",
+            "description": "Best fullness per NotebookLM: Unwa Resurrection (phase-fixed) + MVSEP BS 2025.07. Minimum crossbleeding.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "bs-roformer-resurrection",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "max_spec",
+            "source": "NotebookLM recommendation",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_notebook_best_vocals",
+            "name": "Best Vocals (NotebookLM)",
+            "description": "Best vocal ensemble per NotebookLM: BS Revive 3e + BS 2025.07 with Max Spec for maximum detail.",
+            "type": "ensemble",
+            "target": "vocals",
+            "steps": [
+                {
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "mel-band-roformer-kim",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "max_spec",
+            "source": "NotebookLM recommendation",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_notebook_metal_inst",
+            "name": "Metal Inst (NotebookLM)",
+            "description": "Metal/dense music per NotebookLM: BS 2025.07 + Mesk Rifforge with Min Spec to reduce bleed but keep fullness.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "mesk-rifforge",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "min_spec",
+            "source": "NotebookLM recommendation (Mesk's method)",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_mixed_max_min",
+            "name": "Cleanest Instrumental (Max/Min)",
+            "description": "Per-stem algorithm: Max Spec for vocals extraction, Min Spec for instrumental to minimize vocal bleed.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "mel-band-roformer-kim",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "mixed",
+            "algorithm_config": {
+                "vocals": "max_spec",
+                "instrumental": "min_spec"
+            },
+            "source": "NotebookLM: Max/Min strategy",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_phase_fix_golden",
+            "name": "Phase Fix Golden Combo",
+            "description": "Fix Roformer buzzing: Unwa Inst v1e (target) + Becruily Vocal (phase source). Per NotebookLM: weight 2.0, 500-5000 Hz.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "unwa-inst-v1e",
+                    "weight": 1.0,
+                    "role": "magnitude"
+                },
+                {
+                    "model_id": "becruily-inst",
+                    "weight": 1.0,
+                    "role": "phase_source"
+                }
+            ],
+            "algorithm": "phase_fix",
+            "phase_fix_params": {
+                "low_hz": 500,
+                "high_hz": 5000,
+                "high_freq_weight": 2.0
+            },
+            "source": "NotebookLM: Golden combo for phase fixing",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "recipe_debleed_instrumental",
+            "name": "DeBleed Instrumental",
+            "description": "Remove vocal bleed from instrumental: chain vocal model to catch remaining vocals, then subtract.",
+            "type": "chained",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "step_name": "initial_separation",
+                    "model_id": "bs-roformer-viperx-1297"
+                },
+                {
+                    "step_name": "catch_bleed",
+                    "model_id": "mel-band-roformer-kim",
+                    "input_source": "initial_separation.instrumental",
+                    "note": "Catches remaining vocal bleed"
+                }
+            ],
+            "source": "NotebookLM: Chained separation for debleed"
+        },
+        {
+            "id": "recipe_vocal_low_cut",
+            "name": "Vocal Low Cut Cleanup",
+            "description": "Clean vocals with 500 Hz high-pass to remove rumble and low-freq bleed.",
+            "type": "single",
+            "target": "vocals",
+            "steps": [
+                {
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                }
+            ],
+            "post_processing": "high_pass",
+            "post_processing_params": {
+                "cutoff_hz": 500
+            },
+            "source": "NotebookLM: Vocal cleanup with low cut",
+            "defaults": {
+                "overlap": 4
+            }
+        },
+        {
+            "id": "pipeline_live_cleanup",
+            "name": "Live Recording Cleanup (Full Chain)",
+            "description": "Per NotebookLM: De-Crowd → Separation → De-Reverb → DeBleed. For concerts, bootlegs, VHS rips.",
+            "type": "pipeline",
+            "target": "vocals",
+            "steps": [
+                {
+                    "step_name": "decrowd",
+                    "model_id": "mel-roformer-decrowd",
+                    "note": "Remove audience noise first"
+                },
+                {
+                    "step_name": "separation",
+                    "model_id": "bs-roformer-viperx-1297",
+                    "input_source": "decrowd.output",
+                    "note": "Aggressive separation on cleaned audio"
+                },
+                {
+                    "step_name": "dereverb",
+                    "model_id": "mel-roformer-dereverb-anvuew",
+                    "input_source": "separation.vocals",
+                    "note": "De-reverb vocals only, not full mix"
+                },
+                {
+                    "step_name": "debleed",
+                    "model_id": "debleed-melband-roformer",
+                    "input_source": "dereverb.vocals",
+                    "note": "Final cleanup of drum bleed",
+                    "optional": true
+                }
+            ],
+            "source": "NotebookLM: Live recording chain",
+            "warning": "Requires multiple specialized models. Process time 4-5x longer than single model."
+        },
+        {
+            "id": "pipeline_live_instrumental",
+            "name": "Live Instrumental Cleanup",
+            "description": "Extract clean instrumental from live recordings. De-Crowd → Separation → Cleanup.",
+            "type": "pipeline",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "step_name": "decrowd",
+                    "model_id": "mel-roformer-decrowd"
+                },
+                {
+                    "step_name": "separation",
+                    "model_id": "bs-roformer-viperx-1297",
+                    "input_source": "decrowd.output"
+                }
+            ],
+            "source": "NotebookLM: Live instrumental extraction"
+        },
+        {
+            "id": "recipe_studio_high_quality",
+            "name": "Studio Master (High Quality)",
+            "description": "Per NotebookLM: Focus on fullness, no aggressive pre-processing. For studio recordings, official releases.",
+            "type": "ensemble",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "model_id": "unwa-inst-v1e",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                }
+            ],
+            "algorithm": "max_spec",
+            "source": "NotebookLM: Studio - fullness over bleedless",
+            "defaults": {
+                "overlap": 8
+            }
+        },
+        {
+            "id": "recipe_studio_vocals",
+            "name": "Studio Vocals (Premium)",
+            "description": "High-quality vocal extraction from studio masters. Preserves detail and warmth.",
+            "type": "single",
+            "target": "vocals",
+            "steps": [
+                {
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                }
+            ],
+            "source": "NotebookLM: Studio - minimal processing",
+            "defaults": {
+                "overlap": 8
+            }
+        },
+        {
+            "id": "golden_ultimate_vocal",
+            "name": "🏆 Golden: Ultimate Vocal",
+            "description": "Maximum vocal quality from studio masters. Gabox for clean isolation + De-Reverb + Karaoke split. Based on NotebookLM Golden Chain.",
+            "type": "pipeline",
+            "target": "vocals",
+            "steps": [
+                {
+                    "action": "separate",
+                    "model_id": "gabox-voc-fv4",
+                    "weight": 1.0,
+                    "note": "Bleedless: 29.07 - No TTA (causes phase issues)"
+                },
+                {
+                    "action": "post_process",
+                    "model_id": "anvuew-dereverb",
+                    "note": "Mono model - processes L/R separately"
+                },
+                {
+                    "action": "post_process",
+                    "model_id": "becruily-karaoke",
+                    "note": "Separate backing vocals to own file"
+                }
+            ],
+            "source": "NotebookLM Golden Chain (a) - Studio Vocal",
+            "defaults": {
+                "overlap": 4,
+                "tta": false,
+                "chunk_size": 352800
+            }
+        },
+        {
+            "id": "golden_ultimate_inst",
+            "name": "🏆 Golden: Ultimate Instrumental",
+            "description": "Audiophile instrumental with Phase Fix to remove Roformer noise. Unwa v1e fullness + Becruily phase reference + De-Bleed cleanup.",
+            "type": "pipeline",
+            "target": "instrumental",
+            "steps": [
+                {
+                    "action": "separate",
+                    "model_id": "unwa-inst-v1e",
+                    "weight": 1.0,
+                    "note": "Fullness: 37.89 - Will be noisy, needs Phase Fix"
+                },
+                {
+                    "action": "phase_fix",
+                    "source_model": "becruily-vocal",
+                    "lowHz": 500,
+                    "highHz": 5000,
+                    "weight": 2.0,
+                    "note": "Copies clean phase from Becruily to remove metallic noise"
+                },
+                {
+                    "action": "post_process",
+                    "model_id": "debleed-melband-roformer",
+                    "note": "Removes last 5% vocal bleed"
+                }
+            ],
+            "source": "NotebookLM Golden Chain (b) - Audiophile Instrumental",
+            "defaults": {
+                "overlap": 4,
+                "tta": false,
+                "chunk_size": 485100
+            }
+        },
+        {
+            "id": "golden_extreme_restoration",
+            "name": "🏆 Golden: Extreme Restoration",
+            "description": "Full restoration chain for live recordings with crowd noise, reverb, and poor quality. De-Crowd → Separation → De-Reverb → De-Noise.",
+            "type": "pipeline",
+            "target": "vocals",
+            "steps": [
+                {
+                    "action": "pre_process",
+                    "model_id": "mel-roformer-decrowd",
+                    "note": "CRITICAL: overlap=2 only - higher causes ghosting"
+                },
+                {
+                    "action": "separate",
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0,
+                    "note": "Aggressive model, better for noisy sources"
+                },
+                {
+                    "action": "post_process",
+                    "model_id": "anvuew-dereverb",
+                    "note": "Vocals only - dries the signal"
+                },
+                {
+                    "action": "post_process",
+                    "model_id": "mel-roformer-denoise",
+                    "note": "Final cleanup - removes mic hiss"
+                }
+            ],
+            "source": "NotebookLM Golden Chain (c) - Extreme Restoration",
+            "defaults": {
+                "overlap": 2,
+                "tta": false,
+                "chunk_size": 352800
+            }
+        },
+        {
+            "id": "mode_quick",
+            "name": "⚡ Quick Mode (2-3 min)",
+            "description": "Fast preview separation using lightweight MDX23C. Good for testing if a song is worth full processing. Lower quality but very fast.",
+            "type": "single",
+            "target": "all",
+            "steps": [
+                {
+                    "model_id": "mdx23c-instvochq",
+                    "weight": 1.0,
+                    "note": "~1.5dB lower SDR than Roformers but much faster"
+                }
+            ],
+            "source": "NotebookLM Quick vs Quality",
+            "vram_category": "low",
+            "defaults": {
+                "overlap": 2,
+                "tta": false
+            }
+        },
+        {
+            "id": "mode_quality",
+            "name": "💎 Quality Mode (10+ min)",
+            "description": "Production-ready separation with BS-Roformer + automatic Phase Fix. Optimized for 6GB VRAM with safe settings.",
+            "type": "pipeline",
+            "target": "all",
+            "steps": [
+                {
+                    "action": "separate",
+                    "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                },
+                {
+                    "action": "phase_fix",
+                    "source_model": "becruily-vocal",
+                    "lowHz": 500,
+                    "highHz": 5000,
+                    "weight": 2.0,
+                    "apply_to": "instrumental",
+                    "note": "Auto Phase Fix for instrumental stem"
+                }
+            ],
+            "source": "NotebookLM Quick vs Quality",
+            "vram_category": "medium",
+            "defaults": {
+                "overlap": 2,
+                "tta": false,
+                "chunk_size": 112455
+            }
+        }
+    ]
+}
