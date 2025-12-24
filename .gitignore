@@ -33,6 +33,7 @@ temp_models/
 # Credentials / secrets (never commit)
 gcp-oauth.keys.json
 gcp-oauth.keys.*.json
+!gcp-oauth.keys.example.json
 *.private.json
 
 # IDE/settings
