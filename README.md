@@ -58,8 +58,8 @@ Use the shell helper to run scripts without relying on virtualenv activation:
 
 ```bash
 # Clone the repo
-git clone https://github.com/<your-user>/<your-repo>.git
-cd <your-repo>
+git clone https://github.com/engdahlz/StemSep.git
+cd StemSep
 
 # Install Python dependencies
 cd StemSepApp
