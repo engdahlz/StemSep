@@ -15,7 +15,7 @@
 
 .USAGE
   From repo root:
-    .\scripts\run_py.ps1 .\validate_model_registry.py
+    .\scripts\run_py.ps1 .\scripts\registry\validate_model_registry.py
     .\scripts\run_py.ps1 .\scripts\download_configs.py --help
     .\scripts\run_py.ps1 -Venv StemSepApp .\StemSepApp\src\main.py
 

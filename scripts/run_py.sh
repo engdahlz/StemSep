@@ -16,11 +16,11 @@
 # Always runs from repo root so relative paths are predictable.
 #
 # Usage:
-#   ./scripts/run_py.sh ./validate_model_registry.py
+#   ./scripts/run_py.sh ./scripts/registry/validate_model_registry.py
 #   ./scripts/run_py.sh ./scripts/download_configs.py --help
-#   ./scripts/run_py.sh --venv Root ./validate_model_registry.py
-#   ./scripts/run_py.sh --venv None ./validate_model_registry.py
-#   ./scripts/run_py.sh --python /usr/bin/python3 ./validate_model_registry.py
+#   ./scripts/run_py.sh --venv Root ./scripts/registry/validate_model_registry.py
+#   ./scripts/run_py.sh --venv None ./scripts/registry/validate_model_registry.py
+#   ./scripts/run_py.sh --python /usr/bin/python3 ./scripts/registry/validate_model_registry.py
 #
 # Notes:
 # - This script intentionally does NOT "activate" any venv.
@@ -46,10 +46,10 @@ Options:
   --help, -h     Show help
 
 Examples:
-  ./scripts/run_py.sh ./validate_model_registry.py
+  ./scripts/run_py.sh ./scripts/registry/validate_model_registry.py
   ./scripts/run_py.sh -v StemSepApp ./scripts/download_configs.py --help
-  ./scripts/run_py.sh -v None ./validate_model_registry.py
-  ./scripts/run_py.sh -p /usr/bin/python3 ./validate_model_registry.py
+  ./scripts/run_py.sh -v None ./scripts/registry/validate_model_registry.py
+  ./scripts/run_py.sh -p /usr/bin/python3 ./scripts/registry/validate_model_registry.py
 USAGE
 }
 

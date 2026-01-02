@@ -1,0 +1,131 @@
+{
+  "mel-band-crowd": {
+    "links": {
+      "checkpoint": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.4/mel_band_roformer_crowd_aufr33_viperx_sdr_8.7144.ckpt",
+      "config": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.4/model_mel_band_roformer_crowd.yaml"
+    }
+  },
+  "mdx23c-d1581": {
+    "links": {
+      "checkpoint": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/MDX23C_D1581.ckpt",
+      "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_061321.yaml"
+    }
+  },
+  "amane-4-stems-large": {
+    "links": {
+      "checkpoint": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/mel_band_roformer_4stems_large_ver1.ckpt",
+      "config": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/config_large.yaml"
+    }
+  },
+  "amane-4-stems-xl": {
+    "links": {
+      "checkpoint": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/mel_band_roformer_4stems_xl_ver1.ckpt",
+      "config": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/config_xl.yaml"
+    }
+  },
+  "amane-full-scratch": {
+    "links": {
+      "checkpoint": "https://huggingface.co/Aname-Tommy/Mel_Band_Roformer_Full_Scratch/resolve/main/model_vocals.ckpt",
+      "config": "https://huggingface.co/Aname-Tommy/Mel_Band_Roformer_Full_Scratch/resolve/main/config_vocals.yaml"
+    }
+  },
+  "anvuew-dereverb-v2": {
+    "links": {
+      "checkpoint": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew_sdr_19.1729.ckpt",
+      "config": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew.yaml"
+    }
+  },
+  "anvuew-dereverb-mono": {
+    "links": {
+      "checkpoint": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
+      "config": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew.yaml"
+    }
+  },
+  "bs-roformer-karaoke-becruily": {
+    "links": {
+      "checkpoint": "https://huggingface.co/becruily/bs-roformer-karaoke/resolve/main/bs_roformer_karaoke_frazer_becruily.ckpt",
+      "config": "https://huggingface.co/becruily/bs-roformer-karaoke/resolve/main/config_karaoke_frazer_becruily.yaml"
+    }
+  },
+  "sucial-male-female": {
+    "links": {
+      "checkpoint": "https://huggingface.co/Sucial/Chorus_Male_Female_BS_Roformer/resolve/main/model_chorus_bs_roformer_ep_267_sdr_24.1275.ckpt",
+      "config": "https://huggingface.co/Sucial/Chorus_Male_Female_BS_Roformer/resolve/main/config_chorus_male_female_bs_roformer.yaml"
+    }
+  },
+  "mdx23c-drumsep-5stem": {
+    "links": {
+      "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-DrumSep-aufr33-jarredou.ckpt",
+      "config": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/config_drumsep_mdx23c.yaml"
+    }
+  },
+  "bs-roformer-4-stems": {
+    "links": {
+      "checkpoint": "https://huggingface.co/SYH99999/bs_roformer_4stems_ft/resolve/main/bs_roformer_4stems_ft.pth",
+      "config": "https://huggingface.co/SYH99999/bs_roformer_4stems_ft/resolve/main/config.yaml"
+    }
+  },
+  "neo-instvfx": {
+    "links": {
+      "checkpoint": "https://huggingface.co/natanworkspace/melband_roformer/resolve/main/Neo_InstVFX.ckpt",
+      "config": "https://huggingface.co/natanworkspace/melband_roformer/resolve/main/config_neo_inst.yaml"
+    }
+  },
+  "amane-inst-fullness": {
+    "links": {
+      "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/Fullness.ckpt",
+      "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml"
+    }
+  },
+  "gabox-inst-fv8b": {
+    "links": {
+      "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/Inst_FV8b.ckpt",
+      "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml"
+    }
+  },
+  "gabox-resurrection": {
+    "links": {
+      "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/BS_ResurrectioN.ckpt",
+      "config": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/resolve/main/BS-Roformer-Resurrection-Inst-Config.yaml"
+    }
+  },
+  "unwa-debleed": {
+    "links": {
+      "checkpoint": "https://huggingface.co/jarredou/bleed_suppressor_melband_rofo_by_unwa_97chris/resolve/main/bleed_suppressor_v1.ckpt",
+      "config": "https://huggingface.co/jarredou/bleed_suppressor_melband_rofo_by_unwa_97chris/resolve/main/config_bleed_suppressor_v1.yaml"
+    }
+  },
+  "drypd-side-extraction": {
+    "links": {
+      "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt",
+      "config": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/config_musdb18_scnet.yaml"
+    }
+  },
+  "mel-band-roformer-kim": {
+    "links": {
+      "config": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml"
+    }
+  },
+  "gabox-inst-fv7z": {
+    "links": {
+      "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/Inst_GaboxFv7z.ckpt",
+      "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml"
+    }
+  },
+  "gabox-inst-v6n": {
+    "links": {
+      "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml"
+    }
+  },
+  "gabox-inst-fv4-noise": {
+    "links": {
+      "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_Fv4Noise.ckpt",
+      "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml"
+    }
+  },
+  "gabox-inst-experimental": {
+    "links": {
+      "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml"
+    }
+  }
+}

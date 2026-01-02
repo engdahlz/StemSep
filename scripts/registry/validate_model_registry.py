@@ -2,7 +2,8 @@
 Validate StemSep model registry consistency.
 
 This script validates:
-- Each model JSON entry under StemSepApp/assets/models/*.json
+- The aggregate registry file under StemSepApp/assets/models.json or models.json.bak (preferred)
+- Or, legacy per-model JSON entries under StemSepApp/assets/models/*.json
 - Architecture strings are recognized (canonical allow-list + aliases)
 - Link fields (checkpoint/config) are present/valid where expected
 - "Expected local filename" can be derived from links.checkpoint (URL basename)
@@ -20,8 +21,8 @@ Exit codes:
 
 Notes:
 - This script intentionally does NOT download anything.
-- It reads registry JSON directly from StemSepApp/assets/models/*.json
-  to avoid relying on runtime initialization side-effects.
+- It reads registry JSON directly from StemSepApp/assets/models.json(.bak) or
+    StemSepApp/assets/models/*.json to avoid relying on runtime initialization side-effects.
 - Architecture handling is intentionally tolerant: registries may use aliases such as
   "MDXNet", "MDX-Net", "mdx_net", "HTDemucs", etc. These are normalized to canonical
   strings to match runtime loaders.
@@ -45,6 +46,7 @@ RECOGNIZED_ARCHITECTURES = {
     # Roformer family
     "Mel-Roformer",
     "BS-Roformer",
+    "BS-Roformer-HyperACE",
     "Roformer",
     # MDX family
     "MDX23C",
@@ -53,6 +55,8 @@ RECOGNIZED_ARCHITECTURES = {
     # Others
     "VR",
     "SCNet",
+    "Apollo",
+    "BandIt",
     "HTDemucs",
     "Demucs",
     "ONNX",
@@ -94,6 +98,9 @@ ARCHITECTURE_ALIASES = {
     "bsroformer": "BS-Roformer",
     "bs-roformer": "BS-Roformer",
     "bs_roformer": "BS-Roformer",
+    "bs-roformer-hyperace": "BS-Roformer-HyperACE",
+    "bsroformerhyperace": "BS-Roformer-HyperACE",
+    "bs roformer hyperace": "BS-Roformer-HyperACE",
     "melroformer": "Mel-Roformer",
     "mel-roformer": "Mel-Roformer",
     "mel_roformer": "Mel-Roformer",
@@ -103,11 +110,16 @@ ARCHITECTURE_ALIASES = {
     "roformer": "Roformer",
     # ONNX label
     "onnx": "ONNX",
+    # Apollo / BandIt
+    "apollo": "Apollo",
+    "bandit": "BandIt",
+    "bandit_plus": "BandIt",
+    "bandit-plus": "BandIt",
     # Unknown
     "unknown": "Unknown",
 }
 
-WEIGHT_EXTENSIONS = (".ckpt", ".pth", ".pt", ".safetensors", ".onnx")
+WEIGHT_EXTENSIONS = (".ckpt", ".pth", ".pt", ".safetensors", ".onnx", ".chpt")
 CONFIG_EXTENSIONS = (".yaml", ".yml")
 
 
@@ -130,10 +142,26 @@ class Issue:
 
 
 def _iter_model_json_files(repo_root: Path) -> List[Path]:
-    models_dir = repo_root / "StemSepApp" / "assets" / "models"
-    if not models_dir.exists():
-        raise FileNotFoundError(f"Registry folder not found: {models_dir}")
-    return sorted([p for p in models_dir.glob("*.json") if p.is_file()])
+    assets_dir = repo_root / "StemSepApp" / "assets"
+
+    # Preferred: single aggregate registry file.
+    aggregate_candidates = [
+        assets_dir / "models.json",
+        assets_dir / "models.json.bak",
+    ]
+    aggregate_existing = [p for p in aggregate_candidates if p.exists() and p.is_file()]
+    if aggregate_existing:
+        return aggregate_existing
+
+    # Legacy: one model per JSON file.
+    models_dir = assets_dir / "models"
+    if models_dir.exists():
+        return sorted([p for p in models_dir.glob("*.json") if p.is_file()])
+
+    raise FileNotFoundError(
+        "Registry not found. Expected either an aggregate file at "
+        f"{assets_dir / 'models.json'} (or models.json.bak), or a folder at {models_dir}."
+    )
 
 
 def _read_json(path: Path) -> Dict[str, Any]:
@@ -237,9 +265,8 @@ def _find_installed_files(models_dir: Path, model_id: str) -> List[Path]:
 
 
 def _detect_repo_root() -> Path:
-    # This script lives at repo root: StemSep-V3/validate_model_registry.py
-    # so __file__ parent is repo root.
-    return Path(__file__).resolve().parent
+    # This script lives in scripts/registry/, so repo root is two levels up.
+    return Path(__file__).resolve().parents[2]
 
 
 # ---- Validation rules ----
@@ -415,36 +442,60 @@ def validate_registry(
     repo_root: Path,
     models_dir: Path,
     strict: bool,
-) -> Tuple[List[Issue], List[Path]]:
+) -> Tuple[List[Issue], List[Path], int]:
     issues: List[Issue] = []
     files = _iter_model_json_files(repo_root)
+    entry_count = 0
 
     seen_ids: Dict[str, Path] = {}
     for f in files:
         try:
-            entry = _read_json(f)
+            root = _read_json(f)
         except Exception as e:
             issues.append(Issue("ERROR", "<parse>", f"Failed to parse JSON: {e}", f))
             continue
 
-        model_id = entry.get("id")
-        if isinstance(model_id, str) and model_id.strip():
-            mid = model_id.strip()
-            if mid in seen_ids:
+        # Support both layouts:
+        # 1) Aggregate file: { "models": [ {..}, {..} ] }
+        # 2) Single-entry file: { "id": "...", ... }
+        entries: List[Dict[str, Any]]
+        if isinstance(root.get("models"), list):
+            entries = [e for e in root.get("models", []) if isinstance(e, dict)]
+            if not entries:
                 issues.append(
                     Issue(
                         "ERROR",
-                        mid,
-                        f"Duplicate model id (also in {seen_ids[mid].name})",
+                        "<parse>",
+                        "No valid model entries found under root.models[]",
                         f,
                     )
                 )
-            else:
-                seen_ids[mid] = f
+                continue
+        else:
+            entries = [root]
 
-        issues.extend(validate_entry(entry, f, models_dir=models_dir, strict=strict))
+        for entry in entries:
+            entry_count += 1
+            model_id = entry.get("id")
+            if isinstance(model_id, str) and model_id.strip():
+                mid = model_id.strip()
+                if mid in seen_ids:
+                    issues.append(
+                        Issue(
+                            "ERROR",
+                            mid,
+                            f"Duplicate model id (also in {seen_ids[mid].name})",
+                            f,
+                        )
+                    )
+                else:
+                    seen_ids[mid] = f
 
-    return issues, files
+            issues.extend(
+                validate_entry(entry, f, models_dir=models_dir, strict=strict)
+            )
+
+    return issues, files, entry_count
 
 
 # ---- CLI ----
@@ -484,7 +535,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"ERROR: models-dir is not a directory: {models_dir}")
             return 1
 
-    issues, files = validate_registry(
+    issues, files, entry_count = validate_registry(
         repo_root=repo_root, models_dir=models_dir, strict=args.strict
     )
 
@@ -492,20 +543,27 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.show_missing and models_dir.exists():
         for f in files:
             try:
-                entry = _read_json(f)
+                root = _read_json(f)
             except Exception:
                 continue
-            mid = entry.get("id")
-            if not isinstance(mid, str) or not mid.strip():
-                continue
-            mid = mid.strip()
-            expected = _infer_expected_local_filename(entry)
-            if expected and (models_dir / expected).exists():
-                continue
-            # If "installed by id" exists, it's not missing; it's mismatched (already warned).
-            if _find_installed_files(models_dir, mid):
-                continue
-            issues.append(Issue("INFO", mid, "Not installed locally", f))
+
+            if isinstance(root.get("models"), list):
+                entries = [e for e in root.get("models", []) if isinstance(e, dict)]
+            else:
+                entries = [root]
+
+            for entry in entries:
+                mid = entry.get("id")
+                if not isinstance(mid, str) or not mid.strip():
+                    continue
+                mid = mid.strip()
+                expected = _infer_expected_local_filename(entry)
+                if expected and (models_dir / expected).exists():
+                    continue
+                # If "installed by id" exists, it's not missing; it's mismatched (already warned).
+                if _find_installed_files(models_dir, mid):
+                    continue
+                issues.append(Issue("INFO", mid, "Not installed locally", f))
 
     # Output grouped by severity
     severity_order = {"ERROR": 0, "WARN": 1, "INFO": 2}
@@ -526,7 +584,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(i.format())
 
     print("")
-    print(f"Validated {len(files)} registry entries")
+    print(f"Validated {entry_count} model entries across {len(files)} registry file(s)")
     print(f"Errors: {len(errors)}  Warnings: {len(warns)}  Info: {len(infos)}")
 
     return 1 if errors else 0
