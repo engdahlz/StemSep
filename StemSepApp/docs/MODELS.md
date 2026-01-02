@@ -2,6 +2,37 @@
 
 This document provides detailed information about the AI models available in StemSep.
 
+Note: model availability is defined by the in-app registry (`StemSepApp/assets/models.json.bak`). Some older guide nicknames (e.g. “SCNet XL”) map to different shipped `model_id`s.
+
+## Registry source of truth (v2) + generator workflow
+
+We are migrating to a robust, long-term registry format.
+
+- **Source of truth (edit this):** `StemSepApp/assets/registry/models.v2.source.json`
+- **Schema (optional validation):** `StemSepApp/assets/registry/models.v2.schema.json`
+- **Generated legacy registry (do not hand-edit):** `StemSepApp/assets/models.json.bak`
+- **Generator script:** `scripts/generate_model_registry.py`
+
+### How to update the registry
+
+1) Edit the v2 source registry:
+- Add/update models in `StemSepApp/assets/registry/models.v2.source.json`
+
+2) (Optional) validate the v2 source against the schema:
+- The generator supports best-effort schema validation (requires a JSON Schema validator library in your Python env).
+
+3) Generate the legacy registry used by the current app:
+- Run: `python scripts/generate_model_registry.py --pretty`
+
+### Important rules
+
+- Do **not** hand-edit `StemSepApp/assets/models.json.bak` (it is generated).
+- Keep changes additive and backwards compatible.
+- When adding new models, include deterministic fields for:
+  - runtime routing/compatibility
+  - requirements (dependencies/manual steps)
+  - phase-fix reference eligibility (when applicable)
+
 ## Architecture Overview
 
 StemSep supports several state-of-the-art audio source separation architectures:
@@ -17,25 +48,17 @@ StemSep supports several state-of-the-art audio source separation architectures:
 - **Artifacts**: May sound slightly filtered due to strong denoising
 
 **Best Models**:
-- **BS-Roformer 2025.07** (Recommended)
-  - SDR: 17.5
-  - Fullness: 32.0
-  - Bleedless: 42.5
+- **BS-Roformer Viperx** (Recommended)
+  - StemSep `model_id`: `bs-roformer-viperx-1297`
   - Use case: General vocal/instrumental separation
 
 **Karaoke Variants**:
-- **BS-Roformer Karaoke (becruily & frazer)**
-  - SDR: 11.0
-  - Specializes in harmony detection
-  - Superior lead/back vocal differentiation
-  - Can detect double vocals
+- **BS-Roformer Karaoke (Becruily)**
+  - StemSep `model_id`: `bs-roformer-karaoke-becruily`
   - Use case: Karaoke tracks with harmonies
 
-- **BS Roformer 3-Stem (MVSep Team)**
-  - SDR: 10.41
-  - Returns 3 separate stems: lead, back, instrumental
-  - Very good for harmonies
-  - Minimal bleed when working properly
+-- **BS Roformer 3-Stem (MVSEP Team)**
+  - Not currently shipped as a downloadable StemSep registry model (MVSEP-only / manual download territory)
 
 **Specialized**:
 - **BS-Roformer Drums**: Dedicated drum separation
@@ -76,10 +99,8 @@ StemSep supports several state-of-the-art audio source separation architectures:
 - **Settings**: n_fft: 12288, cutoff at 14.7kHz
 
 **Best Model**:
-- **MDX23C-8KFFT-InstVoc HQ**
-  - SDR: 14.5
-  - Fullness: 30.0
-  - Bleedless: 35.0
+- **MDX23C-8KFFT HQ**
+  - StemSep `model_id`: `mdx23c-8kfft-hq`
   - Use case: When speed is more important than perfect quality
 
 ### 4. SCNet (Sparse Compression Network)
@@ -93,19 +114,14 @@ StemSep supports several state-of-the-art audio source separation architectures:
 - **Strengths**: Better at handling complexity
 
 **Best Models**:
-- **SCNet XL**
-  - SDR: 17.20
-  - Inst. fullness: 32.31 (highest!)
-  - Bleedless: 38.15
+- **SCNet (StemSep)**
+  - StemSep `model_id`: `scnet-large`
   - Use case: Busy songs, piano, drums
-
-- **SCNet Large**
-  - Similar to XL but slightly different characteristics
 
 ## Model Selection Guide
 
 ### For Vocal/Instrumental Separation
-**Recommended**: BS-Roformer 2025.07
+**Recommended**: `bs-roformer-viperx-1297`
 - Best overall quality
 - Cleanest results
 - Works well on most music genres
@@ -116,24 +132,24 @@ StemSep supports several state-of-the-art audio source separation architectures:
 - Good for acoustic music
 
 ### For Karaoke
-**Recommended**: BS-Roformer Karaoke (becruily & frazer)
+**Recommended**: `bs-roformer-karaoke-becruily`
 - Superior harmony detection
 - Better lead/back vocal differentiation
 - Less bleed
 
-**Alternative**: BS Roformer 3-Stem (MVSep Team)
+**Alternative**: MVSEP 3-stem models (not shipped in registry)
 - Returns 3 stems directly
 - Good for harmonies
 - No bleed when working
 
 ### For Fast Processing
-**Recommended**: MDX23C-8KFFT-InstVoc HQ
+**Recommended**: `mdx23c-8kfft-hq`
 - Fastest model
 - Works on 4GB GPUs
 - Decent quality
 
 ### For Busy/Complex Songs
-**Recommended**: SCNet XL
+**Recommended**: `scnet-large`
 - Best fullness score
 - Handles complexity well
 - Good for piano, drums
@@ -164,7 +180,7 @@ StemSep supports several state-of-the-art audio source separation architectures:
 
 ### Optimal (8GB+ VRAM)
 - All models including ensembles
-- Can use largest models (BS-Roformer, SCNet XL)
+- Can use largest models (BS-Roformer, `scnet-large`)
 - Can run multiple separations simultaneously
 - No VRAM limitations
 
@@ -176,11 +192,11 @@ StemSep supports several state-of-the-art audio source separation architectures:
 ## Performance Tips
 
 ### For Best Quality
-1. Use BS-Roformer 2025.07 as default
+1. Use `bs-roformer-viperx-1297` as default
 2. Close other GPU-intensive applications
 3. Ensure GPU drivers are up to date
 4. Use WAV/FLAC source files when possible
-5. For extra clean results: use DEBLEED-MelBand-Roformer on instrumental stem
+5. For extra clean results: use `gabox-denoise-debleed` on the instrumental stem
 
 ### For Best Speed
 1. Use MDX23C models
@@ -226,7 +242,7 @@ StemSep supports several state-of-the-art audio source separation architectures:
 Combine multiple models for better results:
 
 **Example**: Combine SCNet (fullness) with Mel-Roformer (cleanliness)
-1. Run SCNet XL on original file
+1. Run `scnet-large` on original file
 2. Run Mel-Roformer on original file
 3. Average the results
 4. Manual mixing in DAW
@@ -238,7 +254,7 @@ Combine multiple models for better results:
 
 ### Custom Workflows
 1. **Extract Vocals First**: Get vocals, then instrumental separately
-2. **De-bleed Separation**: Run DEBLEED-MelBand-Roformer on instrumental
+2. **De-bleed Separation**: Run `gabox-denoise-debleed` on instrumental
 3. **Phase Fix**: Use phase fixing tools for final polish
 4. **Multi-pass**: Run model multiple times with different settings
 

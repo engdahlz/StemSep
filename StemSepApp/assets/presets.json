@@ -13,7 +13,6 @@
         {
             "id": "cleanest_vocals",
             "name": "Cleanest Vocals (Minimal Bleed)",
-            "description": "Uses Mel-Roformer Kim FT2 for cleanest possible vocals.",
             "model_id": "unwa-kim-ft2-bleedless",
             "settings": {
                 "overlap": 4
@@ -23,7 +22,7 @@
             "id": "instrumental_fullness",
             "name": "Instrumental - Max Fullness",
             "description": "Uses Unwa v1e+ for maximum instrumental fullness.",
-            "model_id": "unwa-inst-v1e-plus",
+            "model_id": "unwa-inst-v1e+",
             "settings": {
                 "overlap": 4
             }
@@ -48,7 +47,7 @@
             "id": "drums_separation",
             "name": "Drums Separation (5-stem)",
             "description": "Uses DrumSep for detailed drum kit separation.",
-            "model_id": "mel-roformer-drumsep-5stem",
+            "model_id": "mdx23c-drumsep-5stem",
             "settings": {}
         },
         {
@@ -68,8 +67,8 @@
         {
             "id": "dereverb",
             "name": "De-Reverb",
-            "description": "Uses Anvuew dereverb model for reverb removal.",
-            "model_id": "anvuew-dereverb",
+            "description": "Uses Anvuew dereverb-room model for reverb removal.",
+            "model_id": "anvuew-dereverb-room",
             "settings": {}
         }
     ],
@@ -97,7 +96,7 @@
             "algorithm": "max_spec",
             "models": [
                 {
-                    "model_id": "unwa-inst-v1e-plus",
+                    "model_id": "unwa-inst-v1e+",
                     "weight": 1.0
                 },
                 {

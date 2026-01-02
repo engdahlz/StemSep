@@ -1,0 +1,415 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stemsep.dev/schemas/models.v2.schema.json",
+  "title": "StemSep Model Registry v2",
+  "description": "Schema for StemSep's v2 model registry. This format is designed for deterministic runtime routing, explicit compatibility/requirements, and long-term maintainability. Guide recommendations are treated as MUST (strict-spec).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generated_at", "models"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "2.0"
+    },
+    "generated_at": {
+      "type": "string",
+      "description": "RFC 3339 timestamp of registry generation.",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "object",
+      "description": "Optional metadata about how this registry was produced.",
+      "additionalProperties": false,
+      "properties": {
+        "tool": { "type": "string" },
+        "repo": { "type": "string" },
+        "commit": { "type": ["string", "null"] },
+        "notes": { "type": "string" }
+      }
+    },
+    "models": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "$ref": "#/$defs/model" }
+    }
+  },
+  "$defs": {
+    "modelId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,127}$",
+      "description": "Canonical model identifier used throughout the app. Lowercase recommended; avoid spaces."
+    },
+    "url": {
+      "type": "string",
+      "minLength": 1,
+      "format": "uri"
+    },
+    "numberOrNull": {
+      "anyOf": [{ "type": "number" }, { "type": "null" }]
+    },
+    "boolOrNull": {
+      "anyOf": [{ "type": "boolean" }, { "type": "null" }]
+    },
+    "stringOrNull": {
+      "anyOf": [{ "type": "string" }, { "type": "null" }]
+    },
+    "stemName": {
+      "type": "string",
+      "description": "Canonical stem names used internally by StemSep.",
+      "enum": [
+        "vocals",
+        "instrumental",
+        "drums",
+        "bass",
+        "other",
+        "guitar",
+        "piano",
+        "keys",
+        "lead",
+        "back",
+        "crowd",
+        "speech",
+        "sfx",
+        "target",
+        "residual"
+      ]
+    },
+    "architecture": {
+      "type": "string",
+      "description": "Model architecture family.",
+      "enum": [
+        "BS-Roformer",
+        "Mel-Roformer",
+        "MDX23C",
+        "MDX-Net",
+        "VR",
+        "Demucs",
+        "HTDemucs",
+        "SCNet",
+        "Apollo",
+        "BandIt",
+        "Other"
+      ]
+    },
+    "runtimeId": {
+      "type": "string",
+      "description": "Execution runtime identifier used for routing and enforcement.",
+      "enum": ["audio-separator", "stemsep-legacy", "msst"]
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "architecture", "links", "runtime"],
+      "properties": {
+        "id": { "$ref": "#/$defs/modelId" },
+        "name": { "type": "string", "minLength": 1 },
+        "type": {
+          "type": "string",
+          "description": "Human-facing category/type label (legacy field kept for compatibility)."
+        },
+        "architecture": { "$ref": "#/$defs/architecture" },
+        "description": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "description": "Optional tags for UI filtering (e.g. 'karaoke', 'dereverb', 'denoise', 'drumsep').",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "stems": {
+          "type": "array",
+          "description": "Declared output stems (if known).",
+          "items": { "$ref": "#/$defs/stemName" }
+        },
+        "links": { "$ref": "#/$defs/links" },
+        "artifacts": { "$ref": "#/$defs/artifacts" },
+        "metrics": { "$ref": "#/$defs/metrics" },
+        "vram_required": {
+          "description": "Approximate VRAM required in GB (rough guidance).",
+          "$ref": "#/$defs/numberOrNull"
+        },
+        "recommended_settings": { "$ref": "#/$defs/recommendedSettings" },
+        "settings_semantics": { "$ref": "#/$defs/settingsSemantics" },
+        "runtime": { "$ref": "#/$defs/runtime" },
+        "compatibility": { "$ref": "#/$defs/compatibility" },
+        "requirements": { "$ref": "#/$defs/requirements" },
+        "phase_fix": { "$ref": "#/$defs/phaseFix" },
+        "capabilities": { "$ref": "#/$defs/capabilities" },
+        "notes": { "$ref": "#/$defs/notes" }
+      }
+    },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkpoint"],
+      "properties": {
+        "checkpoint": {
+          "description": "Primary weights/checkpoint URL.",
+          "$ref": "#/$defs/url"
+        },
+        "config": {
+          "description": "Optional config URL (yaml/json).",
+          "anyOf": [{ "$ref": "#/$defs/url" }, { "type": "null" }]
+        },
+        "homepage": {
+          "description": "Optional informational link (HF card, MVSEP entry, etc.).",
+          "anyOf": [{ "$ref": "#/$defs/url" }, { "type": "null" }]
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Standardized local artifact expectations. If present, generators should prefer these over deriving basenames from URLs.",
+      "properties": {
+        "primary": { "$ref": "#/$defs/artifactRef" },
+        "config": {
+          "anyOf": [{ "$ref": "#/$defs/artifactRef" }, { "type": "null" }]
+        },
+        "additional": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/artifactRef" }
+        }
+      }
+    },
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "filename"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["checkpoint", "config", "onnx", "yaml", "json", "aux"]
+        },
+        "filename": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Filename expected under the models directory."
+        },
+        "sha256": {
+          "anyOf": [
+            { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+            { "type": "null" }
+          ],
+          "description": "Optional SHA-256 for integrity validation."
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sdr": { "$ref": "#/$defs/numberOrNull" },
+        "fullness": { "$ref": "#/$defs/numberOrNull" },
+        "bleedless": { "$ref": "#/$defs/numberOrNull" },
+        "aura_stft": { "$ref": "#/$defs/numberOrNull" },
+        "aura_mrstft": { "$ref": "#/$defs/numberOrNull" },
+        "log_wmse": { "$ref": "#/$defs/numberOrNull" }
+      }
+    },
+    "recommendedSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Recommended settings. Semantics MUST be interpreted using settings_semantics.",
+      "properties": {
+        "segment_size": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Chunk/segment size in samples (when applicable)."
+        },
+        "batch_size": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Batch size (when applicable)."
+        },
+        "tta": { "$ref": "#/$defs/boolOrNull" },
+        "overlap": { "type": ["integer", "null"] },
+        "shifts": { "type": ["integer", "null"] },
+        "bit_depth": { "anyOf": [{ "type": "integer" }, { "type": "null" }] }
+      }
+    },
+    "settingsSemantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "overlap": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "meaning_by_runtime": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "audio-separator": { "type": "string" },
+                "stemsep-legacy": { "type": "string" },
+                "msst": { "type": "string" }
+              }
+            },
+            "notes": { "type": "string" }
+          }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed", "preferred"],
+      "properties": {
+        "allowed": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/runtimeId" }
+        },
+        "preferred": { "$ref": "#/$defs/runtimeId" },
+        "blocking_reason": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }]
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "uvr_compatible": { "$ref": "#/$defs/boolOrNull" },
+        "audio_separator_compatible": { "$ref": "#/$defs/boolOrNull" },
+        "msst_compatible": { "$ref": "#/$defs/boolOrNull" },
+        "known_issues": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "python": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "min": { "type": ["string", "null"] },
+            "max": { "type": ["string", "null"] }
+          }
+        },
+        "torch": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "min": { "type": ["string", "null"] },
+            "max": { "type": ["string", "null"] },
+            "cuda": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "rocm": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "pip": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "packages": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "files": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "expects": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "provides": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "manual_steps": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "phaseFix": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "is_valid_reference": { "$ref": "#/$defs/boolOrNull" },
+        "recommended_params": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lowHz": { "$ref": "#/$defs/numberOrNull" },
+            "highHz": { "$ref": "#/$defs/numberOrNull" },
+            "highFreqWeight": { "$ref": "#/$defs/numberOrNull" }
+          }
+        },
+        "recommended_usage": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stems": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/stemName" }
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "separation",
+              "phase_fix_reference",
+              "karaoke",
+              "denoise",
+              "dereverb",
+              "decrowd",
+              "drumsep",
+              "upsample",
+              "sfx",
+              "speech",
+              "restoration"
+            ]
+          }
+        },
+        "supports_mono": { "$ref": "#/$defs/boolOrNull" },
+        "supports_stereo": { "$ref": "#/$defs/boolOrNull" }
+      }
+    },
+    "notes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "migration": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "from": { "type": "string" },
+            "legacy_fields_present": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "strict_spec": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "routing_default": { "type": "string" },
+            "blocked_reason": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}
