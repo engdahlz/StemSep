@@ -294,8 +294,7 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
 
   // Global phase params (legacy) are an Advanced-only enhancement.
   // Simple mode should be driven exclusively by preset/recipe-defined pipelines.
-  const shouldApplyGlobalPhaseParams =
-    config.mode !== "simple" && !explicitPipelinePhaseFix && !!globalPhaseParams?.enabled;
+  const shouldApplyGlobalPhaseParams = false;
 
   const effectiveGlobalPhaseParams = shouldApplyGlobalPhaseParams
     ? globalPhaseParams

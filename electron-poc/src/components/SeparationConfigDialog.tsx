@@ -7,7 +7,6 @@ import { Preset } from '../presets'
 import type { SeparationConfig } from '../types/separation'
 import { EnsembleBuilder } from './EnsembleBuilder'
 import { PresetSelector } from './PresetSelector'
-import { PhaseSwapControls } from './PhaseSwapControls'
 import { VRAMUsageMeter, estimateVRAMUsage } from './ui/vram-meter'
 import { TTAWarning, CPUOnlyWarning, LowVRAMWarning, EnsembleTip } from './ui/warning-tip'
 import { bestVolumeCompensation } from '../utils/volumeCompensation'
@@ -432,10 +431,6 @@ export default function SeparationConfigDialog({
                                 </label>
                             </div>
 
-                            {/* Phase Swap Controls */}
-                            <div className="pt-4 border-t border-border/50">
-                                <PhaseSwapControls />
-                            </div>
                         </div>
                     )}
 
