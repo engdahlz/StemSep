@@ -2,11 +2,11 @@
 
 Based on the deep analysis of `deton24_guide.txt` (approx. 23k lines), here is the status of our models and presets.
 
-## ✅ Verified Models (Present in `assets/models/`)
+## ✅ Verified Models (Present in the downloadable registry)
 We have a strong foundation with these key models:
 *   **Unwa Series**: `unwa-inst-v1e`, `unwa-inst-fno`, `unwa-big-beta-5e`, `unwa-kim-ft2`
 *   **Gabox Series**: `gabox-inst-fv7z`, `gabox-voc-fv4`, `gabox-resurrection`
-*   **Becruily Series**: `becruily-inst`, `becruily-vocal`, `becruily-karaoke`
+*   **Becruily Series**: `becruily-inst`, `becruily-vocal`, `mel-band-karaoke-becruily`
 *   **Viperx/Roformer**: `bs-roformer-viperx-1297`, `bs-roformer-karaoke-becruily`
 *   **Anvuew**: `anvuew-karaoke` (Critical for new Karaoke ensemble)
 

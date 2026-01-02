@@ -1,3 +1,9 @@
+NOTE (StemSep): This is a raw extracted copy of an external guide.
+Model names/IDs mentioned here often do NOT match StemSep's downloadable registry.
+Use docs/separation_guide/stemsep_model_id_mapping.md for the canonical mapping and shipped model_ids.
+Some models referenced here are MVSEP-only or require manual download.
+Updated: 2025-12-28
+
 edit. 04.12.25
 deton24’s
 Instrumental and vocal & stems separation & mastering
