@@ -1,0 +1,90 @@
+[page 621/642]
+    https://drive.google.com/file/d/1LUtBsCSym1iDHqADEusmACs-LF2lNYLw/view?usp=sharing  Currently,  this  optimized  version  can  find  the  best  combo  of  9,  3  minute  audio  files  in  about  2  
+minutes
+ 
+and
+ 
+40
+ 
+seconds
+ 
+in
+ 
+Colab.
+   Refactored  best  weighted  ensemble  finder  by  jarredou  https://drive.google.com/file/d/1Rm09z1wpj0Pi-6bFQ15u767n1XV95pDz/view?usp=sharing  “That's  what  I've  used  to  find  optimal  weights  for  my  MDX23  fork  v2.5  update.  It's  still  Nelder-Mead  based  optimizer,  but  code  is  way  more  simple/clean  than  1st  version.   To  use  it,  you  need:  A  dataset  of  clean  sources  (with  exact  same  filename  scheme  than  mvsep  multisong  
+dataset).
+ Process  dataset  mixtures  with  all  the  models  you  want  to  ensemble  and  put  the  outputs  in  
+different
+ 
+folders,
+ 
+1
+ 
+for
+ 
+each
+ 
+model
+ 
+(and
+ 
+still
+ 
+with
+ 
+exact
+ 
+same
+ 
+filename
+ 
+scheme
+ 
+than
+ 
+mvsep
+ 
+multisong
+ 
+dataset).
+ librosa  and  scipy  python  libs  then  run  (for  example):  weight_finder_v2.py  \    --ref  c:\reference_dataset  \    --est  c:\InstVoc  c:\bsrofo1296  c:\kimrofo  \    --stem  vocals  \    --extension  flac  \    --tracks  100   --ref  is  clean  sources'  folder  path  --est  is  estimates  (separations)  folder  paths  (multiple  inputs)  --stem  is  stem  name  (based  on  multisong  dataset  filename  scheme)  --extension  is  audio  file  extension  (flac/wav...)  --tracks  is  a  number  of  tracks  in  a  dataset.    It  will  process  the  datasets  many  times  and  change  weights  each  time  until  it  find  the  best  
+balance.
+ 
+When
+ 
+finished,
+ 
+it
+ 
+will
+ 
+output
+ 
+weights
+ 
+scaled
+ 
+to
+ 
+10
+ 
+max
+ 
+value.
+ Warning:  it  can  take  hours  (or  even  days,  depending  on  the  number  of  models  to  ensemble,  
+size
+ 
+of
+ 
+dataset
+ 
+and
+ 
+resources
+ 
+of
+ 
+computer)
+ A  python  lib  to  align  audio:  https://github.com/nomonosound/fast-align-audio”   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

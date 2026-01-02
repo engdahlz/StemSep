@@ -1,0 +1,93 @@
+[page 468/642]
+    It  was  possible  at  some  point  that  later  stages  of  the  training,  looking  like  over  fitting  were  
+responsible
+ 
+for
+ 
+higher
+ 
+frequency
+ 
+output.
+  It’s  sometimes  already  better  than  BVE  models,  and  the  model  has  already  similar  to  demo  
+results
+ 
+on
+ 
+their
+ 
+site.
+  Sadly,  the  training  code  is  extremely  messy  and  broken,  but  a  fork  by  Cyrus  with  instructions  
+is
+ 
+planned,
+ 
+with
+ 
+releasing
+ 
+datasets
+ 
+including
+ 
+the
+ 
+one
+ 
+behind
+ 
+geo-lock.
+ 
+Datasets
+ 
+are
+ 
+huge
+ 
+and
+ 
+heavy.
+  Original  repo  (Vinctekan  fixed  it  -  the  video  at  the  top  contains  it)  https://github.com/jeonchangbin49/medleyvox  ____  Outdated   https://colab.research.google.com/drive/1StFd0QVZcv3Kn4V-DXeppMk8Zcbr5u5s?usp=sharing (pip  issues  fixed  29.08.24,  defunct  as  of  06.02.25)   (outdated  instructions,  current  Colab  explains  everything)   “Run  the  1st  cell,  upload  song  to  folder  infer_file,  run  the  2nd  cell,  get  results  from  folder  
+results
+ 
+=
+ 
+profit”
+ 
+ 
+Further
+ 
+explanations
+ 
+how
+ 
+to
+ 
+use
+ 
+the
+ 
+Colab:
+ 
+``Run
+ 
+the
+ 
+1st
+ 
+cell``
+ So  press  the  first  "play"  button  then  you  load  the  Colab  ``upload  song  to  folder  infer_file``  Looks  like  the  folder  for  the  input  file  has  changed  from  infer_file  to  input  in  newer  Colabs.  So,  once  you  started  the  first  cell,  and  it  finished,  open  Colab  file  manager  (folder  icon  on  the  
+left)
+ 
+and
+ 
+go
+ 
+to
+ 
+/content/MedleyVox/input\
+ Now  paste  your  song  there  and  wait  till  it's  done.  ``run  the  2nd  cell``  So  the  next  play  button  below  the  first  one  once  you  scroll  down  a  bit.  Now  it  will  start  
+separation
+ ``get  results  from  folder  results``  Go  to  file  manager  again  and  find  /content/MedleyVox/results  right-click  on  the  result  file  and  download  it.  Wait  till  it's  done.  ``Currently,  we  have  a  duet/unison  model  238  (default  in  Colab)``  So  you  don't  have  to  change  anything  in  the  Colab  to  separate  using  it.   Old  info  https://media.discordapp.net/attachments/900904142669754399/1050444866464784384/Screenshot_81.jpg (dead)  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

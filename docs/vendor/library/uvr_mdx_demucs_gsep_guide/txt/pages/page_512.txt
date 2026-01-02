@@ -1,0 +1,30 @@
+[page 512/642]
+    Mastering  services  I'm  yet  to  test:   Landr,  Aria,  SoundCloud,  Master  Channel,  Instant  Mastering  (iirc  April  fools  joke),  Bakuage,  
+Mixea.
+   AI  mixing  services   https://automix.roexaudio.com AI  online  auto-mixing  service.  Various  instruments,  genre  settings,  stem  priority,  pan  priority.   1  free  mix  per  month.   Might  be  useful  for  enhancing  4  stem  separations.   "I  tried  2  songs  with  it.  Wasn't  really  pleased  with  results"  "The  biggest  problem  I  had  [...]  while  I  am  trying  to  balance  my  vocals  in  instrumental  like  
+Hollywood
+ 
+style"
+  Other  tool  by  Sony  (open-source)  https://github.com/sony/fxnorm-automix You  can  also  train  your  own  models  using  wet  music  data.   A  new  free  tool  by  Sony:  https://github.com/SonyResearch/MEGAMI https://www.arxiv.org/abs/2511.08040   HyMPS  list of  AI/CML  tools   AI  mixing  plugins   iZotope  Nectar   iZotope  Neutron  (Mix  Assistant)   Sonible  Pure  Bundle    Creating  mashups  and  also  DJ  sets  (two  options)   https://rave.dj/mix It  can  give  better  results  than  manual  mixes  performed  by  some  less  experienced  users  (but  
+I
+ 
+doubt
+ 
+it
+ 
+will
+ 
+work
+ 
+with
+ 
+more
+ 
+than
+ 
+2
+ 
+stems).
+  Ripple iOS  only  app  (currently  for  US  region  only)  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

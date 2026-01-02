@@ -1,0 +1,85 @@
+[page 622/642]
+    Universal  function  to  make  different  types  of  ensembles  by  ZFTurbo  https://cdn.discordapp.com/attachments/911050124661227542/1192220574982881320/ensemble.py I  think  it’s  the  same  or  newer:  https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/ensemble.py  “In  my  experiments  SDR  for  avg_wave  always  the  max.”   Now  also  jarredou  made  his  Colab  with  the  above  implemented  with  comfy  GUI:  https://colab.research.google.com/github/jarredou/Music-Source-Separation-Training-Colab-Inference/blob/main/Manual_Ensemble_Colab.ipynb  _____________________________________________________    ____________________________________________________________________   
+Volume  compensation  for  MDX  v2  models   How  to  automate  calculation  of  volume  compensation  value  for  all  older  MDX  models  (results  are  not  perfect  and  need  to  be  fine-tuned)   by  jarredou   So,  I  have  maybe  a  protocol  to  find  accurate  volume  compensation:   -  Use  a  short  .wav  file  of  just  noise  (I've  used  pink  noise  here)  and  pass  it  through  the  model  
+you
+ 
+wanna
+ 
+evaluate
+  -  Take  the  resulting  audio,  the  one  that  will  have  all  the  noise  in  it  and  compare  it  to  the  
+original
+ 
+noise
+ 
+with
+ 
+this
+ 
+little
+ 
+python
+ 
+script
+ 
+that
+ 
+will
+ 
+give
+ 
+you
+ 
+the
+ 
+difference
+ 
+in
+ 
+dBTP
+ 
+and
+ 
+the
+ 
+quivalent
+ 
+VC
+ 
+ratio
+ 
+(you'll
+ 
+need
+ 
+to
+ 
+ pip  install  librosa   if  you  don't  have  it  installed  already).  The  results  I've  found  with  it  are  coherent  with  the  
+ones
+ 
+you've
+ 
+found
+ 
+by
+ 
+ears
+ 
+!
+ 
+(1.035437
+ 
+for
+ 
+HQ2
+ 
+/
+ 
+1.022099
+ 
+for
+ 
+KimFT
+ 
+other)
+  Here's  the  script  :  import  numpy  as  np  import  argparse  import  librosa      def  Diff_dBTP(file1,file2):  _____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

@@ -1,0 +1,74 @@
+[page 437/642]
+     Afterwards,  click  on  the  play  button  to  start  the  separation,  **make  sure**  you  uploaded  the  
+audio
+ 
+file
+ 
+in
+ 
+the
+ 
+`folder_path`
+ 
+you
+ 
+provided.
+ After  it's  done,  it  will  output  the  stems  in  the  `output_folder`.   Also  note,  "`filename_instrum`"  is  the  inversion  of  the  separated  vocals  stems  against  the  
+original
+ 
+audio.
+  "`filename_instrum2`"  is  the  sum  of  the  Drums  +  Bass  +  Other  stems  that  are  obtained  by  
+processing
+ 
+"`instrum`"
+ 
+with
+ 
+multiple
+ 
+Demucs
+ 
+models.
+  So  "`instrum`"  is  the  most  untouched  and  "`instrum2`"  can  have  fewer  vocals  residues.    Installing  the  Colab  locally  NVIDIA  12GB  VRAM  GPU  recommended   "I  think  it's  possible  to  use  Colab  notebook  .ipynb  files  locally  with  anaconda  and  jupyter,  but  
+I've
+ 
+never
+ 
+tried.
+ 
+[Or:]
+  You  can  git  clone  the  repo,  install  requirements  and  use  the  inference.py  script,  but  the  
+command
+ 
+line
+ 
+can
+ 
+be
+ 
+really
+ 
+long
+ 
+to
+ 
+type
+ 
+manually
+ 
+(on
+ 
+Colab
+ 
+it's
+ 
+managed
+ 
+with
+ 
+the
+ 
+GUI):
+  python  inference.py  \          --input_audio  "{file_path}"  \          --large_gpu  \          --BSRoformer_model  {BSRoformer_model}  \          --weight_BSRoformer  {weight_BSRoformer}  \          --weight_Kim_MelRoformer  {weight_Kim_MelRoformer}  \          --weight_InstVoc  {weight_InstVoc}  \          --weight_InstHQ4  {weight_InstHQ4}  \          --weight_VOCFT  {weight_VOCFT}  \          --weight_VitLarge  {weight_VitLarge}  \          --overlap_demucs  {overlap_demucs}  \          --overlap_VOCFT  {overlap_VOCFT}  \          --overlap_InstHQ4  {overlap_InstHQ4}  \          --output_format  {output_format}  \          --BigShifts  {BigShifts}  \          --output_folder  "{output_folder}"  \          --input_gain  {input_gain}  \          {filter_vocals}  \          {restore_gain}  \          {vocals_only}  \          {use_VitLarge_}  \  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

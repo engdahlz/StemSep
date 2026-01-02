@@ -1,0 +1,111 @@
+[page 604/642]
+    Q:  Problem  is...  It  simply  takes  too  much  time,  copying  to  cpu  and  back  is  expensive  
+resource-wise
+ A:  In  some  part  of  torchlibrosa  they  use  a  workaround  for  nn.functional.fold  function,  maybe  
+that
+ 
+can
+ 
+be
+ 
+reproduced/adapted
+ 
+to
+ 
+the
+ 
+other
+ 
+failing
+ 
+part
+ 
+where
+ 
+fold
+ 
+used.
+ A:  line  239  is  the  drop  in,  you  have  to  make  sure  the  settings  are  the  same  from  what  i  
+remember
+ 
+https://github.com/adobe-research/convmelspec/blob/main/convmelspec/stft.py
+ Q:  It  got  thru  the  whole  ass  forward  step.  But  now  it's  stuck  at  backward  step.  yk,  recalculate  the  weights  based  on  this  step  to  improve  the  model.   replaced  the  backwards  function  of  stft  with  empty  one,  and  yet:  stuck.  so  since  backwards  step  of  stft/istft  is  disabled...  the  problem  is  elsewhere.   No  idea  where,  no  idea  how  to  debug,  out  of  my  expertise.  A:  I  might  be  100%  wrong  here,  but  I  think  you  should  disable  the  backward  pass  through  
+that
+ 
+class
+ 
+if
+ 
+it
+ 
+is
+ 
+type
+ 
+nn.Module
+ 
+ stft.requires_grad=False  or  when  you  call  stft  use  a  decorator  with  indentation   with  torch.no_grad():    x=stft(x)    Other  archs   SCNet:  Sparse  Compression  Network  Large  models  by  ZFTurbo  turned  out  to  sound  between  Roformers  and  MDX.  “SCNet  is  maybe  a  bit  more  bleedy  than  MDX23c”  and/or  possibly  noisy,  judging  by  the  
+MVSEP
+ 
+model(s).
+ 
+“seemingly
+ 
+impossible”
+ 
+to
+ 
+train
+ 
+guitars
+  [July  10th  2024]  “Official  SCNet  repo  has  been  updated  by  the  author  with  training  code. https://github.com/starrytong/SCNet”  “ZF's  script  already  can  train  SCNet,  but  currently  it  doesn't  give  good  results”  https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/ The  author’s  checkpoint:  https://drive.google.com/file/d/1CdEIIqsoRfHn1SJ7rccPfyYioW3BlXcW/view June  2025  ZFTurbo:  “I  added  new  version  of  SCNet  with  mask  in  main  MSST  repository.  Available  with  
+key
+ 
+'scnet_masked'.
+ 
+Thanks
+ 
+to
+ 
+becruily
+ 
+for
+ 
+help.”
+ “the  main  thing  is  removing  the  SCNet  buzzing”  -  Dry  Paint  How  heavily  undertrained  weights  looks  on  spectrograms  with  mask  vs  without:  click  “One  diff  I  see  between  author  config  and  ZF's  one,  is  that  dev  has  used  learning  rate  of  
+5e-04
+ 
+while
+ 
+it's
+ 
+4e-05
+ 
+in
+ 
+ZF
+ 
+config.
+ 
+And
+ 
+main
+ 
+issue
+ 
+ZF
+ 
+was
+ 
+facing
+ 
+was
+ 
+slow
+ 
+progress
+ 
+(while
+ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

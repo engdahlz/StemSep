@@ -1,0 +1,125 @@
+[page 636/642]
+    when  demudder  won't  find  phase  similarities  so  effectively.  It  will  work  the  best  on  music  
+made
+ 
+with
+ 
+samples.
+ 
+If
+ 
+the
+ 
+track
+ 
+is
+ 
+digital,
+ 
+it
+ 
+is
+ 
+more
+ 
+likely
+ 
+to
+ 
+work
+ 
+better.
+ Anjok  currently  works  on  it  to  make  it  work  for  all  tracks.    The  more  he  works  on  it,  the  more  breakthroughs  are  made,  but  due  to  his  day  job,  he  had  
+less
+ 
+time
+ 
+to
+ 
+work
+ 
+on
+ 
+it
+ 
+lately.
+  Anjok  gives  his  appreciation  on  the  group  of  very  talented  developers  who  made  MDX-Net  
+arch
+ 
+in
+ 
+the
+ 
+University
+ 
+of
+ 
+Korea.
+ 
+It's
+ 
+his
+ 
+favourite
+ 
+network.
+ 
+He's
+ 
+a
+ 
+big
+ 
+fan
+ 
+of
+ 
+Woosung
+ 
+Choi
+ 
+work.
+ _____   Later,  Aufr33  invented  his  own:  Simpler  demudder   Published  for  paid  users  of  x-minus.pro  (when  you  pick  Roformer  model  for  instrumentals,  
+buttons
+ 
+with
+ 
+methods
+ 
+appear;
+ 
+it
+ 
+is
+ 
+only
+ 
+applied
+ 
+for
+ 
+instrumentals,
+ 
+not
+ 
+vocals)
+  In  his  own  words:  “  1.  Separate  the  song  into  vocals  and  music  2.  Invert  the  phase  of  the  vocal  and  mix  it  with  the  music  3.  Now  separate  this  mix  4.  Mix  the  vocals  with  the  input  song   It  actually  works  more  complicated  than  that.  I  added  a  high  pass  filter  since  the  demudder  is  
+not
+ 
+needed
+ 
+at
+ 
+low
+ 
+frequencies.”
+ Probably  something  from  the  100-250  Hz  range.   Actually  Aufr33  used  following  ffmpeg  command:  “  -filter_complex  
+"[0:a]highpass=f=900[hp1];[0:a][hp1]amerge,pan=stereo|c0=c0-c2|c1=c1-c3[lp];[1:a]highpass
+=f=900[hp2];[lp][hp2]amix=inputs=2:duration=longest:normalize=0[out]"”
+  Rephrased  by  becruily   “use  roformer  on  a  song  phase  invert  the  vocal  file  and  combine  it  with  the  instrumental  separate  again  using  the  same  model  combine  the  original  song  and  vocals  (no  inversion  or  anything)  and  you  will  get  demudded  
+inst
+  this  is  for  instrumental,  if  you  want  demudded  vocals  just  switch  the  two  words  (acapella  and  
+instrumental)”
+  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

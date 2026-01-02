@@ -1,0 +1,44 @@
+[page 448/642]
+      While  you  can’t  use  that  language  pack,  you  can  always  use  Google  Translate  to  transform  
+Chinese
+ 
+into
+ 
+your
+ 
+own
+ 
+language
+ 
+on
+ 
+a
+ 
+screen
+ 
+of
+ 
+your
+ 
+smartphone.
+ https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQwk_qynMHMwquSfQZFrrn30F355Ihta_GHQNo7vhnPUhfjj-kUiqSRBiLQbPlgmB5Gqro&usqp=CAU https://support.google.com/translate/answer/6142483?hl=en&co=GENIE.Platform%3DDesktop  “Trying  out  capcut,  the  quality  seems  the  same  as  the  Ripple  app  (low  bitrate  mp3  quality)  at  least  the  voice  leftover  bug  is  fixed,  lol”   Random  vocal  pops  from  Ripple  are  fixed  here.  Also,  it  still  has  the  same  clicks  every  25  seconds  as  before  in  Ripple.  Capcut  adds  1024  extra  samples  at  the  beginning,  and  16  extra  samples  at  the  end  of  the  
+file.
+  How  to  change  region  to  US   in  order  to  make  Ripple  work  on  iOS  in  Apple  App  Store  to  make  "Ripple  -  Music  Creation  Tool"  (SAMI-Bytedance)  work.  https://support.apple.com/en-gb/HT201389  -  Bas'  guide to  change  region  to  US  for  Ripple  on  iOS   https://www.bestrandoms.com/random-address-in-us Or  use  this  Walmart  address  in  Texas,  the  number  belongs  to  an  airport.  Do  it  in  App  Store  (where  you  have  the  person-icon  in  top  right).  You  don't  have  to  fill  credit  cards  details,  when  you  are  rejected,  reboot,  check  region/country...  and  it  can  be  set  to  the  US  already.  Although,  it  can  happen  for  some  users  that  it  won't  let  you  download  anything  forcing  your  
+real
+ 
+country.
+  "I  got  an  error  because  the  zip  code  was  wrong  (I  did  enter  random  numbers)  and  it  got  
+stuck
+ 
+even
+ 
+after
+ 
+changing
+ 
+it.
+ So  I  started  from  the  beginning,  typed  in  all  the  correct  info,  and  voilà"   If  ''you  have  a  store  credit  balance;  you  must  spend  your  balance  before  you  can  change  
+stores''.
+  It  needs  (an  old?)  a  simcard  to  log  your  old  account  out  if  necessary   
+Ripple  on  Windows  or  MacOS  -  Another  way  to  use  Ripple  without  Apple  device  -  _____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

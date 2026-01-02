@@ -1,0 +1,63 @@
+[page 492/642]
+    Alternatively  check:  
+Qobuz
+ 
+Downloader
+ 
+X
+ 
+ or  Allavsoft  (both  requires  subscription)   https://www.qobuz-dl.com/ (takendown  frontend  browser  client  for  downloading  music  for  Qobuz.  The  code  for  hosting  on  GH)   7b)  https://github.com/nathom/streamrip A  scriptable  stream  downloader  for  Qobuz,  Tidal,  Deezer  (active  subscription  required)  and  
+SoundCloud.
+  8*)  For  Deezer  you  can  use  Deezloader or  Deezloader  Remix  -  it  doesn’t  require  any  subscription  for  mp3  128kbps,  just  register  a  Deezer  account  for  free  before,  and  use  the  
+account
+ 
+in
+ 
+the
+ 
+app.
+ 
+For
+ 
+free
+ 
+users
+ 
+it
+ 
+gives
+ 
+only
+ 
+mp3
+ 
+128kbps
+ 
+with
+ 
+16kHz,
+ 
+so
+ 
+it's
+ 
+worse
+ 
+than
+ 
+YT
+ 
+and
+ 
+Opus,
+ 
+so
+ 
+don't
+ 
+bother.
+  9a)  For  Spotify,  you  can  use  Soggfy,  or    9b)  SpotiDown  (premium  subscription  for  320kbps  downloading  and  app  compiling  required)   9c**  Seemingly  you  can  use  https://spotiflyer.app/ but  it  “doesn't  download  from  Spotify,  but  from  Saavn,  in  128kbps/low-quality.  Also,  since  it  doesn't  d/l  from  Spotify,  you  can't  d/l  exclusives  released  from  there.”   It  doesn't  require  a  valid  subscription  irc  and  also  allows  playing  and  sharing  music  inside  the  
+app.
+  9d**  The  same  sadly  goes  to  this  telegram  bot  downloader:  https://t.me/Spotify_downloa_bot  9e)  https://spotify-downloader.com/     Other  lists  of  rippers  and  sites:   https://rentry.org/firehawk52 https://ripped.guide/Audio/Music/ https://fmhy.net/audiopiracyguide#audio-ripping-sites ________________   Other  sites   (not  downloading  directly  from  streaming)   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

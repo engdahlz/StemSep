@@ -1,0 +1,64 @@
+[page 504/642]
+                          Lvss,  Rvss,  Ts,  Lvr,  Rvr,  Cvr,  Cb,  Lb,  Rb          14:  5/2.1    -  C,  L,  R,  Ls,  Rs,  LFE,  Lv,  Rv          15:  5/5.2    -  C,  L,  R,  Lss,  Rss,  Ls,  Rs,  Lv,  Rv,  Cvr,  LFE,  LFE2          16:  5/4.1    -  C,  L,  R,  Ls,  Rs,  LFE,  Lv,  Rv,  Lvs,  Rvs          17:  6/5.1    -  C,  L,  R,  Ls,  Rs,  LFE,  Lv,  Rv,  Cv,  Lvs,  Rvs,  Ts          18:  6/7.1    -  C,  L,  R,  Ls,  Rs,  Lbs,  Rbs,  LFE,  Lv,  Rv,  Cv,  Lvs,  Rvs,  Ts          19:  5/6.1    -  C,  L,  R,  Lss,  Rss,  Lsr,  Rsr,  LFE,  Lv,  Rv,  Lvr,  Rvr          20:  7/6.1    -  C,  Leos,  Reos,  L,  R,  Lss,  Rss,  Lsr,  Rsr,  LFE,  Lv,  Rv,  Lvs,  Rvs  Note:  CICP  13  is  applicable  for  baseline  profile  streams  with  only  object  audio.   But  the  delivery  is  all  contained  within  12  channels  (7.1.4)   There  are  different  levels  of  MPEG-H.  For  streaming,  it's  7.1.4  which  is  level  3  IIRC.  Q:  3rd  order  Ambisonics  you  mean?  And  7.1.4  is  literally  just  Dolby,  right?  A:  No  7.1.4.  You  can  consider  it  the  same  as  Dolby  Atmos.  It's  object-based  audio,  Ambisonics  is  channel  based  audio.  Q:  Isn't  360  RA  Ambisonics  though?  Dolby  is  object  based,  right?  A:  Yep,  Dolby  and  Sony  360  are  object  based.  Sony  360  is  just  protected  MPEG-H  3D   Q:  So  Sony  360  is  also  object  based?  So  it's  not  Ambisonics  A:  [Sony  360  7.1.4  “decoded  to  normal  channel-based  audio”  looks  like  just  12  stems  which  
+can
+ 
+be
+ 
+imported
+ 
+into
+ 
+Audacity]
+ Q:  The  one  I  got  was  from  Amazon  Music,  not  Tidal.  Shouldn't  make  a  difference?  A:  It's  actually  far  more  powerful  than  Dolby  Atmos  in  this  sense.   Music  Media  Helper  can  decode  Sony  360.  Last  time  i  checked  they  are  possible  to  rip  from  
+Tidal
+ 
+although
+ 
+iirc
+ 
+Tidal
+ 
+are
+ 
+dropping
+ 
+360
+ 
+support?
+ https://www.quadraphonicquad.com/forums/threads/music-media-helper-tools-for-multichannel-audio-music-videos.22693/ (Sam)   Alternatively,  this  paid  plugin  can  handle  360RA  downmix  to  binaural  audio.  https://www.perfectsurround.com/ but  you  need  an  iLok  ID  even  for  the  free  trial  (jarredou)        
+___AI  mastering  services___  
+Might  be  useful  even  for  enhancing  quality  of  instrumentals  after  separation  (or  your  own  
+mixed
+ 
+music)
+  Be  aware  that  at  least  some  advanced  mixing  beforehand  may  cheat  the  content  ID  
+detection
+ 
+system,
+ 
+so
+ 
+your
+ 
+song
+ 
+won't
+ 
+be
+ 
+detected.
+ 
+If
+ 
+some
+ 
+label
+ 
+prevents
+ 
+from
+ 
+uploading
+ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

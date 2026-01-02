@@ -1,0 +1,71 @@
+[page 639/642]
+    On  example  of  dca’s  ensemble  in  the  doc:  "0)  Unwa  BS  Roformer  Resurrection  Inst  (BS  2025.07  as  a  reference  for  phase  fix)  +  
+MVSEP
+ 
+BS
+ 
+Roformer
+ 
+2025.07
+ 
+(Max
+ 
+Spec)
+  —->  the  least  vocal  crossbleeding.   Alternatively,  you  can  use  becruily  vocal  model  instead  of  2025.07  for  the  ensemble  -  “Becruily  vocal  correctly  recognize  instruments  far  better  than  the  instrumental  one”  -  
+dca100fb8"
+  “This  would  equate  to  the  following  steps:  [guide  corrected;  didn't  give  correct  results  before;  thx  Ari/arxynr]   1.  Separate  your  mixture  using  the  Unwa  BS  Roformer  Resurrection  Inst  model.    •  Output:  inst_unwa.wav  (instrumental)  +  optional  vocal.   2.  Separate  your  mixture  using  the  MVSEP  BS  Roformer  2025.07  model.    •  Output:  inst_mvsep.wav  +  vox_mvsep.wav.  [Note:  Set  WAV  output.  Then  MVSEP  won't  turn  down  the  volume  to  accommodate  for  
+clipping,
+ 
+and
+ 
+in
+ 
+such
+ 
+cases
+ 
+it
+ 
+should
+ 
+use
+ 
+32-bit
+ 
+float
+ 
+instead
+ 
+of
+ 
+16-bit
+ 
+automatically,
+ 
+despite
+ 
+16-bit
+ 
+being
+ 
+set
+ 
+for
+ 
+free
+ 
+user]
+  3.  Build  the  ensemble  with  UVR’s  Manual  Ensemble  mode:    4a.  Inputs  =  •  inst_unwa.wav  (from  Step  1)  •  inst_mvsep.wav  (from  Step  2)    4b.  Set  Algorithm  =  “Max  Spec.”    4c.  Click  Start  Processing   4.  Phase  fix  with  UVR’s  Phase  Swapper:    3a.  Target  Audio  =  inst_unwa+inst_mvsep  (ensembled).wav  (from  Step  3).    3b.  Reference  Audio  =  inst_mvsep.wav  (from  Step  2).    3c.  Click  Start  Processing.    3d.  Note  the  resulting  new  file  (~~~_phaseswapped.wav  or  similar).   The  resulting  file  =  your  final  instrumental  stem  (the  one  referenced  in  the  Google  Doc  
+instructions
+ 
+as
+ 
+having
+ 
+the
+ 
+least
+ 
+cross-bleed).”
+   FAQ  _____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

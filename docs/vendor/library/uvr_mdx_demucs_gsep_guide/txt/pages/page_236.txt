@@ -1,0 +1,36 @@
+[page 236/642]
+     For  vocals  with  vocoder   -  voc_ft  Alternatively,  you  can  use:  -  5HP  Karaoke  (e.g.  with  aggression  settings  raised  up)  or   -  Karaoke  2  model  (UVR5  or  Colabs).  Try  out  separating  the  result  obtained  with  voc_ft  as  
+well.
+ -  BS-Roformer  model  ver.  2024.04  on  MVSEP  (better  on  vocoder  than  the  viperx’  model).    "If  you  have  a  track  with  3  different  vocal  layers  at  different  parts,  it's  better  to  only  isolate  the  
+parts
+ 
+with
+ 
+'two
+ 
+voices
+ 
+at
+ 
+once'
+ 
+so
+ 
+to
+ 
+speak"
+  Various  speakers'  isolation  (from  e.g.  podcast  or  movie)  
+ 
+-
+ 
+MVSEP
+ 
+Male/Female
+ 
+SCNet
+ 
+model
+ 
+ -  MVSEP  Male/Female  MelRoformer  model  -  Aufr33  BS-Roformer  Male/Female  beta  model |  config |  Colab (based  on  the  model  below)   -  Male/female  BS-Roformer  model by  Sucial  |  config for  UVR |  tensor  match  error  fix (if  they  sing  at  intervals  [one  by  one]  they  cannot  be  separated)  -  Multispeaker  model  on  MVSEP  -  BS-Roformer  becruily  &  frazer  Karaoke  model   ____  -  Guide  and  script  for  WhisperX  -  https://github.com/alexlnkp/Easy-Audio-Diarisation  -  Spectralayers 11’s  unmix  multiple  voices  option   (for  further  research)  -  some  of  these  tools  might  get  useful:  https://github.com/dmlguq456/SepReformer (SOTA  for  2  speakers)  https://paperswithcode.com/task/speaker-separation/latest https://arxiv.org/abs/2301.13341 https://paperswithcode.com/task/multi-speaker-source-separation/latest  ____________________________________________________________________   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

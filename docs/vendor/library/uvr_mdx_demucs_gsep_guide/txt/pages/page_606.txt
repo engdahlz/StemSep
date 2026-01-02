@@ -1,0 +1,73 @@
+[page 606/642]
+        -  0.433    Large:   dims:      -  4      -  64      -  128      -  256   band_SR:      -  0.225      -  0.372      -  0.403”    ZFTurbo  eventually  trained  SCNet  large  model,  but  it  turned  out  to  sound  similar  to  
+Roformers,
+ 
+but
+ 
+with
+ 
+more
+ 
+noise.
+ 
+You
+ 
+can
+ 
+test
+ 
+the
+ 
+model
+ 
+on
+ 
+MVSEP.com
+  SCNet  Large  turned  out  to  be  good  for  piano  (vs  MDX23C  and  MelRoformer)  and  also  
+drums
+ 
+models
+ 
+according
+ 
+to
+ 
+ZFTurbo.
+ “He  also  said  SCNet  didn't  work  that  well  for  strings,  Aufr  didn't  have  luck  with  BV  model  as  
+well”
+ 
+“MDX23c
+ 
+is
+ 
+already
+ 
+looking
+ 
+better
+ 
+on
+ 
+guitar
+ 
+after
+ 
+5
+ 
+epochs
+ 
+than
+ 
+scnet
+ 
+after
+ 
+100
+ 
+epochs”
+  “with  SCNet  I've  had  the  fastest  results  with  prodigy  [optimizer]”  becruily   Later,  ZFTurbo  released  SCNet  4  stems  (in  his  repo)  and  exclusive  bass  model  on  MVSEP.    There  was  also  an  older,  an  unofficial  (not  fully  finished  yet,  it  seems)  implementation  of  SCNet:  https://github.com/amanteur/SCNet-PyTorch   Experimental  BS-Mamba  git  clone  https://github.com/mapperize/Music-Source-Separation-Training.git  --branch  
+workingmamba
+  
+ TS-BSmamba2  https://arxiv.org/abs/2409.06245 https://github.com/baijinglin/TS-BSmamba2 Added  to  ZFTurbo  training  repo:  https://github.com/ZFTurbo/Music-Source-Separation-Training/  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

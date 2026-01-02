@@ -1,0 +1,22 @@
+[page 592/642]
+    Frazer  :”chat  models  can't  even  code  javascript  let  alone  AI”  B:  yeah  the  hallucinations  and  unnecessary  edits  are  insane  but  2.5  pro  is  prob  the  best  I've  
+seen
+ 
+as
+ 
+long
+ 
+as
+ 
+it
+ 
+has
+ 
+all
+ 
+the
+ 
+context
+  F:  “just  standard  CFM  it  doesn't  need  something  audio  specific  for  it  to  work  2s  time  =  torch.randn(B,  device=device,  dtype=dtype).sigmoid()  time  =  time.view(B,  1,  1)   x  =  time  *  OUTPUTTENSOR  +  (1  -  time)  *  INPUTTENSOR  target  =  OUTPUTTENSOR  -  INPUTTENSOR   condition  =  self.timeembedder(time)   condition2  =  self.someconditioningembedder(otherinfo  here)  somecondition  =  condition  +  condition2   x  =  model(x,  somecondition)   loss  =  F.mse_loss(x,  target)    you  need  time  embeddings  for  it  to  work,  but  it's  copy-paste  10  minutes  work”   Q:  what  about  the  train/inference/valid,  don't  they  have  to  be  adapted  to  cfm  as  well  or  nah  F:  yeah  -  so  inference  will  have  to  be  something  like  this        def  evaluate(self,  x:  torch.Tensor,  N:  int  =  50)  ->  torch.Tensor:           x  =  x.transpose(1,  2)  #X  must  be  B  T  C  (if  thats  what  bsroformer  uses  idk)          t_span  =  torch.linspace(0,  1,  N  +  1,  device=x.device,  dtype=x.dtype)           dt  =  t_span[1]  -  t_span[0]           for  t  in  t_span[:-1]:              k  =  self.forward_eval(x,  t)              x  =  x  +  dt  *  k           x  =  x.transpose(1,  2)          return  x    where  you  then  define  a  new  eval  forward       def  forward_eval(self,  x:  torch.Tensor,  time:  torch.Tensor):          B,  T  =  x.shape[0],  x.shape[1]           time  =  torch.full((B,),  time,  device=x.device,  dtype=x.dtype)          time  =  time.long()  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

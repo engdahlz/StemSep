@@ -1,0 +1,47 @@
+[page 550/642]
+    -  Daft  Punk  -  Robot  Rock  -  Deep  Forest  -  Sweet  Lullaby  (Version  1992)  (yodelling  difficult  to  remove;  BV  bleed  
+starting
+ 
+at
+ 
+~1:21)
+ -  Radiohead  -  The  National  Anthem  (vocal  effects  difficult  to  separate;  LV  effects  bleed  
+starting
+ 
+at
+ 
+~1:36)
+ -  Moby  -  One  Last  Time  (vocal  bleed  in  instrumental;  LV  effects  bleed  starting  at  1:39)  -  Air  -  Run  -  Kodex  -  Do  jutra  (esp.  at  1:30  vocals  bleeding  in  a  lot  of  models  with  low  bleedless  
+metric)
+  Bleeding  on  every  model  tested  as  for  06.12.24  incl.  Dango  -   
+not
+ 
+so
+ 
+severe,
+ 
+but
+ 
+containing
+ 
+vocal
+ 
+pop-ins
+ 
+(dca100fb8):
+ 
+ -  "Supersonic"  by  Jamiroquai  (BV  bleed  starting  @~0:07)  -  "Amazing"  by  George  Michael  (BV  bleed  starting  @~3:45)  -  "El  lilady"  by  Samo  Zaen  (BV  bleed  starting  @~3:30)  -  "Here  Comes  the  Rain  Again"  by  Eurythmics  (BV  bleed  starting  @~1:17)  -  "Sun  is  Shining"  by  Bob  Marley  &  The  Wailers  (BV  bleed  starting  @~1:52)  -  "Sun  is  Shining  (Kaya  40  Mix)"  by  Bob  Marley  &  The  Wailers  (BV  bleed  starting  
+@1:52)
+ -  "Road  to  Zion"  by  Damian  Marley  (BV  bleed  starting  @~0:00)  -  "Les  Rubans"  by  Daniel  Masson  (LV  bleed  starting  @~2:13)  -  "Remember"  by  Air  (BV  bleed  starting  @~0:46  +  LV  bleed  starting  @~0:58)  -  "Strangers"  by  Portishead  (LV  bleed  starting  @~0:30)  -  "Samsam  (Chanson  du  générique)"  (BV  bleed  starting  @~0:00)  -  "Aicha"  by  Khaled  (BV  bleed  starting  @~3:45)  -  "Forest  Hymn"  by  Deep  Forest  (BV  bleed  starting  @~0:33)  -  "33  Degree"  by  Thievery  Corporation  (LV  effects  bleed  starting  @~1:44)  -  "Run"  by  Air  (BV  bleed  starting  @~1:08)  -  "An  Indian  Summer"  by  Al-Pha-X  (BV  effects  bleed  starting  @~3:13)  -  "Forest  Hymn"  by  Deep  Forest  (BV  effects  bleed  starting  @~0:33)  -  "In  The  Air  Tonight"  by  Phil  Collins  (LV  effects  bleed  starting  @~3:03)  -  Goldfrapp  -  Utopia  (BV  bleed  starting  @~0:00)  -  Depeche  Mode  -  Sacred  (BV  bleed  starting  @~0:00)  -  Seal  -  Love's  Divine  (BV  bleed  starting  @~3:26)  -  Da  Lata  -  Alice  (No  Pais  Da  Malandragem)  (LV  or  BV  bleeding  at  a  different  time  with  
+each
+ 
+model)
+ -  ABBA  -  Gimme!  Gimme!  Gimme!  (A  Man  After  Midnight)  (BV  bleed  starting  @1:22)  -  311  -  Beyond  the  Gray  Sky  (LV  effects  bleed  @~1:24)   Vocal  bleed  in  instrumentals  using  MVSEP  MelRoformer  2024.10  model  which  
+Dango
+ 
+fixes
+ 
+(dca100fb8)
+  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

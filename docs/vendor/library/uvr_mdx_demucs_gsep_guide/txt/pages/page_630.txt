@@ -1,0 +1,115 @@
+[page 630/642]
+    (take  a  look  at  the  augmentations  in  ZFTurbo  script  (dataset.py),  it  uses  both  libs  with  
+randomized
+ 
+parameters
+ 
+also
+ 
+for
+ 
+pedalboard)
+ 
+  Q:  What  Transformer  and  Mamba  is  A:  https://www.youtube.com/watch?v=XfpMkf4rD6E https://www.youtube.com/watch?v=9dSkvxS2EB0  Side-note:  with  a  bit  of  tweaking,  ZFTurbo  training  script  can  be  edited  to  train  a  reverb  
+model,
+ 
+generating
+ 
+the
+ 
+randomized
+ 
+reverb
+ 
+on
+ 
+the
+ 
+fly
+ 
+with
+ 
+pedalboard.Reverb
+ (https://spotify.github.io/pedalboard/reference/pedalboard.html#pedalboard.Reverb)  and  using  reverbs  IRs  to  have  more  diversity   https://openaccess.thecvf.com/content/CVPR2022/papers/Mangalam_Reversible_Vision_Transformers_CVPR_2022_paper.pdf https://arxiv.org/abs/2306.09342  Fork  of  ZFTurbo  training  code,  but  I  don’t  know  with  what  changes  (by  frazer):  https://github.com/fmac2000/Music-Source-Separation-Training-Models/tree/revnet Another  (by  joowon)  https://github.com/mapperize/Music-Source-Separation-Training  Another  (not  so  new)  paper  with  maybe  interesting  concept  improving  separations  quality  
+that
+ 
+couldb
+ 
+may
+ 
+be
+ 
+reproduced:
+ VocEmb4SVS:  Improving  Singing  Voice  Separation  with  Vocal  Embeddings   http://www.apsipa.org/proceedings/2022/APSIPA%202022/TuAM1-7/1570836845.pdf There's  also  a  demo  site  for  the  4-stem  version,  but  I  haven't  found  any  publication/code  https://cathy0610.github.io/2023-SrcEmb4MSS/  "Demucs  employs  a  combination  of  L1  loss  and  deep  clustering  loss  to  optimize  source  separation."  (https://github.com/facebookresearch/demucs/issues/458)  I've  found  this  paper  few  months  ago,  its  findings  are  based  only  on  openunmix  arch,  the  observed  behaviour  
+could
+ 
+be
+ 
+different
+ 
+with
+ 
+other
+ 
+archs,
+ 
+but
+ 
+it's
+ 
+still
+ 
+very
+ 
+interesting:
+ https://arxiv.org/abs/2202.07968”  Not  really  in  MDX23  code  made  by  ZFTurbo:  “By  default,  my  code  uses  loss  proposed  by  kueilab  team.  They  use  MSE  but  skip  sample  
+with
+ 
+worst
+ 
+loss
+ 
+(to
+ 
+avoid
+ 
+problems
+ 
+in
+ 
+dataset).
+ 
+mse
+ 
+loss
+ 
+can
+ 
+be
+ 
+used
+ 
+directly
+ 
+with
+ 
+--mse_loss
+  
+argument.
+ Also,  auraloss  is  included  in  my  code  too.  I  experimented  with  it,  but  it  didn't  allow  to  gain  
+additional
+ 
+profit
+ 
+comparing
+ 
+to
+ 
+standard
+ 
+loss
+ 
+function.”
+  Useful  lib  to  experiment  with  different  loss  functions:  https://github.com/csteinmetz1/auraloss 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

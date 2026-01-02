@@ -1,0 +1,57 @@
+[page 611/642]
+     KAN-Stem  That  might  be  interesting  to  train  multistem,  it’s  based  on  Demucs:  https://github.com/waefrebeorn/KAN-Stem   VR  architecture  by  tsurumeso  https://github.com/tsurumeso/vocal-remover (VR  models  in  UVR,  use  modified  v5  training  code  in  order  to  support  e.g.  4  bands,  
+inferencing
+ 
+v6
+ 
+models
+ 
+is
+ 
+not
+ 
+yet
+ 
+supported
+ 
+in
+ 
+UVR)
+  The  arch  is  obsolete  for  instrumentals  -  bleeding  and  vocal  artefacts.  Not  really  recommended  anymore,  unless  for  specific  tasks  like  de-noise,  de-reverb  or  
+Karaoke
+ 
+or
+ 
+BVE
+ 
+when
+ 
+MDX
+ 
+V1
+ 
+wasn't
+ 
+giving
+ 
+that
+ 
+good
+ 
+results.
+  (guide  by  Joe)    Q:  How  do  I  train  my  own  models?  A:    Model  Training  Tutorial  Requirements:  -  Windows  10  -  Nvidia  GeForce  Graphic  card  (at  least  8  GB  of  VRAM)  -  At  least  16GB  of  Ram  -  Recommend  1  -  2TB  of  hard  drive   Setup  your  dataset  1.  You  need  to  know...   Attention:   -  Although  you  can  train  your  model  with  mp3,  m4a,  flac  file,  but  we  recommend  convent  
+those
+ 
+file
+ 
+to
+ 
+wav
+ 
+file.
+ -  For  high-resolution  audio  sources,  the  samples  are  reduced  to  44.1kHz  during  conversion.  -  If  possible,  match  the  playback  position  and  volume  of  the  OnVocal  and  OffVocal  sound  
+sources.
+ 
+ -  The  dataset  required  at  least  150  pairs  of  songs   2.  Rename  the  file...  Attention:   Create  "mixtures"  folder  with  vocals  /  "instruments"  folder  without  vocals  Please  separate  the  sound  sources  with  and  without  vocals  as  shown  below.   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

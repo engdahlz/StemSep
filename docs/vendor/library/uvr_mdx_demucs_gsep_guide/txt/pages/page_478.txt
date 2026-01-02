@@ -1,0 +1,66 @@
+[page 478/642]
+    (HV)   For  clean  vocal,  you  can  also  use  ensemble  with  following  models:  https://cdn.discordapp.com/attachments/767947630403387393/897512785536241735/unknown.png (REUim2005)   __How  to  remove  artefacts  from  an  inverted  acapella?_____   This  section  is  old,  and  “cleaning  inverts”  in  current  models section  can  provide  more  up-to  date  solutions.         0)  Currently,  GSEP  is  said  to  be  the  best  in  cleaning  inverts.  But  at  least  for  vocal  you  
+can
+ 
+use
+ 
+some
+ 
+MDX
+ 
+model
+ 
+like
+ 
+Kim,
+ 
+or
+ 
+even
+ 
+better
+ 
+MDX23
+ 
+from
+ 
+MVSEP
+ 
+beta.
+  1)  by  charm   (rather  outdated)  Use  Vocal_HP_4BAND_3090_arch-124m.pth  at  0.5  aggressiveness,  tta  
+enabled
+  then  use  any  model  u  like  with  Vocal_HP_4BAND_3090_arch-124m.pth  instrumental  results  
+to
+ 
+filter
+ 
+out
+ 
+any
+ 
+vocals
+ 
+that
+ 
+weren't
+ 
+detected
+ 
+as
+ 
+vocals
+ 
+with
+ 
+Vocal_HP_4BAND_3090_arch-124m.pth
+ 
+model
+  combine  the  two  results   then  use  model  ensemble  with  whatever  models  u  like  (i  used  HP2  4BAND  1  and  2)   drag  both  vocal  hp  4band+another  model  and  ensemble  results  into  audacity   use  the  amplify  effect  on  both  tracks  and  set  it  to  -6.03   render   then  use  StackedMGM_MM_v4_1band_arch-default.pth   tbh  vocal  models  even  at  0  aggressiveness  really  help  inverts  Or  0.3   I  mostly  use  acapellas  for  mashups  and  remixes,  so  the  little  bit  of  bleed  i  get  at  0.0  
+aggressiveness
+ 
+is
+ 
+fine
+  drums-4BAND-3090_4band.pth  0.5  optionally  (less  metallic  sound)  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

@@ -1,0 +1,48 @@
+[page 642/642]
+    Someone  was  once  telling  that  value  not  bigger  than  2  takes  no  more  than  4GB  of  VRAM,  
+but
+ 
+it
+ 
+will
+ 
+rather
+ 
+differ
+ 
+from
+ 
+AMD/Intel
+ 
+when
+ 
+the
+ 
+VRAM
+ 
+usage
+ 
+is
+ 
+higher
+ 
+due
+ 
+to
+ 
+lack
+ 
+of
+ 
+garbage
+ 
+collector
+ 
+present
+ 
+in
+ 
+CUDA.
+   _______  Done  by  deton24,  2021-2025  Special  thanks  to  Audio  Separation Discord  (and  all  the  people  mentioned  in  the  credits  section)  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

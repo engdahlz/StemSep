@@ -1,0 +1,96 @@
+[page 595/642]
+    -  “inverts  can  bring  good  quality  shit  if  you  clean  the  remaining  instrumentals  in  your  vocals  
+with
+ 
+a
+ 
+roformer
+ 
+(...)
+ 
+(ofc
+ 
+this
+ 
+only
+ 
+works
+ 
+if
+ 
+you
+ 
+possess
+ 
+both
+ 
+the
+ 
+original
+ 
+songs
+ 
+and
+ 
+instrumental
+ 
+version
+ 
+which
+ 
+you
+ 
+have
+ 
+to
+ 
+align
+ 
+perfectly)”
+ 
+-
+ 
+mesk
+  _____    If  you  already  prepared  your  dataset,  here  is  a  step-by-step  guide  by  Bas  Curtiz  on:   
+Setting  up  training  on  your  local  machine  (read  also  mesk’s  guide)  “Make  sure  you  have  all  dependencies  installed  for  ZFTurbo's  Training  &  Inference  script:  https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/gui.md Update  Nvidia  drivers:  https://www.nvidia.com/en-us/drivers/ Set  power  plan  to  best  performance  +  never  fall  asleep.  Determine  what  the  fastest  drive  is  on/in  your  PC:  https://www.guru3d.com/download/crystal-diskmark-download/ Put  your  dataset  on  the  fastest  drive.   Read  and  apply  the  steps  at:  https://github.com/ZFTurbo/Music-Source-Separation-Training?tab=readme-ov-file#how-to-train Notes:   a)  ZFTurbo's  repo  has  a  lot  of  config  files  to  start  with.  Pick  the  one  based  on  the  model  
+type,
+ 
+you
+ 
+want
+ 
+to
+ 
+use,
+ 
+inside
+ 
+the
+ 
+folder
+ 
+/configs
+ b)  Alternatively,  if  you  are  going  to  fine-tune  an  existing  model,  use  the  .yaml  associated   (unsure,  implementation  looks  unstable  or  smth  wonky)  To  train  locally,  assuming  you  don't  have  a  powerhouse  of  a  GFX  card,  add  this  line  in  
+config:use_torch_checkpoint:
+ 
+True
+  a)  Learning  rate  wise,  If  you  are  training  a  model  from  scratch,  you  want  to  set  it  
+higher:5.00e-04
+ 
+is
+ 
+used
+ 
+by
+ 
+ByteDance
+ 
+for
+ 
+example
+ 
+(=0.0005)
+ b)  If  you  are  fine-tuning  an  existing  model,  set  it  lower:  5.00e-06  is  recommended  
+(=0.000005)
+  Save  the  altered  config  and  add  your  handle  for  ex.   For  full  overview  of  (optional)  parameters  that  can  be  used:  https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/train.py#L106  _____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

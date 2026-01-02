@@ -1,0 +1,132 @@
+[page 47/642]
+     "It  is  based  on  v1e,  but  the  Fullness  is  not  as  high  as  v1e,  so  it  is  positioned  as  an  improved  
+version
+ 
+of
+ 
+v1."
+ 
+Unwa
+  "very  nice  model,  the  multistft  noise  is  gone"  It's  probably  due  to:  "Unwrapped  phase  loss  function  added"  Unwa  BTW.  It  was  already  proven  before,  that  adding  artificial  noise  to  separations  was  increasing  
+fullness
+ 
+metric.
+  "Seems  to  have  significantly  less  sax  and  harmonica  bleed  in  vocal,  which  is  an  awesome  
+thing
+ 
+(...)
+ 
+It
+ 
+still
+ 
+struggles
+ 
+with
+ 
+other
+ 
+things
+ 
+like
+ 
+FX
+ 
+and
+ 
+Kazoo."
+ 
+dca
+ "It  sounds  clean.  The  only  thing  [is]  that  some  instruments  are  deleted,  and  in  some  tracks  
+leaves
+ 
+remnants
+ 
+of
+ 
+voice
+ 
+in
+ 
+the
+ 
+instrumental."
+ 
+Fabio
+ "Screams  are  not  removed  from  the  track"  Halif   Training  details   "I  made  a  small  improvement  to  the  dataset  and  trained  about  50k  steps  with  a  batch  size  of  
+2.
+  8192  was  added  to  multi_stft_resolutions_window_sizes.  As  it  was,  the  memory  usage  increased  too  much,  so  it  was  rewritten  to  use  hop_length  =  
+147
+ 
+when
+ 
+window_size
+ 
+is
+ 
+4096
+ 
+or
+ 
+less
+ 
+and
+ 
+441
+ 
+when
+ 
+window_size
+ 
+is
+ 
+greater
+ 
+than
+ 
+that."
+ 
+Unwa
+  -  Mesk  released  a  preview  of  his  instrumental  model  retrained  from  Mel  Kim  on  metal  
+dataset
+ 
+consisting
+ 
+of
+ 
+a
+ 
+few
+ 
+thousands
+ 
+of
+ 
+songs.
+ https://huggingface.co/meskvlla33/metal_roformer_preview/tree/main |  Colab These  are  not  multisong  metrics,  but  made  with  private  dataset!  Instr  bleedless:  48.81,  fullness:  42.85,  SDR:  13.7621   "currently  restarting  from  scratch  because  I  think  I  know  what  all  the  problematic  vocal  tracks  
+were,
+ 
+and
+ 
+I
+ 
+removed
+ 
+them,
+ 
+we'll
+ 
+see
+ 
+if
+ 
+it's
+ 
+gonna
+ 
+be
+ 
+better"
+  "vocals  could  follow  if  requested.  Should  work  fine  for  all  genres  of  metal,  but  doesn't  work  on:  -  hard  compressed  screams  -  some  background  vocals  -  weird  tracks  (think  Meshuggah's  "The  Ayahuasca  Experience")   P.S:  Use  the  training  repo  (MSST) if  you  want  to  [separate]  with  it.  UVR  will  be  abysmally  slow  (because  of  chunk_size  [introduced  since  UVR  Roformer  beta #3])”   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

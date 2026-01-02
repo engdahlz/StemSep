@@ -1,0 +1,24 @@
+[page 313/642]
+    Bleedless:  35.62   Unwa  v1e  Fullness:  38.87   Bleedless:  35.59   Gabox  fv5  Fullness:  39.40   Bleedless:  33.49    Vocal  models/ensembles  sorted  by  instrumental  bleedless  metric:  
+(more
+ 
+muddy;
+ 
+Gabox
+ 
+and
+ 
+Unwa’s
+ 
+Revive
+ 
+models
+ 
+not
+ 
+evaluated
+ 
+yet):
+ Descriptions of  the  public  models    MVSep  BS-Roformer  (2025.07.20)  -  the  2  previous  versions  got  replaced  on  the  site  by  it  Inst.  Fullness  27.83   Inst.  Bleedless  49.12   MVSep  Ensemble  11.50  (2024.12.20)  Inst.  Fullness  27.17   Inst.  Bleedless  47.94   MVSep  Ensemble  (4  stem)  11.93  (2025.06.30)  Inst.  Fullness  28.70  Inst.  Bleedless  47.68   MVSep  MelBand  Roformer  (2024.10)  Inst.  Fullness  27.73  Inst.  Bleedless  47.48   BS-RoFormer  SW  6  stem  (MVSEP/Colab/undef13  splifft)  Inst.  Fullness  27.45  Inst.  Bleedless  47.41  (use  inversion  from  vocals  and  not  mixed  stems  for  better  instrumental  metrics)   MDX23  Colab  fork  v2.5  by  jarredou  Inst.  Fullness  28.02  Inst.  Bleedless  47.24  (more  noticeable  bleeding/noise  than  MVSep  Ensemble  above)   Beta  6X  xx  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

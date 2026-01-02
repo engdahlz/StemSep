@@ -1,0 +1,90 @@
+[page 104/642]
+    Older  Roformer  patch  #1/2  for  MacOS  (ARM  only)  got  deleted  from  the  Discord  server   
+____________
+ 
+ (Roformer  models  are  also  added  on  MVSEP  and  x-minus.pro/uvronline.app and  MSST-GUI,  and  inference Colab  and  MDX23  v.2.4/2.5  Colab)    Instructions  for  UVR  Roformer  patches  and  installing  custom  models   -  Your  current  settings  might  be  lost  after  patching  your  current  UVR  installation   -  Applying  newer  UVR  Roformer  versions  over  some  older  UVR  versions  might  cause  errors  
+on
+ 
+startup
+ 
+-
+ 
+then
+ 
+perform
+ 
+clean
+ 
+installation
+ 
+to
+ 
+fix
+ 
+the
+ 
+issue.
+ 
+Just
+ 
+make
+ 
+sure
+ 
+that
+ 
+after
+ 
+uninstalling
+ 
+UVR,
+ 
+nothing
+ 
+is
+ 
+inside
+ 
+the
+ 
+old
+ 
+UVR
+ 
+folder
+  -  To  perform  clean  installation  of  the  latest  version,  for  now  you  need:   Windows :  
+Roformer
+ 
+full
+ 
+patch
+ 
+#13:
+ 
+UVR_Patch_1_15_25_22_30_BETA: Link 
+And  then  install  small  patch  #14:  
+UVR_Patch_1_21_25_2_28_BETA: Link 
+RTX  5000  full  patch  #14:   
+UVR_Patch_4_24_25_20_11_BETA:  Link (iirc  uses  newer  PyTorch  and  CUDA)  
+The  above  is  enough  for  complete  installation.  Installing  the  2023  5.6.0  version  before  is  
+unnecessary.
+ 
+ 
+MacOS
+:
+ 
+-
+ 
+Roformer
+ 
+full
+ 
+patch
+ 
+#13.1
+ 
+(standalone)
+ 
+(beta_0115_MacOS_arm64_hf)  which  applies  a  hotfix  to  address  a  few  graphics  issues:   -  Mac  M1  (arm64)  users  -  Link -  Mac  Intel  (x86_64)  users  -  Link (it  went  offline  for  some  reason;  older  version  #13  below   Link)   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

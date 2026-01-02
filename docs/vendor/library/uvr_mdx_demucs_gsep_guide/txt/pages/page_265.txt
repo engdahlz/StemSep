@@ -1,0 +1,108 @@
+[page 265/642]
+    Vocal models,  e.g.:  -  MVSEP  BS-Roformer  2025.07  (if  you  already  have  birds  in  a  vocal  stem,  as  most  vocal  
+models
+ 
+do
+ 
+iirc,
+ 
+that
+ 
+may
+ 
+do
+ 
+the
+ 
+trick)
+ SFX models  Zero  shot  solutions:  (you  can  try  them  to  get  e.g.  birds  SFX  and  then  use  as  a  source  to  debleed  or  maybe  try  to  
+invert
+ 
+phase
+ 
+and
+ 
+cancel
+ 
+it
+ 
+out)
+ -  AudioSep -  USS-ByteDance (for  providing  any,  at  least,  proper  sample)  -  Zero  Shot (currently  worse  for  SFX  vs  Bytedance)  -  custom  stem  separation  on  Dango  (paid,  10  seconds  for  free  Technically,  if  bird  noises  are  in  vocals,  then  equally:   -  RTX  Voice,   -  AMD  Noise  Suppression  or  even   -  Krisp  and   -  Adobe  Podcast   might  get  rid  of  them,  but  at  least  the  last  changes  the  tone  of  voice,  and  the  previous  may  
+work
+ 
+good
+ 
+only
+ 
+with
+ 
+voice
+ 
+instead
+ 
+of
+ 
+vocals.
+ Spectral  editing   De-clippping/de-limitter/de-compression  of  dynamics  (for  loud  or  brickwalled  songs  with  
+overly
+ 
+used
+ 
+compressor/clipper/limiter/distortion
+ 
+-
+ 
+transients/peaks
+ 
+recovery)
+ 
+ Free  declipper  plugins:  -  ReLife  1.42  by  Terry  West  (works  best  for  stereo  tracks  divided  into  mono,  newer  versions  
+are
+ 
+paid)
+ -  ERA  6 declipper  (released  in  bundle  for  free  after  they  were  bought  by  Meta)  -  Airwindows  AQuickVoiceClip  -  mainly  for  streamers  yelling  into  the  microphone  “It’s  not  a  
+‘un-clipper’
+ 
+but
+ 
+it
+ 
+tames
+ 
+the
+ 
+distortion
+ 
+a
+ 
+bit.”
+ 
+ AI  tools  (not  plugins):  -  RemFX (contains  model  to  get  rid  of  distortion  and  compression;  “mostly  for  singular  sounds,  it  won't  work  for  whole  mixes  like  songs”)  -  Rukai (for  speech  and  instrumentals)  -  Amis (mainly  for  speech)  -  stet-stet’s  DDD (speech,  req.  decent  CML  knowledge  to  setup)  -  jeonchangbin49’s  De-limiter (HF |  Colab)  (“if  you  have  any  squished  tracks  that  apollo  doesn't  handle  well,  try  passing  it  through  that  AI  de-limiter  first”  -  macularguide  “parallel  mix  -  “define[s]  how  the  normalized  input  and  the  de-limited  inference  will  blend  
+together.
+ 
+Where
+ 
+0
+ 
+is
+ 
+100%
+ 
+normalized
+ 
+and
+ 
+1
+ 
+means
+ 
+100%
+ 
+de-limited”
+ 
+-
+ 
+santilli_)
+  -  Neutone  FX>Clipper,  actually  an  AI  plugin  (instruction)   More  GH  repos  -  HyMPS list  |  #2 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

@@ -1,0 +1,36 @@
+[page 227/642]
+    BVE  models,  so  in  case  of  any  problems  with  HP5/6  or  Karaoke,  you  can  test  out  also  
+Settings>Choose
+ 
+Advanced
+ 
+Menu>[model
+ 
+arch]>Secondary
+ 
+model
+ 
+instead.
+  Don't  forget  reading  vocals to  find  the  best  separation  method  for  your  song  to  use  it  for  separation  with  Karaoke/BVE  models.   Recommended  ensemble  settings  for  Karaoke  in  UVR  5  GUI  (instrumentals  with  backing  
+vocals):
+ -  5_HP-Karaoke-UVR,  6_HP-Karaoke-UVR,  UVR-MDX-NET  Karaoke  2  (Max  Spec)  (in  e.g.  “min/max”  the  latter  is  for  instrumental)   -  Alternatively,  use  Manual  Ensemble  with  UVR  with  Max  Spec  using  x-minus’  UVR  BVE  v2  result  and  the  UVR  ensemble  result  from  the  above.   Or  single  model:  -  HP_KAROKEE-MSB2-3BAND-3090  (a.k.a.  VR's  6HP-Karaoke-UVR)  -  UVR  BV  v2  on  x-minus  (and  download  "Song  without  L.V.".  Better  solution,  newer,  different  
+model)
+ -  5HP  can  be  sometimes  better  than  6HP  (UVR5  GUI /  x-minus.pro /  Colab)  -  you  might  want  to  use  Kim  Vocal  2  or  voc_ft  or  1296  or  MDX23C  first  for  better  results.  -  UVR-BVE-4B_SN-44100-1   Q:  What  are  the  differences  between  Mel-Roformer  Karaoke  and  the  last  model?  A:  If  the  vocals  don't  contain  harmonies,  this  model  (Mel)  is  better.  In  other  cases,  it  is  better  
+to
+ 
+use
+ 
+the
+ 
+MDX+UVR
+ 
+Chain
+ 
+ensemble
+ 
+for
+ 
+now.
+  -  Gabox  denoise/debleed  Mel-Roformer  |  model |  yaml |  Colab “better  results  than  kar  v2”   -  Gabox  kar  v2  |  model |  yaml   -  De-echo  VR  model  in  UVR5  GUI  set  to  maximum  aggression   -  MedleyVox with  our  trained  model  (more  coherent  results  than  current  BV  models)   Or  ensemble  in  UVR:  "The  karaoke  ensemble  works  best  with  isolated  vocals  rather  than  the  full  track  itself"   -  VR  Arc:  6HP-Karaoke-UVR  -  MDX-Net:  UVR-MDX-NET  Karaoke  2  -  Demucs:  v4  |  htdemucs_ft   Or:  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

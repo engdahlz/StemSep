@@ -1,0 +1,54 @@
+[page 528/642]
+     22  instrumental  albums  and  some  single  tracks  (DL)  -  hard  to  align  for  inversion,  even  for  lossless,  sometimes  time  shifts  every  verse,  possible  artefacts/bleeding  after  inversion  to  be  cleaned  further  with  models.   
+127
+ 
+hip-hop
+ 
+instrumentals
+ 
+with
+ 
+vocal
+ 
+chops
+ 
+(duplicates
+ 
+from
+ 
+the
+ 
+above),
+ 
+and
+ 
+80
+ 
+with
+ scratches  or  harmonies  (DL)   Giliaan  stems  for  4  songs  (EDM/Dance/House)  and  Mainstream  Dataset  with  20  songs:  https://drive.google.com/drive/folders/1JbQRMYH9DT_vUHpf4jHwD80eC6VvpDZX Mirror  (with  messages  below)  https://discord.com/channels/708579735583588363/1286052299931652106/1304884347492372580  50  Produce  Like  a  Pro  multitracks  https://producelikeapro.com/blog/happy-new-year-2022-3/ https://producelikeapro.lpages.co/keep-truckin-multitracks-form/ Potentially  more:  https://www.youtube.com/playlist?list=PLnLOmVwRMCqS1ia3o9Vv0nG5sMgcFR9Tc   Sites:   https://promodj.com/tools There  is  a  lot  of  filtered  trash,  but  you  can  also  find  official  acapellas.   https://www.acapellas4u.co.uk/ Collection  of  40K  instrumentals  and  accapellas  (lossy,  rather  avoid  using  such  files  for  
+training,
+ 
+and
+ 
+search
+ 
+for
+ 
+lossless
+ 
+if
+ 
+possible)
+  https://isolated-tracks.com/ Multitracks.  Looks  like  paid,  but  it  has  also  few  pages  with  some  free  ones  (e.g.  Fleetwood  
+Mac,
+ 
+not
+ 
+sure
+ 
+if
+ 
+free)
+  https://www.multitracks.com/ This  is  also  paid,  but  it  has  less  known  music  “those  are  covers  from  famous  songs,  but  all  in  multitracks.  And  from  what  I've  listened  to  so  far,  is  that  they  are  pretty  conservative.  The  vocals  all  seem  to  be  dry  and  none  seem  to  contain  bleed  so  far.  Also,  the  instrument  stems  are  proper  /  not  mixed  up  with  other  instrumentals.  The  stems  are  the  exact  same  duration.   All  in  all,  a  solid  dataset  right  off-the-bat  imo.   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

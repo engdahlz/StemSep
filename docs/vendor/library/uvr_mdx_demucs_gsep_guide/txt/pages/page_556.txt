@@ -1,0 +1,46 @@
+[page 556/642]
+    -  Morcheeba  -  Blindfold  (crossbleeding  starting  @0:53)  -  Daniel  Masson  -  Les  Rubans  (crossbleeding  starting  @2:13)  -  Depeche  Mode  -  Sacred  (crossbleeding  starting  @0:00)  -  Goldfrapp  -  Utopia  (crossbleeding  starting  @0:11)  -  Da  Lata  -  Alice  (No  Pais  Da  Malandragem)  (crossbleeding  starting  @0:38)  -  Joe  Dassin  -  L'été  indien  (crossbleeding  starting  @0:24)  -  Led  Zeppelin  -  Kashmir  (crossbleeding  starting  @2:16)   List  of  songs  which  have  bleed  in  the  vocal  track  using  the  new  BS-Roformer  Revive  v1  
+experimental
+ 
+vocal
+ 
+model
+ 
+by
+ 
+unwa
+ 
+(dca’s
+ 
+contribution
+ 
+as
+ 
+well):
+  -  Travis  -  Sing  (FX  picked  up  in  vocal,  starting  @00:09)  -  Thievery  Corporation  -  Safar  (The  Journey)  (instrument  picked  up  in  vocal,  starting  
+@00:03)
+ -  Asian  Dub  Foundation  -  Tu  Meri  (instrument  picked  up  in  vocal,  starting  @02:33)  -  Thievery  Corporation  -  Radio  Retaliation  (FX  picked  up  in  vocal,  starting  @00:00)  -  Thierry  David  -  Huong  Vietnam  (erhu  picked  up  in  vocal,  starting  @00:35)  -  Deep  Forest  -  Dignity  (elec  guitar  picked  up  in  vocal,  starting  @00:36)  -  Zaz  -  Je  veux  (whole  kazoo  solo  picked  up  in  vocal,  starting  @02:08)  -  Archive  -  Fool  (harmonica  picked  up  in  vocal,  starting  @00:00)  -  Portishead  -  Humming  (FX  and  theremin  picked  up  in  vocal,  starting  @00:00)  -  Moby  -  Lift  Me  Up  (synth  picked  up  in  vocal,  starting  @00:00)  -  The  Cardigans  -  My  Favourite  Game  (guitar  picked  up  in  vocal,  starting  @00:10)  -  Talk  Talk  -  It's  My  Life  (FX  picked  up  in  vocal,  starting  @00:05)  -  Radiohead  -  The  National  Anthem  (various  FX  and  instruments  picked  up  in  vocal  
+throughout
+ 
+the
+ 
+song)
+ -  Zero  7  -  Distractions  (synth/FX  bleed  @00:07/@04:29)  -  Porcupine  Tree  -  What  Happens  Now?  (synth/FX/guitar  bleed  @~07:31)  -  Porcupine  Tree  -  Start  of  Something  Beautiful  (synth  bleed  @04:55)  -  Porcupine  Tree  -  The  Start  of  Something  Beautiful  (Live)  (synth  bleed  @04:38)  -  Porcupine  Tree  -  Don't  Hate  Me  (guitar  bleed  @00:29/@03:54)  -  Porcupine  Tree  -  Dark  Matter  (synth  bleed  @03:18/@05:42)  -  Porcupine  Tree  -  Arriving  Somewhere  but  Not  Here  (synth  bleed  @04:12,  elec  guitar  
+bleed
+ 
+@04:46)
+ -  Porcupine  Tree  -  Way  out  of  Here  (Live)  (synth  bleed  @00:13,  @06:36)  -  Radiohead  -  Pyramid  Song  (FX  bleed  @00:05/@04:08)  -  Talk  Talk  -  Happiness  is  Easy  (wind  instrument  bleed  @04:20)  -  The  Cinematic  Orchestra  -  Evolution  (scratching  bleed  @04:38)   -  Pink  Floyd  -  Dogs  (elec  guitar/fx/synth  bleed  at  times)  -  Archive  -  Again  (harmonica/fx/synth  bleed  at  times)  -  Archive  -  Lights  (fx/synth  bleed  at  times)   List  of  song  where  Roformer  SW  and  BS  2025.06  solves  the  problem  of  vocals/BV  
+crossbleeding
+ 
+in
+ 
+some
+ 
+songs
+ 
+by
+ 
+dca100fb8
+ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

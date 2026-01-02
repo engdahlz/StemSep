@@ -1,0 +1,107 @@
+[page 618/642]
+    2nd  one  "limiter.py"  is  a  fork  of  this  Safety  Limiter:  https://github.com/nhthn/safety-limiter/ (54line  to  change  the  audio  inputs)  You  have  "release"  and  "hold_time"  settings.  (no  threshold  here,  you  just  gain  the  input)  ---  Even  if  they  were  sounding  "ok"  with  normal  settings,  the  speed  performances  were  not  
+satisfying
+ 
+for
+ 
+any
+ 
+of
+ 
+them
+ 
+for
+ 
+the
+ 
+planned
+ 
+use,
+ 
+I
+ 
+will
+ 
+not
+ 
+develop
+ 
+them
+ 
+more,
+ 
+consider
+ 
+them
+ 
+as
+ 
+abandonware.
+ 
+But
+ 
+they
+ 
+can
+ 
+maybe
+ 
+be
+ 
+usefull
+ 
+for
+ 
+someone
+ 
+else.
+ 
+ from  pydub  import  AudioSegment,  effects     https://cdn.discordapp.com/attachments/773763762887852072/1167555636272316467/limiter.py https://cdn.discordapp.com/attachments/773763762887852072/1167555635928367265/pydub_comp_fork.py  You  can  use  this  technique  to  make  the  loudness  of  your  stems  consistent:   https://github.com/jeonchangbin49/musdb-XL to  get  better  results  with  your  model,  where  usually  there's  a  problem  with  proper  isolation  of  overly  compressed  music.   You  can  also  read  Aufr33  short  guide   on  his  approach  toward  this  problem  (plus  more  explanations  here)   For  a  problem  of  inconsistent  volume  in  mixture  vs  stems  when  a  limiter  is  used,  sidechain  
+mixture
+ 
+to
+ 
+a
+ 
+limiter.
+  Other  option,  more  close  to  real  world  processing  :  *  apply  (strong)  compressor/limiter  to  individual  stems  to  mimic  the  mixing  process  *  and  then  apply  (softer/lighter)  compressor/limiter  on  mixture  (with  sidechain  trick)  to  mimic  
+the
+ 
+mastering
+ 
+process.
+  Because  if  you  apply  too  much  limiting  on  the  mixture,  it  will  destroy  the  sound.  2-stage  
+dynamics
+ 
+processing
+ 
+is
+ 
+more
+ 
+transparent.
+  The  only  problem  with  the  technique  is  that  there  could  be  clipping  if  we  invert  one  or  more  
+stems
+ 
+over
+ 
+the
+ 
+mixture.
+ Unless  the  AIs  work  with  [32  bit]  floating  point  (not  integer!)   Exemplary  step-by-step  guide   I  used  side-chain  on  the  2  stems  with  source  3  as  input.  Somehow  I  had  to  set  the  threshold  to  -12db  (instead  of  the  OG  -24db)  i  applied  to  the  
+mixture
+ 
+(prolly
+ 
+coz
+ 
+12
+ 
+x
+ 
+2
+ 
+stems)
+ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

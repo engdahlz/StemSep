@@ -1,0 +1,26 @@
+[page 610/642]
+    https://github.com/comfyanonymous/ComfyUI#amd-gpus-experimental-windows-and-linux-rdna-3-35-and-4-only (RDNA  3-4  instructions  for  Python  manual  installation  using  DirectML  branch  of  UVR  to  use  
+with
+ 
+different
+ 
+backend)
+  https://github.com/comfyanonymous/ComfyUI#for-amd-cards-not-officially-supported-by-rocm (flags  for  RDNA  2-3)   https://github.com/patientx/ComfyUI-Zluda (Instructions  for  GCN4-RDNA4;   RDNA  2  with  HIP  6.2.4  and  experimental  6.4.2)   Using  hip  5.7.1  and  corresponding  ZLUDA  should  be  possible  on  RDNA2  too   https://github.com/CS1o/Stable-Diffusion-Info/wiki/Webui-Installation-Guides#amd-fooocus-with-zluda (Step  5  in  "Setting  up  Zluda"  a  bit  below  -  for  GPUs  below  RX  6800  or  9070/60,  and  instructions  above  the  point  are  there  for  6800  or  higher  too   https://github.com/CS1o/Stable-Diffusion-Info/wiki/Webui-Installation-Guides#rocm-hip-sdk-57-with-zluda-setup (Instructions  for  GCN4  [RX  400/500];  it  contains  a  step  with   pip  install  torch==2.2.1  torchvision==0.17.1  torchaudio==2.2.1  --index-url  
+https://download.pytorch.org/whl/cu118)
+  https://github.com/advanced-lvl-up/Rx470-Vega10-Rx580-gfx803-gfx900-fix-AMD-GPU#important-notes-on-installation (Instructions  for  GCN4  [GFX803  &  GFX900])   https://github.com/ROCm/ROCm/issues/4749#issuecomment-3117083336 (some  old  7900  XTX  (gfx11100)  troubleshooting  -  HIP  SDK  6.5  might  a  bit  less  crashy,   "Follow  the  instructions  at  https://github.com/patientx/ComfyUI-Zluda then  do  the  patches  at  https://github.com/patientx/ComfyUI-Zluda/issues/222)   Possible  complement  for  RX  6600/6700  (if  wasn’t  mentioned  in  the  instructions  above  
+already)
+ https://github.com/YellowRoseCx/koboldcpp-rocm/releases/download/deps-v6.2.0/rocblas-6.2.0.dll.7z extract  that  zip  file  into  C:/Program  Files/AMD/ROCm/6.1/bin/  it  should  merge  with  the  
+"rocblas"
+ 
+folder
+ 
+that's
+ 
+already
+ 
+in
+ 
+there.
+   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

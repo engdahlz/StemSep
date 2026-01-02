@@ -1,0 +1,112 @@
+[page 607/642]
+    At  this  moment,  training  works  only  on  Linux  or  WSL.   SDR  seems  to  be  higher  than  all  the  current  archs,  maybe  besides  Mel/BS  Roformers  
+(weren’t
+ 
+tested).
+ 
+“It's
+ 
+in
+ 
+between
+ 
+SCNet
+ 
+and
+ 
+Rofos
+ 
+but
+ 
+maybe
+ 
+more
+ 
+lightweight
+ 
+than
+ 
+them.
+ (...)  From  the  scores  from  MelBand  paper  [it  seems]  the  Rofos  are  still  like  +0.5  SDR  
+average
+ 
+above
+ 
+the
+ 
+other
+ 
+archs
+ 
+when
+ 
+trained
+ 
+on
+ 
+musdb18
+ 
+only.
+ But  it's  great  to  finally  see  some  mamba-inspired  MSS  arch  with  great  performance”.  As  for  22.09.24,  ZFTurbo  had  problems  with  low  SDR  during  training.   https://discord.com/channels/708579735583588363/1220364005034561628/1286650425596186645 https://discord.com/channels/708579735583588363/1220364005034561628/1284221988294099102   Another  three  very  promising  archs  for  the  moment:   Conformer  “performs  just  as  well  if  not  better  than  a  standard  Roformer”  https://arxiv.org/pdf/2005.08100 https://github.com/lucidrains/conformer (people  already  train  with  it,  and  its  implementation  might  be  pushed  to  the  MSST  repo  in  not  
+distant
+ 
+future)
+ https://github.com/ZFTurbo/Music-Source-Separation-Training/issues/169  Essid  pretrain:  https://huggingface.co/Essid/MelBandConformer/tree/main https://mvsep.com/quality_checker/entry/9087 “Due  to  cost  issues,  I'm  discontinuing  the  Mel-Band-Conformer  MUSDB18HQ-based  train.  
+I'm
+ 
+sharing
+ 
+the
+ 
+ckpt
+ 
+and
+ 
+config,
+ 
+so
+ 
+anyone
+ 
+who
+ 
+wants
+ 
+to
+ 
+continue
+ 
+can
+ 
+use
+ 
+them.”
+ It  has  shown steady  improvement  in  training  in  the  last  12  hours  from  epoch  0  to  83  (1  SDR  increase  on  private  validation  dataset,  probably  on  A100XL  (80GB)  on  “thunder  compute”  
+$1.05/hour)
+ 
+and
+ 
+the
+ 
+shared
+ 
+weight
+ 
+is
+ 
+epoch
+ 
+200+.
+   TF-Locoformer  https://arxiv.org/abs/2408.03440 https://github.com/merlresearch/tf-locoformer/blob/main/espnet2/enh/separator/tflocoformer_separator.py  “I  see  only  now  that  the  tf-locoformer  repo  was  updated  to  include  the  variants  published  few  
+months
+ 
+ago
+ 
+(TF-Locoformer-NoPE
+ 
+and
+ 
+BS-Locoformer)
+ https://github.com/merlresearch/tf-locoformer”  -  jarredou   dTTnet  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

@@ -1,0 +1,78 @@
+[page 432/642]
+    “I've  only  removed  the  denoise  double  pass  for  demucs_6s,  it's  activated  for  other  demucs  
+models.”
+  jarredou:  “you  can  use  a  workaround  to  have  MDX23C  InstVoc-HQ  results  only  with  (dead)  settings:  (all  weights  beside  MDXv3  set  to  0,  BigShifts_MDX  set  to  min.  of  1,  and  demucs  overlap  0  
+[at
+ 
+least
+ 
+for
+ 
+vocal_instru_only)
+ You  can  use  a  higher  "overlap_MDXv3"  value  than  in  the  screenshot  to  get  slightly  better  
+results.
+ (and  also,  as  it's  only  a  workaround,  it  will  still  process  the  audio  with  other  models,  but  they  
+will
+ 
+not
+ 
+be
+ 
+used
+ 
+for
+ 
+final
+ 
+result
+ 
+as
+ 
+their
+ 
+weights
+ 
+=
+ 
+0)
+ (MDX23C  InstVoc-HQ  =  MDXv3  here)   You  can  also  use  the  defaults  settings  &  weights,  as  it  scores  a  bit  higher  SDR  than  InstVoc  
+alone
+ 
+”
+  Be  aware  that  2.0 version  wasn’t  updated  with:   !python  -m  pip  install  ort-nightly-gpu  
+--index-url=https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ort-cuda-12-nig
+htly/pypi/simple/
+  Or  in  case  of  credential  issues,  you  can  try  out  this  instead:  !python  -m  pip  -q  install  onnxruntime-gpu  --extra-index-url  
+https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/
+simple/
+   Hence,  it’s  slow  (so  use  2.1-2.3  instead  as  they  work  as  intended  or  add  the  line  at  the  end  
+of
+ 
+the
+ 
+first
+ 
+cell
+ 
+yourself)
+  Explanations  on  features  added  in  2.2  Colab (2.2  might  have  more  residues  vs  2.1)  by  jarredou   What  are  BigShifts?   It's  based  on  Demucs'  shift  trick,  but  for  Demucs  it  is  limited  to  0.5  second  shifting  max  (with  
+a
+ 
+randomly
+ 
+chosen
+ 
+value).
+ Each  BigShifts  here  shifts  the  audio  by  1  second,  no  more  random  shfiting.  f.e.  bigshifts=2,  it  will  do  1  pass  with  0  shifting,  and  a  second  pass  with  1  second  shifting,  
+then
+ 
+merge
+ 
+the
+ 
+results
+ bigshifts=3  means  1  pass  with  0  shifting  +  1  pass  with  1  sec  shift  +  1  pass  with  2  sec  shift,  
+etc...
+  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

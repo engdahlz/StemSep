@@ -1,0 +1,66 @@
+[page 627/642]
+    Stable  Audio  Open  Gen  
+Available  on  MVSEP  in  the  Experimental  section.  It’s  not  for  separation,  but  generating  
+sounds.
+ 
+ZFTurbo:  “Algorithm  based  on  model:  
+https://huggingface.co/stabilityai/stable-audio-open-1.0 
+Audio  is  generated  in  Stereo  format  with  a  sample  rate  of  44.1  kHz  and  duration  up  to  47  
+seconds.
+ 
+The
+ 
+quality
+ 
+is
+ 
+quite
+ 
+high.
+ 
+It's
+ 
+better
+ 
+to
+ 
+make
+ 
+prompts
+ 
+in
+ 
+English.
+ 
+ Example  prompts:  
+1)  Sound  effects  generation:  cats  meow,  lion  roar,  dog  bark  
+2)  Sample  generation:  128  BPM  tech  house  drum  loop  
+3)  Specific  instrument  generation:  A  Coltrane-style  jazz  solo:  fast,  chaotic  passages  (200  
+BPM),
+ 
+with
+ 
+piercing
+ 
+saxophone
+ 
+screams
+ 
+and
+ 
+sharp
+ 
+dynamic
+ 
+changes
+ 
+ Examples:  
+Cat  meow: https://mvsep.com/result/20250612092110-b297c082fb-generated.wav 
+Dog  bark: https://mvsep.com/result/20250612115517-b297c082fb-generated.wav 
+128  BPM  tech  house  drum  loop: https://mvsep.com/result/20250612115841-b297c082fb-generated.wav 
+Violin  solo: https://mvsep.com/result/20250612120111-b297c082fb-generated.wav 
+Woman  sing  song  "Happy  Birthday  to  you": https://mvsep.com/result/20250612120433-b297c082fb-generated.wav”  
+  
+__________  
+Links  for  research  on  separation   https://github.com/facebookresearch/AudioMAE https://arxiv.org/abs/2310.02802 https://github.com/pbelcak/fastfeedforward https://github.com/corl-team/rebased  https://github.com/bowang-lab/U-Mamba/tree/main _____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

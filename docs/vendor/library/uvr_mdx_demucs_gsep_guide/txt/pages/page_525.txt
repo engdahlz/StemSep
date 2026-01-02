@@ -1,0 +1,78 @@
+[page 525/642]
+    https://gist.github.com/kiselecheck/df62174c5d986afcc5875300fd38bf9a  Cambridge  Multitrack  Library  https://multitracksearch.cambridge-mt.com/ms-mtk-search.htm A  nice  collection  of  legally  available  multitracks.  "I  believe  about  2/3rds  of  musdb18's  tracks  are  taken  from  this."   Great  for  dataset  for  creating  stem  specific  models  like  acoustic  guitars,  electric  guitars,  
+piano,
+ 
+etc.
+ 
+You
+ 
+will
+ 
+just
+ 
+get
+ 
+the
+ 
+stem
+ 
+file
+ 
+you
+ 
+want
+ 
+and
+ 
+combine
+ 
+the
+ 
+rest
+  DAMP-VSEP   https://zenodo.org/record/3553059 Smule  Digital  Archive  of  Mobile  Performances  -  Vocal  Separation  seems  to  be  a  really  big  dataset  of  instrumental-amateur  vocal-mix  with  compression  and  
+such
+ 
+triplets.
+  Metapop  https://metapop.com/competitions?p=1&status=ended&type=all “Most  of  them  have  a  click  through  to  download  stems.  You  might  need  to  automate  
+downloads
+ 
+using
+ 
+Simple
+ 
+Mass
+ 
+Downloader
+ 
+browser
+ 
+extension
+ 
+or
+ 
+something.
+ 
+Some
+ 
+are
+ 
+remix
+ 
+competitions,
+ 
+some
+ 
+a
+ 
+production,
+ 
+but
+ 
+all
+ 
+have
+ 
+stems."
+   Guitar  Hero  /  Rockband  stems  remixpacks.ru /  remixpacks.club (taken  down,  now  it’s  under  https://remixpacks.net/ address  [not  sure  if  the  site  content  is  the  same)   Python  script by  MissAllure  for  downloading  stems  from:  https://docs.google.com/spreadsheets/d/1BtUSgPffbcaW4bMuGClYi8FGvaYmYyc1p4SkfpNty-U/edit?gid=0#gid=0 (only  10,  but  you  can  change  it;  saves  you  from  having  to  open  links;  written  by  AI)   Remix  packs  master  post  (removed  dead  links)  -  still  has  like  2000+  stems   https://drive.google.com/file/d/11NrElQSjrXT_DbTL00r9OeMrrEBral3V/view?usp=sharing  Torrent:  or  here:  magnet:?xt=urn:btih:45a805dbd78b8dec796a0a127c4b4d2466ddbb9a  (list  with  names:  https://docs.google.com/spreadsheets/d/1uCWmuAUfvVLonbXp9sQUb9dEODYTHmPAOyvGxulMOCA/edit?usp=sharing)  Renamer  -  python  script  https://mega.nz/file/gEgwwaaB#BCDDMpl-VcIZDnNYQziyklOV9Vpf43wuc76hsS3JTlw Showcase  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

@@ -1,0 +1,30 @@
+[page 623/642]
+         y1,  sr1  =  librosa.load(file1)      y2,  sr2  =  librosa.load(file2)       true_peak1  =  np.max(np.abs(y1))      true_peak2  =  np.max(np.abs(y2))       difference  =  20  *  np.log10(true_peak1  /  true_peak2)       print(f"Diff_dBTP  :  The  difference  in  true  peak  between  the  two  audio  files  is  
+{difference:.6f}
+ 
+dB.")
+     ratio  =  10  **  (difference  /  20)      print(f"The  volume  of  sound2  is  {ratio:.6f}  times  that  of  sound1.\n")     if  __name__  ==  "__main__":      parser  =  argparse.ArgumentParser(description="Find  volume  difference  of  two  audio  
+files.")
+     parser.add_argument("file1",  help="Path  to  original  audio  file")      parser.add_argument("file2",  help="Path  to  extracted  audio  file")      args  =  parser.parse_args()           Diff_dBTP(args.file1,  args.file2)    Volume  compensation  values  for  various  models  (in  reality  they  may  differ  +/-  e.g.  by  
+0.00xxxx,
+ 
+but
+ 
+maybe
+ 
+not
+ 
+much
+ 
+more)
+  All  values  according  to  the  script  made  by  **jarredou**  *(All  default  but  Spectral  Inversion  -  Off;  Denoise  Output:  On;  -  the  latter  shouldn't  affect  the  
+results
+ 
+if
+ 
+turned
+ 
+off)*:
+     -    Kim  Vocal_1    -    1.012819     -    Kim  Vocal  2  -  1.009     -    voc_ft  -  1.021        -    Kim  ft  other  -  1.020  (Bas'  fine-tuned  and  SDR-validated)     -    UVR-MDX-NET  1     -    1.017194     -    UVR-MDX-NET  Inst  2     -    1.037748     -    UVR-MDX-NET  Inst  3     -    1.043115     -    UVR-MDX-NET  Inst  HQ  1     -    1.052259     -    UVR-MDX-NET  Inst  HQ  2     -    1.047476     -    UVR-MDX-NET  Inst  Main     -    1.037812  (actually  it  turned  out  to  be  1.025)     -    UVR-MDX-NET  Main     -    1.002124     -    UVR-MDX-NET-Inst_full_292     -    1.056003     -    UVR-MDX-NET_Inst_82_beta     -    1.088610  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

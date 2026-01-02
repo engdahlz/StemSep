@@ -1,0 +1,62 @@
+[page 332/642]
+     These  are  basically  the  top  single  models  for  now   (conventionally  after  these,  additional  vocal  residues  kick  in,  especially  if  not  a  vocal  model)  Based  on  Multisong  dataset  evaluation  on  MVSEP  chart  with  similar  or  the  same  parameters  
+and
+ 
+inference
+ 
+if
+ 
+applicable.
+  
+Kim’s
+ 
+Mel
+ 
+Roformer
+ model_bs_roformer_ep_317_sdr_12.9755  model_bs_roformer_ep_368_sdr_12.9628  (viperx/UVR  beta)  BS-Roformer_LargeV1  (unwa’s  ft)  Unwa's  Mel-Roformer  Beta  3  (although  for  this  day,  SDR  wasn’t  tested  with  the  same  
+parameters
+ 
+vs
+ 
+above,
+ 
+so
+ 
+it’s
+ 
+based
+ 
+on
+ 
+assumption
+ 
+that
+ 
+unwa
+ 
+used
+ 
+the
+ 
+same
+ 
+parameters
+ 
+in
+ 
+synth
+ 
+dataset
+ 
+measurement)
+ Unwa's  Mel-Roformer  Beta  4  Unwa's  Mel-Roformer  Beta  5e  0)  InstVoc  MDX23C  HQ  (fullband  a.k.a.  1648,  8K  FFT)  0b)  InstVoc  MDX23C  HQ  2  (fullband)  1)  voc_ft  1b)  UVR-MDX-NET  HQ_4  (inst)  2)  MDX23C_D1581  (a.k.a.  narrowband)  3)  Kim  Vocal  2  4)  Kim  Vocal  1  5)  UVR-MDX-NET_Main_427  (voc)  6)  UVR-MDX-NET_Main_406  (voc)  7)  UVR-MDX-NET  HQ_5  (inst)  7)  UVR-MDX-NET  HQ_3  (inst)  8)  UVR-MDX-NET_Main_438  (voc)  9)  UVR-MDX-NET_Main_390  (voc)  10)  Kim  inst  (a.k.a.  other)  11)  UVR-MDX-NET_Main_340  (voc)  12)  Inst  3  (a.k.a.  464)  13)  UVR-MDX-NET  HQ_2  (inst)   (for  vocal  models,  here  start  those  with  more  vocal  residues  in  instrumentals  -  can  be  still  
+handy
+ 
+for
+ 
+specific
+ 
+songs)
+ +4  pos.   9)  Inst  Main  (496)  10)  Inst  2  11)  UVR-MDX-NET  HQ1  12)  UVR-MDX-NET  HQ  337  >382>338  epoch  13)  Inst  1  14)  HQ  386>403>292  epoch  15)  UVR-MDX-NET2>NET3>NET1>9482  (NET3  a.k.a.  9.7)  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

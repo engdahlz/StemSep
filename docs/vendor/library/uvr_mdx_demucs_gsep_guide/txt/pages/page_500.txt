@@ -1,0 +1,21 @@
+[page 500/642]
+    Download  Apple  Music  ALAC  Downloader  -  https://github.com/adoalin/apple-music-alac-downloader Extract  content  to  any  folder.   1)  Install  Android  Studio  Create  a  virtual  device  on  Android  Studio  with  an  image  that  doesn't  have  Google  APIs.   2)  Install  SAI  -  https://github.com/Aefyr/SAI Install  Apple  Music  3.6.0  beta  4  -  https://www.apkmirror.com/apk/apple/apple-music/apple-music-3-6-0-beta-release/apple-music-3-6-0-beta-4-android-apk-download/ Launch  Apple  Music  and  sign  in  to  your  account.  Subscription  required.   3)  Open  Terminal  adb  forward  tcp:10020  tcp:10020  if  u  get  a  msg  that  there  are  more  than  1  emulator/devices  running,  seek  up  
+NTKDaemonService
+ 
+in
+ 
+task
+ 
+manager/services
+ 
+and
+ 
+stop
+ 
+it
+ adb  root  cd  frida-server-16.2.1-android-x86_64  adb  push  frida-server-16.2.1-android-x86_64  /data/local/tmp/  adb  shell  "chmod  755  /data/local/tmp/frida-server-16.2.1-android-x86_64"  adb  shell  "/data/local/tmp/frida-server-16.2.1-android-x86_64  &"  The  steps  above  place  Frida-server  on  your  Android  device  and  starts  the  Frida-server.   4)  Open  a  new  Terminal  window  Change  directory  to  Apple  Music  ALAC  Downloader  folder  location  pip  install  frida-tools  frida  -U  -l  agent.js  -f  com.apple.android.music   5)  Open  a  new  Terminal  window  Change  directory  to  Apple  Music  ALAC  Downloader  folder  location  Start  downloading  some  albums:  go  run  main.go  https://music.apple.com/us/album/beautiful-things-single/1724488123  go  run  main_atmos.go  "https://music.apple.com/hk/album/ 周 杰 倫 地 表 最 強 世 界 巡 迴 演 唱 會
+/1721464851"
+ 
+  -  from  Apple  Music  (alternative  tool)  https://rentry.co/AppleMusicDecrypt (after  March  5,  2025  get  WSA  from  here:  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

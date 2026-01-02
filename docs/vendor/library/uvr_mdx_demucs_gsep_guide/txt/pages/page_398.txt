@@ -1,0 +1,66 @@
+[page 398/642]
+    6)  VR  3  band  model  (gives  better  results  on  some  songs  like  K  Pop)  HP2-MAIN-MSB2-3BAND-3090 (I  think  default  aggresiveness  was  0.3)   7)  deprecated  -  in  many  cases  lot  of  bleeding  (not  every  time)  but  in  some  cases  it  hurts  
+some
+ 
+instruments
+ 
+less
+ 
+than
+ 
+all
+ 
+above
+ 
+models
+ 
+(e.g.
+ 
+quiet
+ 
+claps).
+  MGM-v5-4Band-44100-BETA2/  (MGM-v5-4Band-44100-_arch-default-BETA2)   /BETA1  Agg  0.9,  TTA,  WS:  272   Sometimes  I  use  Lossless-Cut  to  merge  beta1  and  beta2  certain  fragments.   Models  from  point  4  surpasses  ensemble  of  both  BETA1  and  BETA2  models.   (!)  Interesting  results  (back  in  2021)   “Whoever  wants  to  know  the  HP1,  HP2  plus  v4  STACKED  model  method,  I  have  a  [...]  group  
+explaining
+ 
+it"
+ https://discord.gg/PHbVxrV4yS Long  story  short  -  you  need  to  ensemble  HP1  and  HP2  models,  then  on  top  of  it,  apply  
+stacked
+ 
+model
+ 
+from
+ 
+v4.
+ Be  aware  that  ensemble  with  postprocessing  in  Colab  doesn't  work.   Instruction:   1  Open  this  link  https://colab.research.google.com/drive/189nHyAUfHIfTAXbm15Aj1Onlog2qcCp0?usp=sharing 2.  Proceed  all  the  steps  3.  After  mounting  GDrive  upload  your,  at  best,  lossless  song  to  GDrive\MDX\tracks  4.  Uncheck  download  as  MP3,  begin  isolation  step  5.  Download  the  track  from  "separated"  folder  on  your  GDrive.  You  can  use  GDrive  preview  
+on
+ 
+the
+ 
+left.
+  1*.  Alternatively,  if  you  have  a  paid  account  here,  upload  your  song  to:  https://x-minus.pro/ai?hp Make  sure  you  have  "mdx"  selected  for  the  AI  Model  option.  Wait  for  it  to  finish  processing.  2*.  Set  the  download  format  to  "wav"  then  click  "DL  Music."  Store  the  resulting  file  in  the  
+ROOT
+ 
+of
+ 
+your
+ 
+UVR
+ 
+installation.
+  6.  Use  a  combination  of  UVR  models  to  remove  the  vocals.  Experiment  to  see  what  works  
+with
+ 
+what.
+ 
+Here's
+ 
+a
+ 
+good
+ 
+starting
+ 
+point:
+ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

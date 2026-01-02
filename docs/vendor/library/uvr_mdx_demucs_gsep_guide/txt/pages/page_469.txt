@@ -1,0 +1,86 @@
+[page 469/642]
+    Colab  old  https://colab.research.google.com/drive/17G3BPOPBPcwQdXwFiJGo0pKrz-kZ4SdU Older  Colab  https://colab.research.google.com/drive/1EHJFBSDd5QJH1FQV7z0pbDRvz8yXQvhk (The  same  one,  but  here  you  need  to  change  the  .ckpt,  .json  and  .pth  files  there  from  Cyrus  
+[more
+ 
+details
+ 
+in
+ 
+the
+ 
+video
+ 
+above].)
+  ____________________________________________________________________   About  other  services:   Check  this chart  by  Bas  Curtiz  to  check  what  AIs  use  various  (also  online)  services,  plus  their  pricing.    At  this  point  everything  mentioned  above  this  link  for  at  least  instrumentals,  vocals,  4-6  
+stems
+ 
+is
+ 
+better
+ 
+than
+ 
+below,
+ 
+(with
+ 
+exceptions
+ 
+for
+ 
+some
+ 
+single
+ 
+stems
+ 
+described
+ 
+at
+ 
+the
+ 
+top)
+ 
+commonly
+ 
+known
+ 
+services:
+  
+ Spleeter   and  its  implementation  in:   Izotope  RX-8/9/10   which  just  uses  22kHz  models  instead  of  16kHz  in  the  original  Spleeter.  There  is  no  point  in  
+using
+ 
+these
+ 
+anymore.
+ 
+The
+ 
+same
+ 
+goes
+ 
+to
+ 
+most
+ 
+AIs
+ 
+described
+ 
+below
+ 
+(or
+ 
+only
+ 
+for
+ 
+specific
+ 
+stems):
+ voiceremover.org,  lalal.ai,   phonicmind  melody.ml  RipX,  Demix,   ByteDance  Ripple/CapCut  beatstorapon  For  reference,  you  can  check  a  comparison chart  on  MVSEP.com,   or  results  of  demixing  challenge from  Sony  (kimberley_jensen  there  is  9.7  MDX-UVR  model  for  vocals  -  2nd  best  on  the  time)   and  watch  this comparison.   To  hear  4  stems  models  comparison  samples  you  can  watch  this video  comparison  (December  2022).  It  all  also  refers  to  new:  
+real-time   AI  separation  tools  like   Serato   and   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  
