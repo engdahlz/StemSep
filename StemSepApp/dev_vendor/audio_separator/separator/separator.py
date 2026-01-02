@@ -122,7 +122,8 @@ class Separator:
 
         # Skip initialization logs if info_only is True
         if not info_only:
-            package_version = self.get_package_distribution("audio-separator").version
+            dist = self.get_package_distribution("audio-separator")
+            package_version = dist.version if dist is not None else "vendored"
             self.logger.info(f"Separator version {package_version} instantiating with output_dir: {output_dir}, output_format: {output_format}")
 
         if output_dir is None:
@@ -185,6 +186,10 @@ class Separator:
         # These are parameters which users may want to configure so we expose them to the top-level Separator class,
         # even though they are specific to a single model architecture
         self.arch_specific_params = {"MDX": mdx_params, "VR": vr_params, "Demucs": demucs_params, "MDXC": mdxc_params}
+
+        # Optional: caller-provided progress callback(percent, message)
+        # (Set by StemSep wrapper; forwarded to architecture separators via CommonSeparator)
+        self.progress_callback = None
 
         self.torch_device = None
         self.torch_device_cpu = None
@@ -744,6 +749,7 @@ class Separator:
             "model_name": model_name,
             "model_path": model_path,
             "model_data": model_data,
+            "progress_callback": getattr(self, "progress_callback", None),
             "output_format": self.output_format,
             "output_bitrate": self.output_bitrate,
             "output_dir": self.output_dir,

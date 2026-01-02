@@ -317,7 +317,14 @@ class MDXCSeparator(CommonSeparator):
                 result = torch.zeros(req_shape, dtype=torch.float32)
                 counter = torch.zeros(req_shape, dtype=torch.float32)
 
-                for i in tqdm(range(0, mix.shape[1], step)):
+                total_chunks = max(1, (int(mix.shape[1]) + int(step) - 1) // int(step))
+
+                for chunk_idx, i in enumerate(tqdm(range(0, mix.shape[1], step)), start=1):
+                    pct = min(100.0, (chunk_idx / total_chunks) * 100.0)
+                    self._emit_progress(
+                        pct,
+                        f"Processing chunk {chunk_idx}/{total_chunks}",
+                    )
                     part = mix[:, i : i + chunk_size]
                     length = part.shape[-1]
                     if i + chunk_size > mix.shape[1]:
@@ -384,7 +391,13 @@ class MDXCSeparator(CommonSeparator):
 
             with torch.no_grad():
                 count = 0
-                for batch in tqdm(batches):
+                total_batches = max(1, len(batches))
+                for batch_idx, batch in enumerate(tqdm(batches), start=1):
+                    pct = min(100.0, (batch_idx / total_batches) * 100.0)
+                    self._emit_progress(
+                        pct,
+                        f"Processing batch {batch_idx}/{total_batches}",
+                    )
                     # Since the model processes the audio data in batches, single_batch_result temporarily holds the model's output
                     # for each batch before it is accumulated into accumulated_outputs.
                     single_batch_result = self.model_run(batch.to(self.torch_device))

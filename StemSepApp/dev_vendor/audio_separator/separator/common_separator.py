@@ -4,6 +4,8 @@ from logging import Logger
 import os
 import re
 import gc
+import time
+from typing import Callable, Optional
 import numpy as np
 import librosa
 import torch
@@ -83,6 +85,13 @@ class CommonSeparator:
         self.invert_using_spec = config.get("invert_using_spec")
         self.sample_rate = config.get("sample_rate")
         self.use_soundfile = config.get("use_soundfile")
+
+        # Optional progress reporting hook (percent, message)
+        self.progress_callback: Optional[Callable[[float, str], None]] = config.get(
+            "progress_callback"
+        )
+        self._progress_last_emit_time: float = 0.0
+        self._progress_last_emit_pct: Optional[float] = None
         
         # Roformer-specific loading support
         self.roformer_loader = None
@@ -134,6 +143,44 @@ class CommonSeparator:
         self.secondary_stem_output_path = None
 
         self.cached_sources_map = {}
+
+    def _emit_progress(self, percent: float, message: str, force: bool = False):
+        """Best-effort progress callback with lightweight throttling.
+
+        Many separation loops can iterate thousands of times; we keep this cheap and
+        avoid spamming IPC/logs while still providing meaningful chunk progress.
+        """
+        cb = self.progress_callback
+        if not callable(cb):
+            return
+
+        try:
+            pct = float(percent)
+        except Exception:
+            return
+
+        now = time.perf_counter()
+
+        # Always allow first/forced updates and terminal-ish values.
+        terminal = pct <= 0.0 or pct >= 100.0
+        if not force and not terminal and self._progress_last_emit_time:
+            dt = now - self._progress_last_emit_time
+            dp = (
+                abs(pct - self._progress_last_emit_pct)
+                if self._progress_last_emit_pct is not None
+                else 999.0
+            )
+            if dt < 0.75 and dp < 1.0:
+                return
+
+        self._progress_last_emit_time = now
+        self._progress_last_emit_pct = pct
+
+        try:
+            cb(pct, str(message))
+        except Exception:
+            # Never let progress reporting break separation.
+            return
 
     def secondary_stem(self, primary_stem: str):
         """Determines secondary stem name based on the primary stem name."""
