@@ -1,0 +1,81 @@
+# StemSepApp development & test dependencies (Windows-focused)
+#
+# Purpose:
+# - Make `py -3.12 -m pip install -r StemSepApp/requirements-dev.txt` a reproducible
+#   baseline for running `py -3.12 -m pytest StemSepApp/tests`.
+#
+# Notes:
+# - CUDA-enabled PyTorch wheels are not installed from PyPI. Install torch/torchaudio
+#   separately from the PyTorch CUDA index URL (see below).
+# - Keep this file intentionally "dev/test only". Runtime deps belong in the app's
+#   main requirements / packaging config.
+#
+# Recommended install sequence (Windows, Python 3.12):
+#   py -3.12 -m pip install --upgrade pip
+#   py -3.12 -m pip install -r StemSepApp/requirements-dev.txt
+#   py -3.12 -m pip install torch --index-url https://download.pytorch.org/whl/cu121
+#   py -3.12 -m pip install torchaudio --index-url https://download.pytorch.org/whl/cu121
+#   py -3.12 -m pytest -q StemSepApp/tests
+#
+# If you want CPU-only torch instead:
+#   py -3.12 -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   py -3.12 -m pip install torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# ---- Test runner ----
+pytest==9.0.2
+
+# ---- Core test import deps (commonly required during test collection) ----
+PyYAML==6.0.3
+soundfile==0.13.1
+
+# ---- ONNX runtime (used by vendored audio-separator paths) ----
+onnxruntime==1.23.2
+
+# ---- Vendored audio-separator imports ----
+requests==2.32.5
+tqdm==4.67.1
+
+# ---- Model/vendor utilities used by some architecture wiring tests ----
+librosa==0.11.0
+spafe==0.3.3
+
+# librosa dependency stack (pin for reproducibility)
+# (pip will resolve these automatically, but pinning reduces "works on my machine" drift)
+audioread==3.1.0
+decorator==5.2.1
+joblib==1.5.3
+lazy_loader==0.4
+msgpack==1.1.2
+numba==0.63.1
+llvmlite==0.46.0
+pooch==1.8.2
+scikit-learn==1.8.0
+scipy==1.16.3
+soxr==1.0.0
+threadpoolctl==3.6.0
+
+# requests dependency stack (pin for reproducibility)
+certifi==2025.11.12
+charset-normalizer==3.4.4
+idna==3.11
+urllib3==2.6.2
+
+# onnxruntime logging deps
+coloredlogs==15.0.1
+flatbuffers==25.12.19
+protobuf==6.33.2
+humanfriendly==10.0
+pyreadline3==3.5.4
+
+# Shared low-level deps
+cffi==2.0.0
+pycparser==2.23
+colorama==0.4.6
+iniconfig==2.3.0
+packaging==25.0
+pluggy==1.6.0
+pygments==2.19.2
+typing_extensions==4.15.0
+
+# Numpy is widely used across the codebase; keep it pinned to avoid ABI surprises.
+numpy==2.3.5

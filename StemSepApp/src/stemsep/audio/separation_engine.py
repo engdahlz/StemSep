@@ -3,15 +3,22 @@ Audio stem separation engine
 """
 
 import asyncio
+import gc
+import json
 import logging
+import os
 import tempfile
+import time
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
+
 import yaml
+
 
 # Add tuple constructor for safe_load to handle !!python/tuple tags in configs
 def tuple_constructor(loader, node):
     return tuple(loader.construct_sequence(node))
+
 
 yaml.SafeLoader.add_constructor("tag:yaml.org,2002:python/tuple", tuple_constructor)
 
@@ -40,12 +47,12 @@ try:
 except ImportError:
     DEMUCS_AVAILABLE = False
 
-from models.architectures.demucs_wrapper import DemucsModel
-from models.architectures.mdxnet import MDXNetModel
+from stemsep.models.architectures.demucs_wrapper import DemucsModel
+from stemsep.models.architectures.mdxnet import MDXNetModel
 
 # Pitch preprocessing for improved high-frequency separation
 try:
-    from audio.pitch_preprocessor import (
+    from stemsep.audio.pitch_preprocessor import (
         PRESET_DRUMS_CYMBALS,
         PRESET_SOPRANO_VOCALS,
         restore_pitch,
@@ -57,10 +64,10 @@ except ImportError:
     PITCH_PREPROCESS_AVAILABLE = False
 
 # Simple separator using audio-separator library (proven to work, like UVR5-UI)
-from audio.simple_separator import SimpleSeparator
+# Imported lazily since it depends on onnxruntime.
 
 
-def _get_windowing_array(window_size: int, fade_size: int) -> torch.Tensor:
+def _get_windowing_array(window_size: int, fade_size: int) -> "torch.Tensor":
     """
     Generate a windowing array with linear fade-in at beginning and fade-out at end.
 
@@ -83,12 +90,64 @@ def _get_windowing_array(window_size: int, fade_size: int) -> torch.Tensor:
     return window
 
 
-# Overlap Settings (per NotebookLM recommendations)
-# Higher overlap = better quality but slower; too high causes muddiness/misalignment
-OVERLAP_FAST = 2  # Safest for low VRAM (4GB), fastest
-OVERLAP_BALANCED = 4  # Good SDR, reasonable speed
-OVERLAP_QUALITY = 8  # Sweet spot, requires dim_t >= 801
-OVERLAP_MAX = 16  # Diminishing returns, may cause muddiness
+# Overlap Settings (guide-style: integer overlap >= 2)
+# In MSST/UVR contexts overlap is typically expressed as an integer "num_overlap"/divisor
+# (2, 3, 4, 8, ...). Higher values generally increase quality but cost time/VRAM.
+#
+# IMPORTANT: In this codebase we accept an `overlap` input that may be:
+#   - float in [0, 1): overlap_fraction, where step ~= chunk_size * (1 - overlap_fraction)
+#   - int   >= 2: overlap_divisor / num_overlap, where step = chunk_size / overlap_int
+#
+# The helper `_resolve_overlap_int(...)` normalizes to overlap_int >= 2.
+OVERLAP_FAST = 2  # Fastest / lowest VRAM
+OVERLAP_BALANCED = 4  # Default quality/speed balance
+OVERLAP_QUALITY = 8  # Higher quality, slower
+OVERLAP_MAX = 16  # Diminishing returns
+
+
+def _resolve_overlap_int(overlap: float, logger=None) -> int:
+    """
+    Normalize overlap setting into a guide-style integer overlap >= 2.
+
+    Accepted input forms:
+      - overlap is None: returns OVERLAP_BALANCED
+      - 0 <= overlap < 1: treat as overlap_fraction; map -> overlap_int via 1/(1-overlap)
+      - overlap >= 1: treat as overlap_int/divisor (requires integer-ish values)
+
+    Returns:
+      int overlap_int in [2, 50] (clamped) to keep behavior stable.
+    """
+    if overlap is None:
+        return OVERLAP_BALANCED
+
+    try:
+        ov = float(overlap)
+    except Exception:
+        # Unknown type; fall back to balanced.
+        if logger:
+            logger.warning(
+                f"Unrecognized overlap value {overlap!r}; using OVERLAP_BALANCED={OVERLAP_BALANCED}."
+            )
+        return OVERLAP_BALANCED
+
+    if ov < 0:
+        if logger:
+            logger.warning(
+                f"Overlap {ov} < 0 is invalid; using OVERLAP_BALANCED={OVERLAP_BALANCED}."
+            )
+        return OVERLAP_BALANCED
+
+    # Fraction form (UI-friendly): map to overlap_int
+    if ov < 1.0:
+        denom = max(1e-6, 1.0 - ov)
+        overlap_int = int(round(1.0 / denom))
+    else:
+        # Integer/divisor form
+        overlap_int = int(round(ov))
+
+    # Guide note: overlap should be >= 2 to avoid clicks in many chunked pipelines.
+    overlap_int = max(2, min(50, overlap_int))
+    return overlap_int
 
 
 def validate_overlap(overlap: int, dim_t: int, logger=None) -> int:
@@ -223,32 +282,182 @@ class SeparationEngine:
     # Note: MDX23C uses SimpleSeparator's built-in handler, not zfturbo_wrapper
     ZFTURBO_ARCHITECTURES = ["Mel-Roformer", "BS-Roformer", "SCNet"]
 
+    # Structured error codes for device / CUDA failures. These codes are intended to be
+    # propagated to the backend/UI so we can show actionable messages to end users.
+    CUDA_ERROR_NOT_AVAILABLE = "CUDA_NOT_AVAILABLE"
+    CUDA_ERROR_DEVICE_INVALID = "CUDA_DEVICE_INVALID"
+    CUDA_ERROR_INIT_FAILED = "CUDA_INIT_FAILED"
+    CUDA_ERROR_OOM = "CUDA_OOM"
+    CUDA_ERROR_RUNTIME = "CUDA_RUNTIME_ERROR"
+
     def __init__(self, model_manager=None, gpu_enabled: bool = True):
         self.logger = logging.getLogger("StemSep")
         self.model_manager = model_manager
         self.gpu_enabled = gpu_enabled and TORCH_AVAILABLE and torch.cuda.is_available()
         self.device = torch.device("cuda" if self.gpu_enabled else "cpu")
         self.progress_callbacks: List[Callable] = []
-        
+
         # Model cache for faster repeated separations
         # Key: model_id, Value: loaded model/separator instance
         self._model_cache: Dict[str, any] = {}
         self._cache_max_size: int = 2  # Keep max 2 models in VRAM
         self._cache_order: List[str] = []  # LRU tracking
 
-        # Initialize SimpleSeparator (uses audio-separator library like UVR5-UI)
-        # Use model_manager's models_dir if available, otherwise default
+        # SimpleSeparator (audio-separator) depends on onnxruntime and is initialized lazily.
+        # Use model_manager's models_dir if available, otherwise default.
         if model_manager and hasattr(model_manager, "models_dir"):
-            models_dir = model_manager.models_dir
+            self.models_dir = Path(model_manager.models_dir)
         else:
-            models_dir = Path.home() / ".stemsep" / "models"
-        self.simple_separator = SimpleSeparator(models_dir=str(models_dir))
+            self.models_dir = Path.home() / ".stemsep" / "models"
+        self.simple_separator = None
 
         self.logger.info(f"SeparationEngine initialized on {self.device}")
 
     def add_progress_callback(self, callback: Callable):
         """Add a progress callback"""
         self.progress_callbacks.append(callback)
+
+    def _raise_cuda_error(
+        self,
+        code: str,
+        message: str,
+        *,
+        device: Optional[str] = None,
+        details: Optional[str] = None,
+    ):
+        """Raise a structured CUDA/device error.
+
+        NOTE: We intentionally do NOT fall back to CPU. The caller/UI should make an explicit choice.
+        """
+        payload = {
+            "code": code,
+            "message": message,
+            "device": device,
+            "details": details,
+        }
+        # Use json so downstream layers can parse reliably even if message includes colons/newlines.
+        raise RuntimeError(
+            "STEMSEP_DEVICE_ERROR " + json.dumps(payload, ensure_ascii=False)
+        )
+
+    def _preflight_validate_device(
+        self, device: Optional[str]
+    ) -> Optional["torch.device"]:
+        """Validate requested device and ensure CUDA is actually usable.
+
+        Returns a torch.device to use for separation, or None to indicate "use engine default".
+        """
+        if not device:
+            return None
+
+        device_str = str(device).strip()
+        if not device_str:
+            return None
+
+        # Normalize common values
+        if device_str.lower() == "cuda":
+            device_str = "cuda:0"
+
+        # CPU always allowed
+        if device_str.lower() == "cpu":
+            return torch.device("cpu") if TORCH_AVAILABLE else None
+
+        # Any CUDA request must be validated strictly
+        if device_str.lower().startswith("cuda"):
+            if not TORCH_AVAILABLE:
+                self._raise_cuda_error(
+                    self.CUDA_ERROR_NOT_AVAILABLE,
+                    "CUDA was requested but PyTorch is not available in this environment.",
+                    device=device_str,
+                )
+
+            # torch is available but CUDA may not be
+            if not torch.cuda.is_available():
+                # This typically indicates a CPU-only torch build, missing driver, or misconfigured runtime.
+                details = None
+                try:
+                    details = (
+                        f"torch.version.cuda={getattr(torch.version, 'cuda', None)}"
+                    )
+                except Exception:
+                    details = None
+                self._raise_cuda_error(
+                    self.CUDA_ERROR_NOT_AVAILABLE,
+                    "CUDA was requested but torch.cuda.is_available() is false. Install a CUDA-enabled PyTorch build and ensure NVIDIA drivers are installed.",
+                    device=device_str,
+                    details=details,
+                )
+
+            # Validate index if provided
+            idx = 0
+            if ":" in device_str:
+                try:
+                    idx = int(device_str.split(":", 1)[1])
+                except Exception:
+                    self._raise_cuda_error(
+                        self.CUDA_ERROR_DEVICE_INVALID,
+                        f"Invalid CUDA device string: '{device_str}'. Expected 'cuda' or 'cuda:<index>'.",
+                        device=device_str,
+                    )
+
+            try:
+                count = int(torch.cuda.device_count())
+            except Exception as e:
+                self._raise_cuda_error(
+                    self.CUDA_ERROR_INIT_FAILED,
+                    "Failed to query CUDA device count. CUDA runtime may be unavailable or misconfigured.",
+                    device=device_str,
+                    details=str(e),
+                )
+
+            if count <= 0:
+                self._raise_cuda_error(
+                    self.CUDA_ERROR_NOT_AVAILABLE,
+                    "CUDA was requested but no CUDA devices were reported by PyTorch.",
+                    device=device_str,
+                )
+
+            if idx < 0 or idx >= count:
+                self._raise_cuda_error(
+                    self.CUDA_ERROR_DEVICE_INVALID,
+                    f"CUDA device index out of range: {idx}. Available devices: 0..{count - 1}.",
+                    device=device_str,
+                )
+
+            # Smoke test CUDA context by allocating a tiny tensor on the requested device.
+            try:
+                d = torch.device(f"cuda:{idx}")
+                _ = torch.tensor([0.0], device=d)
+                return d
+            except RuntimeError as e:
+                msg = str(e)
+                if "out of memory" in msg.lower():
+                    self._raise_cuda_error(
+                        self.CUDA_ERROR_OOM,
+                        "CUDA ran out of memory during device preflight. Try a smaller segment size or use CPU.",
+                        device=device_str,
+                        details=msg,
+                    )
+                self._raise_cuda_error(
+                    self.CUDA_ERROR_INIT_FAILED,
+                    "Failed to initialize the requested CUDA device. Check NVIDIA drivers/CUDA runtime and your PyTorch CUDA build.",
+                    device=device_str,
+                    details=msg,
+                )
+            except Exception as e:
+                self._raise_cuda_error(
+                    self.CUDA_ERROR_INIT_FAILED,
+                    "Unexpected error during CUDA device preflight.",
+                    device=device_str,
+                    details=str(e),
+                )
+
+        # Unknown device string
+        self._raise_cuda_error(
+            self.CUDA_ERROR_DEVICE_INVALID,
+            f"Unsupported device string: '{device_str}'. Expected 'cpu' or 'cuda:<index>'.",
+            device=device_str,
+        )
 
     def _notify_progress(self, progress: float, message: str = ""):
         """Notify progress callbacks"""
@@ -257,9 +466,9 @@ class SeparationEngine:
                 callback(progress, message)
             except Exception as e:
                 self.logger.error(f"Progress callback error: {e}")
-    
+
     # ==================== Model Cache Management ====================
-    
+
     def _get_cached_model(self, model_id: str) -> Optional[any]:
         """Get model from cache if available, updating LRU order."""
         if model_id in self._model_cache:
@@ -270,40 +479,82 @@ class SeparationEngine:
             self.logger.info(f"Model cache hit: {model_id}")
             return self._model_cache[model_id]
         return None
-    
+
     def _cache_model(self, model_id: str, model: any):
         """Cache model, evicting oldest if at capacity."""
         # Check if already cached
         if model_id in self._model_cache:
             return
-        
+
         # Evict oldest if at capacity
         while len(self._model_cache) >= self._cache_max_size and self._cache_order:
             oldest_id = self._cache_order.pop(0)
             if oldest_id in self._model_cache:
                 self.logger.info(f"Evicting model from cache: {oldest_id}")
                 del self._model_cache[oldest_id]
-                self._cleanup_memory()
-        
+                self._cleanup_memory(force=True)
+
         # Add to cache
         self._model_cache[model_id] = model
         self._cache_order.append(model_id)
-        self.logger.info(f"Cached model: {model_id} (cache size: {len(self._model_cache)})")
-    
+        self.logger.info(
+            f"Cached model: {model_id} (cache size: {len(self._model_cache)})"
+        )
+
     def clear_model_cache(self):
         """Clear all cached models and free memory."""
         self._model_cache.clear()
         self._cache_order.clear()
-        self._cleanup_memory()
+        self._cleanup_memory(force=True)
         self.logger.info("Model cache cleared")
-    
-    def _cleanup_memory(self):
-        """Clean up GPU memory."""
-        if TORCH_AVAILABLE and torch.cuda.is_available():
-            torch.cuda.empty_cache()
-            import gc
-            gc.collect()
 
+    def _cleanup_memory(self, force: bool = False):
+        """Clean up memory.
+
+        Avoid clearing CUDA caches aggressively: it defeats model caching and can hurt performance.
+        Set env `STEMSEP_AGGRESSIVE_GPU_CLEANUP=1` to revert to the old behavior.
+        """
+        if TORCH_AVAILABLE and torch.cuda.is_available():
+            aggressive = os.getenv("STEMSEP_AGGRESSIVE_GPU_CLEANUP", "").lower() in (
+                "1",
+                "true",
+                "yes",
+            )
+            should_clear = bool(force or aggressive)
+            if not should_clear:
+                try:
+                    free_b, total_b = torch.cuda.mem_get_info()
+                    should_clear = bool(total_b) and (free_b / float(total_b)) < 0.15
+                except Exception:
+                    should_clear = False
+
+            if should_clear:
+                torch.cuda.empty_cache()
+                try:
+                    torch.cuda.ipc_collect()
+                except Exception:
+                    pass
+
+        gc.collect()
+
+    def _get_simple_separator(self):
+        if self.simple_separator is not None:
+            return self.simple_separator
+
+        try:
+            from stemsep.audio.simple_separator import SimpleSeparator  # local import
+
+            self.simple_separator = SimpleSeparator(models_dir=str(self.models_dir))
+        except ModuleNotFoundError as e:
+            raise ImportError(
+                "audio-separator backend unavailable. Install dependencies (e.g., 'onnxruntime') "
+                "and ensure vendored 'audio_separator' is available. Original error: "
+                + str(e)
+            )
+        except Exception as e:
+            raise ImportError(f"Failed to initialize audio-separator backend: {e}")
+
+        return self.simple_separator
 
     async def separate(
         self,
@@ -314,8 +565,10 @@ class SeparationEngine:
         device: Optional[str] = None,
         overlap: float = 0.25,
         segment_size: int = 352800,
+        batch_size: int = 1,
         tta: bool = False,
         shifts: int = 1,
+        use_amp: bool = True,
         progress_callback: Optional[Callable] = None,
         check_cancelled: Optional[Callable[[], bool]] = None,
     ) -> tuple[Dict[str, str], str]:
@@ -345,11 +598,10 @@ class SeparationEngine:
             if not Path(file_path).exists():
                 raise FileNotFoundError(f"Input file not found: {file_path}")
 
-            # Set device for this separation
-            if device:
-                separation_device = (
-                    torch.device(device) if TORCH_AVAILABLE else self.device
-                )
+            # Set device for this separation (strict validation; no automatic CPU fallback)
+            validated = self._preflight_validate_device(device)
+            if validated is not None:
+                separation_device = validated
             else:
                 separation_device = self.device
 
@@ -445,13 +697,16 @@ class SeparationEngine:
                 "vr",  # VR models (UVR) use audio-separator's VR handler
             ]
             use_zfturbo_engine = any(z in arch for z in zfturbo_archs)
-            
+
             # IMPORTANT: HyperACE needs our custom BSRoformerHyperACE implementation (with SegmModel),
             # NOT audio-separator's BS-Roformer which lacks the HyperACE modules.
             # Force legacy path for HyperACE to use ModelFactory->BSRoformerHyperACE.
-            if "hyperace" in arch:
+            # Defensive: also detect via model_id in case registry metadata is stale.
+            if "hyperace" in arch or "hyperace" in model_id.lower():
                 use_zfturbo_engine = False
-                self.logger.info(f"HyperACE detected - using legacy path with ModelFactory")
+                self.logger.info(
+                    f"HyperACE detected - using legacy path with ModelFactory"
+                )
             print(
                 f"*** Architecture: {arch}, use_zfturbo_engine: {use_zfturbo_engine} ***"
             )
@@ -468,6 +723,7 @@ class SeparationEngine:
 
             # Read target_instrument from YAML config (to correctly map model output)
             target_instrument = None
+            expected_in_channel = None
             if self.model_manager:
                 config_path = self.model_manager.models_dir / f"{model_id}.yaml"
                 if config_path.exists():
@@ -475,17 +731,51 @@ class SeparationEngine:
                         import yaml
 
                         with open(config_path, "r", encoding="utf-8") as f:
-                            # Use safe_load for security (per Gemini Code Assist review)
-                            yaml_config = yaml.safe_load(f)
+                            # ZFTurbo/pcunwa configs can contain !!python/tuple tags.
+                            # Prefer FullLoader for trusted local configs; fall back to safe_load.
+                            try:
+                                yaml_config = yaml.load(f, Loader=yaml.FullLoader)
+                            except Exception:
+                                f.seek(0)
+                                yaml_config = yaml.safe_load(f)
+
                             # target_instrument is under 'training' key
-                            if "training" in yaml_config:
+                            if (
+                                isinstance(yaml_config, dict)
+                                and "training" in yaml_config
+                            ):
                                 target_instrument = yaml_config["training"].get(
                                     "target_instrument"
                                 )
+
+                            # Some architectures (e.g. BandIt) specify expected waveform channels
+                            # via model.in_channel. Ensure the loaded audio matches.
+                            if isinstance(yaml_config, dict):
+                                model_cfg = yaml_config.get("model") or {}
+                                if isinstance(model_cfg, dict):
+                                    expected_in_channel = model_cfg.get("in_channel")
                     except Exception as e:
                         self.logger.warning(
                             f"Could not read target_instrument from YAML: {e}"
                         )
+
+            # If the model declares an expected input channel count, match it.
+            # NOTE: audio is shaped (channels, samples) here.
+            if expected_in_channel in (1, 2) and audio.shape[0] != expected_in_channel:
+                if expected_in_channel == 1:
+                    audio = np.mean(audio, axis=0, keepdims=True)
+                    self.logger.info(
+                        f"Adjusted audio to mono to match model.in_channel=1 for {model_id}: shape={audio.shape}"
+                    )
+                elif expected_in_channel == 2:
+                    if audio.shape[0] == 1:
+                        audio = np.concatenate([audio, audio], axis=0)
+                    else:
+                        # Best-effort downmix for multichannel inputs
+                        audio = audio[:2, :]
+                    self.logger.info(
+                        f"Adjusted audio to stereo to match model.in_channel=2 for {model_id}: shape={audio.shape}"
+                    )
 
             # Fallback: Infer target from model name if not specified in YAML
             if not target_instrument:
@@ -535,45 +825,24 @@ class SeparationEngine:
                 loop = asyncio.get_event_loop()
 
                 audio_separator_segment_size = 256
-                segment_seconds = max(0.001, float(requested_segment_size) / 44100.0)
 
-                if "roformer" in arch:
-                    if overlap is None:
-                        overlap_divisor = 8
-                        audio_separator_overlap = max(0.05, segment_seconds / float(overlap_divisor))
-                    elif overlap < 1:
-                        audio_separator_overlap = max(
-                            0.05,
-                            segment_seconds * (1.0 - float(overlap)),
-                        )
-                    else:
-                        if 2 <= int(overlap) <= 50 and float(overlap).is_integer():
-                            audio_separator_overlap = max(
-                                0.05, segment_seconds / float(int(overlap))
-                            )
-                        else:
-                            audio_separator_overlap = max(0.05, float(overlap))
-                else:
-                    if overlap is None:
-                        audio_separator_overlap = 8
-                    elif overlap < 1:
-                        denom = max(1e-6, 1.0 - float(overlap))
-                        audio_separator_overlap = int(round(1.0 / denom))
-                    else:
-                        audio_separator_overlap = int(overlap)
-
-                    audio_separator_overlap = max(2, min(50, audio_separator_overlap))
+                # Normalize overlap to a guide-style integer overlap >= 2 (2/3/4/8...).
+                # SimpleSeparator will convert this into the [0..1) overlap ratio expected by audio-separator:
+                #   overlap_ratio = (overlap_int - 1) / overlap_int
+                audio_separator_overlap = _resolve_overlap_int(
+                    overlap, logger=self.logger
+                )
 
                 result_paths = await loop.run_in_executor(
                     None,
-                    lambda: self.simple_separator.separate(
+                    lambda: self._get_simple_separator().separate(
                         audio_path=str(file_path),
                         model_id=model_id,
                         output_dir=str(output_dir),
                         output_format="wav",
                         segment_size=audio_separator_segment_size,
                         overlap=audio_separator_overlap,
-                        batch_size=1,
+                        batch_size=batch_size,
                         progress_callback=lambda pct, msg: notify(35 + pct * 0.45, msg),
                     ),
                 )
@@ -600,15 +869,23 @@ class SeparationEngine:
                         stems or model_info["stems"],
                         overlap=overlap,
                         segment_size=segment_size,
+                        batch_size=batch_size,
                         tta=tta,
                         shifts=shifts,
+                        use_amp=use_amp,
                         progress_callback=progress_callback,
                         check_cancelled=check_cancelled,
                         target_instrument=target_instrument,
                     )
                     break  # Success!
                 except RuntimeError as e:
-                    if "out of memory" in str(e).lower() and attempt < max_retries:
+                    # If this is a structured device/CUDA error, do not retry with smaller segment sizes here.
+                    # Those errors should be surfaced directly to the user.
+                    msg = str(e)
+                    if msg.startswith("STEMSEP_DEVICE_ERROR "):
+                        raise
+
+                    if "out of memory" in msg.lower() and attempt < max_retries:
                         self.logger.warning(
                             f"OOM detected. Retrying with smaller segment size... ({segment_size} -> {segment_size // 2})"
                         )
@@ -646,6 +923,7 @@ class SeparationEngine:
                     output_file,
                     stem_audio.T if getattr(stem_audio, "ndim", 1) > 1 else stem_audio,
                     sr,
+                    subtype="FLOAT",
                 )
                 output_files[stem_name] = str(output_file)
 
@@ -684,7 +962,7 @@ class SeparationEngine:
             # so skip the installation check for them.
             arch = model_info.get("architecture", "").lower()
             is_demucs = "demucs" in arch or "htdemucs" in arch
-            
+
             if self.model_manager and not is_demucs:
                 if not self.model_manager.is_model_installed(model_id):
                     # IMPORTANT: Do not silently substitute a different model.
@@ -708,23 +986,60 @@ class SeparationEngine:
 
                     self.logger.info(f"Download complete for {model_id}")
 
-                # Get path from installed models or search for it (to handle different extensions like .onnx)
-                if model_id in self.model_manager.installed_models:
-                    checkpoint_path = self.model_manager.installed_models[
-                        model_id
-                    ].file_path
-                else:
-                    # Fallback search
-                    candidates = list(
-                        self.model_manager.models_dir.glob(f"{model_id}.*")
-                    )
-                    if candidates:
-                        checkpoint_path = candidates[0]
-                    else:
-                        # Default fallback
-                        checkpoint_path = (
-                            self.model_manager.models_dir / f"{model_id}.ckpt"
-                        )
+                # Ensure standard alias filenames exist (e.g. `<model_id>.yaml`) so
+                # legacy loaders can always find the config/checkpoint regardless of
+                # registry basenames.
+                try:
+                    self.model_manager.ensure_model_ready(model_id)
+                except Exception:
+                    pass
+
+                # Resolve checkpoint path.
+                # ModelManager.installed_models maps model_id -> Path (not an object).
+                links = (
+                    model_info.get("links") if isinstance(model_info, dict) else None
+                )
+                ckpt_url = links.get("checkpoint") if isinstance(links, dict) else None
+
+                def _url_basename(url: Optional[str]) -> Optional[str]:
+                    if not url or not isinstance(url, str):
+                        return None
+                    return url.split("?")[0].rstrip("/").split("/")[-1]
+
+                preferred: List[Path] = []
+                ckpt_base = _url_basename(ckpt_url)
+                if ckpt_base:
+                    preferred.append(self.model_manager.models_dir / ckpt_base)
+
+                # Common aliases created by ensure_model_ready()
+                for ext in [".ckpt", ".chpt", ".pth", ".pt", ".safetensors", ".onnx"]:
+                    preferred.append(self.model_manager.models_dir / f"{model_id}{ext}")
+
+                # Best-effort scan for any model_id.* non-config artifact
+                preferred.extend(
+                    sorted(self.model_manager.models_dir.glob(f"{model_id}.*"))
+                )
+
+                checkpoint_path = None
+                for p in preferred:
+                    try:
+                        if not p.exists():
+                            continue
+                        if p.suffix.lower() in (".yaml", ".yml"):
+                            continue
+                        checkpoint_path = p
+                        break
+                    except Exception:
+                        continue
+
+                if (
+                    checkpoint_path is None
+                    and model_id in self.model_manager.installed_models
+                ):
+                    checkpoint_path = self.model_manager.installed_models[model_id]
+
+                if checkpoint_path is None:
+                    checkpoint_path = self.model_manager.models_dir / f"{model_id}.ckpt"
             else:
                 # Fallback if no manager (shouldn't happen in normal app usage)
                 checkpoint_path = Path(f"models/{model_id}.ckpt")
@@ -732,7 +1047,7 @@ class SeparationEngine:
             # Get configuration
             # Priority: 1. YAML file, 2. Factory Defaults based on ID/Architecture
             config = {}
-            from models.model_factory import ModelFactory
+            from stemsep.models.model_factory import ModelFactory
 
             if self.model_manager:
                 config_path = self.model_manager.models_dir / f"{model_id}.yaml"
@@ -788,7 +1103,7 @@ class SeparationEngine:
                     f"No YAML config found, analyzing checkpoint for {model_id}"
                 )
                 try:
-                    from models.checkpoint_analyzer import analyze_checkpoint
+                    from stemsep.models.checkpoint_analyzer import analyze_checkpoint
 
                     config = analyze_checkpoint(checkpoint_path)
 
@@ -820,11 +1135,35 @@ class SeparationEngine:
                         model_id, architecture=model_info.get("architecture")
                     )
 
-            # Inject model path into config for models that load weights during init (like MDX/ONNX)
-            config["model_path"] = str(checkpoint_path)
+            # Some model families (e.g., ONNX-based loaders) accept `model_path` and load
+            # weights during construction. Our PyTorch/ZFTurbo models (BandIt/Apollo/SCNet/
+            # Roformer) do not, and passing it breaks instantiation.
+            config_with_model_path = dict(config)
+            config_with_model_path["model_path"] = str(checkpoint_path)
 
-            # Instantiate model
-            model = ModelFactory.create_model(model_info["architecture"], config)
+            # Instantiate model (retry without model_path if the constructor rejects it)
+            try:
+                model = ModelFactory.create_model(
+                    model_info["architecture"], config_with_model_path
+                )
+            except TypeError as e:
+                msg = str(e)
+                if (
+                    "model_path" in config_with_model_path
+                    and ("model_path" in msg)
+                    and (
+                        "unexpected keyword argument" in msg
+                        or "got an unexpected" in msg
+                    )
+                ):
+                    self.logger.info(
+                        f"Model '{model_info['architecture']}' rejected model_path kwarg; retrying without it"
+                    )
+                    model = ModelFactory.create_model(
+                        model_info["architecture"], dict(config)
+                    )
+                else:
+                    raise
 
             # For PyTorch models, load state dict and move to device
             # MDX-Net (ONNX) and Demucs models load weights in constructor and handle device internally
@@ -843,16 +1182,22 @@ class SeparationEngine:
                 # NOTE: Skip for HyperACE - its checkpoint already has matching keys and remapping breaks it
                 arch_lower = model_info.get("architecture", "").lower()
                 skip_remap = "hyperace" in arch_lower
-                
+
                 if not skip_remap:
                     try:
-                        from models.checkpoint_analyzer import remap_checkpoint_keys
+                        from stemsep.models.checkpoint_analyzer import (
+                            remap_checkpoint_keys,
+                        )
 
-                        state_dict = remap_checkpoint_keys(state_dict, model.state_dict())
+                        state_dict = remap_checkpoint_keys(
+                            state_dict, model.state_dict()
+                        )
                     except Exception as e:
                         self.logger.warning(f"Key remapping failed: {e}")
                 else:
-                    self.logger.info(f"Skipping key remapping for {arch_lower} (already matching)")
+                    self.logger.info(
+                        f"Skipping key remapping for {arch_lower} (already matching)"
+                    )
 
                 # Load into model
                 try:
@@ -880,14 +1225,16 @@ class SeparationEngine:
         stems: List[str],
         overlap: float = 0.25,
         segment_size: int = 352800,
+        batch_size: int = 1,
         tta: bool = False,
         shifts: int = 1,
+        use_amp: bool = True,
         progress_callback: Optional[Callable] = None,
         check_cancelled: Optional[Callable[[], bool]] = None,
         target_instrument: Optional[str] = None,
     ) -> Dict[str, np.ndarray]:
         """
-        Perform the actual separation loop.
+        Perform the actual separation loop with batched inference and AMP.
 
         Args:
             target_instrument: What the model actually outputs (e.g. 'vocals', 'other', 'instrumental').
@@ -906,9 +1253,12 @@ class SeparationEngine:
         if shifts < 1:
             shifts = 1
 
+        if batch_size < 1:
+            batch_size = 1
+
         # Log advanced parameters
         self.logger.info(
-            f"Separating with params: overlap={overlap}, segment_size={segment_size}, tta={tta}, shifts={shifts}"
+            f"Separating with params: overlap={overlap}, segment_size={segment_size}, batch_size={batch_size}, tta={tta}, shifts={shifts}, amp={use_amp}"
         )
 
         # Ensure audio is (channels, samples)
@@ -921,17 +1271,18 @@ class SeparationEngine:
         # ZFTurbo demix() parameters
         chunk_size = segment_size
 
-        # Calculate num_overlap from overlap fraction (inverse of ZFTurbo's approach)
-        # ZFTurbo uses num_overlap as chunk_size // step, typically 2-8
-        # Our overlap param is 0.25 = 75% overlap = num_overlap of 4
-        num_overlap = max(2, int(1 / (1 - overlap))) if overlap < 1 else 4
+        # Normalize overlap to guide-style integer overlap >= 2.
+        # This aligns with common MSST/UVR practice where overlap is an integer (2/3/4/8...).
+        # If caller provided a fraction (0..1), we map it to an integer overlap so that:
+        #   step = chunk_size / overlap_int
+        num_overlap = _resolve_overlap_int(overlap, logger=self.logger)
 
         fade_size = chunk_size // 10  # Linear fade region (10% of chunk)
         step = chunk_size // num_overlap  # Step between chunks
         border = chunk_size - step  # Amount of overlap on each side
 
         self.logger.info(
-            f"ZFTurbo demix params: chunk_size={chunk_size}, num_overlap={num_overlap}, step={step}, fade_size={fade_size}, border={border}"
+            f"ZFTurbo demix params: chunk_size={chunk_size}, overlap={overlap}, num_overlap={num_overlap}, step={step}, fade_size={fade_size}, border={border}"
         )
 
         # Create linear fade window (not Hanning!)
@@ -978,58 +1329,120 @@ class SeparationEngine:
                     current_shift_outputs = None
                     weight_accumulator = None
 
-                    # Process chunks
+                    # Process chunks with Batching
                     i = 0  # Current position in padded audio
                     chunk_idx = 0
-                    total_chunks = (padded_length - chunk_size) // step + 1
+                    # We allow tail chunks past (padded_length - chunk_size) by padding them.
+                    # So total_chunks must match the iteration condition `while i < padded_length`.
+                    total_chunks = ((padded_length - 1) // step) + 1 if step > 0 else 1
+
+                    last_progress_emit = 0.0
+
+                    # Prepare Autocast context if enabled
+                    # Note: We keep torch.no_grad() from outer context
+                    amp_context = (
+                        torch.cuda.amp.autocast()
+                        if use_amp and self.gpu_enabled
+                        else torch.no_grad()
+                    )
 
                     while i < padded_length:
                         if check_cancelled and check_cancelled():
                             raise asyncio.CancelledError("Job cancelled")
 
-                        # Extract chunk at position i
-                        chunk = padded_audio[:, i : i + chunk_size]
-                        chunk_len = chunk.shape[-1]
+                        batch_chunks = []
+                        batch_positions = []  # store (i, chunk_len) for each item in batch
 
-                        # Pad chunk if it's shorter than chunk_size (at the end)
-                        if chunk_len < chunk_size:
-                            if chunk_len > chunk_size // 2:
-                                pad_mode = "reflect"
-                            else:
-                                pad_mode = "constant"
-                            chunk = np.pad(
-                                chunk,
-                                ((0, 0), (0, chunk_size - chunk_len)),
-                                mode=pad_mode,
-                            )
+                        # Collect batch
+                        for _ in range(batch_size):
+                            if i >= padded_length:
+                                break
 
-                        # Convert to tensor
-                        chunk_tensor = (
-                            torch.from_numpy(chunk.copy()).float().to(self.device)
+                            # Extract chunk at position i
+                            chunk = padded_audio[:, i : i + chunk_size]
+                            chunk_len = chunk.shape[-1]
+
+                            # Pad chunk if it's shorter than chunk_size (at the end)
+                            if chunk_len < chunk_size:
+                                if chunk_len > chunk_size // 2:
+                                    pad_mode = "reflect"
+                                else:
+                                    pad_mode = "constant"
+                                chunk = np.pad(
+                                    chunk,
+                                    ((0, 0), (0, chunk_size - chunk_len)),
+                                    mode=pad_mode,
+                                )
+
+                            batch_chunks.append(chunk)
+                            batch_positions.append((i, chunk_len))
+
+                            i += step
+                            chunk_idx += 1
+
+                        if not batch_chunks:
+                            break
+
+                        # Stack batch: (batch, channels, chunk_size)
+                        # Then unsqueeze to (batch, 1, channels, chunk_size) for typical BSRoformer input
+                        # Note: Some models expect (batch, channels, chunk_size) directly.
+                        # Demucs wrapper handles its own batching usually, but here we feed our custom loaded model.
+                        # ZFTurbo models usually take (batch, channels, samples) or (batch, 1, channels, samples).
+                        # Let's standardize on (batch, channels, samples) and let model wrapper handle dim expansion if needed.
+                        # BUT wait, the loop above did: chunk_tensor.unsqueeze(0) to make it (1, channels, samples)
+
+                        batch_np = np.stack(
+                            batch_chunks
+                        )  # (batch, channels, chunk_size)
+                        batch_tensor = (
+                            torch.from_numpy(batch_np).float().to(self.device)
                         )
-                        chunk_tensor = chunk_tensor.unsqueeze(0)  # Batch dim
 
-                        # Run model
-                        outputs = model(chunk_tensor)
+                        # Add explicit sequence dim if model expects it (Roformers usually take [B, C, T] or [B, 1, C, T])
+                        # The original code did chunk_tensor.unsqueeze(0) making it [1, C, T]
+                        # So batch_tensor is already [B, C, T].
+
+                        # Run model with AMP
+                        with amp_context:
+                            outputs = model(batch_tensor)
+
+                        # Handle output shape
+                        # Expected: (batch, stems, channels, samples)
+                        if outputs.ndim == 3:
+                            # (batch, channels, samples) -> single stem output?
+                            # Or (stems, channels, samples) if batch=1?
+                            # If input was [B, C, T], output usually [B, Stems, C, T] or [B, C, T]
+                            if batch_tensor.shape[0] == 1 and outputs.shape[0] != 1:
+                                # This might be [Stems, C, T] for a single batch
+                                outputs = outputs.unsqueeze(0)
+                            elif (
+                                batch_tensor.shape[0] > 1
+                                and outputs.shape[0] == batch_tensor.shape[0]
+                            ):
+                                # [B, C, T] -> needs stem dim
+                                outputs = outputs.unsqueeze(1)
 
                         if outputs.ndim == 3 and outputs.shape[0] == 1:
+                            # Legacy case catch
                             outputs = outputs.unsqueeze(1)
 
+                        # TTA (Test Time Augmentation) Logic adapted for Batches
                         if tta:
-                            # 3-Pass TTA (ZFTurbo method):
-                            # 1. Original (already computed above)
-                            # 2. Stereo-inverted (L↔R swap)
-                            # 3. Phase-inverted (polarity flip)
-
                             # Pass 2: Stereo swap (L↔R)
-                            if chunk_tensor.shape[1] >= 2:
-                                chunk_stereo_swap = torch.stack(
-                                    [chunk_tensor[:, 1, :], chunk_tensor[:, 0, :]],
+                            # Swap channels dim (dim 1)
+                            if batch_tensor.shape[1] >= 2:
+                                batch_stereo_swap = torch.stack(
+                                    [batch_tensor[:, 1, :], batch_tensor[:, 0, :]],
                                     dim=1,
                                 )
                             else:
-                                chunk_stereo_swap = chunk_tensor
-                            outputs_stereo = model(chunk_stereo_swap)
+                                batch_stereo_swap = batch_tensor
+
+                            with amp_context:
+                                outputs_stereo = model(batch_stereo_swap)
+
+                            # Re-swap output stereo channels
+                            # Output shape: [Batch, Stems, Channels, Samples]
                             if outputs_stereo.ndim == 3:
                                 outputs_stereo = outputs_stereo.unsqueeze(1)
                             if outputs_stereo.shape[2] >= 2:
@@ -1041,23 +1454,40 @@ class SeparationEngine:
                                     dim=2,
                                 )
 
-                            # Pass 3: Phase invert (polarity flip)
-                            chunk_tensor_inv = -chunk_tensor
-                            outputs_inv = model(chunk_tensor_inv)
+                            # Pass 3: Phase invert
+                            batch_tensor_inv = -batch_tensor
+                            with amp_context:
+                                outputs_inv = model(batch_tensor_inv)
+
                             if outputs_inv.ndim == 3:
                                 outputs_inv = outputs_inv.unsqueeze(1)
                             outputs_inv = -outputs_inv
 
-                            # Average all 3 passes
+                            # Average
                             outputs = (outputs + outputs_stereo + outputs_inv) / 3.0
 
-                        outputs = (
-                            outputs.squeeze(0).cpu().numpy()
-                        )  # (stems, channels, samples)
+                        # Move to CPU: (batch, stems, channels, samples)
+                        batch_outputs_np = outputs.cpu().float().numpy()
+
+                        # Some model implementations can return a slightly different sample length than the
+                        # requested chunk size (e.g. due to STFT/ISTFT framing). Normalize to the expected
+                        # length so overlap-add windowing stays shape-consistent.
+                        expected_len = batch_np.shape[-1]
+                        actual_len = batch_outputs_np.shape[-1]
+                        if actual_len != expected_len:
+                            if actual_len < expected_len:
+                                pad_width = [(0, 0)] * batch_outputs_np.ndim
+                                pad_width[-1] = (0, expected_len - actual_len)
+                                batch_outputs_np = np.pad(
+                                    batch_outputs_np, pad_width, mode="constant"
+                                )
+                            else:
+                                batch_outputs_np = batch_outputs_np[..., :expected_len]
 
                         # Initialize buffers if first chunk
                         if current_shift_outputs is None:
-                            num_stems = outputs.shape[0]
+                            # batch_outputs_np[0] is (stems, channels, samples)
+                            num_stems = batch_outputs_np.shape[1]
                             current_shift_outputs = np.zeros(
                                 (num_stems, channels, padded_length)
                             )
@@ -1065,27 +1495,39 @@ class SeparationEngine:
                                 (num_stems, channels, padded_length)
                             )
 
-                        # ZFTurbo windowing: use .clone() to avoid in-place modification issues
-                        window = windowing_array.clone()
-                        if i == 0:
-                            # First chunk: No fade-in (set fade region to 1)
-                            window[:fade_size] = 1.0
-                        if i + step >= padded_length:
-                            # Last chunk: No fade-out (set fade region to 1)
-                            window[-fade_size:] = 1.0
+                        # Unpack batch and accumulate
+                        for b_idx, (pos_i, pos_chunk_len) in enumerate(batch_positions):
+                            # result: (stems, channels, samples)
+                            result = batch_outputs_np[b_idx]
 
-                        # Convert window to numpy for accumulation
-                        win_np = window.numpy()
+                            # Prepare window
+                            window = windowing_array.clone()
+                            if pos_i == 0:
+                                window[:fade_size] = 1.0
+                            if pos_i + step >= padded_length:
+                                window[-fade_size:] = 1.0
 
-                        # Accumulate with window weighting (ZFTurbo method)
-                        for s in range(outputs.shape[0]):
-                            for c in range(channels):
-                                current_shift_outputs[s, c, i : i + chunk_len] += (
-                                    outputs[s, c, :chunk_len] * win_np[:chunk_len]
-                                )
-                                weight_accumulator[s, c, i : i + chunk_len] += win_np[
-                                    :chunk_len
-                                ]
+                            win_np = window.numpy()
+
+                            # Accumulate
+                            for s in range(result.shape[0]):
+                                for c in range(channels):
+                                    # Safe extraction with on-the-fly padding/trimming
+                                    stem_chunk = result[s, c]
+
+                                    # Handle length mismatches robustly (e.g. 352768 vs 352800)
+                                    if stem_chunk.shape[-1] < pos_chunk_len:
+                                        pad_amt = pos_chunk_len - stem_chunk.shape[-1]
+                                        stem_chunk = np.pad(stem_chunk, (0, pad_amt))
+                                    elif stem_chunk.shape[-1] > pos_chunk_len:
+                                        stem_chunk = stem_chunk[:pos_chunk_len]
+
+                                    current_shift_outputs[
+                                        s, c, pos_i : pos_i + pos_chunk_len
+                                    ] += stem_chunk * win_np[:pos_chunk_len]
+                                    weight_accumulator[
+                                        s, c, pos_i : pos_i + pos_chunk_len
+                                    ] += win_np[:pos_chunk_len]
 
                         # Update progress
                         total_progress_range = 55.0
@@ -1097,15 +1539,21 @@ class SeparationEngine:
                             + (chunk_idx / max(1, total_chunks)) * shift_progress_chunk
                         )
 
-                        if chunk_idx % 10 == 0:
+                        # Guard against occasional off-by-one / rounding that can push progress > 100.
+                        prog = max(0.0, min(100.0, float(prog)))
+
+                        now = time.perf_counter()
+                        should_emit = (
+                            chunk_idx <= 1
+                            or chunk_idx >= total_chunks
+                            or (now - last_progress_emit) >= 1.0
+                        )
+                        if should_emit:
+                            last_progress_emit = now
                             notify(
                                 prog,
-                                f"Processing chunk {chunk_idx + 1}/{total_chunks} (Shift {shift_idx + 1}/{shifts})",
+                                f"Processing chunk {chunk_idx}/{total_chunks} (Shift {shift_idx + 1}/{shifts})",
                             )
-
-                        # Move to next chunk position
-                        i += step
-                        chunk_idx += 1
 
                     # Normalize by accumulated weights (ZFTurbo: result / counter)
                     # Avoid division by zero
@@ -1152,23 +1600,61 @@ class SeparationEngine:
                     # Normalize target_instrument to lowercase for comparison
                     target = (target_instrument or "").lower()
 
-                    # Determine which stem the model actually outputs
-                    # "other" and "instrumental" are equivalent
+                    # Determine which stem the model actually outputs.
+                    # We'll trust target_instrument when it's explicit, but apply a safety check
+                    # for ambiguous or incorrect metadata by comparing relative energy:
+                    # typically, accompaniment has higher RMS than vocals.
                     if target in ["vocals", "vocal"]:
-                        # Model outputs vocals
                         output_stem = "vocals"
                         residual_stem = "instrumental"
-                    elif target in ["other", "instrumental", "instrument", "inst", "karaoke"]:
-                        # Model outputs instrumental/other
+                    elif target in [
+                        "other",
+                        "instrumental",
+                        "instrument",
+                        "inst",
+                        "karaoke",
+                    ]:
                         output_stem = "instrumental"
                         residual_stem = "vocals"
                     else:
                         # Fallback: use first stem as output
                         output_stem = stems[0] if stems else "vocals"
-                        residual_stem = stems[1] if len(stems) > 1 else None
+                        residual_stem = stems[1] if stems and len(stems) > 1 else None
                         self.logger.warning(
                             f"Unknown target_instrument '{target}', using stems order"
                         )
+
+                    # Compute residual and optionally swap labels if the energy profile strongly
+                    # contradicts the expected target.
+                    residual = audio - model_output
+                    try:
+
+                        def _rms(x: np.ndarray) -> float:
+                            x = np.asarray(x)
+                            return float(
+                                np.sqrt(np.mean(np.square(x), dtype=np.float64))
+                            )
+
+                        out_rms = _rms(model_output)
+                        res_rms = _rms(residual)
+
+                        # If one side is dramatically quieter, it's likely vocals.
+                        # Swap when target says "instrumental" but output looks like vocals, or vice versa.
+                        if out_rms > 0 and res_rms > 0:
+                            if output_stem == "instrumental" and out_rms < (
+                                0.65 * res_rms
+                            ):
+                                self.logger.warning(
+                                    f"Single-stem output energy suggests VOCALS (out_rms={out_rms:.6f} < 0.65*res_rms={res_rms:.6f}); swapping stem labels"
+                                )
+                                output_stem, residual_stem = "vocals", "instrumental"
+                            elif output_stem == "vocals" and out_rms > (1.35 * res_rms):
+                                self.logger.warning(
+                                    f"Single-stem output energy suggests INSTRUMENTAL (out_rms={out_rms:.6f} > 1.35*res_rms={res_rms:.6f}); swapping stem labels"
+                                )
+                                output_stem, residual_stem = "instrumental", "vocals"
+                    except Exception:
+                        residual = audio - model_output
 
                     self.logger.info(
                         f"Stem mapping: model outputs '{output_stem}', residual is '{residual_stem}'"
@@ -1178,8 +1664,10 @@ class SeparationEngine:
                     separated[output_stem] = model_output
 
                     # Compute residual if needed
-                    if residual_stem and len(stems) > 1:
-                        residual = audio - model_output
+                    should_compute_residual = residual_stem is not None and (
+                        stems is None or len(stems) > 1
+                    )
+                    if should_compute_residual:
                         separated[residual_stem] = residual
                 else:
                     for i, stem_name in enumerate(stems):
@@ -1350,16 +1838,28 @@ class SeparationJob:
         invert: bool = False,
         normalize: bool = False,
         bit_depth: str = "16",
+        vc_enabled: bool = False,
+        vc_stage: str = "export",
+        vc_db_per_extra_model: float = 3.0,
         on_complete: Optional[Callable] = None,
     ):
+        # Keep both `id` and `job_id` for compatibility across callers.
         self.id = job_id
+        self.job_id = job_id
         self.file_path = file_path
         self.model_id = model_id
 
         # Temp & Commit Logic
         self.final_output_dir = output_dir
-        # Create temp dir
-        self.temp_dir = tempfile.mkdtemp(prefix=f"stemsep_{self.id}_")
+        # Create temp dir. If an output_dir is provided, stage temp outputs inside it
+        # so previews can be stable (e.g., Electron preview-cache) without relying on OS temp.
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            self.temp_dir = tempfile.mkdtemp(
+                prefix=f"stemsep_{self.id}_", dir=output_dir
+            )
+        else:
+            self.temp_dir = tempfile.mkdtemp(prefix=f"stemsep_{self.id}_")
         # Override output_dir to use temp for processing
         self.output_dir = self.temp_dir
 
@@ -1370,6 +1870,9 @@ class SeparationJob:
         self.invert = invert
         self.normalize = normalize
         self.bit_depth = bit_depth
+        self.vc_enabled = bool(vc_enabled)
+        self.vc_stage = vc_stage
+        self.vc_db_per_extra_model = vc_db_per_extra_model
         self.status = "pending"
         self.progress = 0.0
         self.start_time = None

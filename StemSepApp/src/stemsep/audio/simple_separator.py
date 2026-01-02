@@ -12,13 +12,32 @@ Usage:
 """
 
 import importlib
+import inspect
 import logging
+import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 from urllib.parse import urlparse
 
 import torch
 import yaml
+
+# Always prefer the vendored audio_separator library (StemSepApp/dev_vendor/audio_separator),
+# so we can patch/extend behavior (e.g. detailed progress callbacks) without relying on the
+# user's globally installed package version.
+#
+# NOTE: After moving the code under the `stemsep` namespace, this module now lives at:
+#   StemSepApp/src/stemsep/audio/simple_separator.py
+# So the repo root is 4 parents up from this file.
+_repo_root = Path(__file__).resolve().parents[4]
+_vendor_root = _repo_root / "StemSepApp" / "dev_vendor"
+_vendored_audio_separator = _vendor_root / "audio_separator"
+
+if _vendored_audio_separator.exists():
+    vendor_root_str = str(_vendor_root)
+    if vendor_root_str not in sys.path:
+        sys.path.insert(0, vendor_root_str)
+
 from audio_separator.separator import Separator
 
 
@@ -103,6 +122,19 @@ class SimpleSeparator:
 
         self.logger.info(f"SimpleSeparator initialized on {self.device}")
 
+        # Helpful diagnostics: confirm whether we are using vendored audio-separator.
+        try:  # pragma: no cover
+            import audio_separator
+
+            self.logger.info(
+                f"audio_separator package: {Path(audio_separator.__file__).resolve()}"
+            )
+            self.logger.info(
+                f"Separator implementation: {Path(inspect.getfile(Separator)).resolve()}"
+            )
+        except Exception:
+            pass
+
     def get_model_filename(self, model_id: str) -> str:
         """
         Resolve a model_id to an actual filename inside models_dir.
@@ -144,7 +176,16 @@ class SimpleSeparator:
             return self.MODEL_FILENAMES[normalized]
 
         # 4) Direct file existence checks
-        for ext in [".ckpt", ".pth", ".pt", ".safetensors", ".onnx", ".yaml", ""]:
+        for ext in [
+            ".ckpt",
+            ".chpt",
+            ".pth",
+            ".pt",
+            ".safetensors",
+            ".onnx",
+            ".yaml",
+            "",
+        ]:
             if (self.models_dir / f"{model_id}{ext}").exists():
                 return f"{model_id}{ext}"
 
@@ -156,15 +197,20 @@ class SimpleSeparator:
 
     def _has_local_yaml(self, model_id: str) -> bool:
         """Check if a model has a local YAML config file.
-        
+
         Note: MDX23C and VR models are excluded from direct loading path because they require
         audio-separator's specialized handlers.
         """
         # These models should use audio-separator's built-in handling, not our direct-load path
         model_lower = model_id.lower()
-        if any(x in model_lower for x in ['mdx23c', 'vr', 'uvr', '_hp']):
+        # HyperACE checkpoints require a custom model definition (SegmModel/HyperACE modules)
+        # not provided by audio-separator's RoformerLoader.
+        if "hyperace" in model_lower:
             return False
-        
+
+        if any(x in model_lower for x in ["mdx23c", "vr", "uvr", "_hp"]):
+            return False
+
         # Check for model_id.yaml and any known weight extension
         yaml_path = self.models_dir / f"{model_id}.yaml"
         if not yaml_path.exists():
@@ -186,7 +232,7 @@ class SimpleSeparator:
             The expected filename (e.g. "MelBandRoformer.ckpt") or None if unavailable.
         """
         try:
-            from models.model_manager import (
+            from stemsep.models.model_manager import (
                 ModelManager,  # local import to avoid heavy imports at module load
             )
 
@@ -197,12 +243,22 @@ class SimpleSeparator:
             if expected:
                 return expected
 
-            # Backward fallback: derive from direct_download_url if present
+            # Backward fallback: derive from registry links if present
             info = mm.get_model(model_id)
-            if not info or not info.direct_download_url:
+            if not info or not getattr(info, "links", None):
                 return None
 
-            parsed = urlparse(info.direct_download_url)
+            url = None
+            try:
+                if isinstance(info.links, dict):
+                    url = info.links.get("checkpoint") or info.links.get("config")
+            except Exception:
+                url = None
+
+            if not url:
+                return None
+
+            parsed = urlparse(str(url))
             basename = Path(parsed.path).name
             if not basename:
                 return None
@@ -239,9 +295,6 @@ class SimpleSeparator:
 
         def normalize(obj: Any) -> Any:
             if isinstance(obj, dict):
-                # Key aliases at this level
-                if "num_subbands" in obj and "num_bands" not in obj:
-                    obj["num_bands"] = obj.pop("num_subbands")
                 return {k: normalize(v) for k, v in obj.items()}
 
             # Keep lists as lists by default; only convert to tuples when explicitly needed.
@@ -259,10 +312,6 @@ class SimpleSeparator:
         if isinstance(normalized, dict) and isinstance(normalized.get("model"), dict):
             model_cfg = normalized["model"]
 
-            # Ensure key alias is applied inside 'model' section even if nested/loader checks there.
-            if "num_subbands" in model_cfg and "num_bands" not in model_cfg:
-                model_cfg["num_bands"] = model_cfg.pop("num_subbands")
-
             # audio-separator / roformer loaders often want this as tuple.
             if "multi_stft_resolutions_window_sizes" in model_cfg and isinstance(
                 model_cfg["multi_stft_resolutions_window_sizes"], list
@@ -273,7 +322,9 @@ class SimpleSeparator:
 
         return normalized
 
-    def _build_audio_separator_model_data(self, model_data: Any) -> Any:
+    def _build_audio_separator_model_data(
+        self, model_data: Any, *, is_roformer: bool = False
+    ) -> Any:
         """
         Build a model_data object in the shape expected by audio-separator CommonSeparator/MDXCSeparator.
 
@@ -296,13 +347,52 @@ class SimpleSeparator:
         if not out:
             out = dict(model_data)
 
-        # Ensure alias inside model section
-        if (
-            isinstance(out.get("model"), dict)
-            and "num_subbands" in out["model"]
-            and "num_bands" not in out["model"]
-        ):
-            out["model"]["num_bands"] = out["model"].pop("num_subbands")
+        # Some community configs (and ZFTurbo-derived YAMLs) use legacy key `num_subbands`.
+        # For Roformer-based models, audio-separator constructors are strict and expect `num_bands`
+        # instead, so keep `num_bands` and strip `num_subbands` everywhere.
+        inferred_roformer = False
+        if isinstance(out.get("model"), dict):
+            model_cfg = out["model"]
+            inferred_roformer = (
+                "num_bands" in model_cfg
+                or "freqs_per_bands" in model_cfg
+                or "flash_attn" in model_cfg
+                # Heuristics for older community Roformer YAMLs that still use `num_subbands`
+                # and may omit newer flags.
+                or (
+                    "dim" in model_cfg
+                    and "depth" in model_cfg
+                    and (
+                        "time_transformer_depth" in model_cfg
+                        or "freq_transformer_depth" in model_cfg
+                        or "attn_dropout" in model_cfg
+                    )
+                )
+            )
+
+        if is_roformer or inferred_roformer:
+
+            def _strip_num_subbands(obj: Any) -> Any:
+                if isinstance(obj, dict):
+                    if "num_subbands" in obj and "num_bands" not in obj:
+                        obj["num_bands"] = obj["num_subbands"]
+                    obj.pop("num_subbands", None)
+                    return {k: _strip_num_subbands(v) for k, v in obj.items()}
+                if isinstance(obj, list):
+                    return [_strip_num_subbands(v) for v in obj]
+                if isinstance(obj, tuple):
+                    return tuple(_strip_num_subbands(v) for v in obj)
+                return obj
+
+            out = _strip_num_subbands(out)
+
+            # Help audio-separator's RoformerLoader detect model type from config even when
+            # the checkpoint filename is an alias like `<model_id>.ckpt` (no "mel/roformer" hint).
+            # RoformerLoader.detect_model_type() runs BEFORE its internal structure normalization,
+            # so it needs key hints at the top-level.
+            if isinstance(out.get("model"), dict):
+                for k, v in out["model"].items():
+                    out.setdefault(k, v)
 
         # Ensure training exists (audio-separator may index into it)
         if "training" not in out or out["training"] is None:
@@ -340,16 +430,72 @@ class SimpleSeparator:
             model_data = yaml.load(f, Loader=yaml.FullLoader)
 
         model_data = self._normalize_model_data(model_data)
-        model_data_for_separator = self._build_audio_separator_model_data(model_data)
 
-        # Mark as roformer if applicable (most community models are roformer)
-        if (
-            "roformer" in str(yaml_path).lower()
-            or "mel" in model_id.lower()
+        # Heuristic: most community YAML+weights loaded this way are Roformer-derived.
+        # We use this to apply strict-key compatibility fixes (e.g. strip num_subbands).
+        # Detect Roformer primarily from the YAML contents (filenames are unreliable because
+        # this repo often installs alias files like `<model_id>.ckpt` / `<model_id>.yaml`).
+        model_section = None
+        if isinstance(model_data, dict):
+            model_section = model_data.get("model")
+
+        roformer_by_config = False
+        if isinstance(model_section, dict):
+            roformer_by_config = (
+                "num_bands" in model_section
+                or "freqs_per_bands" in model_section
+                or (
+                    "dim" in model_section
+                    and "depth" in model_section
+                    and (
+                        "time_transformer_depth" in model_section
+                        or "freq_transformer_depth" in model_section
+                        or "attn_dropout" in model_section
+                    )
+                )
+            )
+
+        model_filename_hint = ""
+        try:
+            model_filename_hint = str(self.get_model_filename(model_id)).lower()
+        except Exception:
+            model_filename_hint = ""
+
+        is_roformer = (
+            roformer_by_config
+            or (isinstance(model_data, dict) and bool(model_data.get("is_roformer")))
+            or "roformer" in str(yaml_path).lower()
             or "roformer" in model_id.lower()
-        ):
-            if isinstance(model_data_for_separator, dict):
-                model_data_for_separator["is_roformer"] = True
+            or "roformer" in model_filename_hint
+            or "melband" in model_filename_hint
+            or "roformer" in model_path.name.lower()
+        )
+
+        model_data_for_separator = self._build_audio_separator_model_data(
+            model_data, is_roformer=is_roformer
+        )
+
+        # Belt-and-suspenders: RoformerLoader's config validation is strict about unknown keys.
+        # Ensure the legacy key is fully removed even if a community YAML includes it in multiple places.
+        if is_roformer and isinstance(model_data_for_separator, dict):
+
+            def _strip_num_subbands(obj: Any) -> Any:
+                if isinstance(obj, dict):
+                    if "num_subbands" in obj and "num_bands" not in obj:
+                        obj["num_bands"] = obj["num_subbands"]
+                    obj.pop("num_subbands", None)
+                    return {k: _strip_num_subbands(v) for k, v in obj.items()}
+                if isinstance(obj, list):
+                    return [_strip_num_subbands(v) for v in obj]
+                if isinstance(obj, tuple):
+                    return tuple(_strip_num_subbands(v) for v in obj)
+                return obj
+
+            model_data_for_separator = _strip_num_subbands(model_data_for_separator)
+
+        # Mark as roformer if applicable (helps audio-separator pick loaders)
+        if is_roformer and isinstance(model_data_for_separator, dict):
+            model_data_for_separator["is_roformer"] = True
 
         model_name = model_id
 
@@ -364,6 +510,7 @@ class SimpleSeparator:
             "model_name": model_name,
             "model_path": str(model_path),
             "model_data": model_data_for_separator,
+            "progress_callback": getattr(separator, "progress_callback", None),
             "output_format": separator.output_format,
             "output_bitrate": separator.output_bitrate,
             "output_dir": separator.output_dir,
@@ -400,7 +547,7 @@ class SimpleSeparator:
         output_dir: str,
         output_format: str = "wav",
         segment_size: int = 256,
-        overlap: int = 8,
+        overlap: float = 8,
         batch_size: int = 1,
         progress_callback: Optional[Callable[[float, str], None]] = None,
     ) -> Dict[str, str]:
@@ -425,6 +572,16 @@ class SimpleSeparator:
             if progress_callback:
                 progress_callback(pct, msg)
 
+        # audio-separator internal progress is naturally 0..100 for the separation phase.
+        # Map it onto our overall 0..100 scale so progress stays monotonic with the
+        # stage markers below (30=run, 90=postprocess).
+        def notify_internal(pct: float, msg: str):
+            try:
+                pct_f = float(pct)
+            except Exception:
+                pct_f = 0.0
+            notify(30.0 + max(0.0, min(100.0, pct_f)) * 0.6, msg)
+
         notify(0, "Initializing separator...")
 
         # Preflight via ModelManager:
@@ -433,7 +590,7 @@ class SimpleSeparator:
         #
         # NOTE: This does not download automatically; it only validates and repairs naming.
         try:
-            from models.model_manager import ModelManager
+            from stemsep.models.model_manager import ModelManager
         except Exception as e:
             raise RuntimeError(
                 f"Unable to import ModelManager for preflight. Underlying error: {e}"
@@ -483,6 +640,31 @@ class SimpleSeparator:
 
         notify(10, f"Loading model {model_filename}...")
 
+        # audio-separator expects overlap as a ratio in [0, 1].
+        # Our UI/recipes often use ZFTurbo-style integer overlaps (e.g. 2/4/8),
+        # where step = chunk_size / overlap => overlap_ratio = (overlap - 1) / overlap.
+        overlap_ratio: float
+        try:
+            overlap_val = float(overlap)
+        except Exception:
+            overlap_val = 0.25
+
+        if overlap_val <= 0:
+            overlap_ratio = 0.25
+        elif overlap_val <= 1.0:
+            overlap_ratio = overlap_val
+        else:
+            overlap_ratio = (overlap_val - 1.0) / overlap_val
+            # Keep inside the valid range (and avoid edge-case 1.0)
+            if overlap_ratio < 0.0:
+                overlap_ratio = 0.0
+            if overlap_ratio >= 1.0:
+                overlap_ratio = 0.999
+
+            self.logger.info(
+                f"Normalizing overlap {overlap_val} -> {overlap_ratio:.4f} for audio-separator"
+            )
+
         # Create separator instance (exactly like UVR5-UI)
         separator = Separator(
             log_level=logging.INFO,
@@ -492,10 +674,13 @@ class SimpleSeparator:
             use_autocast=self.use_autocast,
             mdxc_params={
                 "segment_size": segment_size,
-                "overlap": overlap,
+                "overlap": overlap_ratio,
                 "batch_size": batch_size,
             },
         )
+
+        # Enable chunk-level progress reporting from vendored audio-separator.
+        separator.progress_callback = notify_internal
 
         # Load model - try direct loading for models with local YAML config
         # This bypasses audio-separator's validation for community models.
@@ -513,7 +698,7 @@ class SimpleSeparator:
                 )
 
                 # Fallback: internal roformer implementation (zfturbo_wrapper.RoformerSeparator)
-                from audio.zfturbo_wrapper import RoformerSeparator
+                from stemsep.audio.zfturbo_wrapper import RoformerSeparator
 
                 fallback = RoformerSeparator(
                     models_dir=self.models_dir, device=self.device

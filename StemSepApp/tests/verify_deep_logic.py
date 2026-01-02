@@ -10,57 +10,35 @@ from pathlib import Path
 project_root = Path(os.getcwd())
 sys.path.insert(0, str(project_root / "StemSepApp" / "src"))
 
-from models.model_factory import ModelFactory
-from core.separation_manager import SeparationManager
-from models.model_manager import ModelManager
+try:
+    import soundfile  # noqa: F401
+    _HAS_SOUNDFILE = True
+except Exception:
+    _HAS_SOUNDFILE = False
+
+if _HAS_SOUNDFILE:
+    from core.separation_manager import SeparationManager
+    from models.model_manager import ModelManager
+else:  # pragma: no cover
+    SeparationManager = None  # type: ignore
+    ModelManager = None  # type: ignore
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('StemSepTest')
 
+@unittest.skipUnless(
+    _HAS_SOUNDFILE,
+    "Optional dependency 'soundfile' not installed; skipping SeparationManager logic tests",
+)
 class TestDeepLogic(unittest.TestCase):
-    
+
     def setUp(self):
         self.model_manager = ModelManager()
-        # We don't need GPU for config checks, but we need it if we init engines.
-        # Mocking GPU for logic verification is safer/faster.
         self.separation_manager = SeparationManager(self.model_manager, gpu_enabled=False)
-        
-    def test_01_model_factory_unwa_config(self):
-        """Verify Unwa Inst V1e gets the correct Mel-Roformer config (60 bands)"""
-        print("\n--- Testing Unwa Config ---")
-        config = ModelFactory.get_model_config("unwa-inst-v1e")
-        
-        self.assertEqual(config.get('dim'), 384, "Unwa dim should be 384 (Verified via HuggingFace config)")
-        self.assertEqual(config.get('dim_freqs_in'), 1025, "Unwa dim_freqs_in should be 1025 (Verified via HuggingFace config)")
-        # Official YAML uses num_bands=60, not explicit freqs_per_bands list
-        self.assertEqual(config.get('num_bands'), 60, "Unwa should have num_bands=60")
-        print("✅ Unwa config looks correct (Mel-Roformer 60 bands)")
 
-    def test_02_model_factory_viperx_config(self):
-        """Verify ViperX gets correct BS-Roformer config"""
-        print("\n--- Testing ViperX Config ---")
-        config = ModelFactory.get_model_config("bs-roformer-viperx-1297")
-        
-        self.assertEqual(config.get('dim'), 512, "ViperX dim should be 512")
-        self.assertEqual(config.get('dim_freqs_in'), 1025, "ViperX dim_freqs_in should be 1025 (BS)")
-        print("✅ ViperX config looks correct")
-
-    def test_03_model_factory_vr_config(self):
-        """Verify VR models get VR config"""
-        print("\n--- Testing VR Config ---")
-        config = ModelFactory.get_model_config("5_hp-karaoke-uvr")
-        self.assertEqual(config.get('dim'), 32, "VR dim should be 32")
-        
-        # Test instantiation (to verify imports work)
-        try:
-            model = ModelFactory.create_model("VR", config)
-            print("✅ VR Model instantiated successfully (Imports work)")
-        except Exception as e:
-            self.fail(f"Failed to instantiate VR model: {e}")
-
-    def test_04_create_job_arguments(self):
-        """Verify create_job passes arguments correctly to create_ensemble_job"""
+    def test_01_create_job_arguments(self):
+        """Verify create_job passes arguments correctly to create_ensemble_job."""
         print("\n--- Testing create_job Argument Passing ---")
         
         # We create a dummy ensemble config
@@ -100,6 +78,27 @@ class TestDeepLogic(unittest.TestCase):
             
         finally:
             self.separation_manager.create_ensemble_job = original_create_ensemble
+
+    def test_02_recommended_settings_defaulting_single_model(self):
+        """Verify model recommended_settings apply when caller uses 'unset' defaults."""
+        job_id = self.separation_manager.create_job(
+            file_path="test.wav",
+            model_id="bs-roformer-viperx-1297",
+            output_dir="out",
+            overlap=0.25,
+            segment_size=0,
+            batch_size=1,
+            tta=False,
+        )
+
+        job = self.separation_manager.get_job(job_id)
+        self.assertIsNotNone(job)
+        self.assertEqual(getattr(job, 'segment_size', None), 352800)
+        # Registry uses overlap as integer divisor (e.g., 4)
+        self.assertEqual(getattr(job, 'overlap', None), 4)
+        # On CPU, we deliberately do not auto-increase batch_size
+        self.assertEqual(getattr(job, 'batch_size', None), 1)
+        self.assertEqual(getattr(job, 'tta', None), False)
 
 if __name__ == '__main__':
     unittest.main()

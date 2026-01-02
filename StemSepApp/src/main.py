@@ -1,97 +1,80 @@
 """
-StemSep - Advanced Audio Stem Separation Application
-A Windows application for separating audio into individual stems using local AI models.
+Legacy GUI entry module.
+
+This file is kept for backwards compatibility with older workflows that run
+`python src/main.py` or import `main`. The robust, long-term entry point is:
+
+    python -m stemsep
+
+The application code now lives under the `stemsep` import namespace to avoid
+top-level package name collisions (e.g. `audio`, `core`, `models`, `ui`).
+
+Important:
+- No sys.path hacks here. Editable installs and normal installs should work.
 """
 
-import customtkinter as ctk
-import tkinter as tk
-from tkinter import messagebox
+from __future__ import annotations
+
 import sys
-import os
-import logging
-from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from ui.main_window import MainWindow
-from core.config import Config
-from core.logger import setup_logging
-from core.gpu_detector import GPUDetector
-from core.fonts import ensure_font_permissions
-from models.model_manager import ModelManager
+def main(argv: list[str] | None = None) -> int:
+    """
+    Start the StemSep desktop GUI application.
 
-class StemSepApp:
-    """Main application class for StemSep"""
+    Args:
+        argv: Optional CLI args. Currently ignored (GUI app).
 
-    def __init__(self):
-        """Initialize the application"""
-        # Setup logging
-        self.logger = setup_logging()
+    Returns:
+        Process exit code.
+    """
+    _ = argv
 
-        # Load configuration
-        self.config = Config()
+    # Import lazily so `import main` stays cheap and doesn't error in environments
+    # where GUI deps aren't installed.
+    from stemsep.core.config import Config
+    from stemsep.core.fonts import ensure_font_permissions
+    from stemsep.core.gpu_detector import GPUDetector
+    from stemsep.core.logger import setup_logging
+    from stemsep.models.model_manager import ModelManager
+    from stemsep.ui.main_window import MainWindow
 
-        # Setup appearance mode
-        ctk.set_appearance_mode(self.config.get('ui.theme', 'dark'))
-        ctk.set_default_color_theme(self.config.get('ui.color_theme', 'blue'))
+    # Setup logging early
+    logger = setup_logging()
 
-        # Ensure font readability on Linux to avoid CustomTkinter fallback rendering
-        try:
-            ensure_font_permissions(self.logger)
-        except Exception:
-            pass
+    # Load configuration
+    config = Config()
 
-        # Detect GPU
-        self.gpu_detector = GPUDetector()
-        gpu_info = self.gpu_detector.get_gpu_info()
+    # Ensure font readability on Linux to avoid CustomTkinter fallback rendering
+    try:
+        ensure_font_permissions()
+    except Exception:
+        logger.debug("Font permission check failed (non-fatal).", exc_info=True)
 
-        self.logger.info("StemSep Application Starting")
-        self.logger.info(f"GPU Detected: {gpu_info}")
+    # Initialize GPU detector early, so device errors are surfaced deterministically
+    try:
+        GPUDetector()
+    except Exception:
+        # Device policy is enforced deeper in the pipeline; we log here for visibility.
+        logger.debug("GPU detector initialization encountered an error.", exc_info=True)
 
-        # Initialize model manager
-        self.model_manager = ModelManager()
-
-        # Create main window
-        self.root = ctk.CTk()
-        self.root.title("StemSep - Audio Stem Separation")
-        self.root.geometry("1200x800")
-        self.root.minsize(1000, 700)
-
-        # Set window icon if available
-        try:
-            icon_path = Path(__file__).parent.parent / 'assets' / 'icon.ico'
-            if icon_path.exists():
-                self.root.iconbitmap(str(icon_path))
-        except Exception as e:
-            self.logger.warning(f"Could not set window icon: {e}")
-
-        # Initialize main window UI
-        self.main_window = MainWindow(
-            root=self.root,
-            config=self.config,
-            gpu_info=gpu_info,
-            model_manager=self.model_manager
+    # Ensure models are discovered/initialized
+    try:
+        ModelManager(config=config)
+    except TypeError:
+        # Some versions/branches may have a different signature.
+        ModelManager()  # type: ignore[call-arg]
+    except Exception:
+        logger.debug(
+            "ModelManager initialization failed (may be deferred).", exc_info=True
         )
 
-    def run(self):
-        """Start the application main loop"""
-        try:
-            self.root.mainloop()
-        except Exception as e:
-            self.logger.error(f"Application error: {e}")
-            messagebox.showerror("Error", f"An unexpected error occurred: {e}")
-        finally:
-            self.logger.info("StemSep Application Shutting Down")
+    # Start UI
+    app = MainWindow(config=config)
+    app.mainloop()
 
-def main():
-    """Main entry point"""
-    try:
-        app = StemSepApp()
-        app.run()
-    except Exception as e:
-        print(f"Failed to start application: {e}")
-        sys.exit(1)
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main(sys.argv[1:]))

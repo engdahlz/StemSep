@@ -2,15 +2,17 @@
 Models page for downloading and managing models
 """
 
-import customtkinter as ctk
+import asyncio
+import threading
 import tkinter as tk
 from tkinter import messagebox
-import asyncio
-import aiohttp
 from typing import Dict, List
-import threading
 
-from models.model_manager import ModelInfo
+import aiohttp
+import customtkinter as ctk
+
+from stemsep.models.model_manager import ModelInfo
+
 
 class ModelsPage(ctk.CTkFrame):
     """Page for managing models"""
@@ -35,9 +37,7 @@ class ModelsPage(ctk.CTkFrame):
         """Create the models page UI"""
         # Title
         title_label = ctk.CTkLabel(
-            self,
-            text="Models",
-            font=ctk.CTkFont(size=24, weight="bold")
+            self, text="Models", font=ctk.CTkFont(size=24, weight="bold")
         )
         title_label.pack(pady=(20, 10))
 
@@ -46,21 +46,21 @@ class ModelsPage(ctk.CTkFrame):
         filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
         filter_frame.grid_columnconfigure(2, weight=1)
 
-        ctk.CTkLabel(filter_frame, text="Filter:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        ctk.CTkLabel(filter_frame, text="Filter:").grid(
+            row=0, column=0, padx=10, pady=10, sticky="w"
+        )
 
         self.filter_var = tk.StringVar(value="all")
         filter_menu = ctk.CTkOptionMenu(
             filter_frame,
             variable=self.filter_var,
             values=["all", "BS-Roformer", "Mel-Roformer", "MDX23C", "SCNet"],
-            command=self._on_filter_change
+            command=self._on_filter_change,
         )
         filter_menu.grid(row=0, column=1, padx=10, pady=10, sticky="w")
 
         install_status = ctk.CTkLabel(
-            filter_frame,
-            textvariable=self.install_progress_var,
-            text_color="gray"
+            filter_frame, textvariable=self.install_progress_var, text_color="gray"
         )
         install_status.grid(row=0, column=2, padx=10, pady=10, sticky="e")
 
@@ -68,7 +68,7 @@ class ModelsPage(ctk.CTkFrame):
             filter_frame,
             text="Install All",
             width=120,
-            command=self._on_install_all_clicked
+            command=self._on_install_all_clicked,
         )
         self.install_all_button.grid(row=0, column=3, padx=10, pady=10, sticky="e")
 
@@ -89,14 +89,14 @@ class ModelsPage(ctk.CTkFrame):
         # Instead of destroying all widgets, show/hide existing ones
         # This is much faster than recreating everything
         model_ids = {m.id for m in models}
-        
+
         # Hide cards not in filtered list
         for model_id, card in self.model_cards.items():
             if model_id in model_ids:
                 card.pack(fill=tk.X, pady=10)
             else:
                 card.pack_forget()
-        
+
         # Create new cards for models we haven't seen yet
         for model in models:
             if model.id not in self.model_cards:
@@ -110,7 +110,7 @@ class ModelsPage(ctk.CTkFrame):
             model,
             self.model_manager,
             on_install=self._on_install_clicked,
-            on_remove=self._on_remove_clicked
+            on_remove=self._on_remove_clicked,
         )
         card.pack(fill=tk.X, pady=10)
         return card
@@ -121,13 +121,12 @@ class ModelsPage(ctk.CTkFrame):
 
     def _on_install_clicked(self, model_id: str):
         """Handle install button click"""
+
         # Start download in background
         def download():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            loop.run_until_complete(
-                self.model_manager.download_model(model_id)
-            )
+            loop.run_until_complete(self.model_manager.download_model(model_id))
             loop.close()
 
         thread = threading.Thread(target=download, daemon=True)
@@ -138,8 +137,7 @@ class ModelsPage(ctk.CTkFrame):
     def _on_remove_clicked(self, model_id: str):
         """Handle remove button click"""
         result = messagebox.askyesno(
-            "Confirm Removal",
-            f"Are you sure you want to remove {model_id}?"
+            "Confirm Removal", f"Are you sure you want to remove {model_id}?"
         )
 
         if result:
@@ -151,10 +149,14 @@ class ModelsPage(ctk.CTkFrame):
         if self.batch_install_running:
             return
 
-        missing_models = [m.id for m in self.model_manager.get_available_models() if not m.installed]
+        missing_models = [
+            m.id for m in self.model_manager.get_available_models() if not m.installed
+        ]
 
         if not missing_models:
-            messagebox.showinfo("All Installed", "All available models are already installed.")
+            messagebox.showinfo(
+                "All Installed", "All available models are already installed."
+            )
             return
 
         self.batch_install_running = True
@@ -163,7 +165,9 @@ class ModelsPage(ctk.CTkFrame):
         self.batch_results_fail.clear()
         self.batch_results_errors.clear()
         self.install_all_button.configure(state=tk.DISABLED, text="Installing...")
-        self.install_progress_var.set(f"Starting batch ({len(missing_models)} models)...")
+        self.install_progress_var.set(
+            f"Starting batch ({len(missing_models)} models)..."
+        )
 
         def download_all():
             loop = asyncio.new_event_loop()
@@ -174,7 +178,9 @@ class ModelsPage(ctk.CTkFrame):
                     async with aiohttp.ClientSession() as session:
                         for index, model_id in enumerate(missing_models, start=1):
                             self._update_batch_status(index, len(missing_models))
-                            await self.model_manager.download_model(model_id, session=session)
+                            await self.model_manager.download_model(
+                                model_id, session=session
+                            )
                 finally:
                     self._end_batch_status()
 
@@ -187,7 +193,12 @@ class ModelsPage(ctk.CTkFrame):
         messagebox.showinfo("Batch Download", "Started downloading all missing models.")
 
     def _update_batch_status(self, current: int, total: int):
-        self.after(0, lambda: self.install_progress_var.set(f"Downloading model {current}/{total}..."))
+        self.after(
+            0,
+            lambda: self.install_progress_var.set(
+                f"Downloading model {current}/{total}..."
+            ),
+        )
 
     def _end_batch_status(self):
         def _reset():
@@ -222,17 +233,17 @@ class ModelsPage(ctk.CTkFrame):
     def _process_download_event(self, event_type: str, model_id: str, value):
         card = self.model_cards.get(model_id)
 
-        if event_type == 'start':
+        if event_type == "start":
             if card:
                 card.set_downloading()
-        elif event_type == 'progress':
+        elif event_type == "progress":
             if card:
                 try:
                     progress = float(value)
                 except (TypeError, ValueError):
                     progress = 0.0
                 card.update_progress(progress)
-        elif event_type == 'complete':
+        elif event_type == "complete":
             if card:
                 card.set_complete()
             if self.batch_install_running:
@@ -241,7 +252,7 @@ class ModelsPage(ctk.CTkFrame):
                 self.install_progress_var.set("")
                 self.install_all_button.configure(state=tk.NORMAL, text="Install All")
                 self._refresh_model_list()
-        elif event_type == 'error':
+        elif event_type == "error":
             if card:
                 card.set_error(str(value))
             if self.batch_install_running:
@@ -252,7 +263,10 @@ class ModelsPage(ctk.CTkFrame):
                 self.install_all_button.configure(state=tk.NORMAL, text="Install All")
                 self.batch_install_running = False
                 if value:
-                    messagebox.showerror("Download Failed", f"Failed to download {model_id}: {value}")
+                    messagebox.showerror(
+                        "Download Failed", f"Failed to download {model_id}: {value}"
+                    )
+
 
 class ModelCard(ctk.CTkFrame):
     """Card showing model information"""
@@ -283,18 +297,13 @@ class ModelCard(ctk.CTkFrame):
 
         # Name
         name_label = ctk.CTkLabel(
-            self,
-            text=self.model.name,
-            font=ctk.CTkFont(size=18, weight="bold")
+            self, text=self.model.name, font=ctk.CTkFont(size=18, weight="bold")
         )
         name_label.grid(row=0, column=1, sticky="w", padx=20, pady=(15, 5))
 
         # Description
         desc_label = ctk.CTkLabel(
-            self,
-            text=self.model.description,
-            font=ctk.CTkFont(size=12),
-            wraplength=500
+            self, text=self.model.description, font=ctk.CTkFont(size=12), wraplength=500
         )
         desc_label.grid(row=1, column=1, sticky="w", padx=20, pady=5)
 
@@ -305,10 +314,7 @@ class ModelCard(ctk.CTkFrame):
             f"Bleedless: {self.model.bleedless}"
         )
         metrics_label = ctk.CTkLabel(
-            self,
-            text=metrics_text,
-            font=ctk.CTkFont(size=12),
-            text_color="gray"
+            self, text=metrics_text, font=ctk.CTkFont(size=12), text_color="gray"
         )
         metrics_label.grid(row=2, column=1, sticky="w", padx=20, pady=5)
 
@@ -319,10 +325,7 @@ class ModelCard(ctk.CTkFrame):
             f"Speed: {self.model.speed}"
         )
         info_label = ctk.CTkLabel(
-            self,
-            text=info_text,
-            font=ctk.CTkFont(size=11),
-            text_color="gray"
+            self, text=info_text, font=ctk.CTkFont(size=11), text_color="gray"
         )
         info_label.grid(row=3, column=1, sticky="w", padx=20, pady=5)
 
@@ -338,7 +341,7 @@ class ModelCard(ctk.CTkFrame):
                 width=100,
                 command=self._on_remove_clicked,
                 fg_color="red",
-                hover_color="darkred"
+                hover_color="darkred",
             )
             self.remove_button.pack(side=tk.RIGHT)
 
@@ -347,7 +350,7 @@ class ModelCard(ctk.CTkFrame):
                 self.button_frame,
                 text="✓ Installed",
                 font=ctk.CTkFont(size=12, weight="bold"),
-                text_color="green"
+                text_color="green",
             )
             self.status_label.pack(side=tk.RIGHT, padx=15)
         else:
@@ -356,7 +359,7 @@ class ModelCard(ctk.CTkFrame):
                 self.button_frame,
                 text="Download",
                 width=100,
-                command=self._on_install_clicked
+                command=self._on_install_clicked,
             )
             self.install_button.pack(side=tk.RIGHT)
 
@@ -367,7 +370,7 @@ class ModelCard(ctk.CTkFrame):
                     self.button_frame,
                     text=f"{size_mb:.1f} MB",
                     font=ctk.CTkFont(size=12),
-                    text_color="gray"
+                    text_color="gray",
                 )
                 self.size_label.pack(side=tk.RIGHT, padx=15)
 
@@ -375,7 +378,7 @@ class ModelCard(ctk.CTkFrame):
             self.button_frame,
             textvariable=self.progress_var,
             font=ctk.CTkFont(size=12),
-            text_color="gray"
+            text_color="gray",
         )
 
     def _on_remove_clicked(self):
