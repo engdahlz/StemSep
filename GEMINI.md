@@ -1,99 +1,85 @@
-# 🧠 StemSep-V3 - AI Developer Context
+# StemSep V3 Context
 
-## 📋 Project Overview
-**StemSep-V3** is a local, AI-powered audio stem separation desktop application. It allows users to split audio files into individual tracks (vocals, drums, bass, etc.) using state-of-the-art machine learning models.
+## Project Overview
 
-### 🏗️ Architecture
-The project is a hybrid **Electron + Python** application:
-*   **Frontend (`electron-poc/`):**
-    *   **Framework:** Electron, React, TypeScript, Vite.
-    *   **Styling:** Tailwind CSS, shadcn/ui.
-    *   **Role:** Handles the user interface, file management, audio playback, and interaction with the Python backend.
-*   **Backend (`StemSepApp/`):**
-    *   **Core:** Python 3.
-    *   **ML Framework:** PyTorch (Torch/Torchaudio).
-    *   **Audio Processing:** Librosa, SoundFile, FFmpeg.
-    *   **Role:** Executes the AI inference using models like BS-Roformer, Mel-Roformer, MDX23C, and SCNet.
-*   **Bridge:**
-    *   Communication occurs via a Python bridge script (`electron-poc/python-bridge.py`) using standard I/O (stdin/stdout) or IPC to relay commands and progress between Electron and the Python engine.
+**StemSep V3** is a desktop application for AI-powered audio stem separation. It allows users to extract vocals, drums, bass, and other instruments from audio files using state-of-the-art machine learning models (BS-Roformer, Mel-Roformer, MDX23C, Demucs).
 
----
+**Architecture:**
+The application follows a hybrid architecture:
+*   **Frontend (UI):** Electron + React + TypeScript (located in `electron-poc/`).
+*   **Orchestration (Backend):** Rust service (located in `stemsep-backend/`) handling IPC and process management.
+*   **Inference Engine:** Python 3.10+ (located in `StemSepApp/`), driven by `scripts/inference.py`.
 
-## 📂 Directory Structure
+## Key Directories
 
-### `electron-poc/` (Frontend)
-*   `package.json`: Node dependencies and scripts (`npm run electron:dev`).
-*   `src/`: React source code.
-    *   `components/`: UI components (Upload area, Player, Progress bars).
-    *   `App.tsx`: Main application entry point.
-*   `python-bridge.py`: The interface script spawned by Electron to run Python code.
+*   `electron-poc/`: Main Electron/React application source code.
+*   `stemsep-backend/`: Rust backend source code.
+*   `StemSepApp/`: Core Python library containing model logic and separation engines.
+*   `scripts/`: Python utility scripts for inference, model downloading, and validation.
+*   `models/`: Directory where downloaded model weights are stored.
+*   `docs/`: Project documentation.
 
-### `StemSepApp/` (Backend)
-*   `src/main.py`: Legacy/Stand-alone Python entry point.
-*   `src/core/`: Core logic for configuration and separation management.
-*   `src/audio/`: Audio processing and inference engines.
-*   `src/models/`: Model management (downloading, loading).
-*   `requirements.txt`: Python dependencies.
-
-### Root Files
-*   `MCP_TOOLS_GUIDE.md`: Documentation for Model Context Protocol tools.
-*   `stemsep_cli.py`: Command-line interface for separation tasks.
-
----
-
-## 🚀 Development & Usage
+## Build and Run Instructions
 
 ### Prerequisites
-*   **Node.js:** v18+
-*   **Python:** 3.10+
-*   **FFmpeg:** Must be installed and on the system PATH.
-*   **CUDA (Optional):** For GPU acceleration (strongly recommended).
+*   Node.js (v20 LTS recommended)
+*   Python 3.10+
+*   Rust (latest stable)
 
-### Setup
-1.  **Backend:**
-    ```bash
-    # In root or StemSepApp/
+### Development Setup
+
+1.  **Python Environment:**
+    ```powershell
+    cd StemSepApp
     python -m venv .venv
-    source .venv/bin/activate  # or .venv\Scripts\activate
-    pip install -r StemSepApp/requirements.txt
+    .\.venv\Scripts\Activate
+    pip install -r requirements.txt
     ```
-2.  **Frontend:**
-    ```bash
-    cd electron-poc
-    npm install
+
+2.  **UI Dependencies:**
+    ```powershell
+    # From project root
+    npm run install:ui
     ```
 
 ### Running the Application
-To start the full stack (Electron + React + Python Bridge) in development mode:
-```bash
-cd electron-poc
-npm run electron:dev
+
+*   **Development Mode (Hot Reload):**
+    ```powershell
+    # From project root
+    npm run electron:dev
+    ```
+    This command concurrently runs the Vite dev server and the Electron app.
+
+*   **Production Build:**
+    ```powershell
+    # From project root
+    npm run electron:build
+    ```
+    This builds the Rust backend (`cargo build --release`), the React frontend (`vite build`), and packages the Electron application using `electron-builder`.
+
+### Utility Scripts
+
+The `scripts/` directory contains various helpers. Use the provided shell wrappers for reliability:
+
+*   **Windows:** `.\scripts\run_py.ps1 <script_path> [args]`
+*   **macOS/Linux:** `./scripts/run_py.sh <script_path> [args]`
+
+Example:
+```powershell
+.\scripts\run_py.ps1 .\scripts\registry\validate_model_registry.py
 ```
-*This command concurrently runs Vite (for React HMR) and Electron, which in turn spawns the Python bridge.*
 
----
+## Development Conventions
 
-## 🤖 AI Agent Guidelines
-
-### Core Directive
-You are an autonomous AI developer for StemSep-V3. Your goal is to maintain, refactor, and enhance this application. Always prefer using available tools to explore context before asking the user.
-
-### 🛠️ Tool Usage Strategy
-*   **`codebase_investigator`**: Use this FIRST for complex tasks to understand dependencies between the React frontend and Python backend.
-*   **`grep` / `glob`**: Use for targeted searches (e.g., finding where specific models are loaded).
-*   **`run_shell_command`**: Use to run tests (`npm test`, `pytest`), install dependencies, or start the app.
-*   **`write_file` / `replace`**: Use for code modifications. Always verify the file content first.
-
-### 💡 Project-Specific Behaviors
-*   **Cross-Language Context:** When modifying the UI (React), checking the backend (Python) response format in `python-bridge.py` is often necessary.
-*   **Models:** The app relies on external model weights (Roformer, MDX). Assume they are downloaded to `models/` or handled by `ModelManager`.
-*   **Performance:** Audio separation is heavy. Be mindful of async operations and progress reporting in the UI to prevent freezing.
-
-### 📦 MCP Integration
-This environment supports the Model Context Protocol (MCP).
-*   **GitHub:** Use for issue tracking and PRs if connected.
-*   **Google Drive:** Use for accessing external project docs if needed.
-*   **Sequential Thinking:** Use for complex architectural refactoring.
-
----
-*Auto-generated by Gemini Agent - December 7, 2025*
+*   **UI/Frontend:**
+    *   Uses TailwindCSS for styling.
+    *   State management via Zustand.
+    *   Typecheck with `npm run ui:typecheck`.
+    *   Test with `npm run ui:test`.
+*   **Code Style:**
+    *   Follow existing formatting (Rustfmt, Prettier, Black/Ruff for Python).
+    *   Keep changes small and focused.
+*   **Models:**
+    *   New models in the registry must have a stable `model_id` and valid download URL.
+    *   Check `CONTRIBUTING.md` for detailed guidelines.
