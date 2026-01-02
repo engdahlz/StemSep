@@ -7,6 +7,7 @@ __pycache__/
 # Virtual environments
 .env/
 .venv/
+.venv312/
 venv/
 ENV/
 
@@ -20,6 +21,13 @@ pnpm-debug.log*
 # Build outputs
 build/
 dist/
+.turbo/
+**/*.tsbuildinfo
+electron-poc/dist-electron/
+electron-poc/dist-renderer/
+
+# Rust
+**/target/
 *.spec
 
 # Logs and runtime
@@ -30,6 +38,24 @@ temp_models/
 .stemsep/
 *.log
 
+# Local dev artifacts and caches
+.pytest_cache/
+*_tmp*.log
+_backend_out/
+_backend_smoke_out/
+output_golden_smoke/
+saved_output/
+test_output/
+
+# Reports
+# Do not blanket-ignore reports (some are source-of-truth, e.g. mirror manifests).
+# If you have large/generated outputs, add targeted patterns here instead.
+
+# Electron dev logs (generated)
+dev-electron.log
+electron-poc/dev-electron.log
+electron-poc/*.log
+
 # Credentials / secrets (never commit)
 gcp-oauth.keys.json
 gcp-oauth.keys.*.json
@@ -39,6 +65,18 @@ gcp-oauth.keys.*.json
 # IDE/settings
 .vscode/
 .idea/
+
+# AI/dev tool state
+.kilocode/
+.gemini/
+gha-creds-*.json
+
+# IDE/assistant local state
+.opencode/
+.zed/
+
+# Nested repos / vendor workspaces
+rust-sdk/
 
 # Audio/model cache
 models/
@@ -57,6 +95,46 @@ models_test/
 Thumbs.db
 Desktop.ini
 
+# Large local media/doc artifacts
+# Keep canonical references under docs/vendor (tracked), but ignore elsewhere.
+*.mp3
+*.xlsx
+*.docx
+*.pdf
+*.wav
+*.flac
+*.m4a
+*.aac
+*.ogg
+*.opus
+
+!docs/vendor/**
+!docs/vendor/**/*
+!docs/vendor/**/*.mp3
+!docs/vendor/**/*.xlsx
+!docs/vendor/**/*.docx
+!docs/vendor/**/*.pdf
+!docs/vendor/**/*.wav
+!docs/vendor/**/*.flac
+!docs/vendor/**/*.m4a
+!docs/vendor/**/*.aac
+!docs/vendor/**/*.ogg
+!docs/vendor/**/*.opus
+
+# Exclude heavy binary artifacts inside vendor subfolders (keep curated text/PDF only)
+docs/vendor/deton24_guide/*.xlsx
+docs/vendor/deton24_guide/*.docx
+docs/vendor/deton24_guide/*.mp3
+
+# Local artifact backup folders (moved out of source-of-truth paths)
+StemSepApp/assets/_backups/
+docs/notes/artifacts/backups/
+
+# Debug artifacts: keep structure + README, but don't commit ad-hoc dumps/logs
+docs/notes/artifacts/**
+!docs/notes/artifacts/README.md
+!docs/notes/artifacts/backups/
+
 # PyInstaller temp
 *.manifest
 *.dll
@@ -64,6 +142,3 @@ Desktop.ini
 # Coverage
 htmlcov/
 .coverage*
-
-saved_output/
-test_output/
