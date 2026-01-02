@@ -47,13 +47,15 @@ const PHASE_FIX_PRESETS = {
 interface EnsembleBuilderProps {
     models: Model[]
     config: EnsembleModelConfig[]
-    algorithm: 'average' | 'max_spec' | 'min_spec'
+    algorithm: 'average' | 'max_spec' | 'min_spec' | 'frequency_split'
     phaseFixEnabled?: boolean
+    volumeCompEnabled?: boolean
     stemAlgorithms?: StemAlgorithms
     phaseFixParams?: PhaseFixParams
+    onVolumeCompEnabledChange?: (enabled: boolean) => void
     onChange: (
         config: EnsembleModelConfig[],
-        algorithm: 'average' | 'max_spec' | 'min_spec',
+        algorithm: 'average' | 'max_spec' | 'min_spec' | 'frequency_split',
         stemAlgorithms?: StemAlgorithms,
         phaseFixParams?: PhaseFixParams,
         phaseFixEnabled?: boolean
@@ -65,8 +67,10 @@ export function EnsembleBuilder({
     config,
     algorithm,
     phaseFixEnabled = false,
+    volumeCompEnabled = false,
     stemAlgorithms,
     phaseFixParams,
+    onVolumeCompEnabledChange,
     onChange
 }: EnsembleBuilderProps) {
     const availableModels = models.filter(m => m.installed !== false)
@@ -150,6 +154,25 @@ export function EnsembleBuilder({
                 </div>
             </div>
 
+            {/* Volume Compensation Checkbox */}
+            <div className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
+                <input
+                    type="checkbox"
+                    id="volumeCompEnabled"
+                    checked={volumeCompEnabled}
+                    onChange={(e) => onVolumeCompEnabledChange?.(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <div>
+                    <label htmlFor="volumeCompEnabled" className="text-sm font-medium cursor-pointer">
+                        Enable VC
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                        Adds headroom when combining multiple models (reduces clipping risk). When enabled, uses best defaults.
+                    </p>
+                </div>
+            </div>
+
             {/* Algorithm Selection */}
             <div className="flex items-center justify-between">
                 <label className="text-sm font-medium">Ensemble Algorithm</label>
@@ -161,6 +184,7 @@ export function EnsembleBuilder({
                     <option value="average">Average (Balanced SDR)</option>
                     <option value="max_spec">Max Spec (Fullest)</option>
                     <option value="min_spec">Min Spec (Bleedless)</option>
+                    <option value="frequency_split">Frequency Split (Low/High)</option>
                 </select>
             </div>
 

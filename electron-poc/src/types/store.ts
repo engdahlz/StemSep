@@ -1,107 +1,162 @@
 export interface Model {
-  id: string
-  name: string
-  architecture: string
-  version: string
-  category: string
-  description: string
-  sdr: number
-  fullness: number
-  bleedless: number
-  vram_required: number
-  speed: string
-  stems: string[]
-  file_size: number
-  installed: boolean
-  downloading: boolean
-  downloadPaused?: boolean
-  downloadProgress: number
-  downloadSpeed?: number
-  downloadEta?: number
-  downloadError?: string
-  recommended: boolean
-  is_custom?: boolean
+  id: string;
+  name: string;
+  architecture: string;
+  version: string;
+  category: string;
+  description: string;
+  sdr: number;
+  fullness: number;
+  bleedless: number;
+  vram_required: number;
+  speed: string;
+  stems: string[];
+  file_size: number;
+  installed: boolean;
+  downloading: boolean;
+  downloadPaused?: boolean;
+  downloadProgress: number;
+  downloadSpeed?: number;
+  downloadEta?: number;
+  downloadError?: string;
+  recommended: boolean;
+  is_custom?: boolean;
   recommended_settings?: {
-    overlap?: number
-    segment_size?: number
-    chunk_size?: number
-    shifts?: number
-  }
-  repo_id?: string
-  chunk_size?: number
-  dim_f?: number
-  dim_t?: number
-  n_fft?: number
-  hop_length?: number
+    overlap?: number;
+    segment_size?: number;
+    chunk_size?: number;
+    shifts?: number;
+  };
+  repo_id?: string;
+  chunk_size?: number;
+  dim_f?: number;
+  dim_t?: number;
+  n_fft?: number;
+  hop_length?: number;
+
+  // v2 registry metadata (optional - comes from backend registry)
+  tags?: string[];
+  compatibility?: {
+    stemsep_min_version?: string;
+    python_min_version?: string;
+    engines?: string[];
+    devices?: string[];
+    os?: string[];
+  };
+  runtime?: {
+    allowed?: boolean;
+    blocking_reason?: string;
+    requirements?: {
+      manual_steps?: string[];
+      python_packages?: string[];
+      system?: string[];
+    };
+  };
+  phase_fix?: {
+    is_valid_reference?: boolean;
+    reference_model_id?: string;
+    recommended_params?: {
+      lowHz?: number;
+      highHz?: number;
+      highFreqWeight?: number;
+    };
+  };
+  artifacts?: {
+    primary?: {
+      url?: string;
+      filename?: string;
+      sha256?: string;
+    };
+    extra?: Array<{
+      url?: string;
+      filename?: string;
+      sha256?: string;
+    }>;
+  };
 }
 
+export type Recipe = import("./recipes").Recipe;
+
 export interface HistoryItem {
-  id: string
-  backendJobId?: string
-  date: string
-  inputFile: string
-  outputDir: string
-  modelId: string
-  modelName: string
-  preset?: { id: string; name: string }
-  status: 'completed' | 'failed'
-  duration?: number
-  outputFiles?: Record<string, string>
-  isFavorite?: boolean
+  id: string;
+  backendJobId?: string;
+  date: string;
+  inputFile: string;
+  outputDir: string;
+  modelId: string;
+  modelName: string;
+  preset?: { id: string; name: string };
+  status: "completed" | "failed";
+  duration?: number;
+  outputFiles?: Record<string, string>;
+  isFavorite?: boolean;
   settings: {
-    overlap?: number
-    segmentSize?: number
-    stems?: string[]
-  }
+    overlap?: number;
+    segmentSize?: number;
+    stems?: string[];
+  };
 }
 
 export interface SeparationState {
-  isProcessing: boolean
-  isPaused: boolean
-  progress: number
-  message: string
-  logs: string[]
-  outputFiles: Record<string, string> | null
-  error: string | null
-  startTime?: number
-  queue: QueueItem[]
+  isProcessing: boolean;
+  isPaused: boolean;
+  progress: number;
+  message: string;
+  logs: string[];
+  outputFiles: Record<string, string> | null;
+  error: string | null;
+  startTime?: number;
+  queue: QueueItem[];
 }
 
 export interface QueueItem {
-  id: string
-  backendJobId?: string
-  file: string
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'queued'
-  outputFiles?: Record<string, string>
-  error?: string
-  device?: string
-  progress?: number
-  message?: string // Progress message (Loading model, Processing chunk X/Y, Finalizing...)
-  startTime?: number // For ETR calculation
-  modelId?: string
+  id: string;
+  backendJobId?: string;
+  file: string;
+  status:
+    | "pending"
+    | "processing"
+    | "completed"
+    | "failed"
+    | "cancelled"
+    | "queued";
+  outputFiles?: Record<string, string>;
+  error?: string;
+  device?: string;
+  progress?: number;
+  message?: string; // Progress message (Loading model, Processing chunk X/Y, Finalizing...)
+  startTime?: number; // For ETR calculation
+  lastProgressTime?: number; // Timestamp of the last progress/progress-like update (for UI reassurance)
+  modelId?: string;
 }
 
 export interface PhaseParams {
-  enabled: boolean
-  lowHz: number
-  highHz: number
-  highFreqWeight: number
+  enabled: boolean;
+  lowHz: number;
+  highHz: number;
+  highFreqWeight: number;
 }
 
 export interface SettingsState {
-  theme: 'light' | 'dark' | 'system'
-  defaultOutputDir?: string
-  defaultExportDir?: string
-  modelsDir?: string
-  defaultModelId?: string
-  phaseParams: PhaseParams
+  theme: "light" | "dark" | "system";
+  defaultOutputDir?: string;
+  defaultExportDir?: string;
+  modelsDir?: string;
+  defaultModelId?: string;
+  phaseParams: PhaseParams;
   advancedSettings?: {
-    shifts: number
-    overlap: number
-    segmentSize: number
-    outputFormat: 'mp3' | 'wav' | 'flac'
-    bitrate: string
-  }
+    device?: "auto" | "cpu" | "cuda" | string;
+    /**
+     * Persist a specific CUDA device (e.g. "cuda:0", "cuda:1") so users can set a
+     * stable default GPU choice rather than relying on "cuda" or "auto".
+     */
+    preferredCudaDevice?: string;
+    shifts: number;
+    overlap: number;
+    segmentSize: number;
+    outputFormat: "wav" | "mp3" | "flac";
+    bitrate: string;
+  };
 }
 
 // Forward declaration for slices to use
@@ -124,61 +179,68 @@ export interface SettingsState {
 // Slice interfaces:
 
 export interface ModelSlice {
-  models: Model[]
-  recipes: any[]
-  setModels: (models: Model[]) => void
-  setRecipes: (recipes: any[]) => void
-  startDownload: (modelId: string) => void
-  setDownloadProgress: (data: { modelId: string, progress: number, speed?: number, eta?: number }) => void
-  completeDownload: (modelId: string) => void
-  setDownloadError: (modelId: string, error: string) => void
-  pauseDownload: (modelId: string) => void
-  resumeDownload: (modelId: string) => void
-  setModelInstalled: (modelId: string, installed: boolean) => void
+  models: Model[];
+  recipes: Recipe[];
+  setModels: (models: Model[]) => void;
+  setRecipes: (recipes: Recipe[]) => void;
+  startDownload: (modelId: string) => void;
+  setDownloadProgress: (data: {
+    modelId: string;
+    progress: number;
+    speed?: number;
+    eta?: number;
+  }) => void;
+  completeDownload: (modelId: string) => void;
+  setDownloadError: (modelId: string, error: string) => void;
+  pauseDownload: (modelId: string) => void;
+  resumeDownload: (modelId: string) => void;
+  setModelInstalled: (modelId: string, installed: boolean) => void;
 }
 
 export interface SeparationSlice {
-  separation: SeparationState
-  setQueue: (queue: QueueItem[]) => void
-  addToQueue: (items: QueueItem[]) => void
-  removeFromQueue: (id: string) => void
-  updateQueueItem: (id: string, updates: Partial<QueueItem>) => void
-  clearQueue: () => void
-  startSeparation: () => void
-  cancelSeparation: () => void
-  pauseQueue: () => void
-  resumeQueue: () => void
-  reorderQueue: (jobIds: string[]) => void
-  setSeparationProgress: (progress: number, message: string) => void
-  addLog: (message: string) => void
-  completeSeparation: (outputFiles: Record<string, string>) => void
-  failSeparation: (error: string) => void
-  clearSeparation: () => void
-  loadQueue: () => Promise<void>
+  separation: SeparationState;
+  setQueue: (queue: QueueItem[]) => void;
+  addToQueue: (items: QueueItem[]) => void;
+  removeFromQueue: (id: string) => void;
+  updateQueueItem: (id: string, updates: Partial<QueueItem>) => void;
+  clearQueue: () => void;
+  startSeparation: () => void;
+  cancelSeparation: () => void;
+  pauseQueue: () => void;
+  resumeQueue: () => void;
+  reorderQueue: (jobIds: string[]) => void;
+  setSeparationProgress: (progress: number, message: string) => void;
+  addLog: (message: string) => void;
+  completeSeparation: (outputFiles: Record<string, string>) => void;
+  failSeparation: (error: string) => void;
+  clearSeparation: () => void;
+  loadQueue: () => Promise<void>;
 }
 
 export interface SettingsSlice {
-  history: HistoryItem[]
-  settings: SettingsState
-  sessionToLoad: HistoryItem | null
-  watchModeEnabled: boolean
-  watchPath: string
+  history: HistoryItem[];
+  settings: SettingsState;
+  sessionToLoad: HistoryItem | null;
+  watchModeEnabled: boolean;
+  watchPath: string;
 
-  addToHistory: (item: Omit<HistoryItem, 'id' | 'date'>) => void
-  removeFromHistory: (id: string) => void
-  toggleHistoryFavorite: (id: string) => void
-  clearHistory: () => void
-  loadSession: (item: HistoryItem) => void
-  clearLoadedSession: () => void
-  setTheme: (theme: 'light' | 'dark' | 'system') => void
-  setDefaultOutputDir: (path: string) => void
-  setDefaultExportDir: (path: string) => void
-  setModelsDir: (path: string) => void
-  setDefaultModel: (modelId: string) => void
-  setAdvancedSettings: (settings: Partial<SettingsState['advancedSettings']>) => void
-  setWatchMode: (enabled: boolean) => void
-  setWatchPath: (path: string) => void
-  setPhaseParams: (params: PhaseParams) => void
+  addToHistory: (item: Omit<HistoryItem, "id" | "date">) => void;
+  removeFromHistory: (id: string) => void;
+  toggleHistoryFavorite: (id: string) => void;
+  clearHistory: () => void;
+  loadSession: (item: HistoryItem) => void;
+  clearLoadedSession: () => void;
+  setTheme: (theme: "light" | "dark" | "system") => void;
+  setDefaultOutputDir: (path: string) => void;
+  setDefaultExportDir: (path: string) => void;
+  setModelsDir: (path: string) => void;
+  setDefaultModel: (modelId: string) => void;
+  setAdvancedSettings: (
+    settings: Partial<SettingsState["advancedSettings"]>,
+  ) => void;
+  setWatchMode: (enabled: boolean) => void;
+  setWatchPath: (path: string) => void;
+  setPhaseParams: (params: PhaseParams) => void;
 }
 
-export type AppState = ModelSlice & SeparationSlice & SettingsSlice
+export type AppState = ModelSlice & SeparationSlice & SettingsSlice;

@@ -17,11 +17,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('youtube-progress', handler)
   },
 
-  separationPreflight: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }) =>
-    ipcRenderer.invoke('separation-preflight', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, phaseParams }),
+  separationPreflight: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }) =>
+    ipcRenderer.invoke('separation-preflight', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation }),
 
-  separateAudio: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }) =>
-    ipcRenderer.invoke('separate-audio', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, phaseParams }),
+  separateAudio: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }) =>
+    ipcRenderer.invoke('separate-audio', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation }),
   cancelSeparation: (jobId: string) => ipcRenderer.invoke('cancel-separation', jobId),
   saveJobOutput: (jobId: string) => ipcRenderer.invoke('save-job-output', jobId),
   discardJobOutput: (jobId: string) => ipcRenderer.invoke('discard-job-output', jobId),
@@ -32,7 +32,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   reorderQueue: (jobIds: string[]) => ipcRenderer.invoke('reorder-queue', jobIds),
   exportFiles: (sourceFiles: Record<string, string>, exportPath: string, format: string, bitrate: string) =>
     ipcRenderer.invoke('export-files', { sourceFiles, exportPath, format, bitrate }),
-  onSeparationProgress: (callback: (data: { progress: number, message: string }) => void) => {
+  onSeparationProgress: (callback: (data: { progress: number, message: string, jobId?: string }) => void) => {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('separation-progress', handler)
     return () => ipcRenderer.removeListener('separation-progress', handler)
@@ -41,6 +41,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('separation-complete', handler)
     return () => ipcRenderer.removeListener('separation-complete', handler)
+  },
+  onSeparationStarted: (callback: (data: { jobId: string }) => void) => {
+    const handler = (_event: any, data: any) => callback(data)
+    ipcRenderer.on('separation-started', handler)
+    return () => ipcRenderer.removeListener('separation-started', handler)
   },
   onSeparationError: (callback: (data: { error: string }) => void) => {
     const handler = (_event: any, data: any) => callback(data)
@@ -115,4 +120,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // App Config (for settings that main process needs)
   saveAppConfig: (config: Record<string, any>) => ipcRenderer.invoke('save-app-config', config),
   getAppConfig: () => ipcRenderer.invoke('get-app-config'),
+
+  // Hugging Face auth (optional)
+  setHuggingFaceToken: (token: string) => ipcRenderer.invoke('set-huggingface-token', token),
+  clearHuggingFaceToken: () => ipcRenderer.invoke('clear-huggingface-token'),
+  getHuggingFaceAuthStatus: () => ipcRenderer.invoke('get-huggingface-auth-status'),
+
+  // External links (safe browser open)
+  openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url),
 })

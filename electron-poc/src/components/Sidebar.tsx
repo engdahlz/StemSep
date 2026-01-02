@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { Home, Music, Settings, Clock, Bookmark, Info, ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react'
+import { Home, Music, Settings, Clock, Info, ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react'
 import { Button } from './ui/button'
 import { cn } from '../lib/utils'
 import { SystemStatus } from './SystemStatus'
 import { StemSepLogo } from './StemSepLogo'
-
-type Page = 'home' | 'models' | 'settings' | 'history' | 'presets' | 'about' | 'results' | 'configure'
+import type { Page } from '../types/navigation'
 
 interface SidebarProps {
   currentPage: Page
@@ -20,7 +19,6 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
     { id: 'results' as Page, icon: PlayCircle, label: 'Results' },
     { id: 'models' as Page, icon: Music, label: 'Models' },
     { id: 'history' as Page, icon: Clock, label: 'History' },
-    { id: 'presets' as Page, icon: Bookmark, label: 'Presets' },
     { id: 'settings' as Page, icon: Settings, label: 'Settings' },
     { id: 'about' as Page, icon: Info, label: 'About' },
   ]

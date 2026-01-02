@@ -1,6 +1,23 @@
 {
+  "name": "stemsep",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "install:ui": "npm --prefix electron-poc install",
+    "ui:dev": "npm --prefix electron-poc run dev",
+    "ui:typecheck": "npm --prefix electron-poc run typecheck",
+    "ui:test": "npm --prefix electron-poc run test:run",
+    "electron:dev": "npm --prefix electron-poc run electron:dev",
+    "electron:build": "npm --prefix electron-poc run electron:build",
+    "backend:build": "cd stemsep-backend && cargo build --release"
+  },
   "dependencies": {
     "chokidar": "^5.0.0",
     "mongodb": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/chokidar": "^2.1.8",
+    "@types/mongodb": "^4.0.7",
+    "typescript": "^5.2.2"
   }
 }

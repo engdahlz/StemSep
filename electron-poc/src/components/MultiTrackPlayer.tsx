@@ -213,7 +213,28 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
     }
 
     const handleDiscard = () => {
-        if (!confirm("Remove this separation from history?")) return
+        if (!confirm("Discard this separation? This will remove it from history and delete the cached stems.")) return
+
+        // Best-effort cleanup of staged preview outputs.
+        // Uses backend job id (passed via jobId) when available.
+        if (jobId && window.electronAPI?.discardJobOutput) {
+            window.electronAPI.discardJobOutput(jobId)
+                .then((result) => {
+                    if (!result?.success) {
+                        toast.error("Failed to discard output: " + (result?.error || "Unknown error"))
+                        return
+                    }
+                    if (onDiscard) {
+                        onDiscard()
+                        toast.success("Separation removed from history")
+                    }
+                })
+                .catch((e) => {
+                    toast.error("Error discarding output")
+                    console.error(e)
+                })
+            return
+        }
 
         if (onDiscard) {
             onDiscard()

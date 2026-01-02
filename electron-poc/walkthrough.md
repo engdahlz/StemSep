@@ -1,5 +1,19 @@
 # Walkthrough: Backend Verification and Codebase Cleanup
 
+## Quick QA (Dec 2025) – Simple presets + Multi-step
+- New Separation → drop/click to choose file → Configure Separation.
+- Simple Mode:
+	- Pick a preset (use Goal/Mode/Search).
+	- Toggle `Multi-step ON/OFF` to include/exclude recipe/pipeline/chained presets.
+	- Toggle `Details ON/OFF` to show/hide technical model IDs.
+	- Verify multi-step presets show “Multi-step preset” and a collapsed “What happens?” step list.
+- Missing models:
+	- Select a preset that requires uninstalled models → Start should be disabled.
+	- Click “Go to Model Browser” (or “Download Missing Models”) and verify you land on the Models area/details.
+- Run:
+	- Start Separation → progress updates → Results preview plays.
+	- Discard should remove staged preview stems (cache cleanup).
+
 ## Overview
 This session focused on verifying the core backend logic, resolving model loading issues, and cleaning up the codebase.
 

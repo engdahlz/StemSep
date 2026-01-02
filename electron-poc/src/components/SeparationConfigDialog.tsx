@@ -4,11 +4,15 @@ import { Button } from './ui/button'
 import { Card } from './ui/card'
 import { useStore } from '../stores/useStore'
 import { Preset } from '../presets'
+import type { SeparationConfig } from '../types/separation'
 import { EnsembleBuilder } from './EnsembleBuilder'
 import { PresetSelector } from './PresetSelector'
 import { PhaseSwapControls } from './PhaseSwapControls'
 import { VRAMUsageMeter, estimateVRAMUsage } from './ui/vram-meter'
 import { TTAWarning, CPUOnlyWarning, LowVRAMWarning, EnsembleTip } from './ui/warning-tip'
+import { bestVolumeCompensation } from '../utils/volumeCompensation'
+
+export type { SeparationConfig } from '../types/separation'
 
 interface SeparationConfigDialogProps {
     open: boolean
@@ -21,31 +25,6 @@ interface SeparationConfigDialogProps {
     models?: any[]
     onNavigateToModels?: (modelId?: string) => void
     onShowModelDetails?: (modelId: string) => void
-}
-
-export interface SeparationConfig {
-    mode: 'simple' | 'advanced'
-    presetId?: string
-    modelId?: string
-    device: string
-    outputFormat: 'wav' | 'mp3' | 'flac'
-    exportMixes?: string[]
-    stems?: string[]
-    invert?: boolean
-    normalize?: boolean
-    bitDepth?: string
-    advancedParams?: {
-        overlap?: number
-        segmentSize?: number
-        shifts?: number
-        tta?: boolean
-        bitrate?: string
-    }
-    ensembleConfig?: {
-        models: { model_id: string; weight?: number }[]
-        algorithm: 'average' | 'avg_wave' | 'max_spec' | 'min_spec' | 'phase_fix'
-    }
-    splitFreq?: number
 }
 
 export default function SeparationConfigDialog({
@@ -64,10 +43,12 @@ export default function SeparationConfigDialog({
     const [mode, setMode] = useState<'simple' | 'advanced'>('simple')
     const [selectedPresetId, setSelectedPresetId] = useState<string>(initialPresetId || (presets.length > 0 ? presets[0].id : ''))
     const [selectedModelId, setSelectedModelId] = useState<string>('')
-    const [device, setDevice] = useState<string>('auto')
-    const [outputFormat, setOutputFormat] = useState<'wav' | 'mp3' | 'flac'>(globalAdvancedSettings?.outputFormat || 'wav')
+    const [device, setDevice] = useState<string>((globalAdvancedSettings?.device === 'cuda' ? 'cuda:0' : globalAdvancedSettings?.device) || 'auto')
+    // Preview/playback is always WAV. Export format is chosen later in Results.
+    const [outputFormat] = useState<'wav' | 'mp3' | 'flac'>('wav')
     const [invert, setInvert] = useState(false)
     const [normalize, setNormalize] = useState(false)
+    const [volumeCompEnabled, setVolumeCompEnabled] = useState(false)
     const [bitDepth, setBitDepth] = useState('16')
     const [splitFreq, setSplitFreq] = useState(750)
     const [advancedParams, setAdvancedParams] = useState({
@@ -78,8 +59,7 @@ export default function SeparationConfigDialog({
         bitrate: globalAdvancedSettings?.bitrate || '320k'
     })
 
-    // Phase Correction State
-    const [usePhaseCorrection, _setUsePhaseCorrection] = useState(false)
+    // Simple mode is locked to presets; phase-correction is only available in Advanced mode.
 
     // Ensemble State
     const [isEnsembleMode, setIsEnsembleMode] = useState(false)
@@ -128,12 +108,17 @@ export default function SeparationConfigDialog({
     const handleConfirm = () => {
         const config: SeparationConfig = {
             mode,
-            presetId: selectedPresetId,
+            // Presets are only meaningful in Simple mode. In Advanced mode, avoid carrying a stale
+            // presetId (it can cause Results to show the preset label even when a custom modelId ran).
+            presetId: mode === 'simple' ? selectedPresetId : undefined,
             modelId: isEnsembleMode ? undefined : selectedModelId,
             device,
             outputFormat,
             invert,
             normalize,
+            volumeCompensation: volumeCompEnabled
+                ? bestVolumeCompensation()
+                : undefined,
             bitDepth,
             splitFreq: (isEnsembleMode && ensembleAlgorithm === 'frequency_split') ? splitFreq : undefined,
             advancedParams: mode === 'advanced' ? advancedParams : undefined,
@@ -143,25 +128,14 @@ export default function SeparationConfigDialog({
             } : undefined
         }
 
-        // Handle simple mode ensemble preset or phase correction
+        // Simple mode is locked to preset definitions.
+        // - If the preset defines an ensembleConfig, use it.
+        // - Otherwise use the preset's modelId mapping (already reflected in selectedModelId).
         if (mode === 'simple') {
             const preset = presets.find(p => p.id === selectedPresetId)
-
-            if (usePhaseCorrection && !preset?.ensembleConfig && selectedModelId) {
-                const refModel = getPhaseRefModelId() || 'bs-roformer-viperx-1297';
-
-                config.ensembleConfig = {
-                    models: [
-                        { model_id: selectedModelId, weight: 1.0 }, // Target (Magnitude)
-                        { model_id: refModel, weight: 1.0 } // Reference (Phase)
-                    ],
-                    algorithm: 'phase_fix' as any
-                }
-                // Clear modelId since we are sending an ensemble
-                config.modelId = undefined
-
-            } else if (preset?.ensembleConfig) {
+            if (preset?.ensembleConfig) {
                 config.ensembleConfig = preset.ensembleConfig
+                config.modelId = undefined
             }
         }
 
@@ -173,17 +147,23 @@ export default function SeparationConfigDialog({
 
     const selectedPreset = presets.find(p => p.id === selectedPresetId)
 
-    // Determine reference model for phase correction
-    const getPhaseRefModelId = () => {
-        if (!selectedPresetId) return null;
-        if (selectedPresetId.includes('instrumental') || selectedPresetId.includes('inst')) {
-            return 'mel-band-roformer-kim';
-        }
-        return 'bs-roformer-viperx-1297'; // Default for vocals
-    }
+    const cudaGpus = Array.isArray(gpuInfo?.gpus)
+        ? gpuInfo.gpus.filter((g: any) => g?.type === 'cuda')
+        : []
+    const hasCuda = !!gpuInfo?.has_cuda || cudaGpus.length > 0
+    const primaryCudaDevice = cudaGpus[0]
+        ? `cuda:${Number.isFinite(cudaGpus[0].index) ? cudaGpus[0].index : 0}`
+        : 'cuda:0'
 
-    const phaseRefModelId = getPhaseRefModelId();
-    const isPhaseRefAvailable = phaseRefModelId ? availability?.[phaseRefModelId]?.available !== false : true;
+    useEffect(() => {
+        if (!hasCuda && device.startsWith('cuda')) {
+            setDevice('cpu')
+        }
+        if (hasCuda && device === 'cuda') {
+            setDevice(primaryCudaDevice)
+        }
+    }, [hasCuda, device, primaryCudaDevice])
+
 
     // Check availability
     let isAvailable = true
@@ -205,13 +185,6 @@ export default function SeparationConfigDialog({
                 missingModels.push(modelId)
             }
 
-            // Check Phase Ref model if enabled
-            if (usePhaseCorrection && phaseRefModelId && !isPhaseRefAvailable) {
-                isAvailable = false;
-                if (!missingModels.includes(phaseRefModelId)) {
-                    missingModels.push(phaseRefModelId);
-                }
-            }
         }
     } else if (mode === 'advanced' && !isEnsembleMode && selectedModelId) {
         if (availability && availability[selectedModelId]?.available === false) {
@@ -466,47 +439,25 @@ export default function SeparationConfigDialog({
                         </div>
                     )}
 
-                    <div className="space-y-4 pt-4 border-t">
+                        <div className="space-y-4 pt-4 border-t">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium block">Output Format</label>
-                                <select
-                                    value={outputFormat}
-                                    onChange={(e) => setOutputFormat(e.target.value as any)}
-                                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <option value="wav">WAV (Lossless)</option>
-                                    <option value="flac">FLAC (Compressed Lossless)</option>
-                                    <option value="mp3">MP3 (Compressed)</option>
-                                </select>
-                                {outputFormat === 'mp3' ? (
-                                    <div className="mt-2">
-                                        <label className="text-xs font-medium block mb-1">Bitrate</label>
-                                        <select
-                                            value={advancedParams.bitrate}
-                                            onChange={(e) => setAdvancedParams(prev => ({ ...prev, bitrate: e.target.value }))}
-                                            className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-2 py-1 text-xs"
-                                        >
-                                            <option value="128k">128k (Good)</option>
-                                            <option value="192k">192k (Better)</option>
-                                            <option value="256k">256k (High)</option>
-                                            <option value="320k">320k (Best)</option>
-                                        </select>
-                                    </div>
-                                ) : (
-                                    <div className="mt-2">
-                                        <label className="text-xs font-medium block mb-1">Bit Depth</label>
-                                        <select
-                                            value={bitDepth}
-                                            onChange={(e) => setBitDepth(e.target.value)}
-                                            className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-2 py-1 text-xs"
-                                        >
-                                            <option value="16">16-bit (Standard)</option>
-                                            <option value="24">24-bit (High Res)</option>
-                                            <option value="32">32-bit Float (Pro)</option>
-                                        </select>
-                                    </div>
-                                )}
+                                <label className="text-sm font-medium block">Preview Output</label>
+                                <div className="text-xs text-muted-foreground">
+                                    Preview stems are always written as WAV for lossless playback. Use Export in Results to create MP3/FLAC.
+                                </div>
+                                <div className="mt-2">
+                                    <label className="text-xs font-medium block mb-1">Bit Depth (WAV)</label>
+                                    <select
+                                        value={bitDepth}
+                                        onChange={(e) => setBitDepth(e.target.value)}
+                                        className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-2 py-1 text-xs"
+                                    >
+                                        <option value="16">16-bit (Standard)</option>
+                                        <option value="24">24-bit (High Res)</option>
+                                        <option value="32">32-bit Float (Pro)</option>
+                                    </select>
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium block">Processing Device</label>
@@ -516,8 +467,22 @@ export default function SeparationConfigDialog({
                                     className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <option value="auto">Auto (Recommended)</option>
-                                    <option value="cuda">GPU (CUDA)</option>
                                     <option value="cpu">CPU</option>
+                                    {cudaGpus.length > 0 ? (
+                                        cudaGpus.map((g: any, idx: number) => {
+                                            const index = Number.isFinite(g?.index) ? g.index : idx
+                                            const label = g?.name ? `GPU (CUDA): ${g.name}` : `GPU (CUDA) #${index}`
+                                            return (
+                                                <option key={`cuda:${index}`} value={`cuda:${index}`}>
+                                                    {label}
+                                                </option>
+                                            )
+                                        })
+                                    ) : (
+                                        <option value={primaryCudaDevice} disabled={!hasCuda}>
+                                            GPU (CUDA)
+                                        </option>
+                                    )}
                                 </select>
                             </div>
                         </div>
@@ -540,6 +505,29 @@ export default function SeparationConfigDialog({
                                     </label>
                                     <p className="text-xs text-muted-foreground mt-1">
                                         Prevents clipping by scaling the peak volume. Recommended for ensembles.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Volume Compensation */}
+                        <div className="mt-2 p-3 bg-secondary/30 rounded-lg border border-border/50">
+                            <div className="flex items-start space-x-3">
+                                <div className="flex items-center h-5">
+                                    <input
+                                        type="checkbox"
+                                        id="volumeCompensation"
+                                        checked={volumeCompEnabled}
+                                        onChange={(e) => setVolumeCompEnabled(e.target.checked)}
+                                        className="h-4 w-4 rounded border-primary text-primary focus:ring-primary"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label htmlFor="volumeCompensation" className="text-sm font-medium text-foreground cursor-pointer">
+                                        Volume Compensation (VC)
+                                    </label>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Adds headroom when combining multiple models (reduces clipping risk). When enabled, uses best defaults.
                                     </p>
                                 </div>
                             </div>

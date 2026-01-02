@@ -9,6 +9,8 @@ interface ExportDialogProps {
     outputFiles: Record<string, string>
     defaultExportDir?: string
     onDefaultDirChange?: (dir: string) => void
+    defaultExportFormat?: 'wav' | 'flac' | 'mp3'
+    defaultExportBitrate?: string
 }
 
 const FORMATS = [
@@ -40,10 +42,12 @@ export default function ExportDialog({
     onClose,
     outputFiles,
     defaultExportDir,
-    onDefaultDirChange
+    onDefaultDirChange,
+    defaultExportFormat,
+    defaultExportBitrate
 }: ExportDialogProps) {
-    const [format, setFormat] = useState('mp3')
-    const [bitrate, setBitrate] = useState('320k')
+    const [format, setFormat] = useState<'wav' | 'flac' | 'mp3'>(defaultExportFormat || 'wav')
+    const [bitrate, setBitrate] = useState(defaultExportBitrate || '320k')
     const [exportDir, setExportDir] = useState(defaultExportDir || '')
     const [rememberPath, setRememberPath] = useState(!!defaultExportDir)
     const [isExporting, setIsExporting] = useState(false)
@@ -57,6 +61,14 @@ export default function ExportDialog({
             setRememberPath(true)
         }
     }, [defaultExportDir])
+
+    useEffect(() => {
+        if (defaultExportFormat) setFormat(defaultExportFormat)
+    }, [defaultExportFormat])
+
+    useEffect(() => {
+        if (defaultExportBitrate) setBitrate(defaultExportBitrate)
+    }, [defaultExportBitrate])
 
     // Update selected stems when outputFiles changes
     useEffect(() => {
@@ -126,7 +138,13 @@ export default function ExportDialog({
             toast.success(`Exported ${selectedStems.size} file${selectedStems.size > 1 ? 's' : ''} as ${format.toUpperCase()}`)
             onClose()
         } catch (error) {
-            toast.error('Export failed')
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : typeof error === 'string'
+                        ? error
+                        : 'Export failed'
+            toast.error(message || 'Export failed')
         } finally {
             setIsExporting(false)
         }
@@ -212,7 +230,7 @@ export default function ExportDialog({
                         <label className="block text-sm font-medium text-neutral-900 dark:text-white mb-2">Format</label>
                         <select
                             value={format}
-                            onChange={(e) => setFormat(e.target.value)}
+                            onChange={(e) => setFormat(e.target.value as 'wav' | 'flac' | 'mp3')}
                             className="w-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-3 text-neutral-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         >
                             {FORMATS.map(f => (
