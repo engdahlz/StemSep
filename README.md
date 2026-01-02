@@ -8,7 +8,6 @@ This repo contains a mix of production code and development artifacts. To avoid 
 
 - **Do not commit generated outputs** (build artifacts, logs, temp separation outputs).
 - **Keep long-term reference materials** (guides, PDFs, spreadsheets, sample media) under `docs/vendor/`.
-- **Keep ad-hoc debug artifacts** (stack traces, one-off investigation exports) under `docs/notes/artifacts/`.
 - **Never commit secrets** (tokens, private keys, credentials). Use `*.example.json` patterns and environment variables instead.
 
 The `.gitignore` is intentionally strict for common generated files and local caches; when in doubt, treat an output as non-source and keep it out of git unless it is explicitly intended as a tracked reference under `docs/vendor/`.
@@ -16,9 +15,6 @@ The `.gitignore` is intentionally strict for common generated files and local ca
 ## Repo housekeeping
 
 - Developer utilities live in `scripts/` (not required to run the app).
-- Draft documentation lives in `docs/drafts/`.
-- Developer notes/artifacts live in `docs/notes/` (not required to run the app).
-  - One-off crash dumps and investigation outputs go in `docs/notes/artifacts/`.
 - Vendored upstream reference snapshots and large long-term references live in `docs/vendor/` (reference-only; not required to run the app).
 
 ## UI direction (recommended)
@@ -127,12 +123,6 @@ StemSep-V3/
 
 🛠️ Developer utilities:
 - See [`scripts/README.md`](./scripts/README.md) for maintenance/debug scripts.
-
-📝 Drafts/WIP docs:
-- See [`docs/drafts/`](./docs/drafts/) for in-progress documentation.
-
-🗒️ Notes / artifacts (non-essential):
-- See [`docs/notes/`](./docs/notes/) for extracted text, recovered configs, and other dev artifacts.
 
 📦 Vendored upstream references (non-essential):
 - See [`docs/vendor/`](./docs/vendor/) for pinned upstream snapshots used for reference/cross-checking.
