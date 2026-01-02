@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui:
+    name: UI (typecheck + tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            electron-poc/package-lock.json
+
+      - name: Install UI deps
+        run: npm ci --prefix electron-poc
+
+      - name: Typecheck
+        run: npm run ui:typecheck
+
+      - name: Unit tests
+        run: npm run ui:test
+
+  rust:
+    name: Rust (test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Cargo test (auto-detect)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f "stemsep-backend/Cargo.toml" ]; then
+            cargo test --manifest-path stemsep-backend/Cargo.toml
+          elif [ -f "Cargo.toml" ]; then
+            cargo test
+          else
+            echo "No Cargo.toml found; skipping Rust tests."
+          fi
+
+  python:
+    name: Python (syntax)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile all Python files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q .
