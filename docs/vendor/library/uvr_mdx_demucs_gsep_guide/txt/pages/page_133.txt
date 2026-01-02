@@ -1,0 +1,93 @@
+[page 133/642]
+    If  you  stuffer  from  some  vocal  residues,  try  out  these  settings  BigShifts_MDX:  0  overlap_MDX:  0.65  overlap_MDXv3:  10  overlap  demucs:  0.96  output_format:  float  vocals_instru_only:  disabled   Also,  you  can  manipulate  with  weights.  E.g.  different  weight  balance,  with  less  MDXv3  and  more  VOC-FT.   -  As  an  addition  to  AI-killing  tracks section,  and  in  response  to  deletion  of  "your  poor  results"  channel,  there  was  recently  created  a  Gsheet with  your  problematic  tracks  to  fill  in.  It  is  open  to  everyone  to  contribute.   -  Video  tutorial by  Bas  Curtiz  how  to  install  MedleyVox  (based  on  Vinctekan  fixed  source).  Cyrus  trained  a  model.  MD  serves  to  separation  of  various  singers  from  a  track.  It  
+sometimes
+ 
+does
+ 
+a
+ 
+better
+ 
+job
+ 
+than
+ 
+BVE
+ 
+models
+ 
+in
+ 
+general.
+ 
+  Sadly,  it  has  24kHz  output  sample  rate,  but  AudioSR  works  pretty  good  for  upscaling  the  
+results.
+ https://github.com/haoheliu/versatile_audio_super_resolution  https://replicate.com/nateraw/audio-super-resolution https://colab.research.google.com/drive/1ILUj1JLvrP0PyMxyKTflDJ--o2Nrk8w7?usp=sharing Be  aware  that  it  may  not  work  with  full  length  songs  -  you  might  need  to  divide  them  into  
+smaller
+ 
+30
+ 
+seconds
+ 
+pieces.
+  -  "Ensemble  4/8  algorithms  were  updated  on  MVSep  with  new  VitLarge23  model.  All  quality  
+metrics
+ 
+were
+ 
+increased:
+ Multisong  Vocals:  10.26  ->  10.32  Multisong  Instrumental:  16.52  ->  16.63  Synth  Vocals:  12.42  ->  12.67  Synth  Instrumental  12.12  ->  12.38  MDX23  Leaderboard:  11.063  ->  11.098   I  added  Ensemble  All-In  algorithm  which  includes  additionally  piano,  guitar,  lead/back  vocals.  
+Piano
+ 
+and
+ 
+guitar
+ 
+has
+ 
+better
+ 
+metrics
+ 
+comparing
+ 
+to
+ 
+standard
+ 
+models,
+ 
+because
+ 
+they
+ 
+are
+ 
+extracted
+ 
+from
+ 
+high
+ 
+quality
+ 
+"other"
+ 
+stem.
+ 
+Lead/back
+ 
+vocals
+ 
+also
+ 
+has
+ 
+slightly
+ 
+better
+ 
+metrics.
+ piano:  7.31  ->  7.69  guitar:  7.77  ->  8.95"  ZFTurbo    -  New  vocal  model  added  on  MVSEP:  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

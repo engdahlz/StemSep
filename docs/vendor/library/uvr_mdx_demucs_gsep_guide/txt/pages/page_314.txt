@@ -1,0 +1,50 @@
+[page 314/642]
+    xx   voc_fv4  xx  xx  (Good  if  you  need  less  vocal  residues  than  typical  instrumental  Roformers  (even  less  than  
+Mel
+ 
+Kim,
+ 
+FT2
+ 
+Bleedless,
+ 
+or
+ 
+Beta
+ 
+6X
+ 
+-
+ 
+makidanyee).
+  MelBand  Roformer  Kim  Inst.  Fullness  27.44  Inst.  Bleedless  46.56   Kim  |  FT2  Bleedless  (by  Unwa)  Inst.  Fullness  27.78  Inst.  Bleedless  46.31   Beta  5e  (by  unwa)  Inst.  Fullness  27.63  (bigger  metric  than  Kim)  Inst.  Bleedless  45.90   Kim  |  FT  2  (by  unwa)   Inst.  Fullness  28.36  Inst.  Bleedless  45.58   Kim  |  FT  (by  unwa)   Inst.  Fullness  29.18  Inst.  Bleedless  45.36   MVSEP  BS  Roformer  (2025.06)  Inst.  fullness:  17.30  Inst.  bleedless:  37.83  (can  be  still  a  good  choice  in  case  of  some  crossbleeding,  vocal  chops,  or  residues  of  
+reverbs
+ 
+or
+ 
+BGV)
+  MVSEP  Ensemble  11.93  (also  contains  2025.06)  Inst.  fullness:  17.73  Inst.  bleedless:  36.30   ___   Outperformed  vocal  models  for  instrumental  bleedless  
+(still
+ 
+metrics
+ 
+for
+ 
+instrumental
+ 
+stem,
+ 
+so
+ 
+after
+ 
+inversion
+ 
+if
+ 
+not
+ 
+duality)
+  SYHFT  V3  (by  SYH99999)   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

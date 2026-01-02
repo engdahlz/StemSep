@@ -1,0 +1,116 @@
+[page 503/642]
+    And  if  there  is  bleeding  in  360  then  the  volume  is  completely  balanced  and  doesn’t  change  
+all
+ 
+the
+ 
+time”
+ 
+-
+ 
+I.
+ Q  (isling):  Is  there  a  way  to  just  listen  to  360  files  locally  while  still  getting  the  immersive  3d  
+effect?
+ Decoding  them  and  listening  in  DAWs  don't  sound  like  how  they  do  on  Amazon  Music  for  
+example.
+ Is  there  even  a  way  to  listen  to  them  without  decoding?  I've  downloaded  the  MPEG-H  
+software
+ 
+stuff.
+ The  MPEG-H  format  player  doesn't  read  the  decoded  WAVs  nor  supports  m4a  which  is  what  
+the
+ 
+original
+ 
+non-decoded
+ 
+files
+ 
+are.
+ The  360  WalkMix  player  didn't  work  either.   https://github.com/ittiam-systems/libmpegh/releases This  one  is  the  one  I  use,  works  great  to  use,  but  doesn’t  have  the  same  3D  effect.  I  tried  playing  the  decoded  360  Reality  Audio  stems  in  VLC  as  it  has  the  best  Dolby  effect,  
+but
+ 
+it
+ 
+didn't
+ 
+have
+ 
+all
+ 
+the
+ 
+channels
+ 
+playing.
+  A  (Sam  Hocking):  I've  worked  it  out,  there's  a  free  decoder.  These  are  the  main  MPEG-H  tools  for  both  creating  and  playing  MPEG-H  3D:  https://mpegh.lze-innovation.de/ All  free.  The  plugin  is  really  cool.  Request  the  plugin  from  their  site.   Dolby  and  Sony  360  are  object  based  [not  channel  base  like  Ambisonics].  Sony  360  is  just  
+protected
+ 
+MPEG-H
+ 
+3D.
+  When  you  rip  from  Tidal,  you  can  choose  how  you  decode  the  file  to  channel-based  audio.  
+This
+ 
+is
+ 
+the
+ 
+point
+ 
+of
+ 
+object-based
+ 
+audio,
+ 
+you
+ 
+decode
+ 
+it
+ 
+to
+ 
+what
+ 
+number
+ 
+of
+ 
+speakers
+ 
+you
+ 
+have
+  If  you  use  tidal-gui,  enter  an  Android  token  from  your  Tidal  app  on  the  phone  and  download  
+the
+ 
+file,
+ 
+then
+ 
+you
+ 
+can
+ 
+decode
+ 
+the
+ 
+Sony
+ 
+360
+ 
+/
+ 
+MPEG-H
+ 
+by
+ 
+the
+ 
+following:
+   Description  in  format  Front/Surr.LFE          1:  1/0.0     -  C          2:  2/0.0     -  L,  R          3:  3/0.0     -  C,  L,  R          4:  3/1.0     -  C,  L,  R,  Cs          5:  3/2.0     -  C,  L,  R,  Ls,  Rs          6:  3/2.1     -  C,  L,  R,  Ls,  Rs,  LFE          7:  5/2.1     -  C,  Lc,  Rc,  L,  R,  Ls,  Rs,  LFE          8:  NA          9:  2/1.0     -  L,  R,  Cs          10:  2/2.0    -  L,  R,  Ls,  Rs          11:  3/3.1    -  C,  L,  R,  Ls,  Rs,  Cs,  LFE          12:  3/4.1    -  C,  L,  R,  Ls,  Rs,  Lsr,  Rsr,  LFE          13:  11/11.2  -  C,  Lc,  Rc,  L,  R,  Lss,  Rss,  Lsr,  Rsr,  Cs,  LFE,  LFE2,  Cv,  Lv,  Rv,  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

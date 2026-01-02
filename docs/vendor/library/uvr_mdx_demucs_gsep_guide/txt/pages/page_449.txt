@@ -1,0 +1,70 @@
+[page 449/642]
+    virtual  machine   Sideloading  of  this  mobile  iOS  app  is  possible  on  at  least  M1  Macs.   -  Saucelabs  Sign  up  at  https://saucelabs.com/sign-up Verify  your  email,  upload  this  as  the  IPA:  https://decrypt.day/app/id6447522624/dl/cllm55sbo01nfoj7yjfiyucaa Rotating  puzzle  captcha  for  TikTok  account  can  be  tasking  due  to  low  framerate.  Some  
+people
+ 
+can
+ 
+do
+ 
+it
+ 
+after
+ 
+two
+ 
+tries,
+ 
+others
+ 
+will
+ 
+sooner
+ 
+run
+ 
+out
+ 
+of
+ 
+credits,
+ 
+or
+ 
+completely
+ 
+unable
+ 
+to
+ 
+do
+ 
+it.
+  -  https://mobiledevice.cloud/ Mobile  device  cloud   -  Scaleway  "if  you're  desperate  you  can  rent  an  M1  Mac  on  scaleway  and  run  the  app  through  that  for  $0.11  an  hour  using  this  https://github.com/PlayCover/PlayCover”  IPA  file:  https://www.dropbox.com/s/z766tfysix5gt04/com.ripple.ios.appstore_1.9.1_und3fined.ipa?dl=0 "been  working  like  a  dream  for  me  on  an  M1  Pro…  I've  separated  20+  songs  in  the  last  
+hour"
+ More  info:  -https://cdn.discordapp.com/attachments/708579735583588366/1146136170342920302/image.png -  “keep  in  mind  that  the  vm  has  to  be  up  for  24  hours  before  you  can  remove  it,  so  it'll  be  a  
+couple
+ 
+bucks
+ 
+in
+ 
+total
+ 
+to
+ 
+use
+ 
+it”
+  Fixing  chunking  artefacts  (probably  fixed)   -  Every  8  seconds  there  is  an  artifact  of  chunking  in  Ripple.  Heal  feature  in  Adobe  Audition  
+works
+ 
+really
+ 
+well
+ 
+for
+ 
+it:
+ https://www.youtube.com/watch?v=Qqd8Wjqtx-8  -The  same  explained  on  RX10  example  and  its  Declick  feature:  https://www.youtube.com/watch?v=pD3D7f3ungk   Volcengine  (a.k.a.  The  sami-api-bs-4track  -  10.8696  SDR  Vocals)  https://www.volcengine.com/docs/6489/72011  Ripple/SAMI  Bytedance's  API  was  found.  If  you're  Chinese,  you  can  go  through  it  easier  -  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

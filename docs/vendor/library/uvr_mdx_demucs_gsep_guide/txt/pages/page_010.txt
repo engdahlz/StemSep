@@ -1,0 +1,69 @@
+[page 10/642]
+    It  also  doesn't  work  on  the  UVR’s  RTX  5000  patch  -  then  use  MSST instead.  On  an  M1  Mac,  you  will  probably  need  to  decrease  chunk_size  in  the  yaml  a  bit.  "On  one  song  it  was  on  par  with  the  2025.07  BSRoformer  model  on  MVSep,  at  least  to  my  
+ears
+ 
+(Tentative
+ 
+by
+ 
+System
+ 
+Of
+ 
+A
+ 
+Down)
+ 
+ The  other  song  [Linkin  Park  -  Part  of  Me]  has  some  background  vocals  that  are  hard  to  get  
+for
+ 
+a
+ 
+lot
+ 
+of
+ 
+voc/inst
+ 
+models,
+ 
+2025.07
+ 
+manages
+ 
+to
+ 
+get
+ 
+them
+ 
+while
+ 
+this
+ 
+model
+ 
+doesn't.
+ The  instrumentals  and  vocals  seem  pretty  good  other  than  that"  -  ryanz48  “Guessing  it's  not  high  enough  fullness  the  l  o  s  t is  extremely  muddied,  and  the  other  chanting  is  just  gone.  The  lower  harmony  at  0:49-0:53  is  mostly  gone,  making  it  sound  very  thin  and  a  lot  of  the  vocals  just  sound  like  they  are  breaking  apart.  Hmm,  big  beta  6x  is  significantly  better,  it's  def  a  fullness  issue..  probably  too  high  of  a  
+bleedless
+ 
+model
+ 
+for
+ 
+my
+ 
+tastes
+ big  beta  6x  still  isn't  super  great  here,  the  one  I  used  for  the  other  one  I  posted  was  fv7beta1,  
+which
+ 
+is
+ 
+a
+ 
+fullness
+ 
+model.
+ yeah,  big  beta  6x  seems  more  balanced,  it's  a  bit  fuller  but  not  noisy  to  my  ears,  either  but  I'm  not  using  headphones,  so  I  won't  hear  any  minor  noise  easily.  yoooo,  it  properly  doesn't  capture  the  instrument  here.  even  FT2  bleedless  gets  tricked  by  this  part,  but  this  does  just  fine.  Maybe  I'll  try  it  out  for  this  song..  most  I'll  still  use  higher  fullness  models”  -  rainboomdash   -  Anvuew’s  BS-Roformer  Karaoke  Model  added  to  the  inference  Colab  -  (MVSEP)  “Eleven  new  models  have  been  added:  1)  MVSep  Triangle  (triangle,  other)  Demo:  https://mvsep.com/result/20251104082053-f0bb276157-mixture.wav 2)  MVSep  Sitar  (sitar,  other)  Demo:  https://mvsep.com/result/20251104082317-f0bb276157-mixture.wav 3)  MVSep  Harpsichord  (harpsichord,  other)  Demo:  https://mvsep.com/result/20251104082809-f0bb276157-mixture.wav 4)  MVSep  Tuba  (tuba,  other)  Demo:  https://mvsep.com/result/20251104082845-f0bb276157-mixture.wav 5)  MVSep  Bassoon  (bassoon,  other)  Demo:  https://mvsep.com/result/20251104083211-f0bb276157-mixture.wav 6)  MVSep  Congas  (congas,  other)  Demo:  https://mvsep.com/result/20251104083239-f0bb276157-mixture.wav 7)  MVSep  Bells  (bells,  other)  Demo:  https://mvsep.com/result/20251104083305-f0bb276157-mixture.wav 8)  MVSep  Ukulele  (ukulele,  other)  Demo:  https://mvsep.com/result/20251104083332-f0bb276157-mixture.wav 9)  MVSep  Dobro  (dobro,  other)  Demo:  https://mvsep.com/result/20251104115825-f0bb276157-mixture.wav 10)  MVSep  Wind  Chimes  (wind-chimes,  other)  Demo:  https://mvsep.com/result/20251104115849-f0bb276157-mixture.wav 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

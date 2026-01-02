@@ -1,0 +1,78 @@
+[page 527/642]
+    Different  mixing  of  the  RB  tracks  was  a  factor  in  models  trained  by  the  community.  “Also,  RB  
+tracks
+ 
+never
+ 
+fade
+ 
+out.
+ 
+They
+ 
+are
+ 
+also
+ 
+never
+ 
+brickwalled.”
+ “brickwall  audio  has  negative  influence  on  waveform  based  archs,  but  on  spectrogram  based  
+one
+ 
+like
+ 
+all
+ 
+recents
+ 
+one,
+ 
+it
+ 
+doesn't
+ 
+seem
+ 
+to
+ 
+have
+ 
+big
+ 
+impact
+ 
+on
+ 
+results
+ 
+quality”
+ 
+-
+ 
+jarredou
+  GH  stems  from  X360  instead  of  Wii  for  better  quality  https://www.fretsonfire.org/forums/viewtopic.php?f=5&t=57010&sid=3917a8e390f65097f07d69595dd5ba55 (free  registration  required,  basically  content  of  all  zippyshare  links  of  the  PDF  below:)   PDF  with  separate  RB3-4  stems  description  and  DL  (lots  of  links  are  offline  as  zippyshare  is  
+down),
+ 
+page
+ 
+6
+ 
+shows
+ 
+some
+ 
+table
+ 
+of
+ 
+content
+ 
+with
+ 
+evaluation
+ 
+progress.
+ toaz.info-stemspdf-pr_7a1e446f01c9b1666a9bebe9fd51f419.pdf (reupload)   Huge  database  (probably  contains  some  of  the  above)  https://songstems.net/   Others :   Multitracks’  section  of  rutracker  (requires  free  account):  https://rutracker.org/forum/tracker.php?f=2492  Multitracks/multitrack  queries  on  The  Pirate  Bay  https://thepiratebay.org/search.php?q=multitrack&all=on&search=Pirate+Search&page=0&orderby= https://thepiratebay.org/search.php?q=multitracks&all=on&search=Pirate+Search&page=0&orderby=  “You  can  just  go  here  https://rutracker.org/forum/tracker.php?f=1674 (sample  libraries  category)  and  type  the  instrument  you  want,  it  will  pop  all  the  sample  packs.  Maybe  add  "loop"  to  the  search  too,  will  filter  out  some  weird  packs”   Maybe  you  find  something  useful  on  sharemania.us  too  (160  lossy/261  lossless)   Seems  'acapella  tools'  or  'instrumental  tools'  are  good  key-words  to  search  for.  Some  are  covers  of  original  tracks,  but  that  shouldn't  matter,  since  they  represent  the  same.  This  is  on  Deezer,  but  u  might  find  others  on  Tidal.   There’s  also  some  stuff  available  on  Soulseek  (P2P  service)   frp.live  instrumentals/acapellas  https://docs.google.com/spreadsheets/d/1NuQV8cfFPehvIwPBUGOMbiC4FSei2p923qC6af5tCV8/ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

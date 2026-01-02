@@ -1,0 +1,93 @@
+[page 181/642]
+     
+(Ensembles
+ 
+from
+ 
+before
+ 
+unwa
+ 
+inst.
+ 
+models
+ 
+release
+ 
+-
+ 
+you
+ 
+might
+ 
+also
+ 
+try
+ 
+out
+ 
+replacing
+ 
+all
+ 
+the
+ 
+12xx
+ 
+BS-Roformers
+ 
+below
+ 
+with
+ 
+newer
+ 
+unwa’s/becruily/Gabox
+ 
+models)
+ 
+ 
+0b)  Models  ensembled  -  available  only  for  premium  users  on  x–minus.pro -  max_mag  ensemble  (with  viperx  1297  Roformer)  -  demudder  (on  Mel-Roformer)  -  Mel-Roformer  +  MDX23C   
+UVR  5  ensembles  (although  beta  4  and  inst  v1 on  their  own  might  be  better  already)  For  Roformers,  min.  RTX  3050  8GB  or  faster  AMD/Intel  ARC/Apple  M1-3  recommended   (OpenCL  is  not  as  fast  as  CUDA  in  UVR;  6GB  VRAM  on  CUDA  should be  enough  too,  min.  2K+  CUDA  cores  recommended)    0b)  1296  +  1143  (BS-Roformer  in  beta UVR)  +  MDX-Net  HQ_4  (dopfunk)   [potentially  try  out  Mel  Kim  instead  of  1143  above  already]   0b)  Manual  ensemble  (in  UVR’s  Audio  Tools)  of:  BS-Roformer  1296  +  file  copy  of  the  result  +  MDX23C  HQ  (jarredou;  src)   or  just  1296  +  1297  +  MDX23C  HQ  for  slower  separation  and  similar  result   0b)  Manual  ensemble  of:  -  BS-Roformer  1296  +  drums  stem  from  demucs_ft  or  -  Bs-Roformer  1143  result  passed  through  demucs_ft  for  drums  to  ensemble  with  1296  
+(max/max)
+  0b)  MDXv2  HQ_4  +  BS-Roformer  1296  +  BS-Roformer  1297  +  Melband  RoFormer  1143  
+(Max
+ 
+Spec)
+ 
+“Godsend
+ 
+ensemble
+ 
+for
+ 
+demuddiness”
+ 
+(dca100fb8)
+  0b)  Manual  ensemble  of  HQ_5 (paid  users)  and  Kim's  Mel-Roformer (max_spec)   0b)   (for  metal)  “1  –  pass  through  Kim's  Vocal  Melband  Roformer  (link  in  Single  models  
+below)
+ 2  -  Multi-stem  Ensemble  (Average  algo):  1_HP-UVR  MGM_HIGHEND_v4  MGM_LOWEND_A_v4  (VR  advanced  settings:  320  window  size,  5  aggression  setting,  batch  size  default,  TTA  
+enabled
+ 
+|
+ 
+Post
+ 
+Process
+ 
+and
+ 
+High-End
+ 
+Process
+ 
+CHECKED
+ 
+OFF)”
+ 3  –  Manual  Ensemble  both  your  Melband  output  and  the  Multi-stem  instrumental  output  (with  
+Average
+ 
+algorithm)
+ “best  settings/models  for  metal”  (~mesk)   0b)  (older  version  of  the  above)  1_HP_UVR  +  UVR_MDX-NET-Inst  HQ  4  +  UVR_MDX-NET-Inst_Main  438  (VIP model)  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

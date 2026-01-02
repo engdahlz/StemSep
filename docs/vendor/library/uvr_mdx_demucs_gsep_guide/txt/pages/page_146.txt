@@ -1,0 +1,104 @@
+[page 146/642]
+    It's  there  in  MDX23C  because  now  the  new  arch  supports  multiple  stems  separation  in  one  
+model
+ 
+file.
+  -  Disabling  "match  freq  cutoff"  in  advanced  MDX  settings  seems  to  fix  issues  with  10kHz  
+cutoff
+ 
+in
+ 
+vocals
+ 
+of
+ 
+HQ3
+ 
+model.
+  -  New  explanations  on  Demucs  parameters  added  in  Demucs  4  section  (shifts  0,  overlap  0.99  won in  SDR  vs shifts  1,  overlap  0.99  and  even shifts  10,  overlap  0.95)   -  "Last  update  of  Neutone  VST  plugin  has  now  a  Demucs  model  to  use  in  realtime  in  a  DAW  (it's  a  'light'  version  of  Demucs_mmi)  https://neutone.space/models/1a36cd599cd0c44ec7ccb63e77fe8efc/ It  doesn't  use  GPU,  and  it's  configured  to  be  fast  with  very  low  parameters,  also  the  model  is  
+not
+ 
+the
+ 
+best
+ 
+on
+ 
+its
+ 
+own.
+ 
+It
+ 
+doesn't
+ 
+give
+ 
+decent
+ 
+results,
+ 
+so
+ 
+it's
+ 
+better
+ 
+to
+ 
+stick
+ 
+to
+ 
+other
+ 
+realtime
+ 
+alternatives
+ 
+(see
+ 
+document
+ 
+outline)
+  -  Turns  out  that  with  a  GPU  with  lots  of  VRAM  e.g.  24GB,  you  can  run  two  instances  of  UVR,  
+so
+ 
+the
+ 
+processing
+ 
+will
+ 
+be
+ 
+faster.
+ 
+You
+ 
+only
+ 
+need
+ 
+to
+ 
+use
+ 
+4096
+ 
+segmentation
+ 
+instead
+ 
+of
+ 
+8192.
+  SDR  difference  between  overlap  0.95  and  0.99  for  voc_ft  MDX  model  in  (new/beta)  UVR  is  
+0.02.
+  0.8  seems  to  be  the  best  point  for  ensembles   12K  segmentation  performed  worse  than  4K  SDR-wise   -  Recommended  balanced  values  between  quality  and  time  for  6GB  graphic  cards  in  the  
+latest
+ 
+beta:
+  VR  Architecture:  Window  Size:  320   MDX-Net:   Segment  Size:  2752  (1024  if  it’s  taking  too  long)  Overlap:  0.7-/0.8   Demucs:   Segment:  Default  Shifts:  2  (def)  Overlap:  0.5   (exp.  0.75,   def.  0.25)   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

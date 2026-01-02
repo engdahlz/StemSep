@@ -1,0 +1,90 @@
+[page 233/642]
+     -  arigato78  method  “Karaoke  2  really  won't  pick  up  any  chorus  lead  vocals  EXCEPT  for  ad-libs  6-HP  will  pick  up  the  melody,  although  it's  usually  muffled  as  hell”  “Q:  is  mdx  karaoke  2  still  the  best  for  lead  and  back  vocals'  separation?  A:  I'm  finding  it's  the  best  for  "fullness"  but  6-HP  picks  up  chorus  melody  while  K2  only  
+usually
+ 
+picks
+ 
+up
+ 
+ad-libs
+ I  personally  like  mixing  K2,  6-HP  (and  sometimes  5-HP  if  6-HP  sounds  very  thin)  together  also,  let's  say  a  verse  has  back  vocals  that  are  just  the  melody  behind  the  lead  vocal  
+(instead
+ 
+of
+ 
+harmonies)
+ 
+for
+ 
+a
+ 
+doubling
+ 
+effect,
+ 
+sometimes
+ 
+K2
+ 
+will
+ 
+still
+ 
+pick
+ 
+up
+ 
+both
+ 
+the
+ 
+lead
+ 
+and
+ 
+double.”
+  AG89  avg  ensemble:  UVR-5-1_4band_v4_ms_fullband_BVE_V2,   Karaoke_GaboxV2,   mel-band_karaoke_fusion_standard   Harmonies  For  more  layers  from  the  above  (e.g.  starting  with  voc_ft/1296/Mel/BS  [or  other  good  
+model]>Karaoke
+ 
+2
+ 
+[or
+ 
+other])
+  -  becruily  &  frazer  BS-Roformer  Karaoke  (or  more)  -  Stereo  width  feature  for  uvr  bve  v2  by  setting  it  to  80%  (it  might  use  voc_ft  as  preprocessor  
+already)
+ 
+-
+ 
+on
+ 
+x-minus.pro/uvronline.app
+ -  Medley  Vox (free,  24kHz  SR  model  trained  by  Cyrus,  Colab,  local  installation  tutorial,  more  info,  use  e.g.  AudioSR afterwards;  “help[ed]  me  separate  a  few  layers  harmonies  on  one  song,  though  I  had  to  keep  mixing  certain  ones  back  together  and  run  them  through  the  
+same
+ 
+model
+ 
+to
+ 
+get
+ 
+a
+ 
+cleaner
+ 
+result”)
+ -  Sucial  Mel-Roformer  dereverb/echo  model  #3  called  “fused”:  model |  yaml -  Melodyne (paid,  30  days  trial)  -  “the  best  way  to  ensure  it’s  the  correct  voice”,  or  -  Hit  'n'  Mix  RipX DAW  Pro  7  (paid/trial)  In  Melodyne  it  is  "harder  to  do  but  can  be  cleaner  since  you  can  more  easily  deal  with  the  
+incorrect
+ 
+harmonics
+ 
+than
+ 
+RipX
+ 
+sometimes
+ 
+choses"
+ "every  time  I’d  run  a  song  through  RipX  I  was  only  able  to  separate  4-5"  harmonies  (or  also)  -  (prob.)  Revoice  Pro  5  -  Mel-Roformer  Karaoke  (by  becruily)  model  file (better  than  aufr’s  model)  -  Dango.ai  (paid,  might  be  still  useful  in  certain  situations)   -  Choral  Quartets  F0  Extractor  -  “midi  outputs,  but  it  works”   For  research  https://c4dm.eecs.qmul.ac.uk/ChoralSep/ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

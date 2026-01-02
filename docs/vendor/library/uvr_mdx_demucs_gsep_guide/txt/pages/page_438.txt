@@ -1,0 +1,77 @@
+[page 438/642]
+            {use_VOCFT_}  \          {use_InstHQ4_}  \          {use_InstVoc_}  \          {use_BSRoformer_}  \          {use_Kim_MelRoformer_}    Q:  How  do  you  use  the  example  {useVitLarge}  like  the  other  stuff  ik  how  to  use   A:  These  last  arguments  are  boolean  based,  there  are  generated  before  the  command  line  
+and
+ 
+depending
+ 
+on
+ 
+the
+ 
+option
+ 
+selected
+ 
+in
+ 
+the
+ 
+GUI
+ 
+with:
+ use_InstVoc_  =  '--use_InstVoc'  #forced  use  use_BSRoformer_  =   '--use_BSRoformer'  #forced  use  use_Kim_MelRoformer_  =   '--use_Kim_MelRoformer'  #forced  use   use_VOCFT_  =  '--use_VOCFT'  if  use_VOCFT  is  True  else  ''  use_VitLarge_  =  '--use_VitLarge'  if  use_VitLarge  is  True  else  ''  use_InstHQ4_  =  '--use_InstHQ4'  if  use_InstHQ4  is  True  else  ''  restore_gain  =  '--restore_gain'  if  restore_gain_after_separation  is  True  else  ''  vocals_only  =  '--vocals_only'  if  Separation_mode  ==  'Vocals/Instrumental'  else  ''  filter_vocals  =  '--filter_vocals'  if  filter_vocals_below_50hz  is  True  else  ''    Q:  So  you  don't  need  to  use  them?  Only  using  the  ones  with  the  two  --  before  right   A:  For  example,  if  you  want  to  activate  vocals  filtering  below  50hz,  you  add   "--filter_vocals"  
+to
+ 
+the
+ 
+command
+ 
+line
+  Q:  How  do  you  do  this  A:  (click)  Q:  oh  yeah  I  just  have  to  change  the  default  number  then  right  It  works  #  general   A:  If  you  have  multiple  GPUs  and  the  CUDA  one  is  not  labelled  device  "0",  maybe  that  can  
+be
+ 
+the
+ 
+cause
+ 
+too,
+ 
+it's
+ 
+hardcoded
+ 
+for
+ 
+Colab,
+ 
+but
+ 
+you
+ 
+can
+ 
+change
+ 
+it
+ 
+in
+ 
+first
+ 
+lines
+ 
+of
+ 
+inference.py
+ 
+file
+ 
+gpu_use
+ 
+=
+ 
+"0"
+ 
+  If  your  GPU  is  not  detected  in  Anaconda,  use  Python  (can  be  3.12).  If  it's  the  same:   https://pytorch.org/get-started/locally/#start-locally  Where  it  says  "run  this  command"  I  basically  uninstalled  the  modules  it  had  in  there  so  I  did  pip  uninstall  torch  torchvision  torchaudio  then  ran  that  command  to  install  it  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

@@ -1,0 +1,58 @@
+[page 568/642]
+    A:  https://arxiv.org/abs/2402.18407 (Why  does  music  source  separation  benefit  from  cacophony?)  https://www.merl.com/publications/docs/TR2024-030.pdf (same  non-columns  formatting)  “It  thus  appears  that  a  small  amount  of  random  mixes  composed  of  stems  from  a  larger  set  
+of
+ 
+songs
+ 
+performs
+ 
+better
+ 
+than
+ 
+a
+ 
+large
+ 
+amount
+ 
+of
+ 
+random
+ 
+mixes
+ 
+composed
+ 
+of
+ 
+stems
+ 
+from
+ 
+a
+ 
+smaller
+ 
+set
+ 
+of
+ 
+songs.”
+ If  needed,  the  training  script  that  ZFTurbo  has  made  does  handle  random  and  aligned  
+dataset
+ 
+and
+ 
+has
+ 
+also
+ 
+SCNet
+ 
+implementation:
+ https://github.com/ZFTurbo/Music-Source-Separation-Training  Q:  As  I  know,  SCNet  supports  only  for  inference  here.  A:  It  does  training  too,  ZFTurbo  has  recently  trained  a  SCNet-large  model  on  MUSDB18  
+dataset
+ Dataset  types  doc  https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/dataset_types.md (he  only  didn't  update  help  string)   
+Creating  dataset  -  guide  by  Bas  Curtiz  (now  also  video available)   How  to:  Create  a  dataset  for  training   1.  Download  any  sample  pack  that  is  focused  around  inst/synth  x  or  y.  (sources  to  seek  on:  audioz.download,  magesy.blog,  rutracker.org,  freesounds.org,  etc.)   2.  Use  real-debrid.com  or  alldebrid.com  to  speed  things  up  DL-wise  (costs  a  few  bucks  but  worth  it,  so  better  prepare  so  u  can  sign  up  for  a  free  trial  or  a  3  bucks  access  for  x  amount  of  days)   3.  Unzip  all  (so  they  are  all  in  a  separate  individual  folder)   4.  Convert  all  to  make  it  consistent  (I  use  https://www.dbpoweramp.com/  to  batch-process)  a)  Convert  all  to  WAV/16-bit/Stereo  &  delete  any  other  audio  format  like  AIFF,  MP3,  OGG.  b)  Convert  all  to  FLAC  (saves  space  without  degrading  quality)  c)  Delete  all  *.WAV  files   5.  a)  Move  all  files  to  root  folder  of  the  individual  folder.  (I  use  a  python  script  for  that.  Hit  me  up  so  I  can  share.)  b)  Remove  empty  directories  (I  use  https://sourceforge.net/projects/rem-empty-dir/  to  batch-process)   _____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

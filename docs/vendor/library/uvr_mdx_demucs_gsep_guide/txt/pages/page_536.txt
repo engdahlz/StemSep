@@ -1,0 +1,40 @@
+[page 536/642]
+    https://mobygratis.com/”   -  Official  accapellas,  instrumentals  and  stems  https://infinity101.wolf.usbx.me/filebrowser/share/Q9HHlUB6  -  “beatmania  the  rhythm  game  makes  charts  very  interestingly  because  they  are  all  
+keysounded,
+ 
+but
+ 
+what's
+ 
+interesting
+ 
+is
+ 
+that
+ 
+someone
+ 
+made
+ 
+a
+ 
+chart
+ 
+to
+ 
+reaper
+ 
+project
+ 
+converter
+ and  essentially  it  just  gives  you  stems.  I  think  people  could  probably  export  a  shit  ton  of  electronic  stems  and  improve  models  because  there  are  a  LOT  of  bms  charts”  src -  Songstems.net Telegram  group  where  you  might  find  some  music  stems  https://t.me/+mrluHEcfixwwNzRk  -  Lots  of  instrumentals  (sometimes  with  backing  vocals)  -  click  -  The  Spheres  Dataset  (orchestral)  https://zenodo.org/records/17347681   _______  For  more  links,  check  #resources and  #datasets and  Post  dataset (you  may  encounter  duplicates)  ____     
+List  of  cloud  services  with  a  lot  of  space   
+or  for  temporary  storage  Unlimited  https://filegarden.com/ No  info  on  any  limits,  URL  shortener,  browser  bar  player,  open  source,  registration  required.   Unlimited  https://imgur.gg/ 500MB/file  and  5GB/file  for  registered  users,  no  expiration,  no  registration  required.  Audio  files  previewing.    Unlimited  https://krakenfiles.com/ 1GB/file  and  5GB/file  for  premium  users,  no  registration  required.  
+Audio
+ 
+files
+ 
+previewing.
+ 
+ _____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

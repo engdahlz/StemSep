@@ -1,0 +1,78 @@
+[page 599/642]
+     [“Check  out  the  5090  and  get  a  memory  mod  from  china  like  5090  on  paper  is  slower  than  a6000  but  because  you  get  fp4  its  faster”  -  Frazer]   Most  in-depth  and  handy  article:  https://timdettmers.com/2023/01/30/which-gpu-for-deep-learning/  GPU  performance  chart:  https://i0.wp.com/timdettmers.com/wp-content/uploads/2023/01/GPUS_Ada_raw_performance3.png?w=1703&ssl=1  tldr;  https://nanx.me/gpu/  [dtn:  Performance  in  training  NVIDIA  H100>A100  (40/80GB)>RTX  4090>RTX  A6000  Ada>Nvidia  L40  (also  18K  CUDA  
+cores)>prob.
+ 
+RTX
+ 
+5000
+ 
+Ada
+ 
+(12,8K
+ 
+CUDA
+ 
+cores)>RTX
+ 
+4080
+ 
+(9728K)>3090
+ 
+Ti
+ 
+(10752)>V100
+ 
+(32/16GB)>RTX
+ 
+3090
+ https://i0.wp.com/timdettmers.com/wp-content/uploads/2023/01/GPUS_Ada_raw_performance3.png?w=1703&ssl=1]   Cheaper  GPUs  for  training   2x  GTX  3090s  used  are  cheaper  than  4090  (but  irc,  the  performance  for  multi-GPUs  doesn’t  
+scale
+ 
+linearly,
+ 
+so
+ 
+might
+ 
+be
+ 
+not
+ 
+that
+ 
+affordable)
+  RTX  3090  24GB  (CUDA  cores:  10496)   4070  Ti  Super  16GB  (CUDA  cores:  8448)   RTX  4070  Ti  12GB  (CUDA  cores:  7680,  it's  (still)  tasking  to  train  on  it,  and  Roformers  will  
+achieve
+ 
+worse
+ 
+SDR
+ 
+due
+ 
+to
+ 
+necessity
+ 
+to
+ 
+start
+ 
+training
+ 
+with
+ 
+lower
+ 
+parameters)
+  2x  GTX  1080  (if  dual  GPU  scaling  would  be  decent  enough,  it’s  not  linear)   Not  mentioning  these:  RTX  2080  Ti  (CUDA  cores:  4352)  RTX  3060  12GB  (CUDA  cores:  4864)  GTX  1080  Ti  (CUDA  cores:  3584)   Sign  up  for  an  account  at  https://sites.google.com/site/vultrfreecredit?pli=1 Get  250  bucks  free.   Add  50  bucks.   Now  GPU  rental  is  unlocked.  Start  there  and  vast.ai  and  wait  for  a  server  that  has  a6000  x8  
+for
+ 
+a
+ 
+good
+ 
+price.
+ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

@@ -1,0 +1,109 @@
+[page 477/642]
+    https://discord.com/channels/708579735583588363/887455924845944873/910677893489770536  and  presumably  the  same  goes  to  GSEP  and  their  very  first  vocal  model  (10  SDR)  since  
+their
+ 
+chart
+ 
+showed
+ 
+the
+ 
+same
+ 
+ByteDance
+ 
+SDR
+ 
+score
+ 
+like
+ 
+in
+ 
+aircrowd.
+   ___UVR  settings  for  ensemble  (section  deprecated,  see  the  section  above)__   Ensemble  can  provide  different  results  from  one  current  main  model,  but  not  especially  
+better
+ 
+in
+ 
+all
+ 
+cases,
+ 
+so
+ 
+it’s
+ 
+also
+ 
+a
+ 
+matter
+ 
+of
+ 
+taste
+ 
+and
+ 
+conscious
+ 
+evaluation.
+  -  Aggressiveness  shouldn’t  be  set  to  more  than  0.1  (also  check  0.01)  -  high_end_process:  bypass  (official  recommendation)  or  mirroring  2  (in  some  cases)  -  In  most  cases,  you  shouldn’t  use  more  than  4  models  to  not  decrease  the  quality  
+(developer
+ 
+recommendation)
+  Don't  use  postprocessing  in  HV  Colab  for  ensemble  (doesn't  work).   Other  recommended  models  for  ensemble:    HP2-4BAND-3090_4band_arch-500m_1.pth,   HP2-4BAND-3090_4band_arch-500m_2.pth  (+new  3  band?)  as  they  currently  the  best  (15.08.21)  but  feel  free  to  experiment  with  more  (I  also  used  old  
+MGM
+ 
+beta
+ 
+1
+ 
+and
+ 
+2
+ 
+with
+ 
+two
+ 
+above,
+ 
+ some  people  used  also  vocal  models  as  well,  and  later  there  was  also  
+HP2-MAIN-MSB2-3BAND-3090_arch-500m
+ 
+model
+ 
+released,
+ 
+which
+ 
+gives
+ 
+good
+ 
+results
+ 
+solo).
+    ___Good  UVR  accapella  models______   In  general,  it’s  better  to  use  MDX-UVR  models  for  clean  acappellas,  but  for  UVR,  these  are  
+going
+ 
+to
+ 
+be
+ 
+your
+ 
+best
+ 
+bet:
+  -  Vocal_HP_4BAND_3090  -  This  model  with  come  out  with  less  instrumental  bleed.  -  Vocal_HP_4BAND_3090_AGG  -  This  is  a  more  aggressive  version  of  the  vocal  model  
+above.
+ 
+  “If  you  wanna  removes  the  vocals  but  keeping  the  backing  vocals,  you  can  use  the  latest  BV  
+model”
+ 
+ HP-KAROKEE-MSB2-3BAND-3090.pth  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

@@ -1,0 +1,69 @@
+[page 174/642]
+    0)  Gabox  Mel-Roformer  instrumental  model  “inst_gabox.ckpt”  (Kim/Unwa/Becruily  fine-tuned)   Gabox’  models repo  |  Colab |  Huggingface /  2 inst  fullness  37.07  (better  than  unwa  inst  v1  and  v2),  bleedless  37.40  (better  than  v1e  by  1.8,  
+slightly
+ 
+worse
+ 
+than
+ 
+unwa’s
+ 
+v1)
+ “It’s  like  the  v1  model  with  phase  fixer,  but  it  gets  more  instruments,  like,  it  prevents  some  instruments  from  getting  into  the  vocals”,  “sometimes  both  models  
+don't
+ 
+get
+ 
+choirs”.
+ _____   Faster  inference  models  
+(small
+ 
+model
+ 
+size/potentially
+ 
+workable
+ 
+on
+ 
+not
+ 
+ancient
+ 
+CPUs):
+  MDX-Net  HQ_3,  4,  5  (the  last  is  the  fastest,  56  MB)  MDX-Net  inst3,  Kim  inst  (older,  narrowband,  but  can  be  useful  too  in  some  cases,  63  MB)   Not  sure  if  on  CPU,  but  rather  light,  small  (the  lightest  Roformers,  while  most  have  870  MB):   Unwa  BS-Roformer-Inst-FNO  (works  only  in  MSST  after  modifying  py  file  like  in  the  model  
+card,
+ 
+vs
+ 
+Resurrection
+ 
+inst
+ 
+model
+ 
+“it's
+ 
+a
+ 
+considerably
+ 
+higher
+ 
+bleedless/lower
+ 
+fullness
+ 
+model”
+ 
+-
+ 
+rainboomdash,
+ 
+332
+ 
+MB)
+ Gabox  Mel-Roformer  small_inst |  yaml (experimental.  even  smaller  -  203  MB)  Unwa  BS-Roformer-Inst-EXP-Value-Residual  (low  performance,  use  v2  model  type  in  UVR)   _____    Older  fullness  models   0)  Gabox  F/fullness  v1  |  Huggingface /  2 inst  fullness  37.26  |  bleedless:  37.19   0)   Gabox  F/fullness  v2  |  Huggingface /  2 inst  fullness  37.46  |  bleedless:  37.09   *)  Gabox  inst_Fv4 (F  -  fullness/v4)  |  (don’t  confuse  with  vocal  fv4)  |  yaml |  Colab inst  fullness  39.40  |  bleedless  33.49  Duplicate  from  the  above  
+ Others    0)  intrumental_gabox |  yaml |  Huggingface /  2 __  0)  Gabox  B/bleedless  v1  instrumental  model |  yaml |  Huggingface /  2 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

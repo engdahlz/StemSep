@@ -1,0 +1,75 @@
+[page 466/642]
+    So  it  sounds  like  Zero-Shot  is  being  used  for  noise  removal.  As  for  how  Zero-Shot  and  the  noise  sample  works…   
+AudioSep  “I  decided  to  try  AudioSep:  https://github.com/Audio-AGI/AudioSep on  MultiSong  Dataset.   I  used  prompt  'vocals'.  I  was  sure  it  would  be  bad,  but  I  didn't  think  it's  so  bad.  https://mvsep.com/quality_checker/entry/8408  I  also  tried  it  on  the  Guitar  dataset  -  it's  even  worse  -  negative  SDR.  Maybe  I'm  doing  
+something
+ 
+wrong.
+ 
+But
+ 
+I
+ 
+tried
+ 
+the
+ 
+example
+ 
+with
+ 
+cat
+ 
+from
+ 
+the
+ 
+demo
+ 
+page,
+ 
+and
+ 
+it
+ 
+worked
+ 
+the
+ 
+same
+ 
+as
+ 
+in
+ 
+there.
+ 
+So
+ 
+I
+ 
+think
+ 
+I
+ 
+have
+ 
+no
+ 
+errors.”
+  sdr:  0.33  si_sdr:  -2.39  l1_freq:  17.62  log_wmse:  6.72  aura_stft:  3.66  aura_mrstft:  5.55  bleedless:  9.29  fullness:  16.58   Colab  on  GH  probably  gives  unpickiling  issue.  You  might  be  able  to  fix  it  be  executing:  !pip  install  torch==2.5.0  After  you  execute  all  the  installation-related  cells.  Since  then,  probably  something  more  about  dependencies  is  also  needed,  like  it  ‘s  coded  
+now
+ 
+in
+ 
+the
+ 
+inference
+ 
+Colab.
+  
+Medley  Vox  (different  vocalists)   Use  already  separated  vocals as  input  (e.g.  by  Roformers,  vox_ft  or  MDX23C  fullband  a.k.a.  1648  in  UVR  or  1666  on  MVSEP).   Local  installation  video  tutorial  by  Bas  Curtiz:  https://youtu.be/VbM4qp0VP8 (NVIDIA  GPU  acceleration  supported,  or  perhaps  CPU  -  might  be  slow)   Cyrus  version  of  MedleyVox  Colab  with  chunking  introduced,  so  you  don't  need  to  do  
+chunking
+ 
+manually:
+ https://colab.research.google.com/drive/10x8mkZmpqiu-oKAd8oBv_GSnZNKfa8r2?usp=sharing (07.02.25  fork  with  fairseq  fix  and  GDrive  integration)  _____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

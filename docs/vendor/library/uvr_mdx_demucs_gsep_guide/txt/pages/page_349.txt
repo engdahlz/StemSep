@@ -1,0 +1,128 @@
+[page 349/642]
+    We’ve  tested  various  DirectML.dll  libraries  major  versions  since  1.9  (and  besides  1.12  and  
+1.14),
+ 
+up
+ 
+to
+ 
+1.15.4,
+ 
+and
+ 
+the
+ 
+one
+ 
+attached
+ 
+with
+ 
+UVR
+ 
+(1.10.1.0)
+ 
+was
+ 
+the
+ 
+fastest
+ 
+(1.5.1.0
+ 
+didn’t
+ 
+work).
+  Separation  times  chart  by  Bas  Curtiz  (various  CPUs  and  GPUs,  model  cut-off  
+examination)
+  https://docs.google.com/spreadsheets/d/1R_pOURv8z9GmVkCt-x1wwApgAnplM9SHiPO_ViHWl1Q/edit?gid=460807774#gid=460807774 (probably  the  results  made  with  old  UVR  Roformer  patch  when  lower  overlap  means  longer  
+processing
+ 
+time,
+ 
+so
+ 
+the
+ 
+opposite
+ 
+to
+ 
+what's
+ 
+in
+ 
+patches
+ 
+newer
+ 
+than
+ 
+#2)
+  In  addition  to  the  above  -   for  CPU-only:   -  MDX-Net  HQ_3  in  UVR  with  CPU  takes  2  minutes  with  Ryzen  5  3600  (some  regular  song  
+time)
+  -  HQ_4  takes  ~13  minutes  on  C2Q  @3.6  DDR2  on  CPU,  6GB  RAM  with  default  settings    -  HQ_3  for  4:19  track  takes  20  minutes  and  22  seconds  (default overlap  and  256  segments,  iirc  default  too)    -  HQ_4  is  much  faster  on  the  same  CPU   -  On  AMD  A6-9225  Dual-Core  CPU  (2/2),  4GB  RAM  three  models  ensemble  (MDX,  MDX,  
+Demucs
+ 
+4)
+ 
+it
+ 
+took
+ 
+almost
+ 
+17
+ 
+hours.
+  -  On  i3  3xxx  it  took  around  8  hours  (not  sure  about  song  elapsed  time).    -  The  main  burden  in  this  ensemble  on  such  configuration  is  Demucs   -  MDX23C  and  Demucs  ht/ft  cannot  be  processed  under  ~5-17  hours  without  GPU  
+acceleration
+ 
+with
+ 
+CPU-only
+ 
+using
+ 
+C2Q.
+ 
+Probably
+ 
+the
+ 
+same
+ 
+for
+ 
+Roformers.
+  -   MDX-Net  HQ_3/4  models  and  VR  models  with  512  window  size  are  fine  on  the  same  
+configuration
+  -  MDX-Net  HQ_3  in  UVR  with  CPU  takes  2  minutes  with  Ryzen  5  3600  -  for  unknown  regular  
+song
+ 
+between
+ 
+2-4
+ 
+minutes)
+  -  HQ_4  takes  ~13  minutes  on  C2Q  @3.6  DDR2  with  default  settings  (and  it’s  faster  than  
+HQ_3)
+ 
+-
+ 
+for
+ 
+uknown
+ 
+regular
+ 
+song
+ 
+between
+ 
+2-4
+ 
+minutes)
+ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

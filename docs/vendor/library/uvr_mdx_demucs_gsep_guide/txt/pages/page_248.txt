@@ -1,0 +1,25 @@
+[page 248/642]
+    -  MVSEP  Wind  Mel-Roformer   -  MVSEP  Trumpet  (“so  clean”)  “after  testing  [Wind  9.77]  on  a  song  where  trumpet  and  sax  play  in  unison,  doing  the  trumpet  
+model
+ 
+is
+ 
+cleaner
+ 
+than
+ 
+doing
+ 
+the
+ 
+sax
+ 
+model”
+ 
+-
+ 
+dynamic64
+ 
+ -  MVSep  Trombone   -  MVSep  Oboe   -  MVSep  Clarinet   -  MVSep  Harmonica  (“Hit  or  miss”  -  musicbybrooks)   -  MVSep  French  Horn   -  MVSep  Tuba   -  MVSep  Bassoon   -  MVSep  Accordion   -  MVSep  Brass   -  MVSep  Woodwind   Older  -  "Wind"  model  on  UVR5  (Download  Center  ->  VR  Models  ->  select  model  17)  (You  might  have  to  use  it  on  instrumental  separation  first,  e.g.  with  HQ_4  or  Kim  Inst)  -  Audioshake  -  Music.ai  -  Adobe  Podcast  -  karaoke  4band_v2_sn  on  e.g.  MVSEP  (worse  than  Wind  model  in  UVR)  -  Probably  someone  had  some  success  with  one  de-crowd  model  for  wind  noises  -  Lot  of  instrumental/vocal  models  confuses  wind  instruments  with  vocals   MVSEP  Saxophone  -  SCNet  XL  (SDR  saxophone:  6.15,  other:  18.87)  -  MelBand  Roformer  (SDR  saxophone:  6.97,  other  19.70)  -  Ensemble  Mel  +  SCNet  (SDR  saxophone:  7.13,  other  19.77)   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

@@ -1,0 +1,54 @@
+[page 571/642]
+    arg...  it's  not  that  simple,  there  are  other  places  with  wav/flac  hardcoded...  ”  jarredou  “If  you  were  annoyed  by  dataset  metadata  generation  step  being  slow  with  MSST,  update/do  
+that:
+ https://github.com/ZFTurbo/Music-Source-Separation-Training/pull/178/files it's  like  hundred  times  faster  than  before”  -  jarredou   Bas  Curtiz’  Q&A   “1.  “Is  it  really  necessary  to  have  vocals  for  every  track  when  training?  Depends.  Do  you  wanna  make  a  model  that  can  split  vocal  from  instrumental?  Or  vocal  from  
+whatever
+ 
+'other'
+ 
+is?
+  2.  Could  adding  more  instrumental-only  data  be  beneficial  for  variety?  My  dataset  wasn't  50/50  either.  Does  that  benefit?  No  idea.   3.  Like  is  it  okay  to  just  fill  up  the  dataset  with  instrumentals  to  complete  it  or  is  there  a  risk  
+it’ll
+ 
+start
+ 
+underfitting
+ 
+on
+ 
+vocals?
+ Underfitting  is  always  on  the  lure,  so  make  sure  u  have  plenty  of  data  in  general.   4.  I  know  in  a  lot  of  songs  there  are  instrumental  breaks  with  no  vocals,  so  I'm  just  
+wondering.
+ Hence,  see  video  "my  how  to  create  a  dataset'':  https://www.youtube.com/watch?v=Wmt_0zu94L8 We  ditch  the  silence  parts  from  start/in  between/end,  from  vocal  and  instrumental.   If  you  used  dataset  type  4,  then  don't  throw  away  silence,  since  then  there's  no  cohesion  any  
+longer
+ 
+between
+ 
+the
+ 
+inst/vocal
+ 
+or
+ 
+drums/bass/vocal/other
+ 
+or
+ 
+whatever
+ 
+u
+ 
+training.”
+  Q:  Why  is  my  model  bleeding  the  least  vocals  in  the  instrumental  output?  A:  Cause  I  didn't  use  pre-processed/cleaned  up  vocals  (I  did,  but  only  ~10%  of  the  dataset).  [he  refers  to  his  fine-tune  exclusively  on  MVSEP]   Q:  What  has  that  to  do  with  the  absence  of  vocal  bleeding  in  the  instrumental  output?  A:  Cause  the  full  spectrum  is  being  used  to  determine  what  is  a  vocal.  Even  low  rumble  and  
+potential
+ 
+noise.
+  Q:  So  why  does  yours  bleeds  less  compared  to  other  models?  A:  As  stated,  aufr33  for  ex.  used  pre-processed  vocals  to  train  on.  This  means,  a  part  of  the  noise/low  rumble  is  already  gone.  So  it's  trained  like  that  stuff  isn't  part  of  the  vocal.  And  if  there  is,  it  is  dumped  into  the  other  
+(the
+ 
+instrumental
+ 
+output).
+ This  is  my  gut-feeling  why  we  do  hear  vocal  leftovers  in  the  instrumental  output.   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

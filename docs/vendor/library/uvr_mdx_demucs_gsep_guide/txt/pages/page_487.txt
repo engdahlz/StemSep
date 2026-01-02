@@ -1,0 +1,71 @@
+[page 487/642]
+     1e)  Spotify  /  Deezer  /  Tidal  /  Yandex  /  VK  /  FLAC  /  25  Daily  bot  https://t.me/BeatSpotBot  1f)  Deezer  mp3/FLAC  bot  https://t.me/DeezerMusicBot  1e)  VK  Bot,  vkmusbot or  Meph  Bot -  VK  /  320kbps  MP3   (sites  not  ripping  directly  from  streaming  later  below)   Rippers   2)  Murglar app  -  apk for  Android  -  player  and  downloader  working  with  Deezer,  SoundCloud,  VKontakte  and  Yandex  Music  (alternatively  you  can  use  it  in  Android  virtual  machine)   3)  Apple  Music  ALAC/Atmos  downloader  https://github.com/adoalin/apple-music-alac-downloader ( valid  subscription  required,  you  can’t  use  an  account  that’s  on  a  family  sharing  plan ,  more  about  installation  below  in  Dolby  Atmos section)   Might  be  less  comfy  to  install  for  beginners.  It  requires  Android  (rooted  at  best  and  in  
+Android
+ 
+Studio
+ 
+w/o
+ 
+Google
+ 
+APIs)
+ 
+and
+ 
+installing
+ 
+specific
+ 
+Frida
+ 
+server
+ 
+version
+ 
+(for
+ 
+not
+ 
+rooted
+ 
+devices
+ 
+it
+ 
+might
+ 
+be
+ 
+more
+ 
+complicated)
+ 
+and
+ 
+specific
+ 
+version
+ 
+of
+ 
+Apple
+ 
+Music
+ 
+app.
+ 
+ Refer  to  GitHub  link  above  and  Frida  website  for  further  instructions.  (the  section  continues  later  below)   4)  https://github.com/zhaarey/apple-music-downloader Instruction “and  additional  note  if  that  does  not  work    replace  Part  2  Line  2   Download  and  extract  the  NDK  needed  to  build  the  wrapper.  wget  https://dl.google.com/android/repository/android-ndk-r23b-linux.zip  &&  unzip  
+android-ndk-r23b-linux.zip
+ 
+-d
+ 
+~
+  with    Download  and  extract  the  NDK  needed  to  build  the  wrapper.  wget  https://dl.google.com/android/repository/android-ndk-r27c-linux.zip  &&  unzip  
+android-ndk-r27c-linux.zip
+ 
+-d
+ 
+~
+  the  change  is  the  Android  NDK  version  from  23b  to  27c”  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

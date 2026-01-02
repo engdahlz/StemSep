@@ -1,0 +1,111 @@
+[page 129/642]
+    Before  reopening  the  app,  go  offline  again,  open  the  app,  close  welcome  screen,  go  online,  
+separate,
+ 
+go
+ 
+offline,
+ 
+close.
+ 
+If
+ 
+you
+ 
+happen
+ 
+to
+ 
+missed
+ 
+that
+ 
+step,
+ 
+you
+ 
+need
+ 
+to
+ 
+start
+ 
+from
+ 
+the
+ 
+beginning
+ 
+of
+ 
+the
+ 
+instruction.
+ 
+ (replacing  SettingsSDK folder  no  longer  works  after  transition  from  4.6  to  4.7,  it  freezes  the  app)   FYI  -  the  app  doesn’t  separate  files  locally.   -  Bas  Curtiz  found  out  that  decreasing  volume  of  mixtures  for  Ripple  by  -3dB  eliminates  problems  with  vocal  residues  in  instrumentals  in  Ripple.  Video.   This  is  the  most  balanced  value,  which  still  doesn't  take  too  many  details  out  of  the  song  due  
+to
+ 
+volume
+ 
+attenuation.
+ Other  good  values  purely  SDR-wise  are  -20dB>-8dB>-30dB>-6dB>-4dB>  /wo  vol.  decr.    The  method  might  be  potentially  beneficial  for  other  models  and  probably  work  best  for  the  
+loudest
+ 
+tracks
+ 
+with
+ 
+brickwalled
+ 
+waveforms.
+  
+-  Stable  5.6  OpenCL  (DirectML)  version  of  UVR  5  GUI  for  Windows  
+Supporting  AMD  and  Intel  GPUs  acceleration  but  no  Roformers  yet  https://github.com/Anjok07/ultimatevocalremovergui/releases/download/v5.6/UVR_v5.6.0_setup_directml_old.exe Mac:  https://github.com/Anjok07/ultimatevocalremovergui/releases/ (newer  beta  Roformer [with  “roformer”  in  the  installer  name]  supports  both  DirectML  and  CUDA  out  of  the  box  already;  for  Mac  M1  click).   -  For  CUDA  (NVIDIA  GPUs) -  non-OpenCL  installer  in  the  name  from  here:  https://github.com/Anjok07/ultimatevocalremovergui/releases/download/v5.6/UVR_v5.6.0_setup.exe  (Following  based  on  previous  OpenCL  build)  8GB  VRAM  for  3:00/3:30  tracks  using  MDX23C  HQ  model  with  12GB  VRAM  probably  
+enough
+ 
+for
+ 
+5:00
+ 
+track
+ 
+which
+ 
+is
+ 
+more
+ 
+than
+ 
+in
+ 
+CUDA.
+ Now  the  issue  should  be  mitigated,  and  less  memory  crashes  should  occur.   Ensembles  might  require  more  memory  due  to  memory  allocation  issues  not  met  in  CUDA  
+before.
+ 
+Also,
+ 
+VRAM
+ 
+is
+ 
+fully
+ 
+freed
+ 
+only
+ 
+after
+ 
+closing
+ 
+the
+ 
+application.
+  Acceleration  for  only  Demucs  2  (and  1?)  arch  on  AMD  is  not  supported.  All  others  archs  
+should
+ 
+work.
+  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

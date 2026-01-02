@@ -1,0 +1,116 @@
+[page 278/642]
+    model,  but  I  cannot  guarantee  that  Min  Spec  in  UVR  and  manual  ensemble  will  necessarily  
+work
+ 
+exactly
+ 
+like
+ 
+Min
+ 
+Mag
+ 
+in
+ 
+Colab
+ 
+for
+ 
+a
+ 
+single
+ 
+model.
+ 
+But
+ 
+the
+ 
+explanation
+ 
+remains
+ 
+the
+ 
+same.
+ 
+The
+ 
+best
+ 
+option
+ 
+might
+ 
+even
+ 
+depend
+ 
+on
+ 
+a
+ 
+song.
+  TL;DR  For  vocals  bleeding  in  instrumentals   You  can  use  Spectral  Inversion  for  alleviating  problems  with  bleeding  in  instrumentals.  Max  Spec/Min  Spec  is  also  useful  in  such  scenario.   You  want  less  bleed  of  Vocal  in  Instrumental  stem?  Use  Max-Min   For  bleeding  instruments  in  vocals   Phase  Inversion  enabled  helps  to  get  rid  of  transients  of  the  kick  which  might  be  still  
+hearable
+ 
+in
+ 
+vocals
+ 
+in
+ 
+some
+ 
+cases.
+  Set  Ensemble  Algorithm:  Min/Avg  when  you  still  hear  bleeding.   If  still  the  same,  try  Min/Max  instead  of  Avg/Avg  when  doing  an  ensemble  with  
+Vocals/Instrumental
+ 
+output.
+  Also,  you  can  resign  from  ensemble  setting,  and  simply  use  only  one  clean  model  on  the  
+models
+ 
+list
+ 
+if
+ 
+the
+ 
+result
+ 
+is
+ 
+still
+ 
+not
+ 
+satisfactory.
+   Further  explanations   
+Why
+ 
+not
+ 
+always
+ 
+go
+ 
+for
+ 
+Min-Max
+ 
+when
+ 
+you
+ 
+want
+ 
+the
+ 
+best
+ 
+acapella?
+ Why  not  always  go  for  Max-Min  when  you  want  the  best  Instrumental?   So  far,  I  hear  Max-Min  on  Instrumental  sounds  more  'muddy/muffled'  compared  to  Avg-Avg.  I  bet  this  will  be  the  same  for  acapella,  but  it's  less  noticeable  (I  don't  hear  it).   Hence,  I  think  the  best  approach  would  be  always  going  with  Avg-Avg.  Then  based  on  the  outcome  -  after  reviewing,  tweak  it  based  on  your  desired  outcome,  and  process  again  with  either  Min-Max  or  Max-Min.”   Min  =  less  bleeding  of  the  other  side/stem  (into  this  side/stem),  but  could  get  sound  
+muddy/muffled
+ Max  =  more  full  sound,  but  potential  it  will  have  more  bleeding  Avg  =  average,  so  a  bit  of  all  models  combined   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

@@ -1,0 +1,94 @@
+[page 93/642]
+    -  (x-minus)  “Added  mixing  of  MDX23C  and  BS-RoFormer  results  (avg/bs-roformer  option).  
+So
+ 
+far,
+ 
+it
+ 
+works
+ 
+only
+ 
+for
+ 
+MDX23C.”
+ 
+Aufr33
+  -  “Output  has  released  a  free  AI  based  generator  that  create  multitrack  stem  packs  https://coproducer.output.com/pack-generator”  12-seconds  long  audio,  fullband,  8  stems  (drums  in  one  stem,  electric  and  rhythm  guitar,  
+hammond
+ 
+organ,
+ 
+trumpet,
+ 
+vocals)
+ 
+with
+ 
+8
+ 
+variations
+ “this  looks  more  like  it's  mixing  different  real  instruments,  rather  than  actually  making  up  
+songs
+ 
+(like
+ 
+a
+ 
+diffusion
+ 
+based
+ 
+generator)”
+ 
+~jarredou/becruily
+  -  Ensemble  on  MVSEP  updated   -  The  site  is  up  and  running  after  some  outage   -  ZFTurbo  released  fine-tuned  viperx  model  (“ver.  2024.04”)  on  MVSEP  (further  trained  from  
+checkpoint
+ 
+on
+ 
+a
+ 
+different
+ 
+dataset).
+ 
+Ensembles
+ 
+will
+ 
+be
+ 
+updated
+ 
+tomorrow.
+ 
+Clicking
+ 
+issue
+ 
+has
+ 
+been
+ 
+fixed.
+ SDR  vocals:  11.24,  instrumental:  17.55  (from  17.17  in  the  base  model)  Depends  on  a  song  if  it’s  better.  Some  vocals  can  be  worse  vs  the  previous  model.   -  Test  out  ensemble  1296  +  1143  (BS-Roformer  in  beta  UVR)  +  Inst  HQ4  (dopfunk)  Ensembles  with  BS-Roformer  models  might  not  work  for  everyone,  use  manual  ensemble  if  
+needed.
+  -  Viperx  model  added  also  to  beta  Colab  by  jarredou.  It  gives  only  vocals,  so  perform  
+inversion
+ 
+on
+ 
+your
+ 
+own
+ 
+to
+ 
+get
+ 
+instrumental
+ https://colab.research.google.com/drive/1pd5Eonbre-khKK_gn5kQPFtB1T1a-27p?usp=sharing Update:  now  BS-Roformer  is  also  added  in  the  newer  v.2.4  Colab  -  Viperx’  BS-RoFormer  models  have  been  implemented  by  Anjok  to  UVR   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

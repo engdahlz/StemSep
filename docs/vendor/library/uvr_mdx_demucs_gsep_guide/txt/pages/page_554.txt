@@ -1,0 +1,172 @@
+[page 554/642]
+    vocals  almost  completely  (...)  Removing  vocals  from  "Believe"  is  no  problem  either.”  
+Aufr33)
+  A  list  of  songs  which  have  vocal  bleed  in  the  instrumental  using  unwa's  v1e  model  
+“These
+ 
+songs
+ 
+also
+ 
+present
+ 
+issues
+ 
+after
+ 
+using
+ 
+Mel
+ 
+2024.10
+ 
+and
+ 
+BS
+ 
+2024.08
+ 
+from
+ 
+MVSEP,
+ 
+but
+ 
+the
+ 
+timestamps
+ 
+where
+ 
+the
+ 
+bleed
+ 
+occurs
+ 
+might
+ 
+be
+ 
+different”
+ 
+plus
+ 
+Mel
+ 
+2024.10
+ 
+model
+ 
+might
+ 
+have
+ 
+less
+ 
+of
+ 
+these
+ 
+residues
+ 
+by
+ 
+dca100fb8
+  -  "Supersonic"  by  Jamiroquai  (BV  bleed  starting  @0:07)  -  "Amazing"  by  George  Michael  (BV  bleed  starting  @3:45)  -  "Here  Comes  the  Rain  Again"  by  Eurythmics  (BV  bleed  starting  @1:17)  -  "Porcelain"  by  Moby  (LV  bleed  starting  @1:00  -->  Dango  and  SCNet  XL  fix  the  
+issue)
+ -  "Sun  is  Shining"  by  Bob  Marley  &  The  Wailers  (BV  bleed  starting  @1:52)  -  "Sun  is  Shining  (Kaya  40  Mix)"  by  Bob  Marley  &  The  Wailers  (BV  bleed  starting  
+@1:52)
+ -  "Give  Life  Back  to  Music"  by  Daft  Punk  (LV  bleed  starting  @0:49  -->  Dango  fixes  
+the
+ 
+issue)
+ -  "Road  to  Zion"  by  Damian  Marley  (BV  bleed  starting  @0:00)  -  "El  lilady"  by  Samo  Zaen  (BV  bleed  starting  @3:30)  -  "Night  Bird"  (from  "Essence  of  the  Forest"  album)  by  Deep  Forest  (BV  bleed  starting  
+@1:12
+  
+-->
+ 
+Dango
+ 
+fixes
+ 
+the
+ 
+issue)
+ -  "Desert  Walk"  (from  "Essence  of  the  Forest"  album)  by  Deep  Forest  (BV  bleed  
+starting
+ 
+@0:44
+ 
+-->
+ 
+Dango
+ 
+fixes
+ 
+the
+ 
+issue)
+ -  "Desert  Walk  (Version  1992)"  by  Deep  Forest  (BV  bleed  starting  @0:18  -->  Dango  
+fixes
+ 
+the
+ 
+issue)
+ -  "Love  Is  Gone  (Fred  Riester  &  Joachim  Garraud  Radio  Edit  Remix)"  by  David  
+Guetta
+ 
+(BV
+ 
+bleed
+ 
+starting
+ 
+@1:15
+ 
+-->
+ 
+Dango
+ 
+fixes
+ 
+the
+ 
+issue)
+ -  "Attention  Mesdames  et  Messieurs"  by  Michel  Fugain  &  Le  Big  Bazar  (BV  bleed  
+starting
+ 
+@0:50
+ 
+-->
+ 
+Dango
+ 
+fixes
+ 
+the
+ 
+issue)
+ -  "Strangers"  by  Portishead  (LV  bleed  starting  @0:30)  -  "Everything  In  Its  Right  Place"  by  Radiohead  (BV  bleed  starting  @3:28  -->  Dango  
+fixes
+ 
+the
+ 
+issue)
+ -  "The  National  Anthem"  by  Radiohead  (LV  effects  bleed  starting  @1:36)  -  "Samsam  (Chanson  du  générique)"  (BV  bleed  starting  @0:00)  -  "33  Degree"  by  Thievery  Corporation  (LV  effects  bleed  starting  @1:42)  -  "Sweet  Dreams  (Are  Made  Of  This)"  by  Eurythmics  (BV  bleed  starting  @0:48  -->  
+Dango
+ 
+fixes
+ 
+the
+ 
+issue)
+ -  "Sweet  Lullaby  (Version  1992)"  by  Deep  Forest  (BV  bleed  starting  @1:21)  -  "Lebanese  Blonde"  by  Thievery  Corporation  (BV  bleed  starting  @0:52  -->  Dango  
+fixes
+ 
+the
+ 
+issue)
+ -  "Forest  Hymn"  by  Deep  Forest  (BV  bleed  starting  @0:33)  -  "Aicha"  by  Khaled  (BV  bleed  starting  @3:45)  -  "Run"  by  Air  (BV  bleed  starting  @1:08)  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

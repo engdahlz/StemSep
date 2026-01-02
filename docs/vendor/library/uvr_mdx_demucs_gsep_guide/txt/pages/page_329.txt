@@ -1,0 +1,53 @@
+[page 329/642]
+     ___  In  below  sections  you’ll  find  more  details,  links,  Colabs,  all  tools/AIs  listed,  more  information  
+about
+ 
+specific
+ 
+models
+ 
+as
+ 
+alternatives
+ 
+to
+ 
+experiment
+ 
+further
+ 
+(mostly
+ 
+MDX-UVR
+ 
+instrumental
+ and  vocal  models  available  in  UVR5  GUI  and  https://x-minus.pro/ai and  MVSEP).  I  also  provide  some  technicalities/troubleshooting  everywhere  when  necessary.   _________________________________________________________________________   Table  of  content  (click  on  an  entry  to  be  redirected  to  a  specific  section;   
+the
+ 
+section
+ 
+is
+ 
+outdated
+ 
+-
+ 
+check
+ 
+it
+ 
+in
+ 
+document
+ 
+outline
+ 
+instead
+ 
+if
+ 
+you
+ 
+can)
+  Last  updates  and  news ............................................................................................................ 1 General  reading  advice .......................................................................................................... 30  Instrumental,  vocal,  stems  separation  &  mastering  guide The  best  models for  specific  stems for  instrumentals ............................................................................................. 31 for  vocals ........................................................................................................ 34 How  to  check  whether  a  model  in  UVR5  GUI  is  vocal  or  instrumental? ......... 39 for  karaoke ...................................................................................................... 39 for 4-6  stems  (drums,  bass,  others,  vocals  +  opt.  guitar,  piano): .................... 43 SFX ................................................................................................................. 45 De-reverb ........................................................................................................ 46 Vinyl  noise/white  noise  (or  simply  noise) ........................................................ 50 Mixing  and  mastering..................................................................................... 51  Audio  upscalers  list ......................................................................................... 52 More  descriptions  of  models ........................................................................... 53       MDX  settings  in  UVR5  explained ................................................................... 57 Tips  to  enhance  separation .................................................................................................... 63 Other  ensembles  in  UVR5  -  list .............................................................................................. 71 50  models  sorted  by  SDR ...................................................................................................... 87 Separating  speakers  in  recording .......................................................................................... 93 General  section  of  UVR5  GUI  (MDX-Net,  VR,  Demucs  2-4,  MDX23)  ……………………….  95 GUI  FAQ  &  troubleshooting .................................................................................................... 96 Chunks  may  alter  separation  results ...................................................................................... 99 Q:  Why  I  shouldn’t  use  more  than  4-5  models  for  UVR  ensemble  (in  most  cases).............100 (older)  UVR  &  x-minus.pro  updates ..................................................................................... 101 MVSEP  models  from  UVR5  GUI .......................................................................................... 107 Manual  ensemble  Colab  for  various  AI/models .................................................................... 108 _____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

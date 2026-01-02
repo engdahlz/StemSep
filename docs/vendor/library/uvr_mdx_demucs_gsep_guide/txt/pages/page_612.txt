@@ -1,0 +1,78 @@
+[page 612/642]
+    There  is  also  a  rule  for  file  names,  please  make  the  file  names  numbers  and  add  "_mix"  /  
+"_inst"
+ 
+at
+ 
+the
+ 
+end.
+  Example:   Instrumental  with  vocal:                       D:\dataset\mixtures\001_mix.wav                      D:\dataset\mixtures\002_mix.wav                      D:\dataset\mixtures\003_mix.wav                      .                      .                      .  Instrumental  only:                      D:\dataset\instruments\001_inst.wav                      D:\dataset\instruments\002_inst.wav                      D:\dataset\instruments\003_inst.wav…                      .                      .                      .   3.  Download  the  vocal-Remover  from  GitHub  Link:  https://github.com/tsurumeso/vocal-remover/releases/ 4.  Install  the  program  (Use  this  command  down  below)...  pip  install  --no-cache-dir  -r  requirements.txt   5.  Start  learning  python  train.py  --dataset  D:\dataset\  --reduction_rate  0.5  --mixup_rate  0.5  --gpu  0   Attention:   If  you  want  to  pause,  press  Ctrl+Shift+C   6.  Continue  learning  Example:  python  train.py  --dataset  D:\dataset\  --pretrained_model  .\models\model_iter(number).pth  
+--reduction_rate
+ 
+0.5
+ 
+--mixup_rate
+ 
+0.5
+ 
+--gpu
+ 
+0
+  
+__
+ Compared  to  VR5  arch,  VR6  now  can  handle  phase.  Although  I’m  not  sure  if  it  implements  
+Aufr33
+ 
+mutliband
+ 
+functionality
+ 
+which
+ 
+models
+ 
+trained
+ 
+for
+ 
+UVR5
+ 
+on
+ 
+VR5
+ 
+utilize
+ 
+(I’m
+ 
+not
+ 
+sure
+ 
+if
+ 
+that
+ 
+training
+ 
+code
+ 
+is
+ 
+in
+ 
+the
+ 
+old
+ 
+CML
+ 
+UVR5
+ 
+code).
+ 
+ 
+ MedleyVox  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

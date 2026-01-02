@@ -1,0 +1,87 @@
+[page 344/642]
+    GUI  provides  more  functionalities  and  models/AIs  compared  to  Colabs,  incl.  custom  model  
+import:
+ https://github.com/Anjok07/ultimatevocalremovergui/releases  Official  app  Win  11  installation  tutorial:  https://youtu.be/u8faZW7mzYs MacOS  build:  https://github.com/Anjok07/ultimatevocalremovergui/releases/tag/v5.6 (or  beta)  MacOS  Catalina  tutorial  (outdated  at  this  point):  https://www.youtube.com/watch?v=u8faZW7mzYs (you  better  don’t  run  Windows  build  in  W10  VM  or  you  will  get  like  3  hours  processing  time)  Windows  7  users:  "To  use  the  newest  python  3.8+  with  Windows  7  install  VxKex  API  extensions  and  in  case  of  
+problems
+ 
+select
+ 
+Windows
+ 
+10
+ 
+compatibility
+ 
+in
+ 
+EXE
+ 
+installer
+ 
+properties."
+  Here  you  can  find  a  searchable  PDF  guide  by  the  devs  for  UVR5  GUI  describing  functions  
+and
+ 
+parameters
+ 
+(can
+ 
+be
+ 
+outdated):
+ https://drive.google.com/file/d/1RtMRj8FpSpMHlK1XxaBrKoWQlmMfCSmy/view?usp=drive_link Video  guide:  https://youtu.be/jQE3oHXfc7g Online  guide:  https://multimedia.easeus.com/ai-article/how-to-use-ultimate-vocal-remover.html (their  instructions  for  installing  and  using  stable  version  seems  to  be  fine,  despite  the  fact  
+they
+ 
+recommend
+ 
+to
+ 
+clone
+ 
+repo
+ 
+for
+ 
+Macs.
+ 
+It's
+ 
+already
+ 
+available
+ 
+as
+ 
+appropriate
+ 
+binaries
+ 
+for
+ 
+M1
+ 
+and
+ 
+Intel
+ 
+CPUs
+ 
+(/wo
+ 
+Roformer
+ 
+beta
+ 
+patch
+ 
+at
+ 
+the
+ 
+moment)
+ 
+  Some  of  UVR5  GUI  models  described  in  this  guide  can  be  downloaded  via  the  expansion  
+pack:
+ https://github.com/Anjok07/ultimatevocalremovergui/releases/download/v5.3.0/v5_model_expansion_pack.zip  VIP  models  https://www.buymeacoffee.com/uvr5/vip-model-download-instructions  (some  older)  settings  for  the  GUI:  https://photos.app.goo.gl/EUNMxm1XwnjMHKmW6 (though  it's  mostly  outdated).    (no  longer  necessary  as  UVR  now  has  separate  DirectML  branch  and  executable:)   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

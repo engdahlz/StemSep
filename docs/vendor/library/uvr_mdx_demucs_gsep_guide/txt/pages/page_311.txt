@@ -1,0 +1,99 @@
+[page 311/642]
+    Random  noise  added  to  results  can  increase  fullness  metric:  https://mvsep.com/quality_checker/entry/7709 https://mvsep.com/quality_checker/entry/7708 “l1  freq,  the  simplest  way  to  explain  it  -  it’s  a  mix  between  fullness  and  bleedless  but  without  
+the
+ 
+noise
+ 
+issue
+ 
+(in
+ 
+a
+ 
+sense
+ 
+it’s
+ 
+the
+ 
+real
+ 
+fullness/bleedless
+ 
+metric)
+ 
+(...)
+ 
+there’s
+ 
+no
+ 
+universal
+ 
+metric
+ 
+still
+ 
+sadly,
+ 
+we
+ 
+have
+ 
+to
+ 
+rely
+ 
+on
+ 
+a
+ 
+combination
+ 
+of
+ 
+them
+ 
+(and
+ 
+our
+ 
+ears)”
+  “-l1_freq  =  bleedless  (higher  is  cleaner)  -aura_mrstft  =  fullness  (higher  is  fuller)  they  maybe  don’t  have  the  issues  fullness  and  bleedless  have  but  I  haven’t  played  to  check  
+that”
+ 
+becruily
+  Read  for  discussion  “[The]  problem  with  bleedless/fullness  metric  is  that  you  can  easily  increase  them  by  
+multiplying
+ 
+stem
+ 
+on
+ 
+constant.
+ Multiply  predictions  by  0.97  -  it  increases  fullness  and  reduces  bleedless  Multiply  predictions  by  1.03  -  it  greatly  increases  bleedless  and  reduces  fullness”  -  ZFTurbo (metrics/discussion)   Other  metrics:   Log  WMSE  -  good  “at  least  for  drums  or  anything  rich  in  low  frequency  content”  -  jarredou  "It  is  a  relatively  new  time-domain  metric  over  SDR  and  SI-SDR  that  is  not  overly  sensitive  to  
+low
+ 
+frequencies
+ 
+like
+ 
+SDR
+ 
+and
+ 
+can
+ 
+accurately
+ 
+evaluate
+ 
+silent
+ 
+intervals.
+ In  addition,  time-domain  metrics  can  be  evaluated  for  both  amplitude  and  phase."  -  Unwa  Metrics  ignore  phase,  so  probably  phase  fixer  won't  affect  fullness/bleeedless  metric.   For  evaluating  specific  instrument  stems,  interesting  read:  https://arxiv.org/abs/2507.06917v2 _____________________________   Top  metrics  of  publicly  available  Roformers  for  instrumentals  available  for  download   (as  for  18.06.25)   Instrumental  models  sorted  by  instrumental  fullness  metric:  INSTV6N  (41.68)>inst_Fv4Noise  (40.40)/INSTV7N  (no  metrics)/Inst  V1e  (38.87)>Inst  Fv3  
+(38.71).
+ While  V1e+  (37.89)  might  be  already  muddy  in  some  cases  
+ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

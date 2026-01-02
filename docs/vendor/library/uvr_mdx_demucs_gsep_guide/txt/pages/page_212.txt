@@ -1,0 +1,14 @@
+[page 212/642]
+    https://bascurtiz.x10.mx/models-checkpoint-config-urls.html (some  can  be  offline)   https://github.com/SiftedSand/MusicSepGUI/blob/main/models.json  https://huggingface.co/spaces/TheStinger/UVR5_UI/blob/main/assets/models.json  Some  of  the  older  UVR5  GUI  models  described  in  this  guide  can  be  downloaded  via  
+expansion
+ 
+packs:
+ https://github.com/Anjok07/ultimatevocalremovergui/releases/download/v5.3.0/v5_model_expansion_pack.zip https://github.com/Anjok07/ultimatevocalremovergui/releases/download/v5.3.0/models.zip https://github.com/Anjok07/ultimatevocalremovergui/releases/download/v4.0.1/models.zip  Some  of  the  models  used  by  KaraFan:  https://github.com/Eddycrack864/KaraFan/releases/tag/karafan_models  MDX23C  HQ  2  https://github.com/deton24/Colab-for-new-MDX_UVR_models/releases/download/v1.0.0/MDX23C-8KFFT-InstVoc_HQ_2.ckpt  427:  https://drive.google.com/drive/folders/16sEox9Z_rGTngFUtJceQ63O5S9hhjjDk?usp=drive_link (just  in  case)  Copy  it  to  Ultimate  Vocal  Remover\models\MDX_Net_Models  and  rename  the  model  name  
+to:
+ 
+UVR-MDX-NET_Main_427
+  Jarredou’s  models  mirror   https://huggingface.co/jarredou (6+  models)   Some  direct  links   
+VOCALS-InstVocHQ
+ Config:  https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_vocals_mdx23c.yaml Checkpoint:  https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_mdx23c_sdr_10.17.ckpt  VOCALS-MelBand-Roformer  (by  KimberleyJSN)  Config:  https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

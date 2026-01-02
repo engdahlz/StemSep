@@ -1,0 +1,51 @@
+[page 522/642]
+    https://colab.research.google.com/drive/1gRGRDhx9yA1KtafKhOaXZUpUoh2MuF_8?usp=sharing   Other  one(s):    LaSAFT:  https://colab.research.google.com/drive/1XIngzXDi2mF_y6WwDrLLx4XZtI8_1FAz?usp=sharing  
+(original,
+ 
+cannot
+ 
+define
+ 
+model
+ 
+ATM)
+ https://github.com/ws-choi/Conditioned-Source-Separation-LaSAFT/blob/main/colab_demo/LaSAFT_with_GPoCM_(large)_Stella_Jang_Example.ipynb If  you  cannot  load  the  file,  upload  it  manually  to  your  Colab,  or  just  wait  patiently.  Refresh  
+Github
+ 
+page
+ 
+with
+ 
+CTRL+R
+ 
+if
+ 
+you
+ 
+can’t
+ 
+see
+ 
+the
+ 
+code
+ 
+preview.
+  Check  out  also  this  laSAFT  download  with  message which  says  about  superiority  of  2020  model  (said  in  march  2021).   Clone  voice:  https://colab.research.google.com/github/tugstugi/dl-colab-notebooks/blob/master/notebooks/RealTimeVoiceCloning.ipynb  Matchering:  https://cdn.discordapp.com/attachments/814405660325969942/842133128851750952/MatcheringColabSimplified.ipynb  For  more  Colabs  search  for  colab.research.google.com  on  our  Discord  server     __Google  Colab  troubleshooting  (old)_   -  Error  of  authorisation  during  mounting:  TL:DR  -  you  need  to  log  into  the  same  account  in  Colab  you  want  to  mount  drive  
+later,
+ 
+or
+ 
+just
+ 
+change
+ 
+your
+ 
+Colab
+ 
+account.
+ 
+  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

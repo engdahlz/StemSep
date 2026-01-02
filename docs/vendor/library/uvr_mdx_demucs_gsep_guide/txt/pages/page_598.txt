@@ -1,0 +1,78 @@
+[page 598/642]
+    The  lightest  arch  and  still  performing  great  seems  to  be  Vitlarge.   “This  arch  is  more  tricky  than  other,  even  if  lighter.”  jarredou   (?)  segm_model  in  the  script  (or  something  like  that)   musdb  configs  are  for  4stem  training,  vocals  ones  are  for  2stem   Q:  What’s  the  minimum  length  requirement  A:  “Default  segment_size  in  htdemucs  config  is  11  seconds  audio  chunks,  so  your  training  
+audio
+ 
+files
+ 
+should
+ 
+be
+ 
+longer
+ 
+or
+ 
+equal
+ 
+to
+ 
+11
+ 
+second
+ 
+length.
+ It  can  be  lower,  if  there’s  no  other  choice.”   -  Here,  one  user  is  being  helped  with  training  hi  hat  model  from  scratch  using  ZFTurbo  code  on  an  example  of  RTX  3060  12GB   -  “I  believe  a  length  of  about  one  minute  per  song  is  appropriate  for  the  validation  dataset.”   Q:  “My  avg  loss  is  always  in  the  130–120  range,  is  it  worth  the  time  to  keep  waiting  for  the  
+training?
+ 
+The
+ 
+previous
+ 
+training
+ 
+is
+ 
+also
+ 
+like
+ 
+this,
+ 
+never
+ 
+touched
+ 
+110
+ 
+or
+ 
+under
+ 
+100”
+ A:  Don't  worry  about  avg  loss,  look  at  the  SDR  on  the  metrics  -  is  it  improving?  Q:  No  improvement  so  far,  the  last  one  was  at  epoch  9,  now  I’m  heading  into  epoch  13  A:  “Yeah,  don’t  worry,  so  what  you’re  seeing  is  the  loss  curve.  You've  been  shooting  down  that  ramp,  but  it  slows  improvements  after  a  while”  pic (frazer)   
+How  to  get  fast  GPUs  for  training  By  Bas  Curtiz   "Budget"  option  -  4090,  or  Buy  A6000,  preferably  multiple.  Or  hire  them  in  the  cloud.  Best  bang  for  your  buck  for  now  https://vast.ai/ [https://www.tensordock.com/ similar  prices  (although  for  November  2024,  worse  for  8xA100]  https://www.runpod.io/ https://app.hyperbolic.xyz/compute “5x  and  8x  H100  GPU  instances  with  1.8  TB  storage  for  $5  and  $8  per  hour”  -  Kim  “hunder  compute  -  A100XL  (80GB)  on  $1.05/hour  -  Essid]  
+ “The  easiest  would  be  Colab,  if  you  pay  for  the  compute  units  the  v100  is  identical  to  training  
+with
+ 
+3090
+ 
+locally,
+ 
+but
+ 
+Colab
+ 
+can
+ 
+get
+ 
+expensive
+ 
+quickly”
+ 
+-
+ 
+becruily
+ Paid  Colab  has  now  Nvidia  A100  vs  free  Tesla  T4.  It’s  also  faster  than  v100  and  L4.  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

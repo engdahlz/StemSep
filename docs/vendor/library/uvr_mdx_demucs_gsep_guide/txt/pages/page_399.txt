@@ -1,0 +1,70 @@
+[page 399/642]
+    HP2-4BAND-3090_4band_arch-500m_1.pth  HP2-4BAND-3090_4band_arch-500m_2.pth  HP_4BAND_3090_arch-124m.pth      HP-4BAND-V2_arch-124m.pth   7.  Store  the  resulting  file  in  the  ROOT  of  your  UVR  installation  alongside  your  MDX  result.  8.  Finally,  ensemble  the  two  outputs  together.  cd  into  the  root  of  your  UVR  installation  and  
+invoke
+ 
+spec_utils.py
+ 
+like
+ 
+so:
+ $  python  lib/spec_utils.py  -a  crossover  <input1>  <input2>  the  output  will  be  stored  in  the  ensembled  folder  9*  (optional).  Ensemble  the  output  from  spec_utils  with  the  output  from  UVR  4  stacked  
+models
+ 
+using
+ 
+the
+ 
+same
+ 
+algorithm
+  Ensemble  spec_utils.py  allowing  ensemble  is  standalone,  and  doesn't  require  UVR  installed  in  order  to  
+work.
+ 
+It
+ 
+accepts
+ 
+any
+ 
+of
+ 
+the
+ 
+audio
+ 
+files
+ 
+  mul  -  multiplies  two  spectrograms  crossover  -  mixes  the  high  frequencies  of  one  spectrogram  with  the  low  frequencies  of  
+another
+ 
+spectrogram
+ Default  usage  from  aufr33:  python  lib/spec_utils.py  -o  inst_co  -a  crossover  UVR_inst.wav  MDX_inst.wav    https://github.com/Anjok07/ultimatevocalremovergui/blob/v5-beta-cml/lib/spec_utils.py   Custom  UVR  Piano  Model:  https://drive.google.com/file/d/1_GEEhvZj1qyIod1d1MX2lM6u65CTpbml/view?usp=s  ______________   
+VR  Colab  troubleshooting   If  you  somehow  can't  mount  GDrive  in  the  VR  Colab  because  you  have  errors  or  your  
+separation
+ 
+fails:
+  -  Use  the  same  account  for  Colab  and  for  mounting  GDrive  (or  you’ll  get  an  error)   -  If  you’re  on  mobile,  you  might  be  unable  to  use  Colab  without  PC  mode  checked  in  your  
+browser
+ 
+settings
+ 
+(although
+ 
+now
+ 
+it
+ 
+works
+ 
+without
+ 
+it
+ 
+in
+ 
+Chrome
+ 
+Android)
+  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

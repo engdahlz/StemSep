@@ -1,0 +1,50 @@
+[page 569/642]
+    6.  Rename  files  by  adding  a  prefix  of  the  folder  they're  in.  For  convenience,  add  a  tag  like  [ORGAN]  or  so  to  it:  example:  `[PERC]  -  Aaroh  South  Indian  Percussion  -  
+AR_SIP_80_percussion_small_nagara_double_rhythm.flac`
+ (I  use  https://www.bulkrenameutility.co.uk/  to  batch-process)   7.  Sort  on  length.  If  below  11s,  move  them  elsewhere.  (I  use  Mp3tag  to  sort  and  move  in  batch,  but  Windows  explorer  is  able  to  do  so  too)   8.  Loop  those  up  till  11  seconds.  (I  use  https://www.dbpoweramp.com/  >  Loop  DSP  for  that)   9.  Move  *.flac  files  into  1  folder  (the  looped  +  untouched  audio  files)  -  now  u  can  ditch  all  
+unneeded
+ 
+files/folders
+  10.  Undupe  (I  use  https://www.similarityapp.com/,  https://www.duplicatecleaner.com/ or  https://dupeguru.voltaicideas.net/ to  batch-process)   (optional  -  only  when  applicable)  11.  Sanitize  based  on  SDR  a)  Process  the  original  files  with  HTdemucs.  Based  on  whether  your  dataset  should  contain  bass/drums/other/vocals,  set  the  proper  
+output.
+ b)  Rename  the  output  so  it  matches  the  original  filename  again  (using  https://www.bulkrenameutility.co.uk/)  c)  Use  SDRCALC.exe  like  `sdrcalc  "c:\organ"  "c:\organ-htdemucs"  >  sdr-organ.txt`  d)  copy  over  the  output  in  the  text-file  to  a  GSheet  for  convenience,  to  sort  on  SDR  e)  move  all  unprocessed/original  files  above  a  certain  SDR  to  a  new  folder  (I  use  a  python  script  for  that.  Hit  me  up  so  I  can  share.)   12.  Review  the  content  on  filename  and  play  some  you  aren't  sure,  what  this  filename  would  
+sound
+ 
+like.
+ They  can  be  hit  or  miss  for  your  specific  dataset.  So  anything  that  mentions  something  
+unusual
+ 
+or
+ 
+so
+ 
+usual,
+ 
+you
+ 
+know
+ 
+it's
+ 
+part
+ 
+of
+ 
+something
+ 
+totally
+ 
+different,
+ move  them  elsewhere,  to  keep  the  dataset  close  to  what  you  try  to  obtain  sound-wise.  (example  *timpani*  is  part  of  percussion,  not  so  much  part  of  a  String  Dataset)  You  could  try  to  cluster  the  samples  upfront  with  s/w  like  https://www.sononym.net/  -  also  
+available
+ 
+at
+ 
+audioz.download
+  13.  Zip  those  and  upload,  so  you  can  share  with  those  that  have  the  ability/experience  to  
+train.
+ Also  needed  when  you're  going  to  hire  a  cloud-gpu  setup,  to  copy  over  the  dataset  to  its  
+server).
+ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

@@ -1,0 +1,53 @@
+[page 5/642]
+     -  cyatarow  with  unwa  found  a  way  to  use  MSST  natively  on  Windows  on  RX  9060  using  ROCm  and  released  PyTorch  for  ROCm  for  Windows  without  having  to  use  WSL  -  click  -  Instruction  for  MSST-WebUI  has  been  made  too  -  click   -  Our  user  had  some  success  in  porting  our  Colabs  to  Keggle.  Inference  Colab  and  Apollo  
+ones
+ 
+have
+ 
+been
+ 
+made
+ 
+so
+ 
+far,
+ 
+but
+ 
+the
+ 
+porting
+ 
+process
+ 
+seems
+ 
+to
+ 
+be
+ 
+rather
+ 
+straightforward.
+ Be  aware  that  it  might  gradually  fall  behind  with  any  newer  models  published  in  later  periods.   https://www.kaggle.com/code/zzryndm/music-source-separation-training-inference-webui  https://www.kaggle.com/code/zzryndm/apollo-colab-inference-i-fucking-give-up-with-this  How  it  was  done  -  “I  didn't  even  have  to  debug  anything.  Pasting  the  Colab's  code  without  changes  worked  
+miraculously.
+ Kaggle  doesn't  support  markdown  IN  code  cells  but  I  found  a  workaround  using  U+200C  for  
+the
+ 
+variable
+ 
+names.
+ 
+ Also  set  the  acceleration  to  GPU  P100.  It's  better  than  t4x2.  I  learned  that  through  the  
+"patience
+ 
+is
+ 
+a
+ 
+virtue"
+ 
+route.
+ And  trust  me  when  i  say  it  was  NOT  fun”  -  ryn  (xxml)   -  Gabox  voc_fv7  beta  3  added  to  the  Colab  -  (MVSEP)  “Four  new  models  have  been  added:  1)  MVSep  Percussion  (percussion,  other)  Demo:  https://mvsep.com/result/20251128141738-f0bb276157-mixture.wav 2)  MVSep  Keys  (keys,  other)  Demo:  https://mvsep.com/result/20251128142835-f0bb276157-mixture.wav 3)  MVSep  Brass  (brass,  other)  Demo:  https://mvsep.com/result/20251128142905-f0bb276157-mixture.wav 4)  MVSep  Woodwind  (woodwind,  other)  Demo:  https://mvsep.com/result/20251128143157-f0bb276157-mixture.wav  -  Unwa  BS-Roformer  HyperACE  inst  model  has  been  added  to  a  separate  Colab  -  Gabox  released  two  new  models  (vocal  and  instrumental):  Mel  vocfv7beta3 |  yaml Voc.  fullness  21.82  |  bleedless  30.83   |  SDR  10.80  “beta  1  and  2...  eh,  pretty  close  to  same  instrumental  bleed,  but  beta  3  def  a  step  up  from  the  two  songs  I  compared  (...)  most  songs  so  far,  fv7beta3  is  fuller  than  fv7beta1,  def  less  robotic  sounding  at  times  (when  a  voice  gets  quiet/hard  to  capture,  and  it  just  fails).  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

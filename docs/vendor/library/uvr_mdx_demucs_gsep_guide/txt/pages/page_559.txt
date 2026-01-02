@@ -1,0 +1,64 @@
+[page 559/642]
+    Less  important:   -  Jamiroquai  -  Hot  Tequila  Brown  (LVs  are  still  present  starting  @01:19)  -  Bee  Gees  -  How  Deep  Is  Your  Love  (LVs  are  still  present  starting  @00:47)  -  Simply  Red  -  How  Could  I  Fall  (BVs  are  missing  starting  @01:40)  -  Simply  Red  -  Something  Got  Me  Started  (BVs  are  missing  starting  @00:53)  -  Phil  Collins  -  Don't  Let  Him  Steal  Your  Heart  Away  (BVs/LVs  crossbleeding  starting  
+@01:51)
+ -  Phil  Collins  -  Another  Day  in  Paradise  (BVs/LVs  crossbleeding  starting  @01:13)  -  Phil  Collins  -  That's  Just  the  Way  It  Is  (BVs/LVs  crossbleeding  starting  @00:59)  -  Groundation  -  Confusing  Situation  (LVs  bleed  starting  @00:24  +  crosbleeding  starting  
+@01:06)
+ -  Wham!  -  Everything  She  Wants  (BVs  missing  starting  @00:41)  -  Thievery  Corporation  -  Thief  Rockers  (BVs  missing  starting  @00:00)  -  Thievery  Corporation  -  Radio  Retaliation  (BVs  missing  starting  @00:01)   Due  to  uncommon  panning:   -  Nelly  Furtado  -  Maneater  (@0:16,  LV  are  counted  as  BV  because  of  the  panning,  but  
+using
+ 
+stereo
+ 
+LV
+ 
+Panning
+ 
+doesn't
+ 
+solve
+ 
+the
+ 
+issue)
+ -  Lenny  Kravitz  -  Low  (@1:03,  BV  are  counted  as  LV  by  BVEs  or  Kar  models)  -  Timbaland  -  The  Way  I  Are  (@0:25,  LV  are  counted  as  BV  by  BVEs  or  Kar  models,  
+LV
+ 
+panning
+ 
+failed)
+ -  Timbaland  -  Give  It  To  Me  (@0:25,  LV  are  counted  as  BV  by  BVEs  or  Kar  models,  LV  
+panning
+ 
+failed)
+ -  Timbaland  -  Morning  After  Dark  (@2:02,  BVEs  and  Kar  models  couldn't  differentiate  
+LV
+ 
+from
+ 
+BV,
+ 
+LV
+ 
+panning
+ 
+failed)
+ -  Simply  Red  -  Sunrise  (@0:45,  LV  are  counted  as  BV  because  of  the  panning,  but  
+using
+ 
+Lead
+ 
+Vocal
+ 
+Panning
+ 
+doesn't
+ 
+solve
+ 
+the
+ 
+issue)
+ -  Jamiroquai  -  Automaton  (Lead  vocal  panning  didn't  help)  -  Thievery  Corporation  -  Culture  Of  Fear  (MDX  v2  works)  -  Jamiroquai  -  Supersonic  (Lead  vocal  panning  didn't  help)  -  Jamiroquai  -  Travelling  Without  Moving  (Lead  vocal  panning  didn't  help)  -  Philip  Bailey  &  Phil  Collins  -  Easy  Lover  (LVs  very  difficult  to  differentiate  from  BVs)  -  Thievery  Corporation  -  Sol  Tapado  (Lead  vocal  panning  didn't  help)  -  Moby  -  Landing  (LV  panning  didn't  help)  -  Moby  -  We  Are  All  Made  of  Stars  (LV  panning  didn't  help)  -  The  Weeknd  -  Sacrifice  (@01:25,  LV  panning  didn't  help)  -  Nitin  Sawhney  feat.  The  London  Symphony  Orchestra  -  Songbird  (LV  panning  dind't  
+help)
+  Uncategorized  -  Night  Lovell  -  Dark  Light  (thx  97chris)  -  Supertramp  -  Dreamer  (LVs  difficult  to  distinguish  from  BVs  -  dca)  
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

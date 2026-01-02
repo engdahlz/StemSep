@@ -1,0 +1,103 @@
+[page 588/642]
+    Unfortunately,  while  overall  number  of  weights  is  greatly  reduced,  it  won't  allow  to  greatly  
+increase
+ 
+speed
+ 
+or
+ 
+batch
+ 
+size
+ 
+for
+ 
+training:
+ Mel  band  (384,  6,  chunk:  352800)  mlp_expansion_factor  =  4,  normal  training:  batch  size:  2  (1.27  s/it)  mlp_expansion_factor  =  3,  normal  training:  batch  size:  2  (1.20  s/it)  mlp_expansion_factor  =  2,  normal  training:  batch  size:  2  (1.19  s/it)  mlp_expansion_factor  =  1,  normal  training:  batch  size:  2  (1.16  s/it)  Even  in  last  case,  batch  size  3  is  not  possible   -  I  will  check  how  "checkpointing"  method  works  OMG  checkpointing  technique  impressed  me  a  lot!!  It  reduced  required  memory  ~20  times  Mel  band  (384,  6,  chunk:  352800)  Single  A6000  GPU  48  GB  mlp_expansion_factor  =  4,  normal  training:  batch  size:  2  (1.27  s/it)  -  0.635  sec  per  image  mlp_expansion_factor  =  3,  normal  training:  batch  size:  2  (1.20  s/it)  -  0.600  sec  per  image  mlp_expansion_factor  =  2,  normal  training:  batch  size:  2  (1.19  s/it)  -  0.595  sec  per  image  mlp_expansion_factor  =  1,  normal  training:  batch  size:  2  (1.16  s/it)  -  0.580  sec  per  image   mlp_expansion_factor  =  1,  low  mem  training:  batch  size:  2  (0.60  s/it)  -  0.300  sec  per  image  mlp_expansion_factor  =  1,  low  mem  training:  batch  size:  40  (6.32  s/it)  -   0.158  sec  per  image  mlp_expansion_factor  =  4,  low  mem  training:  batch  size:  40  (6.87  s/it)  -   0.171  sec  per  image  So  my  batch  size  for  single  GPU  grew  from  2  to  40   [So  maybe  there  won’t  be  necessary  to  train  a  good  model  without  x16  A100]  And  speed  per  image  increased  ~  4  times.  Ok  changes  in  repo.  To  train  with  low  memory,  you  need  to  replace  only  one  thing:  
+mel_band_roformer
+ 
+->
+ 
+mel_band_roformer_low_mem.
+ 
+And
+ 
+increase
+ 
+batch_size
+ 
+in
+ 
+config.
+ 
+All
+ 
+weights
+ 
+and
+ 
+model
+ 
+parameters
+ 
+are
+ 
+the
+ 
+same.
+ 
+ The  same  can  be  done  for  BSRoformer  as  well  (need  to  add).   With  current  improvements  for  memory,  we  can  try  big  depths  for  training  BS-Roformer  with  depth  12  now  has  batch_size:  32  We  can  add  sum  of  inputs,  for  example  for  every  3  blocks  of  freq  and  time  transformer  
+blocks.
+ 
+ Or  even  use  DenseNet  approach.  I  found  a  problem.  If  internal  loss  calculation  for  Roformers  is  used  based  on  FFT.  Batch  size  
+reduced
+ 
+to
+ 
+12
+ 
+instead
+ 
+of
+ 
+40.
+ Loss  calculation  inside  the  model  consumes  too  much  memory.”  -  ZFTurbo   unwa:  The  core  of  the  model  is  the  Roformer  block,  and  the  Mask  Estimator  probably  did  not  
+need
+ 
+that
+ 
+many
+ 
+parameters.
+ According  to  the  paper,  the  entire  model  has  105M  parameters,  whereas  when  the  
+mlp_expantion_factor
+ 
+is
+ 
+4,
+ 
+the
+ 
+Mask
+ 
+Estimator
+ 
+alone
+ 
+exceeds
+ 
+that
+ 
+number
+ 
+by
+ 
+a
+ 
+wide
+ 
+margin.
+ 
+ Sorry,  I  forgot  about  this,  I  had  removed  4096  from  multi_stft_resolutions_window_sizes.   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

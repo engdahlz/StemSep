@@ -1,0 +1,76 @@
+[page 594/642]
+    really  difficult  for  them  to  improve  any  further  in  the  next  epochs.  i’ve  already  tried  changing  
+the
+ 
+lr
+ 
+to
+ 
+5e-5
+ 
+and
+ 
+1e-5,
+ 
+but
+ 
+it's
+ 
+still
+ 
+the
+ 
+same
+ A:  “try  fiddling  with  adam's  betas  -  change  from  betas=(0.9,  0.999)  to  betas=(0.8,  0.99)  adamfactor  might  be  a  cool  thing  to  test  as  well  add  this  into  the  config,  it  might  work”    optimizer:    betas:  (0.8,  0.99)   (frazer)  Ident  like  in  a  new  line  equally  with  training  and  inference,  placed  below  training  (so  actually  
+none)
+ Q:  So  far  the  metrics  keep  improving,  unlike  the  previous  training.  It  didn't  just  cap  like  last  
+time.
+  Q:  After  e.g.  14  epochs,  you  can  try  out  restarting  the  checkpoint  from  the  best  SDR  weight  
+because
+ 
+it
+ 
+will
+ 
+do
+ 
+this
+ 
+"it's
+ 
+weird.
+ 
+The
+ 
+optimizer
+ 
+for
+ 
+whatever
+ 
+reason
+ 
+gets
+ 
+fucked
+ 
+up
+ 
+after
+ 
+a
+ while":  pics (src)  (frazer)   A:  how  to  setup  this  graphs?  —wandb_key  YOURKEY   -  Loss  0  issue   https://discord.com/channels/708579735583588363/1220364005034561628/1416389629866672261  Q:  is  this  right?  i  resumed  yesterday’s  training,  but  it  went  back  to  epoch  0  A:  yea  that's  normal  because  you're  restarting,  i  think  there's  something  to  make  it  so  that  it  
+saves
+ 
+that
+ 
+data
+ 
+but
+ 
+IDK
+  -  2nd  epoch  takes  a  long  time  issue  https://discord.com/channels/708579735583588363/708912597239332866/1415577958646808636 “When  VRAM  runs  out  and  begins  using  main  memory,  processing  becomes  extremely  
+slow.”
+  Q:  how  do  i  make  more  metrics  show  up  like  this  during  training?  A:  --metrics  sdr  si_sdr  log_wmse  l1_freq  aura_stft  aura_mrstft  bleedless  fullness   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

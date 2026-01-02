@@ -1,0 +1,66 @@
+[page 220/642]
+    Free:  ISSE,  Ampter,  Filter-Artist,  AudioPaint Paid:  RipX,  SpectraLayers,  Melodyne,  prob.  Revoice  Pro  5   Bleeding  of  instruments  in  vocals  -  Denoise  model  with  0.1-0.2  aggressiveness   Cleaning  the  white  noise/sizzle  inside  the  vocals  (from  e.g.  Roformer  models)  -  MDX23C  model  (e.g.  the  latest  on  MVSEP  or  HQ  in  UVR)  _______   Debleeding  guide  by  Bas  Curtis (other  methods,  e.g.  Audacity)   Denoising and  dereverberation/apps later  below.   See  also  “Vinyl  noise/white  noise”  from  the  end  of  the  list.   _______   How  to  check  whether  a  model  in  UVR5  GUI  is  vocal  or  instrumental?   -  Read  carefully  the  models  list  above  -  they're  categorized  -  If  you  want  to  experiment  with  other  models:  The  moment  you  see  "Instrumental"  on  top  (and  "Vocal"  below)  in  the  list  where  GPU  
+conversion
+ 
+is
+ 
+mentioned,
+ 
+you
+ 
+know
+ 
+it's
+ 
+an
+ 
+instrumental
+ 
+model.
+ When  it  flips  the  sequence,  so  Vocal  on  top,  you  know  it's  a  vocal  model.   Same  happens  for  MDX  and  VR  archs.  -  “Be  aware  that  MDX23C/MDXv3  models  can  be  multisource  -  it  depends  on  the  
+training,
+ 
+so
+ 
+it
+ 
+can
+ 
+be
+ 
+only
+ 
+vocals,
+ 
+or
+ 
+only
+ 
+instrumental,
+ 
+or
+ 
+vocals+instrumental,
+ 
+or
+ 
+vocals+drums+bass+other
+ 
+(like
+ 
+baseline
+ 
+models
+ 
+are),
+ 
+or
+ 
+whatever
+ 
+else.
+ -  You  can  know  it  looking  at  the  config  file  of  the  model,  for  example  InstVocHQ,   https://github.com/Anjok07/ultimatevocalremovergui/blob/master/models/MDX_Net_Models/model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml Seeing  by  the  instruments  line  above,  D1581  and  InstVocHQ  models  are  
+instrumental+vocal.
+ Config  for  the  rest  of  the  models:  https://github.com/Anjok07/ultimatevocalremovergui/blob/master/models/MDX_Net_Models/model_data/model_data.json  (decoded  hashes)  ____________________________________________________________________   
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  

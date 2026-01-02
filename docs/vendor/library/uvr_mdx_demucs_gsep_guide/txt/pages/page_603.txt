@@ -1,0 +1,79 @@
+[page 603/642]
+    (of  course,  in  your  case  the  code  might  be  a  bit  different,  but  it  demonstrates  the  idea)  Q:  obviously  slow  it  is  called  in  a  loop  in  the  forward  function  (=  very  slow)  ...if  it  was  like  only  once  /  before  each  step,  but  not  inside  step.  we'll  try  anyways,  thanks   Timed-out  after  10  mins,  0  steps  were  finished.  Imagine  doing  4032  steps.   JAX  is  like  an  optimizer/JIT.  STFT  of  it,  is  just  Scipy's  STFT  but  running  under  JAX.  Scipy's  implementation  is  CPU-based.  So  it  expects  CPU  data.  Not  Tensor/GPU/TPU  data.   A:  Or  this  might  help  (custom  implementation  of  STFT):  
+https://github.com/MasayaKawamura/MB-iSTFT-VITS/blob/main/stft.py
+ A:  There's  also  https://github.com/qiuqiangkong/torchlibrosa/  that  has  a  stft  implementation  Q:  Hmm  both  use  numpy  which  is  cpu  based  A:  yeah  its  some  weird  operation  in  the  torch  spec,  i  use  
+https://github.com/adobe-research/convmelspec
+ 
+anytime
+ 
+incompatibility
+ 
+occurs
+ Q:  May  be  we  need  to  replace  mel  spec  with  this  in  MelRoformer.   I  got  a  boilerplate/minimal  produduction  ready,  but  2   things...   no  TPU  for  me  right  now  to  test  -  maybe  someone  else  has  better  luck  /  paid  Colab  sub.  Last  outcome,  which  might  be  fixed  by  now:  RuntimeError:  Attempted  to  call  
+variable.set_data(tensor),
+ 
+but
+ 
+variable
+ 
+and
+ 
+tensor
+ 
+have
+ 
+incompatible
+ 
+tensor
+ 
+type.
+ A:  you  can  use  kaggle  for  tpuv3  with  probably  better  availability  Q:  https://github.com/qiuqiangkong/torchlibrosa/  result:  Calling  "torch.nn.functional.fold"  just  gets  stuck,  when  interrupting,  the  error  stack  has  
+mentions
+ 
+of
+ 
+copying
+ 
+to
+ 
+CPU.
+ ...smth  to  do  with  the  fold  function.  Numpy  only  in  initialization  (cpu),  so  that's  fine.   https://github.com/MasayaKawamura/MB-iSTFT-VITS/blob/main/stft.py  result:  Numpy  and  basically  cpu  all-the-way,  so  no/go.   https://github.com/adobe-research/convmelspec  result:  Not  a  STFT  library  /  whole  spectrogram,  don't  wanna  dissect  it,  the  STFT  part  seems  
+internal,
+ 
+ didn't  notice  (would  have  to  double-check)  the  inverse,  but  wasted  2  days  already.  done  with  
+it.
+ A:  Just  a  guess  (have  no  experience  with  Tensorflow):  what  if  STFT  portion  of  the  code  can  
+be
+ 
+executed
+ 
+by
+ 
+TensorFlow
+ 
+code
+ 
+->
+ 
+convert
+ 
+result
+ 
+to
+ 
+numpy
+ 
+CPU
+ 
+->
+ 
+convert
+ 
+to
+ 
+PyTorch
+ 
+tensor
+ 
+_____________________  For  help  and  discussion,  visit  our  Audio  Separation  Discord:  https://discord.gg/ZPtAU5R6rP |  Download  UVR or MSST-GUI  For  inst/voc  separation  in  cloud,  try  out  free  Colabs:  BS/Mel-Roformer
+ |  MDX23 (2-4  stems)  |  MDX-Net |  VR |  Demucs  4 (2-6)  
