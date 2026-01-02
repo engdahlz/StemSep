@@ -1,4 +1,4 @@
-G# Vendored Upstream Reference Repositories
+# Vendored Upstream Reference Repositories
 
 This directory contains **vendored upstream source snapshots** that are kept for:
 - reference and cross-checking behavior against upstream implementations
@@ -6,6 +6,19 @@ This directory contains **vendored upstream source snapshots** that are kept for
 - occasionally syncing “exact copy” modules used in `StemSepApp/src/`
 
 These vendored sources are **not required** to run the application.
+
+## Document library (reference documents)
+
+In addition to upstream code snapshots, this folder also contains a small **document library** under:
+
+- `docs/vendor/library/`
+
+Convention:
+
+- One folder per document (stable id / slug)
+- Subfolders per format (e.g. `pdf/`, `md/`, `txt/`)
+
+This allows us to keep the canonical PDF alongside extracted text / structured indexes without duplicating content.
 
 ## What’s in here
 
