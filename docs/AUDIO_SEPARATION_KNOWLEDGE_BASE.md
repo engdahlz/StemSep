@@ -40,7 +40,7 @@ Based on community benchmarks and SDR/Fullness metrics.
 2. **MVSep Percussion Ensemble** - *Top Tier (Online)*.
 
 ### 🎸 Bass
-1. **SCNet XL** - *Top Definition*. Handles sub-bass best.
+1. **SCNet (StemSep)**: use `scnet-large` - *Top Definition*. Handles sub-bass best.
 2. **BS-Roformer Bass** - *Alternative*. Good if SCNet causes OOM.
 
 ---
@@ -79,8 +79,8 @@ These are multi-stage pipelines for maximizing quality.
 *Goal: 0% Instrumental Bleed, 100% Body.*
 1. **Isolation:** `Gabox Voc_Fv4` (High Bleedless).
 2. **De-Reverb:** `Anvuew De-Reverb` (Mono). Removes room sound.
-3. **Karaoke Split:** `Becruily Karaoke`. Separates backing vocals from lead.
-4. **Cleanup:** `Mel-Roformer De-Noise` (optional).
+3. **Karaoke Split (StemSep):** `mel-band-karaoke-becruily`. Separates backing vocals from lead.
+4. **Cleanup (StemSep):** `aufr33-denoise-std` (optional; try `aufr33-denoise-aggressive` if needed).
 
 ### 🏆 Golden Chain B: Ultimate Instrumental (Audiophile)
 *Goal: Full spectrum, no "Roformer Noise" (metallic buzzing).*
@@ -90,18 +90,18 @@ These are multi-stage pipelines for maximizing quality.
     * **Source:** `Becruily Vocal` (Clean Phase).
     * **Settings:** 500Hz - 5000Hz, Weight 2.0.
     * *Result:* Unwa's body with Becruily's silence/cleanness.
-3. **De-Bleed:** `DeBleed-MelBand-Roformer`. Removes final 5% bleed.
+3. **De-Bleed (StemSep):** `gabox-denoise-debleed`. Removes final bleed.
 
 ### 🏆 Golden Chain C: Extreme Restoration (Live)
 *Goal: Rescue noisy/bootleg recordings.*
-1. **Pre-Process:** `Mel-Roformer De-Crowd`. **Overlap 2 ONLY**. Removes audience.
+1. **Pre-Process (StemSep):** crowd-removal-specific models are not currently shipped; use `aufr33-denoise-aggressive` as the closest available alternative.
 2. **Separation:** `BS-Roformer Viperx`. Aggressive model.
 3. **De-Reverb:** On vocals only.
 4. **De-Noise:** Final polish.
 
 ### 🛠️ Hybrid Frequency Split
 *Best for Instrumentals.*
-* **Low (<1kHz):** `SCNet XL` (Warm bass, natural decay).
+* **Low (<1kHz):** `scnet-large` (Warm bass, natural decay).
 * **High (>1kHz):** `Unwa Inst v1e` (Crisp transients).
 * **Crossover:** 1000 Hz with "Feathering" (Soft crossfade) to avoid clicks.
 

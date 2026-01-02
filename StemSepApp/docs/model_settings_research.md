@@ -46,7 +46,7 @@ This document contains the recommended processing parameters for each model in S
 | Model | chunk_size | num_overlap | overlap | Notes |
 |-------|------------|-------------|---------|-------|
 | unwa-inst-v1e | 485100 | 2 | 0.5 | Same as v1e+ |
-| unwa-inst-v1e-plus | 485100 | 2 | 0.5 | From config_melbandroformer_inst.yaml |
+| unwa-inst-v1e+ | 485100 | 2 | 0.5 | From config_melbandroformer_inst.yaml |
 | unwa-inst-fno | 485100 | 2 | 0.5 | FNO variant, same base config |
 | unwa-duality-v2 | 485100 | 2 | 0.5 | |
 | unwa-big-beta-5e | 485100 | 2 | 0.5 | |
@@ -69,10 +69,10 @@ This document contains the recommended processing parameters for each model in S
 ### Other Mel-Roformers
 | Model | chunk_size | num_overlap | overlap | Notes |
 |-------|------------|-------------|---------|-------|
-| mel-roformer-debleed | 485100 | 2 | 0.5 | Unwa config |
-| mel-roformer-decrowd | 485100 | 2 | 0.5 | |
-| mel-roformer-dereverb-anvuew-v2 | 485100 | 2 | 0.5 | |
-| mel-roformer-drumsep-5stem | 352800 | 2 | 0.5 | MDX23C style |
+| gabox-denoise-debleed | 485100 | 2 | 0.5 | De-bleed utility |
+| aufr33-denoise-aggressive | 352800 | 2 | 0.5 | Closest available alternative to older “de-crowd” references |
+| anvuew-dereverb-room | 352800 | 2 | 0.5 | Dereverb (room) |
+| mdx23c-drumsep-5stem | 352800 | 2 | 0.5 | Drum separation (5 stems) |
 | mesk-rifforge | 485100 | 2 | 0.5 | Metal-focused |
 | amane-full-scratch | 485100 | 2 | 0.5 | |
 | amane-inst-fullness | 485100 | 2 | 0.5 | |
@@ -88,7 +88,7 @@ This document contains the recommended processing parameters for each model in S
 | bs-roformer-viperx-1296 | 352800 | 2 | 0.5 | Standard BS-Roformer |
 | bs-roformer-viperx-1297 | 352800 | 2 | 0.5 | From yaml config |
 | bs-roformer-karaoke-becruily | 352800 | 2 | 0.5 | Karaoke variant |
-| bs-roformer-resurrection | 352800 | 2 | 0.5 | Unwa retrain |
+| unwa-resurrection-inst | 485100 | 2 | 0.5 | “Resurrection” instrumental model (Mel-Roformer) |
 
 ---
 
@@ -96,7 +96,7 @@ This document contains the recommended processing parameters for each model in S
 
 | Model | chunk_size | num_overlap | overlap | Notes |
 |-------|------------|-------------|---------|-------|
-| anvuew-dereverb | 352800 | 2 | 0.5 | Room dereverb |
+| anvuew-dereverb-room | 352800 | 2 | 0.5 | Room dereverb |
 | anvuew-karaoke | 352800 | 2 | 0.5 | |
 | anvuew-vocals | 352800 | 2 | 0.5 | |
 
@@ -108,7 +108,7 @@ This document contains the recommended processing parameters for each model in S
 |-------|------------|-------------|---------|-------|
 | becruily-guitar | 352800 | 2 | 0.5 | |
 | becruily-inst | 352800 | 2 | 0.5 | |
-| becruily-karaoke | 352800 | 2 | 0.5 | |
+| mel-band-karaoke-becruily | 352800 | 2 | 0.5 | Karaoke model (Mel-Roformer) |
 | becruily-vocal | 352800 | 2 | 0.5 | |
 
 ---
@@ -147,7 +147,7 @@ HTDemucs uses internal chunking via `split=True` in demucs.apply_model(), not ch
 | Model | chunk_size | num_overlap | overlap | Notes |
 |-------|------------|-------------|---------|-------|
 | scnet-large | 352800 | 2 | 0.5 | |
-| scnet-xl | 352800 | 2 | 0.5 | XL variant |
+| scnet-large | 352800 | 2 | 0.5 | “XL” is a common nickname in older guides; StemSep ships `scnet-large` |
 
 ---
 
@@ -155,8 +155,8 @@ HTDemucs uses internal chunking via `split=True` in demucs.apply_model(), not ch
 
 | Model | chunk_size | num_overlap | overlap | Notes |
 |-------|------------|-------------|---------|-------|
-| aufr33-denoise | 352800 | 2 | 0.5 | Denoise utility |
-| reverb-hq | 352800 | 2 | 0.5 | Reverb removal |
+| aufr33-denoise-std | 352800 | 2 | 0.5 | Denoise utility |
+| aufr33-denoise-aggressive | 352800 | 2 | 0.5 | Stronger denoise |
 | 5_hp-karaoke-uvr | 256 | 2 | 0.5 | VR arch |
 
 ---

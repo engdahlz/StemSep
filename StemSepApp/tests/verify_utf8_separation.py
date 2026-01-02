@@ -3,7 +3,6 @@ import os
 import logging
 import unittest
 import numpy as np
-import soundfile as sf
 from pathlib import Path
 
 # Add src to path
@@ -11,12 +10,29 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from audio.separation_engine import SeparationEngine
 
+try:
+    import soundfile as sf
+    _HAS_SOUNDFILE = True
+except Exception:
+    sf = None  # type: ignore
+    _HAS_SOUNDFILE = False
+
+try:
+    import librosa  # noqa: F401
+    _HAS_LIBROSA = True
+except Exception:
+    _HAS_LIBROSA = False
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("UTF8Test")
 
 class TestUTF8Separation(unittest.TestCase):
 
+    @unittest.skipUnless(
+        _HAS_SOUNDFILE and _HAS_LIBROSA,
+        "Optional dependencies ('soundfile', 'librosa') not installed; skipping UTF-8 filename test",
+    )
     def test_utf8_filename(self):
         """Verify that SeparationEngine can handle unicode filenames."""
         logger.info("Testing UTF-8 Filename Handling...")

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stemsep.local/schemas/backend_api_v1.schema.json",
+  "title": "StemSep Backend API v1",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/defs/request" },
+    { "$ref": "#/defs/response" },
+    { "$ref": "#/defs/event" }
+  ],
+  "defs": {
+    "request": {
+      "type": "object",
+      "required": ["command"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1 },
+        "id": {},
+        "payload": { "type": "object" }
+      },
+      "additionalProperties": true
+    },
+    "response": {
+      "type": "object",
+      "required": ["success"],
+      "properties": {
+        "id": {},
+        "success": { "type": "boolean" },
+        "data": {},
+        "error": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "event": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 }
+      },
+      "not": { "required": ["success"] },
+      "additionalProperties": true
+    }
+  }
+}

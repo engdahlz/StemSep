@@ -6,7 +6,7 @@
       "name": "Fastest (CPU)",
       "workflow": "single",
       "description": "Very fast separation using MDX-Net HQ_5.",
-      "models": ["uvr-mdx-net-inst-hq-5"],
+      "models": ["mdx-net-hq5"],
       "settings": {
         "overlap": 2,
         "segment_size": 262144
@@ -101,7 +101,7 @@
       "name": "Drums Separation",
       "workflow": "single",
       "description": "Uses Mel-Roformer DrumSep for detailed drum kit separation.",
-      "models": ["mel-roformer-drumsep-4stem"],
+      "models": ["mdx23c-drumsep-5stem"],
       "settings": {
         "overlap": 4,
         "segment_size": 352800
@@ -112,7 +112,7 @@
       "name": "De-Reverb",
       "workflow": "single",
       "description": "Removes reverb using best-in-class Mel-Roformer De-reverb by anvuew v2.",
-      "models": ["mel-roformer-dereverb-anvuew-v2"],
+      "models": ["anvuew-dereverb-room"],
       "settings": {
         "overlap": 4,
         "segment_size": 352800
@@ -123,7 +123,7 @@
       "name": "Crowd/SFX Removal",
       "workflow": "single",
       "description": "Removes crowd noise and sound effects from audio.",
-      "models": ["mel-roformer-decrowd"],
+      "models": ["aufr33-denoise-std"],
       "settings": {
         "overlap": 4,
         "segment_size": 352800
@@ -134,7 +134,7 @@
       "name": "Guitar/Piano Separation",
       "workflow": "single",
       "description": "Uses BS-Roformer SW 6-stem for high-quality guitar and piano extraction.",
-      "models": ["bs-roformer-sw-6stem"],
+      "models": ["htdemucs-6s"],
       "settings": {
         "overlap": 4,
         "segment_size": 352800
@@ -245,7 +245,7 @@
           "weight": 1.0
         },
         {
-          "model_id": "unwa-bs-resurrection-inst",
+          "model_id": "unwa-resurrection-inst",
           "weight": 1.0
         }
       ]
@@ -275,7 +275,7 @@
       "stems": ["vocals", "instrumental"],
       "models": [
         {
-          "model_id": "unwa-inst-v1e-plus",
+          "model_id": "unwa-inst-v1e+",
           "weight": 1.0
         },
         {

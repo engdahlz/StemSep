@@ -1,0 +1,641 @@
+{
+  "downloaded": [
+    {
+      "bytes": 118128452,
+      "filename": "anvuew-dereverb-room.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68c0023a751aae98294f2a03/5010d1be5e4aae67c2553576f63721180bdd411dc7e4b3dd47e1493940d2c32d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203120Z&X-Amz-Expires=3600&X-Amz-Signature=9d0d292e3db2c3b1cfbfc0a78f7bb88d6efc4c2d384ef8294a3dc2ae5fdd3438&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_room_anvuew_sdr_13.7432.ckpt%3B+filename%3D%22dereverb_room_anvuew_sdr_13.7432.ckpt%22%3B&x-id=GetObject&Expires=1767303080&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzA4MH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGMwMDIzYTc1MWFhZTk4Mjk0ZjJhMDMvNTAxMGQxYmU1ZTRhYWU2N2MyNTUzNTc2ZjYzNzIxMTgwYmRkNDExZGM3ZTRiM2RkNDdlMTQ5Mzk0MGQyYzMyZCoifV19&Signature=JjK2aCR4LhOFpUXIGZ4qBNO3K6LDFMq7qPwc619avErNrp5KuDycdeMmZ9QMTzW4LnsmcWCL1y~DeNaMtIHKFRMnhLNZdfiWonBkVgYBgm7xIr48Qdvb5l3tA1WpLIMm~iWEQyuecrRfpwaRIqxfAocjPZlTpNtnaq-GH4hFtDyN7ojwtVR4HAvt4~9uhz20CVkKdfrYnXy6dL5gmfLOYc7rBoKWfTrc04nkVs-Z5mL~6cFPbxM~mg-W53ZjcylgFqc3sFAmMdjuiEpBFwakJUKuKzgouX3ew4f4R66CvOP1GPtPrRVqnG85ad-V-QpbQ3jGT1nfzE3yo6CqFLAaoA__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew_sdr_13.7432.ckpt",
+        "content_length": 118128452,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68c0023a751aae98294f2a03/5010d1be5e4aae67c2553576f63721180bdd411dc7e4b3dd47e1493940d2c32d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203119Z&X-Amz-Expires=3600&X-Amz-Signature=1fc3338dcf324d94de105bc18de4962edaec805ce9057ffdbdb577e8f593fc2f&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_room_anvuew_sdr_13.7432.ckpt%3B+filename%3D%22dereverb_room_anvuew_sdr_13.7432.ckpt%22%3B&x-id=GetObject&Expires=1767303079&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzA3OX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGMwMDIzYTc1MWFhZTk4Mjk0ZjJhMDMvNTAxMGQxYmU1ZTRhYWU2N2MyNTUzNTc2ZjYzNzIxMTgwYmRkNDExZGM3ZTRiM2RkNDdlMTQ5Mzk0MGQyYzMyZCoifV19&Signature=BCqlDPT8EVdGkDNcQhbSxbbKIesCM-FsZszA2s-GCzRaFULxLqY8oOJM~I2ZvtssOHeaXKBtK9F5kkuIkjD691MkC1qC~gUnpAI7GJUdS67TM8Q9vgOfihae~JGvTXY~jnzbCXuJ3WBTcixNtYcHeO0ok6Pa0DXIgomzvbn6Vs2N7SghMCph9Sz8ohqEotprS-VciOne2jKucXez5p7Hq-vuprDkxy2vcRx44K32fgs-GZi8M0uxdsxa9QAkCZy23SxVM-Vfehn7Th8HCy4H7lga6LGAWcp6A5JvoMYE4cu5NVyMzBYsi-XxaZ1khu2-ZUzhM0aJ1I74vBkMdqcsfQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "anvuew-dereverb-room",
+      "notes": "ok=True status=200",
+      "sha256": "2edec521f09e26341c1923dc82c8c52dbc86478b42b9999f679535743c970cb3",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew_sdr_13.7432.ckpt"
+    },
+    {
+      "bytes": 1715,
+      "filename": "bandit-plus.yaml",
+      "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/715096001/a90e8695-eb90-4b7a-a392-fe30b05974bc?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-01-01T21%3A07%3A47Z&rscd=attachment%3B+filename%3Dconfig_dnr_bandit_bsrnn_multi_mus64.yaml&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-01-01T20%3A06%3A52Z&ske=2026-01-01T21%3A07%3A47Z&sks=b&skv=2018-11-09&sig=Ozqi7QvgnkBv3WYGhQNdU0y0RsfjLKzNiV5vw212F1s%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc2NzI5OTc4MywibmJmIjoxNzY3Mjk5NDgzLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.D76Jb1DAVJQm8X_5CTT9IlBK77tDMAtLjZ4j5dqNf6c&response-content-disposition=attachment%3B%20filename%3Dconfig_dnr_bandit_bsrnn_multi_mus64.yaml&response-content-type=application%2Foctet-stream",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.3/config_dnr_bandit_bsrnn_multi_mus64.yaml",
+        "content_length": 1715,
+        "content_type": "application/octet-stream",
+        "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/715096001/a90e8695-eb90-4b7a-a392-fe30b05974bc?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-01-01T21%3A07%3A47Z&rscd=attachment%3B+filename%3Dconfig_dnr_bandit_bsrnn_multi_mus64.yaml&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-01-01T20%3A06%3A52Z&ske=2026-01-01T21%3A07%3A47Z&sks=b&skv=2018-11-09&sig=Ozqi7QvgnkBv3WYGhQNdU0y0RsfjLKzNiV5vw212F1s%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc2NzI5OTc4MywibmJmIjoxNzY3Mjk5NDgzLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.D76Jb1DAVJQm8X_5CTT9IlBK77tDMAtLjZ4j5dqNf6c&response-content-disposition=attachment%3B%20filename%3Dconfig_dnr_bandit_bsrnn_multi_mus64.yaml&response-content-type=application%2Foctet-stream",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "bandit-plus",
+      "notes": "ok=True status=200",
+      "sha256": "c62d316a8ac066b78120f648665b81d33b507d25e2d9096f048ccc1bd91b1a78",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.3/config_dnr_bandit_bsrnn_multi_mus64.yaml"
+    },
+    {
+      "bytes": 639331213,
+      "filename": "bs-roformer-viperx-1297.ckpt",
+      "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/514182217/af41da2e-b2db-49ef-a830-3fc626bd0fad?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-01-01T21%3A25%3A47Z&rscd=attachment%3B+filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-01-01T20%3A25%3A17Z&ske=2026-01-01T21%3A25%3A47Z&sks=b&skv=2018-11-09&sig=atWV04hCMDl7GUYsJUeF01w9YvcUqSOLd7u4ytEfJC8%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc2NzMwMzA4NCwibmJmIjoxNzY3Mjk5NDg0LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.JxqgRkaDF9iikXtSdm4n22gtYqukiBJeUKOt2k7ILa8&response-content-disposition=attachment%3B%20filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&response-content-type=application%2Foctet-stream",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+        "content_length": 639331213,
+        "content_type": "application/octet-stream",
+        "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/514182217/af41da2e-b2db-49ef-a830-3fc626bd0fad?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-01-01T21%3A25%3A47Z&rscd=attachment%3B+filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-01-01T20%3A25%3A17Z&ske=2026-01-01T21%3A25%3A47Z&sks=b&skv=2018-11-09&sig=atWV04hCMDl7GUYsJUeF01w9YvcUqSOLd7u4ytEfJC8%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc2NzMwMzA4NCwibmJmIjoxNzY3Mjk5NDg0LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.JxqgRkaDF9iikXtSdm4n22gtYqukiBJeUKOt2k7ILa8&response-content-disposition=attachment%3B%20filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&response-content-type=application%2Foctet-stream",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "bs-roformer-viperx-1297",
+      "notes": "ok=True status=200",
+      "sha256": "5b84f37e8d444c8cb30c79d77f613a41c05868ff9c9ac6c7049c00aefae115aa",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_317_sdr_12.9755.ckpt"
+    },
+    {
+      "bytes": 2273,
+      "filename": "bs-roformer-viperx-1297.yaml",
+      "final_url": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+        "content_length": 866,
+        "content_type": "text/plain; charset=utf-8",
+        "final_url": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "bs-roformer-viperx-1297",
+      "notes": "ok=True status=200",
+      "sha256": "2bfdd16c656bd9519aba757cc4f8834b7ede675eb1e00ec4772d74ae1c41af7f",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_bs_roformer_ep_317_sdr_12.9755.yaml"
+    },
+    {
+      "bytes": 1719116358,
+      "filename": "duality-v2-unwa.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/671f9401aab69ad33ec081bb/f3224545950e7c02c30549f37c2b23bfc8c4101a6e9b90da3b981d460bdcfd9f?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203151Z&X-Amz-Expires=3600&X-Amz-Signature=34579c9fff3b919e9b03460874dd6083884a4a6709c729135556330f1604019a&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27melband_roformer_instvox_duality_v2.ckpt%3B+filename%3D%22melband_roformer_instvox_duality_v2.ckpt%22%3B&x-id=GetObject&Expires=1767303111&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzExMX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NzFmOTQwMWFhYjY5YWQzM2VjMDgxYmIvZjMyMjQ1NDU5NTBlN2MwMmMzMDU0OWYzN2MyYjIzYmZjOGM0MTAxYTZlOWI5MGRhM2I5ODFkNDYwYmRjZmQ5ZioifV19&Signature=WX3jz9V4pAQBfmDs4K3kkuIYZO7ok9IbBUC2Wy9DU8jtEh95L6j27mqTg1m2f391J4DQojla3VYySGc0PH59oex0zjRsTMieb5Z3v3BC06lzyjBrNlpHGPg3BKvKVFsYoU2YPcH99ABhIZ7uVOxCe1L~HRnm9pfIBs1SFu9Re1na7U-hCogI77VVL~QKRTCm-xPXncBjs51qCR1tMWXY3le18~c4vkALxixEsIa~9rQmd5Hzghni8L2G~zli1l2nrMZvOe6oX3ywkzZ7fZSijiwC~w1QKSK-rYTgmhbR7i5lCbPwWEepGx3aU3f3KuBkwMZTErXJOnjKnRXI3ShmOg__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/melband_roformer_instvox_duality_v2.ckpt",
+        "content_length": 1719116358,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/671f9401aab69ad33ec081bb/f3224545950e7c02c30549f37c2b23bfc8c4101a6e9b90da3b981d460bdcfd9f?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203151Z&X-Amz-Expires=3600&X-Amz-Signature=34579c9fff3b919e9b03460874dd6083884a4a6709c729135556330f1604019a&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27melband_roformer_instvox_duality_v2.ckpt%3B+filename%3D%22melband_roformer_instvox_duality_v2.ckpt%22%3B&x-id=GetObject&Expires=1767303111&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzExMX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NzFmOTQwMWFhYjY5YWQzM2VjMDgxYmIvZjMyMjQ1NDU5NTBlN2MwMmMzMDU0OWYzN2MyYjIzYmZjOGM0MTAxYTZlOWI5MGRhM2I5ODFkNDYwYmRjZmQ5ZioifV19&Signature=WX3jz9V4pAQBfmDs4K3kkuIYZO7ok9IbBUC2Wy9DU8jtEh95L6j27mqTg1m2f391J4DQojla3VYySGc0PH59oex0zjRsTMieb5Z3v3BC06lzyjBrNlpHGPg3BKvKVFsYoU2YPcH99ABhIZ7uVOxCe1L~HRnm9pfIBs1SFu9Re1na7U-hCogI77VVL~QKRTCm-xPXncBjs51qCR1tMWXY3le18~c4vkALxixEsIa~9rQmd5Hzghni8L2G~zli1l2nrMZvOe6oX3ywkzZ7fZSijiwC~w1QKSK-rYTgmhbR7i5lCbPwWEepGx3aU3f3KuBkwMZTErXJOnjKnRXI3ShmOg__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "duality-v2-unwa",
+      "notes": "ok=True status=200",
+      "sha256": "b4a69558708f2857e36ac86a0e03ed95c4e3d8b9c5b8113963987d0d7df7e20f",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/melband_roformer_instvox_duality_v2.ckpt"
+    },
+    {
+      "bytes": 913026650,
+      "filename": "gabox-voc-fv4.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/677e49a8e80a49b80652dbbf/e93cb82adef419f0cf1f90f62eaeef7db411f3509afc5d369194fbdc2ab820b4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203235Z&X-Amz-Expires=3600&X-Amz-Signature=2802356ae00633bd1aea44f46d2762b23e993247359d304c0a89672cfc5f6760&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27voc_gabox.ckpt%3B+filename%3D%22voc_gabox.ckpt%22%3B&x-id=GetObject&Expires=1767303155&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzE1NX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NzdlNDlhOGU4MGE0OWI4MDY1MmRiYmYvZTkzY2I4MmFkZWY0MTlmMGNmMWY5MGY2MmVhZWVmN2RiNDExZjM1MDlhZmM1ZDM2OTE5NGZiZGMyYWI4MjBiNCoifV19&Signature=ty~hU9iejQlWmsQpS8J3nrGWKpLfYmhL6ZKIgKbUjXYH1X~1hw3O60G1MNjBfFrWLjUxkN~DkupMmiFXRAMpbyHNC~Iq0Eyng35w0tmZr-VEa8raLk-Q3pWPWpopV0FIHiwf1Qhhpmm3x5LiX-bBykx7a2DqaC~anyTQ~2rfKj5UbbnML9uAohbngnJoWFaWlQ0wMk4RgzTiGne-qQiIyJbIolpAhRW37g4G3satkE0aHIQuEZJ7JCV9SE-dYbuARIoPLqAubAjckWOLvyovSo0a8GVtHm3kZ~4Z9xq1J2sXoIH7OTyS5c26G67jSojtYREWqsxfq-Ux2M0RgJkdRw__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.ckpt",
+        "content_length": 913026650,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/677e49a8e80a49b80652dbbf/e93cb82adef419f0cf1f90f62eaeef7db411f3509afc5d369194fbdc2ab820b4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203235Z&X-Amz-Expires=3600&X-Amz-Signature=2802356ae00633bd1aea44f46d2762b23e993247359d304c0a89672cfc5f6760&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27voc_gabox.ckpt%3B+filename%3D%22voc_gabox.ckpt%22%3B&x-id=GetObject&Expires=1767303155&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzE1NX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NzdlNDlhOGU4MGE0OWI4MDY1MmRiYmYvZTkzY2I4MmFkZWY0MTlmMGNmMWY5MGY2MmVhZWVmN2RiNDExZjM1MDlhZmM1ZDM2OTE5NGZiZGMyYWI4MjBiNCoifV19&Signature=ty~hU9iejQlWmsQpS8J3nrGWKpLfYmhL6ZKIgKbUjXYH1X~1hw3O60G1MNjBfFrWLjUxkN~DkupMmiFXRAMpbyHNC~Iq0Eyng35w0tmZr-VEa8raLk-Q3pWPWpopV0FIHiwf1Qhhpmm3x5LiX-bBykx7a2DqaC~anyTQ~2rfKj5UbbnML9uAohbngnJoWFaWlQ0wMk4RgzTiGne-qQiIyJbIolpAhRW37g4G3satkE0aHIQuEZJ7JCV9SE-dYbuARIoPLqAubAjckWOLvyovSo0a8GVtHm3kZ~4Z9xq1J2sXoIH7OTyS5c26G67jSojtYREWqsxfq-Ux2M0RgJkdRw__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "gabox-voc-fv4",
+      "notes": "ok=True status=200",
+      "sha256": "ff802a67501fac70587c3ff4e8dbc89c2558e7d8911c92222dfea2aaac208517",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.ckpt"
+    },
+    {
+      "bytes": 913026650,
+      "filename": "gabox-voc-fv5.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/677e49a8e80a49b80652dbbf/059417503c4a2c25837a1de0203372ef4b67512c98e0c8861621b1c12f506a34?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203315Z&X-Amz-Expires=3600&X-Amz-Signature=86e382fa29e9a7244d0f0d5e874e666b9f8a8f561ae08ed15208243f096d8af2&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27voc_gaboxFv1.ckpt%3B+filename%3D%22voc_gaboxFv1.ckpt%22%3B&x-id=GetObject&Expires=1767303195&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzE5NX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NzdlNDlhOGU4MGE0OWI4MDY1MmRiYmYvMDU5NDE3NTAzYzRhMmMyNTgzN2ExZGUwMjAzMzcyZWY0YjY3NTEyYzk4ZTBjODg2MTYyMWIxYzEyZjUwNmEzNCoifV19&Signature=hWsQY~HX5VMneMvuxt1o93rUQYiPHt0bI6~49KA5e83dDhZdeqj22SRXjrQGTQgAHwypE9B3Jsw7sNrcfdGyhj5zOWe~Ynajh1qaicdnO-fsCdUofp2f3UJS-ZmwjYxyjWGZHQrKuMNU6tZIuFTH9m7NcyN0iFiiRIqWtCMFXsaHaNb3dz8JIv6dXLC7wKmvgWZB~1iPdKBuVI1IsrbEzj2VJHLwowYQF3ZBa9YYSdy03NCbR~CY7WXE~~zFmq024anhcHkHgOjvqiBFKp3Gk~Uv14DNJfgJ7HBmlBY0IBWwEguA1WKzNXxK-GVtZFH3VEv52YVMSqD1Gd2Dor1HQA__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gaboxFv1.ckpt",
+        "content_length": 913026650,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/677e49a8e80a49b80652dbbf/059417503c4a2c25837a1de0203372ef4b67512c98e0c8861621b1c12f506a34?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203315Z&X-Amz-Expires=3600&X-Amz-Signature=86e382fa29e9a7244d0f0d5e874e666b9f8a8f561ae08ed15208243f096d8af2&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27voc_gaboxFv1.ckpt%3B+filename%3D%22voc_gaboxFv1.ckpt%22%3B&x-id=GetObject&Expires=1767303195&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzE5NX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NzdlNDlhOGU4MGE0OWI4MDY1MmRiYmYvMDU5NDE3NTAzYzRhMmMyNTgzN2ExZGUwMjAzMzcyZWY0YjY3NTEyYzk4ZTBjODg2MTYyMWIxYzEyZjUwNmEzNCoifV19&Signature=hWsQY~HX5VMneMvuxt1o93rUQYiPHt0bI6~49KA5e83dDhZdeqj22SRXjrQGTQgAHwypE9B3Jsw7sNrcfdGyhj5zOWe~Ynajh1qaicdnO-fsCdUofp2f3UJS-ZmwjYxyjWGZHQrKuMNU6tZIuFTH9m7NcyN0iFiiRIqWtCMFXsaHaNb3dz8JIv6dXLC7wKmvgWZB~1iPdKBuVI1IsrbEzj2VJHLwowYQF3ZBa9YYSdy03NCbR~CY7WXE~~zFmq024anhcHkHgOjvqiBFKp3Gk~Uv14DNJfgJ7HBmlBY0IBWwEguA1WKzNXxK-GVtZFH3VEv52YVMSqD1Gd2Dor1HQA__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "gabox-voc-fv5",
+      "notes": "ok=True status=200",
+      "sha256": "c4dff354d81152d1b4321f6491f242c060919148239fbfe22a1015513de4a7fe",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gaboxFv1.ckpt"
+    },
+    {
+      "bytes": 194278526,
+      "filename": "lew-apollo-vocal.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67aca2694a266bf084b23eb1/ace81bedc2d412746e6a33ab159e4d2dd022f38e9d39b56f32f6620b4c8e4cff?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203339Z&X-Amz-Expires=3600&X-Amz-Signature=959e2dfc34d60b6c2e333e2a1e38d5d711114ec5ae9c30390b1958d833403720&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27model_apollo_vocals_ep_54.ckpt%3B+filename%3D%22model_apollo_vocals_ep_54.ckpt%22%3B&x-id=GetObject&Expires=1767303219&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzIxOX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2FjYTI2OTRhMjY2YmYwODRiMjNlYjEvYWNlODFiZWRjMmQ0MTI3NDZlNmEzM2FiMTU5ZTRkMmRkMDIyZjM4ZTlkMzliNTZmMzJmNjYyMGI0YzhlNGNmZioifV19&Signature=L7De8W9F6LCLqzpc65cWeAjGpgrQikWUbJYkbmJJ6wXX~tbK9b~Z8-Fe19IW6AU1ihbYP-1NQGmfztfigp0q3UmJNvMQP5VgM-nbPeSNHx3WO1eaReGcfzm63le7rK-7-mFLIph0Rr1fuQ-H2oBHts9RFW9es2s2igTQ-Aw5Ffuto7JNmv4RLqAL6RaZtvtY-mWZoI3B~T20ndzUQKWo92XWehfbbqD1vravs5AQTMTXvbOwhfk6NHbfx7bGk1-TfmchQe25SzEzSv5l-vbPtJzWSMRuLyJ2OtwiCDrNjCwGS3IEGog06nhOk0pHqvt-mDeT7hByaXlfamEZa5D9lw__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/baicai1145/Apollo-vocal-msst/resolve/main/model_apollo_vocals_ep_54.ckpt",
+        "content_length": 194278526,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67aca2694a266bf084b23eb1/ace81bedc2d412746e6a33ab159e4d2dd022f38e9d39b56f32f6620b4c8e4cff?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203339Z&X-Amz-Expires=3600&X-Amz-Signature=959e2dfc34d60b6c2e333e2a1e38d5d711114ec5ae9c30390b1958d833403720&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27model_apollo_vocals_ep_54.ckpt%3B+filename%3D%22model_apollo_vocals_ep_54.ckpt%22%3B&x-id=GetObject&Expires=1767303219&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzIxOX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2FjYTI2OTRhMjY2YmYwODRiMjNlYjEvYWNlODFiZWRjMmQ0MTI3NDZlNmEzM2FiMTU5ZTRkMmRkMDIyZjM4ZTlkMzliNTZmMzJmNjYyMGI0YzhlNGNmZioifV19&Signature=L7De8W9F6LCLqzpc65cWeAjGpgrQikWUbJYkbmJJ6wXX~tbK9b~Z8-Fe19IW6AU1ihbYP-1NQGmfztfigp0q3UmJNvMQP5VgM-nbPeSNHx3WO1eaReGcfzm63le7rK-7-mFLIph0Rr1fuQ-H2oBHts9RFW9es2s2igTQ-Aw5Ffuto7JNmv4RLqAL6RaZtvtY-mWZoI3B~T20ndzUQKWo92XWehfbbqD1vravs5AQTMTXvbOwhfk6NHbfx7bGk1-TfmchQe25SzEzSv5l-vbPtJzWSMRuLyJ2OtwiCDrNjCwGS3IEGog06nhOk0pHqvt-mDeT7hByaXlfamEZa5D9lw__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "lew-apollo-vocal",
+      "notes": "ok=True status=200",
+      "sha256": "59e1311f93e1f0fde6d5d11fa69d97e41cdee39be38f0cf4ccb80cfce34b2a2b",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/baicai1145/Apollo-vocal-msst/resolve/main/model_apollo_vocals_ep_54.ckpt"
+    },
+    {
+      "bytes": 437652699,
+      "filename": "mdx23c-drumsep-6stem.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67b6e94f37f3d333b7e86f8e/dfd2f33c1d04a1fbb12f115b404e9445b4315cb1abdef9e1d12abeeb77282b9c?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203345Z&X-Amz-Expires=3600&X-Amz-Signature=d1d03ff1cc1344de6292dacf0aba907a83e578ad1527467606630ba35fb71abe&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27MDX23C-DrumSep-aufr33-jarredou.ckpt%3B+filename%3D%22MDX23C-DrumSep-aufr33-jarredou.ckpt%22%3B&x-id=GetObject&Expires=1767303225&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzIyNX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2I2ZTk0ZjM3ZjNkMzMzYjdlODZmOGUvZGZkMmYzM2MxZDA0YTFmYmIxMmYxMTViNDA0ZTk0NDViNDMxNWNiMWFiZGVmOWUxZDEyYWJlZWI3NzI4MmI5YyoifV19&Signature=TLJKBa8I9YPMm2LJ7RHx2xDlCuiSyVg2Q3o7otmLF4FPTIawtpbO9vrTTjNeKnirIJGVsVkBXqbIXtoiMNy-HlZdE3asGgPBKfjLthHegH49qXbg6fLWsmYj6l2OZH5uaUSPAwLMsvUJSchDGOEnFbQgD8HnoFwaDobA5FsO23ZzdIypybfH-q0BqJ4tsxEhTh~NrcNesqtU2q-QWSmmkOXvbHy8V9LR0qQzgBSJDvFd1QVQoU7zO7D~DvhBDHbGn5Oak-N0bwZ7d7GWsD6~K66tjwb8ztWHSjS33RSU32pSAoqyfmvMvb6Fky0Gekh1G8~GUZQARnMxed1qnaeNZw__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-DrumSep-aufr33-jarredou.ckpt",
+        "content_length": 437652699,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67b6e94f37f3d333b7e86f8e/dfd2f33c1d04a1fbb12f115b404e9445b4315cb1abdef9e1d12abeeb77282b9c?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203345Z&X-Amz-Expires=3600&X-Amz-Signature=d1d03ff1cc1344de6292dacf0aba907a83e578ad1527467606630ba35fb71abe&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27MDX23C-DrumSep-aufr33-jarredou.ckpt%3B+filename%3D%22MDX23C-DrumSep-aufr33-jarredou.ckpt%22%3B&x-id=GetObject&Expires=1767303225&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzIyNX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2I2ZTk0ZjM3ZjNkMzMzYjdlODZmOGUvZGZkMmYzM2MxZDA0YTFmYmIxMmYxMTViNDA0ZTk0NDViNDMxNWNiMWFiZGVmOWUxZDEyYWJlZWI3NzI4MmI5YyoifV19&Signature=TLJKBa8I9YPMm2LJ7RHx2xDlCuiSyVg2Q3o7otmLF4FPTIawtpbO9vrTTjNeKnirIJGVsVkBXqbIXtoiMNy-HlZdE3asGgPBKfjLthHegH49qXbg6fLWsmYj6l2OZH5uaUSPAwLMsvUJSchDGOEnFbQgD8HnoFwaDobA5FsO23ZzdIypybfH-q0BqJ4tsxEhTh~NrcNesqtU2q-QWSmmkOXvbHy8V9LR0qQzgBSJDvFd1QVQoU7zO7D~DvhBDHbGn5Oak-N0bwZ7d7GWsD6~K66tjwb8ztWHSjS33RSU32pSAoqyfmvMvb6Fky0Gekh1G8~GUZQARnMxed1qnaeNZw__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "mdx23c-drumsep-6stem",
+      "notes": "ok=True status=200",
+      "sha256": "d2a4aa53eb584d21eead358a4e66d1882ad182911be018f052b5da73be9096d0",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-DrumSep-aufr33-jarredou.ckpt"
+    },
+    {
+      "bytes": 448101203,
+      "filename": "mdx23c-instvoc-hq.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67b6e94f37f3d333b7e86f8e/bb86a72a60511f0ffd9d546d94ea064b7518a7c91d4ff740cf6babd64a7a8a5a?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203357Z&X-Amz-Expires=3600&X-Amz-Signature=bfb4c040e930cb20f2cf032e43db4b7084aa5795ea5bffa518c99795924e8d50&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27MDX23C-8KFFT-InstVoc_HQ.ckpt%3B+filename%3D%22MDX23C-8KFFT-InstVoc_HQ.ckpt%22%3B&x-id=GetObject&Expires=1767303237&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzIzN319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2I2ZTk0ZjM3ZjNkMzMzYjdlODZmOGUvYmI4NmE3MmE2MDUxMWYwZmZkOWQ1NDZkOTRlYTA2NGI3NTE4YTdjOTFkNGZmNzQwY2Y2YmFiZDY0YTdhOGE1YSoifV19&Signature=l5c7RvvbJbBgfb~itrj5rYnSvHrBM2RjqXSshzEtcqeZ0SK1QZk~3cfXbMdwVNUvNXobxFy81cfATzV0tOAkp9SK7FgUL7fk22LuJ~6-SpTjDPuGhCXyA6ujpReeCGavtpFEuodXMJrDol8opxD6-Ofq6-~NlDDnZme31YadCWBhworLaLLDq0UtnWGMcDzfu8ixJSgc9hp~cmJi8bwRqAn-cgWEI8PFD-KFH0e2b0abMQtj1IPB5SRryq5p4kpH1ekhWkuraimbjaJ6BLR7aVmyzvKHw5tMSBI~5~c9B8SdN-w13dSVnkJN7O6bSuNPsgx46oW5iU6qO38qrzRpFA__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-8KFFT-InstVoc_HQ.ckpt",
+        "content_length": 448101203,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67b6e94f37f3d333b7e86f8e/bb86a72a60511f0ffd9d546d94ea064b7518a7c91d4ff740cf6babd64a7a8a5a?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203357Z&X-Amz-Expires=3600&X-Amz-Signature=bfb4c040e930cb20f2cf032e43db4b7084aa5795ea5bffa518c99795924e8d50&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27MDX23C-8KFFT-InstVoc_HQ.ckpt%3B+filename%3D%22MDX23C-8KFFT-InstVoc_HQ.ckpt%22%3B&x-id=GetObject&Expires=1767303237&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzIzN319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2I2ZTk0ZjM3ZjNkMzMzYjdlODZmOGUvYmI4NmE3MmE2MDUxMWYwZmZkOWQ1NDZkOTRlYTA2NGI3NTE4YTdjOTFkNGZmNzQwY2Y2YmFiZDY0YTdhOGE1YSoifV19&Signature=l5c7RvvbJbBgfb~itrj5rYnSvHrBM2RjqXSshzEtcqeZ0SK1QZk~3cfXbMdwVNUvNXobxFy81cfATzV0tOAkp9SK7FgUL7fk22LuJ~6-SpTjDPuGhCXyA6ujpReeCGavtpFEuodXMJrDol8opxD6-Ofq6-~NlDDnZme31YadCWBhworLaLLDq0UtnWGMcDzfu8ixJSgc9hp~cmJi8bwRqAn-cgWEI8PFD-KFH0e2b0abMQtj1IPB5SRryq5p4kpH1ekhWkuraimbjaJ6BLR7aVmyzvKHw5tMSBI~5~c9B8SdN-w13dSVnkJN7O6bSuNPsgx46oW5iU6qO38qrzRpFA__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "mdx23c-instvoc-hq",
+      "notes": "ok=True status=200",
+      "sha256": "49d51472769e34a2501cd1da782346a3212555c3a5619fc2c53507445528d816",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-8KFFT-InstVoc_HQ.ckpt"
+    },
+    {
+      "bytes": 1724,
+      "filename": "mel-band-karaoke-becruily.yaml",
+      "final_url": "https://huggingface.co/api/resolve-cache/models/becruily/mel-band-roformer-karaoke/0c149975cfaa261c7d87baf54330a9da85bcf888/config_karaoke_becruily.yaml?%2Fbecruily%2Fmel-band-roformer-karaoke%2Fresolve%2Fmain%2Fconfig_karaoke_becruily.yaml=&etag=%2258cd1747a53d1695128e732aa7aa6802cb77db70%22",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/becruily/mel-band-roformer-karaoke/resolve/main/config_karaoke_becruily.yaml",
+        "content_length": 1724,
+        "content_type": "text/plain; charset=utf-8",
+        "final_url": "https://huggingface.co/api/resolve-cache/models/becruily/mel-band-roformer-karaoke/0c149975cfaa261c7d87baf54330a9da85bcf888/config_karaoke_becruily.yaml?%2Fbecruily%2Fmel-band-roformer-karaoke%2Fresolve%2Fmain%2Fconfig_karaoke_becruily.yaml=&etag=%2258cd1747a53d1695128e732aa7aa6802cb77db70%22",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "mel-band-karaoke-becruily",
+      "notes": "ok=True status=200",
+      "sha256": "cd37b0dcc285fc22d88090415722ac7127ee1d9ea2f3346c3b8d8fcc61e0c74b",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/becruily/mel-band-roformer-karaoke/resolve/main/config_karaoke_becruily.yaml"
+    },
+    {
+      "bytes": 168852258,
+      "filename": "scnet-large.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67b6e94f37f3d333b7e86f8e/a6787423745e0baa848d1d29ae9cc1929bf76ce49e9cfaf9c8002b7a09fbe1d3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203410Z&X-Amz-Expires=3600&X-Amz-Signature=8b65684ff109819eea34269a3dc71351a94ca19761af101d5179a01d161743c6&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27SCNet-large_starrytong_fixed.ckpt%3B+filename%3D%22SCNet-large_starrytong_fixed.ckpt%22%3B&x-id=GetObject&Expires=1767303250&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzI1MH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2I2ZTk0ZjM3ZjNkMzMzYjdlODZmOGUvYTY3ODc0MjM3NDVlMGJhYTg0OGQxZDI5YWU5Y2MxOTI5YmY3NmNlNDllOWNmYWY5YzgwMDJiN2EwOWZiZTFkMyoifV19&Signature=k0ntt0pgglBewvlvegxmYy0cLtSaCK6xCB5wxVfjHkya7i4Hp2SG3kJVXfJ5LnL8Aj5fF6OobnJc77CMRs1g3~2KNcnseMQSDePWD8k9od~G6BBXPnNUZMaw2krw69dxcjXT508TAfcDO4dAkG5EOqQ8D-RvyjpVgm5157xo1xee2upUkxHeoiw9zZsnXXKvpE1YLtJtI4shY1eN0CguKYMThgxaG9x4r-l13OzbLlEKDhkX9jddxTASDByZkqamdJ78~70YAFa62jian4uQ9W7tN7FcQN64lfAivFMUI2VnJIOMoIq34h5FuDCgXh8UHTYhXw1a4Yo3Kar9onebzw__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/SCNet-large_starrytong_fixed.ckpt",
+        "content_length": 168852258,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67b6e94f37f3d333b7e86f8e/a6787423745e0baa848d1d29ae9cc1929bf76ce49e9cfaf9c8002b7a09fbe1d3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203410Z&X-Amz-Expires=3600&X-Amz-Signature=8b65684ff109819eea34269a3dc71351a94ca19761af101d5179a01d161743c6&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27SCNet-large_starrytong_fixed.ckpt%3B+filename%3D%22SCNet-large_starrytong_fixed.ckpt%22%3B&x-id=GetObject&Expires=1767303250&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzI1MH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2I2ZTk0ZjM3ZjNkMzMzYjdlODZmOGUvYTY3ODc0MjM3NDVlMGJhYTg0OGQxZDI5YWU5Y2MxOTI5YmY3NmNlNDllOWNmYWY5YzgwMDJiN2EwOWZiZTFkMyoifV19&Signature=k0ntt0pgglBewvlvegxmYy0cLtSaCK6xCB5wxVfjHkya7i4Hp2SG3kJVXfJ5LnL8Aj5fF6OobnJc77CMRs1g3~2KNcnseMQSDePWD8k9od~G6BBXPnNUZMaw2krw69dxcjXT508TAfcDO4dAkG5EOqQ8D-RvyjpVgm5157xo1xee2upUkxHeoiw9zZsnXXKvpE1YLtJtI4shY1eN0CguKYMThgxaG9x4r-l13OzbLlEKDhkX9jddxTASDByZkqamdJ78~70YAFa62jian4uQ9W7tN7FcQN64lfAivFMUI2VnJIOMoIq34h5FuDCgXh8UHTYhXw1a4Yo3Kar9onebzw__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "scnet-large",
+      "notes": "ok=True status=200",
+      "sha256": "65900dfa07d6b6e5d784c0f143920200a4bd281d6e78a806c549d0b912d5885e",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/SCNet-large_starrytong_fixed.ckpt"
+    },
+    {
+      "bytes": 42434986,
+      "filename": "scnet-musdb18.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67b6e94f37f3d333b7e86f8e/75ec047acc6373c70af5c336356b8eabb4562d919af343ecc6bf10acd207507e?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203415Z&X-Amz-Expires=3600&X-Amz-Signature=39999a05ee387c92a46bc6172f6e62f2128e77dc15b710149ece25c39d7e3a62&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27scnet_checkpoint_musdb18.ckpt%3B+filename%3D%22scnet_checkpoint_musdb18.ckpt%22%3B&x-id=GetObject&Expires=1767303255&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzI1NX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2I2ZTk0ZjM3ZjNkMzMzYjdlODZmOGUvNzVlYzA0N2FjYzYzNzNjNzBhZjVjMzM2MzU2YjhlYWJiNDU2MmQ5MTlhZjM0M2VjYzZiZjEwYWNkMjA3NTA3ZSoifV19&Signature=ENMp-6XfARjQQruHnba~t4I7Ql3Hhp5WhWwjEeOS2EicDBuEGvz4PYsiU9vyq24e3tWM-vX6MeVovJejkny388GEQAmnw7uO~KCSleiQMjH-ot21tPkVGi7dxrpMJtzsiRkeGj1BUFkJ9g4A~pyMtLwIYFSr5rMEYW5YI8E3wRdAXT1Z22Gy~gU1Xxe7axBAvDCo6QOxh-Rhr~lvZCpXi9-A8w3N1dt7cHueC7wfrEDcukAvpo9G9LxS4XwyJy-YtDMUrfKGSQY5aC1LBiWnda75sKZUZ1xkY83p6B29kAbLINz7rvZcK0Pfv4S5WdOmBTlmO81uQhvlOvyXxas1fw__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/scnet_checkpoint_musdb18.ckpt",
+        "content_length": 42434986,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67b6e94f37f3d333b7e86f8e/75ec047acc6373c70af5c336356b8eabb4562d919af343ecc6bf10acd207507e?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203414Z&X-Amz-Expires=3600&X-Amz-Signature=dd02e90c26a3340c40fae801afdf8ba84480b1b3762c949128bb01b5b4c52116&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27scnet_checkpoint_musdb18.ckpt%3B+filename%3D%22scnet_checkpoint_musdb18.ckpt%22%3B&x-id=GetObject&Expires=1767303254&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzI1NH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2I2ZTk0ZjM3ZjNkMzMzYjdlODZmOGUvNzVlYzA0N2FjYzYzNzNjNzBhZjVjMzM2MzU2YjhlYWJiNDU2MmQ5MTlhZjM0M2VjYzZiZjEwYWNkMjA3NTA3ZSoifV19&Signature=bxs5akwoE2jk~fOfVWIDxJ1qLPJ9dEfXCdLRMFNbd7xVOr7D72evofRr4WdouyV~NV7j~x80oapmu4lYUi5tQKjEpD7M0dAwgs3Us4E~N9tI394h-vCn23CzOYzAv8Hur~8A4rBMQ9tLs8HGRdT-1EiC8iMubZRUyzGPMZaVkDupGPGHgQIPPHmNhABmEnGFe50HgGW7zj4rm3zT1Txy~adkS5b1c6h3I77azd~iPWJiFKGtz-DTyEzh1x-h73XVMuIjAsR7Bknop7WG-PZey~RjgNmpKl2vTC0hWPJXyif2RE16JbjixfJkLXNFEuy8KTuMPDbMSw-iXargPhEo2g__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "scnet-musdb18",
+      "notes": "ok=True status=200",
+      "sha256": "1bc0d1abb20bfdf966dcd07637bafd03e4bc13653d09ef18bc9b3e342eafe2aa",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/scnet_checkpoint_musdb18.ckpt"
+    },
+    {
+      "bytes": 1739,
+      "filename": "scnet-musdb18.yaml",
+      "final_url": "https://huggingface.co/api/resolve-cache/models/Politrees/UVR_resources/929e057b81aa49bc2e6490bef8671f47b2c120f6/models%2FSCnet%2Fconfig_musdb18_scnet.yaml?%2FPolitrees%2FUVR_resources%2Fresolve%2Fmain%2Fmodels%2FSCnet%2Fconfig_musdb18_scnet.yaml=&etag=%22b74fc2f6f31deafc819aa680e5075f8e134d9793%22",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/config_musdb18_scnet.yaml",
+        "content_length": 1739,
+        "content_type": "text/plain; charset=utf-8",
+        "final_url": "https://huggingface.co/api/resolve-cache/models/Politrees/UVR_resources/929e057b81aa49bc2e6490bef8671f47b2c120f6/models%2FSCnet%2Fconfig_musdb18_scnet.yaml?%2FPolitrees%2FUVR_resources%2Fresolve%2Fmain%2Fmodels%2FSCnet%2Fconfig_musdb18_scnet.yaml=&etag=%22b74fc2f6f31deafc819aa680e5075f8e134d9793%22",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "scnet-musdb18",
+      "notes": "ok=True status=200",
+      "sha256": "0d604738c9bd575938d97f0b0729673ef007598bd674da4dafafc2e124b81f5a",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/config_musdb18_scnet.yaml"
+    },
+    {
+      "bytes": 455776577,
+      "filename": "sucial-dereverb-fused.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/674059b0741dd085e037cd76/8294974eddac22778c07915b3a97d98c3707b3ef2d699103770f94ad68b5daf6?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203418Z&X-Amz-Expires=3600&X-Amz-Signature=29530425046b3a16aaff261ed0b029f7e43cb93e948b6cae56a307222207bce9&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_echo_mbr_fused_0.5_v2_0.25_big_0.25_super.ckpt%3B+filename%3D%22dereverb_echo_mbr_fused_0.5_v2_0.25_big_0.25_super.ckpt%22%3B&x-id=GetObject&Expires=1767303258&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzI1OH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NzQwNTliMDc0MWRkMDg1ZTAzN2NkNzYvODI5NDk3NGVkZGFjMjI3NzhjMDc5MTViM2E5N2Q5OGMzNzA3YjNlZjJkNjk5MTAzNzcwZjk0YWQ2OGI1ZGFmNioifV19&Signature=EDIq2Xg45Ukt9xlzrcagO9G3e2zIzSU-waMl8NzigmuMgh-e8ueLCdzJK5~fB8aDnNA~cHpJfqYhebeYOOrvIv9-IMCDv055hZrOvjDXmx36M1uxMwYCaB93tvhDUyyqWaUFZWziG-k7efgu50eg0vMewkhpxNkTiLP8TPBTkvIo6n2glL8QDc7aAvXuFDNy68V4PR1WLpzsf58CLWwZfifhF7f-ia4CgQlu~ujJsgNX3gQJRCIyInaXRlbVgURxjefPwcEOz6gNjO7HMbKZjzeVCJw5H8z8Z9CObTDUNGD9jpNcQUNm0iu~fCZCAkao8rHjjZPyNzL4pem5-H~bCQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/dereverb_echo_mbr_fused_0.5_v2_0.25_big_0.25_super.ckpt",
+        "content_length": 455776577,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/674059b0741dd085e037cd76/8294974eddac22778c07915b3a97d98c3707b3ef2d699103770f94ad68b5daf6?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203417Z&X-Amz-Expires=3600&X-Amz-Signature=92c33796fc18a668a58ef6ba2d95a08001333c7cca389a14fa8fc03d7fd6ceda&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_echo_mbr_fused_0.5_v2_0.25_big_0.25_super.ckpt%3B+filename%3D%22dereverb_echo_mbr_fused_0.5_v2_0.25_big_0.25_super.ckpt%22%3B&x-id=GetObject&Expires=1767303257&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzI1N319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NzQwNTliMDc0MWRkMDg1ZTAzN2NkNzYvODI5NDk3NGVkZGFjMjI3NzhjMDc5MTViM2E5N2Q5OGMzNzA3YjNlZjJkNjk5MTAzNzcwZjk0YWQ2OGI1ZGFmNioifV19&Signature=ozY-C~G6JwztnUIXz4ebq4W59ajr2sB4MuCCRzePJpiIoXWfZOgoxlvINEARklYUVfEAkehgoB8Xsm1ri6MuDjdGwkU4IfIIEhLegI9mbq66mnhPQVzclrZcmZMXIhKpA4TXxV3cqwjPB-4btoRWq9GJQpqgIZenpnt46zATbpjCj-xYERDQQ5WVAyIJ5~CQVg0Nzu74~cN9vVMkPMJnS6-vo3Ax-CeM06-P7Zg~6g7sc5g5j3BT3ZqiP~2cm-oxaK~w1zj2-DoSgwHFspiSoB94kpP-h34RBY0cvmKQw7uzxhlE3cow8XGzBre9wpFd0CTcWJzybJMph8Y5T6KK3w__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "sucial-dereverb-fused",
+      "notes": "ok=True status=200",
+      "sha256": "1596b1063238f487d54a0510a8c92cb28c000c803a271dd618ac49efc99ef3f7",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/dereverb_echo_mbr_fused_0.5_v2_0.25_big_0.25_super.ckpt"
+    },
+    {
+      "bytes": 1135,
+      "filename": "sucial-dereverb-fused.yaml",
+      "final_url": "https://huggingface.co/api/resolve-cache/models/Sucial/Dereverb-Echo_Mel_Band_Roformer/9c83bf27196213e6107cf0de5ff2d06d56a46876/config_dereverb_echo_mbr_v2.yaml?%2FSucial%2FDereverb-Echo_Mel_Band_Roformer%2Fresolve%2Fmain%2Fconfig_dereverb_echo_mbr_v2.yaml=&etag=%2277a52f5d0f12b784b8bd560840ecbf661ca278f0%22",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/config_dereverb_echo_mbr_v2.yaml",
+        "content_length": 1135,
+        "content_type": "text/plain; charset=utf-8",
+        "final_url": "https://huggingface.co/api/resolve-cache/models/Sucial/Dereverb-Echo_Mel_Band_Roformer/9c83bf27196213e6107cf0de5ff2d06d56a46876/config_dereverb_echo_mbr_v2.yaml?%2FSucial%2FDereverb-Echo_Mel_Band_Roformer%2Fresolve%2Fmain%2Fconfig_dereverb_echo_mbr_v2.yaml=&etag=%2277a52f5d0f12b784b8bd560840ecbf661ca278f0%22",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "sucial-dereverb-fused",
+      "notes": "ok=True status=200",
+      "sha256": "fb26df515b5acc81aa0a281920decd849588d8d09171e9c20fb8cbd5d2efc120",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/config_dereverb_echo_mbr_v2.yaml"
+    },
+    {
+      "bytes": 332004435,
+      "filename": "unwa-inst-fno.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68a71b56109d9b4507371c90/e5bee4ddf9e1062cc7b51ba291aceac9a8ffad9362109a37f26da340ca7e2d68?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203448Z&X-Amz-Expires=3600&X-Amz-Signature=6e962a97707f4fe5df1422242e25d039ce5d625998ea213fb264b31f2d5b1e2e&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27bs_roformer_fno.ckpt%3B+filename%3D%22bs_roformer_fno.ckpt%22%3B&x-id=GetObject&Expires=1767303288&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzI4OH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGE3MWI1NjEwOWQ5YjQ1MDczNzFjOTAvZTViZWU0ZGRmOWUxMDYyY2M3YjUxYmEyOTFhY2VhYzlhOGZmYWQ5MzYyMTA5YTM3ZjI2ZGEzNDBjYTdlMmQ2OCoifV19&Signature=hUmH8uDCtNbYSbBhcxysqAOgNQQ62QPk1bAoUQ1Tbjq4865xntjPaBn5ormGjxasSYeW5nI~EOsltvkr~kFYSE3MIZ3Bfdk-3CPNXWJ13AZVCYxGMIJjZbhsxnGheYOOS~jq03nqYqP2Z-8D9MkugXDgCPHAYEF-VAhWrjQHTWLSJP8FoQ69Mlez2gAgPEoE4wbFUh4DM3AuKbs8qZo~MCUBTanzBWOx827N0rwCS2zAZNcnANYh2gP1S6HjDIN8eSUQk6twE5Ne4q4jNSPAvwB4Xw~ukXNn6cZWICEBie2BVERAvNLXXXyQN99ZRfBK6AoSqyr9Ztd1wTgs2hTDiQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/bs_roformer_fno.ckpt",
+        "content_length": 332004435,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68a71b56109d9b4507371c90/e5bee4ddf9e1062cc7b51ba291aceac9a8ffad9362109a37f26da340ca7e2d68?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T203448Z&X-Amz-Expires=3600&X-Amz-Signature=6e962a97707f4fe5df1422242e25d039ce5d625998ea213fb264b31f2d5b1e2e&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27bs_roformer_fno.ckpt%3B+filename%3D%22bs_roformer_fno.ckpt%22%3B&x-id=GetObject&Expires=1767303288&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwMzI4OH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGE3MWI1NjEwOWQ5YjQ1MDczNzFjOTAvZTViZWU0ZGRmOWUxMDYyY2M3YjUxYmEyOTFhY2VhYzlhOGZmYWQ5MzYyMTA5YTM3ZjI2ZGEzNDBjYTdlMmQ2OCoifV19&Signature=hUmH8uDCtNbYSbBhcxysqAOgNQQ62QPk1bAoUQ1Tbjq4865xntjPaBn5ormGjxasSYeW5nI~EOsltvkr~kFYSE3MIZ3Bfdk-3CPNXWJ13AZVCYxGMIJjZbhsxnGheYOOS~jq03nqYqP2Z-8D9MkugXDgCPHAYEF-VAhWrjQHTWLSJP8FoQ69Mlez2gAgPEoE4wbFUh4DM3AuKbs8qZo~MCUBTanzBWOx827N0rwCS2zAZNcnANYh2gP1S6HjDIN8eSUQk6twE5Ne4q4jNSPAvwB4Xw~ukXNn6cZWICEBie2BVERAvNLXXXyQN99ZRfBK6AoSqyr9Ztd1wTgs2hTDiQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "unwa-inst-fno",
+      "notes": "ok=True status=200",
+      "sha256": "f35bf6d87b2863372388e85c2d9679e5b7651e5c2ddd23aab1480f7af10b90ca",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/bs_roformer_fno.ckpt"
+    },
+    {
+      "bytes": 2373,
+      "filename": "unwa-inst-fno.yaml",
+      "final_url": "https://huggingface.co/api/resolve-cache/models/pcunwa/BS-Roformer-Inst-FNO/d23c266984fecf4fcc87866f5fb9caeec2398af4/bsrofo_fno.yaml?%2Fpcunwa%2FBS-Roformer-Inst-FNO%2Fresolve%2Fmain%2Fbsrofo_fno.yaml=&etag=%227341e694abeb1ee8cad6f0063eb02295c7dae973%22",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/bsrofo_fno.yaml",
+        "content_length": 2373,
+        "content_type": "text/plain; charset=utf-8",
+        "final_url": "https://huggingface.co/api/resolve-cache/models/pcunwa/BS-Roformer-Inst-FNO/d23c266984fecf4fcc87866f5fb9caeec2398af4/bsrofo_fno.yaml?%2Fpcunwa%2FBS-Roformer-Inst-FNO%2Fresolve%2Fmain%2Fbsrofo_fno.yaml=&etag=%227341e694abeb1ee8cad6f0063eb02295c7dae973%22",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "unwa-inst-fno",
+      "notes": "ok=True status=200",
+      "sha256": "8e79699a9d75c31c407f02e84b00521d9c8e59ae323a4449f911dd8c10defeac",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/bsrofo_fno.yaml"
+    },
+    {
+      "bytes": 1722,
+      "filename": "unwa-kim-ft2.yaml",
+      "final_url": "https://huggingface.co/api/resolve-cache/models/pcunwa/Kim-Mel-Band-Roformer-FT/e42d447e5026e85492945b73438b7a98b9314347/config_kimmel_unwa_ft.yaml?%2Fpcunwa%2FKim-Mel-Band-Roformer-FT%2Fresolve%2Fmain%2Fconfig_kimmel_unwa_ft.yaml=&etag=%225d570f18e2611d64555916f844709626eb2d50b2%22",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft.yaml",
+        "content_length": 1722,
+        "content_type": "text/plain; charset=utf-8",
+        "final_url": "https://huggingface.co/api/resolve-cache/models/pcunwa/Kim-Mel-Band-Roformer-FT/e42d447e5026e85492945b73438b7a98b9314347/config_kimmel_unwa_ft.yaml?%2Fpcunwa%2FKim-Mel-Band-Roformer-FT%2Fresolve%2Fmain%2Fconfig_kimmel_unwa_ft.yaml=&etag=%225d570f18e2611d64555916f844709626eb2d50b2%22",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "unwa-kim-ft2",
+      "notes": "ok=True status=200",
+      "sha256": "0942cb7da8e86ac1be840cc7b9647831c11ffe00327a0b239df256031e6c8355",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft.yaml"
+    },
+    {
+      "bytes": 1722,
+      "filename": "unwa-kim-ft2-bleedless.yaml",
+      "final_url": "https://huggingface.co/api/resolve-cache/models/pcunwa/Kim-Mel-Band-Roformer-FT/e42d447e5026e85492945b73438b7a98b9314347/config_kimmel_unwa_ft.yaml?%2Fpcunwa%2FKim-Mel-Band-Roformer-FT%2Fresolve%2Fmain%2Fconfig_kimmel_unwa_ft.yaml=&etag=%225d570f18e2611d64555916f844709626eb2d50b2%22",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft.yaml",
+        "content_length": null,
+        "content_type": "text/plain; charset=utf-8",
+        "final_url": "https://huggingface.co/api/resolve-cache/models/pcunwa/Kim-Mel-Band-Roformer-FT/e42d447e5026e85492945b73438b7a98b9314347/config_kimmel_unwa_ft.yaml?%2Fpcunwa%2FKim-Mel-Band-Roformer-FT%2Fresolve%2Fmain%2Fconfig_kimmel_unwa_ft.yaml=&etag=%225d570f18e2611d64555916f844709626eb2d50b2%22",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "unwa-kim-ft2-bleedless",
+      "notes": "ok=True status=200",
+      "sha256": "0942cb7da8e86ac1be840cc7b9647831c11ffe00327a0b239df256031e6c8355",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft.yaml"
+    },
+    {
+      "bytes": 2382,
+      "filename": "unwa-revive-2.yaml",
+      "final_url": "https://huggingface.co/api/resolve-cache/models/pcunwa/BS-Roformer-Revive/3f912884cdf9cbe8549297ce465f86a38572236c/config.yaml?%2Fpcunwa%2FBS-Roformer-Revive%2Fresolve%2Fmain%2Fconfig.yaml=&etag=%22b2d60c5d37a6c92afea42ef88d8958b7f01b64db%22",
+      "head": {
+        "candidate_notes": "ok=True status=200",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/pcunwa/BS-Roformer-Revive/resolve/main/config.yaml",
+        "content_length": 2382,
+        "content_type": "text/plain; charset=utf-8",
+        "final_url": "https://huggingface.co/api/resolve-cache/models/pcunwa/BS-Roformer-Revive/3f912884cdf9cbe8549297ce465f86a38572236c/config.yaml?%2Fpcunwa%2FBS-Roformer-Revive%2Fresolve%2Fmain%2Fconfig.yaml=&etag=%22b2d60c5d37a6c92afea42ef88d8958b7f01b64db%22",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "unwa-revive-2",
+      "notes": "ok=True status=200",
+      "sha256": "6b9d5fb6aeda6b0941f937e4e4883643e3187331ff403fb820c7aa6af4b02dbb",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/pcunwa/BS-Roformer-Revive/resolve/main/config.yaml"
+    }
+  ],
+  "failed": [],
+  "finished_at": 1767299704.1504366,
+  "hf_suggestions": "C:\\Users\\engdahlz\\StemSep\\reports\\hf_link_suggestions.json",
+  "link_audit": "C:\\Users\\engdahlz\\StemSep\\reports\\link_audit.json",
+  "manifest": "C:\\Users\\engdahlz\\StemSep\\reports\\mirror_upload_manifest.json",
+  "needs_total": 43,
+  "release_asset_count": null,
+  "release_check_enabled": false,
+  "release_repo": "engdahlz/stemsep-models",
+  "release_tag": "models-v2-2026-01-01",
+  "skipped_present_in_release": [],
+  "stage_dir": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage",
+  "staged_already": [
+    {
+      "bytes": 1973,
+      "filename": "anvuew-karaoke.yaml",
+      "kind": "config",
+      "model_id": "anvuew-karaoke",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\anvuew-karaoke.yaml",
+      "sha256": "5cb3f127ecbc6a8e37f31ea7e05f60f360a44da43e857bde805b7b68558f6338"
+    },
+    {
+      "bytes": 1846,
+      "filename": "anvuew-vocals.yaml",
+      "kind": "config",
+      "model_id": "anvuew-vocals",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\anvuew-vocals.yaml",
+      "sha256": "66963a9d60756076506a230b4e503c553a3beb7b4e9a10e6bcc73dee9dbd4866"
+    },
+    {
+      "bytes": 148891175,
+      "filename": "bandit-plus.ckpt",
+      "kind": "checkpoint",
+      "model_id": "bandit-plus",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\bandit-plus.ckpt",
+      "sha256": "c48284779f7d1258a6527d3aaa18a532d45c1f506e2dcc25d5ab179a8c5e2573"
+    },
+    {
+      "bytes": 393068365,
+      "filename": "bs-roformer-1053.ckpt",
+      "kind": "checkpoint",
+      "model_id": "bs-roformer-1053",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\bs-roformer-1053.ckpt",
+      "sha256": "a2e825a03bc908cb04dbd88eddeefbf5147dd1cf1f95cebf453d9dbfabec494b"
+    },
+    {
+      "bytes": 2368,
+      "filename": "bs-roformer-1053.yaml",
+      "kind": "config",
+      "model_id": "bs-roformer-1053",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\bs-roformer-1053.yaml",
+      "sha256": "302b6cee54adf39743b097b145ad4f64c37f3bd31b84791da32f963fb3692d04"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-fv4.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-fv4",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\gabox-voc-fv4.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-fv5.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-fv5",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\gabox-voc-fv5.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-fv6.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-fv6",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\gabox-voc-fv6.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-gabox2.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-gabox2",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\gabox-voc-gabox2.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 789,
+      "filename": "lew-apollo-universal.yaml",
+      "kind": "config",
+      "model_id": "lew-apollo-universal",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\lew-apollo-universal.yaml",
+      "sha256": "e211b2da829c9dfe2fd6a6da45250d30f0fdb70a0deee2a0974a42ebd11d3526"
+    },
+    {
+      "bytes": 519,
+      "filename": "lew-apollo-vocal.yaml",
+      "kind": "config",
+      "model_id": "lew-apollo-vocal",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\lew-apollo-vocal.yaml",
+      "sha256": "0b7a0bbc12e0b23101895ff5b290c914fbadcf32f3241cb7c81c7c12dd5fa895"
+    },
+    {
+      "bytes": 59074342,
+      "filename": "mdx-net-hq4.onnx",
+      "kind": "checkpoint",
+      "model_id": "mdx-net-hq4",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\mdx-net-hq4.onnx",
+      "sha256": "811cb24095d865763752310848b7ec86aeede0626cb05749ab35350e46897000"
+    },
+    {
+      "bytes": 59074342,
+      "filename": "mdx-net-hq5.onnx",
+      "kind": "checkpoint",
+      "model_id": "mdx-net-hq5",
+      "path": "C:\\Users\\engdahlz\\StemSep\\reports\\release_assets_stage\\mdx-net-hq5.onnx",
+      "sha256": "811cb24095d865763752310848b7ec86aeede0626cb05749ab35350e46897000"
+    }
+  ],
+  "started_at": 1767299477.9049678,
+  "unresolved": [
+    {
+      "filename": "amane-full-scratch.ckpt",
+      "kind": "checkpoint",
+      "model_id": "amane-full-scratch",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "amane-inst-fullness.ckpt",
+      "kind": "checkpoint",
+      "model_id": "amane-inst-fullness",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "amane-inst-fullness.yaml",
+      "kind": "config",
+      "model_id": "amane-inst-fullness",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "bs-roformer-4-stems.ckpt",
+      "kind": "checkpoint",
+      "model_id": "bs-roformer-4-stems",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "bs-roformer-4-stems.yaml",
+      "kind": "config",
+      "model_id": "bs-roformer-4-stems",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "drypd-side-extraction.pth",
+      "kind": "checkpoint",
+      "model_id": "drypd-side-extraction",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "neo-instvfx.ckpt",
+      "kind": "checkpoint",
+      "model_id": "neo-instvfx",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "neo-instvfx.yaml",
+      "kind": "config",
+      "model_id": "neo-instvfx",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "unwa-inst-v1e-plus.ckpt",
+      "kind": "checkpoint",
+      "model_id": "unwa-inst-v1e-plus",
+      "reason": "no_candidate_urls"
+    }
+  ]
+}

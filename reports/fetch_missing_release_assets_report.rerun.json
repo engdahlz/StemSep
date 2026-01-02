@@ -1,0 +1,346 @@
+{
+  "downloaded": [],
+  "failed": [],
+  "finished_at": 1767303617.302168,
+  "hf_suggestions": "reports\\hf_link_suggestions.json",
+  "link_audit": "reports\\link_audit.json",
+  "manifest": "reports\\mirror_upload_manifest.json",
+  "needs_total": 43,
+  "release_asset_count": null,
+  "release_check_enabled": false,
+  "release_repo": "engdahlz/stemsep-models",
+  "release_tag": "models-v2-2026-01-01",
+  "skipped_present_in_release": [],
+  "stage_dir": "reports\\release_assets_stage",
+  "staged_already": [
+    {
+      "bytes": 118128452,
+      "filename": "anvuew-dereverb-room.ckpt",
+      "kind": "checkpoint",
+      "model_id": "anvuew-dereverb-room",
+      "path": "reports\\release_assets_stage\\anvuew-dereverb-room.ckpt",
+      "sha256": "2edec521f09e26341c1923dc82c8c52dbc86478b42b9999f679535743c970cb3"
+    },
+    {
+      "bytes": 1973,
+      "filename": "anvuew-karaoke.yaml",
+      "kind": "config",
+      "model_id": "anvuew-karaoke",
+      "path": "reports\\release_assets_stage\\anvuew-karaoke.yaml",
+      "sha256": "5cb3f127ecbc6a8e37f31ea7e05f60f360a44da43e857bde805b7b68558f6338"
+    },
+    {
+      "bytes": 1846,
+      "filename": "anvuew-vocals.yaml",
+      "kind": "config",
+      "model_id": "anvuew-vocals",
+      "path": "reports\\release_assets_stage\\anvuew-vocals.yaml",
+      "sha256": "66963a9d60756076506a230b4e503c553a3beb7b4e9a10e6bcc73dee9dbd4866"
+    },
+    {
+      "bytes": 148891175,
+      "filename": "bandit-plus.ckpt",
+      "kind": "checkpoint",
+      "model_id": "bandit-plus",
+      "path": "reports\\release_assets_stage\\bandit-plus.ckpt",
+      "sha256": "c48284779f7d1258a6527d3aaa18a532d45c1f506e2dcc25d5ab179a8c5e2573"
+    },
+    {
+      "bytes": 1715,
+      "filename": "bandit-plus.yaml",
+      "kind": "config",
+      "model_id": "bandit-plus",
+      "path": "reports\\release_assets_stage\\bandit-plus.yaml",
+      "sha256": "c62d316a8ac066b78120f648665b81d33b507d25e2d9096f048ccc1bd91b1a78"
+    },
+    {
+      "bytes": 393068365,
+      "filename": "bs-roformer-1053.ckpt",
+      "kind": "checkpoint",
+      "model_id": "bs-roformer-1053",
+      "path": "reports\\release_assets_stage\\bs-roformer-1053.ckpt",
+      "sha256": "a2e825a03bc908cb04dbd88eddeefbf5147dd1cf1f95cebf453d9dbfabec494b"
+    },
+    {
+      "bytes": 2368,
+      "filename": "bs-roformer-1053.yaml",
+      "kind": "config",
+      "model_id": "bs-roformer-1053",
+      "path": "reports\\release_assets_stage\\bs-roformer-1053.yaml",
+      "sha256": "302b6cee54adf39743b097b145ad4f64c37f3bd31b84791da32f963fb3692d04"
+    },
+    {
+      "bytes": 639331213,
+      "filename": "bs-roformer-viperx-1297.ckpt",
+      "kind": "checkpoint",
+      "model_id": "bs-roformer-viperx-1297",
+      "path": "reports\\release_assets_stage\\bs-roformer-viperx-1297.ckpt",
+      "sha256": "5b84f37e8d444c8cb30c79d77f613a41c05868ff9c9ac6c7049c00aefae115aa"
+    },
+    {
+      "bytes": 2273,
+      "filename": "bs-roformer-viperx-1297.yaml",
+      "kind": "config",
+      "model_id": "bs-roformer-viperx-1297",
+      "path": "reports\\release_assets_stage\\bs-roformer-viperx-1297.yaml",
+      "sha256": "2bfdd16c656bd9519aba757cc4f8834b7ede675eb1e00ec4772d74ae1c41af7f"
+    },
+    {
+      "bytes": 1719116358,
+      "filename": "duality-v2-unwa.ckpt",
+      "kind": "checkpoint",
+      "model_id": "duality-v2-unwa",
+      "path": "reports\\release_assets_stage\\duality-v2-unwa.ckpt",
+      "sha256": "b4a69558708f2857e36ac86a0e03ed95c4e3d8b9c5b8113963987d0d7df7e20f"
+    },
+    {
+      "bytes": 913026650,
+      "filename": "gabox-voc-fv4.ckpt",
+      "kind": "checkpoint",
+      "model_id": "gabox-voc-fv4",
+      "path": "reports\\release_assets_stage\\gabox-voc-fv4.ckpt",
+      "sha256": "ff802a67501fac70587c3ff4e8dbc89c2558e7d8911c92222dfea2aaac208517"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-fv4.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-fv4",
+      "path": "reports\\release_assets_stage\\gabox-voc-fv4.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 913026650,
+      "filename": "gabox-voc-fv5.ckpt",
+      "kind": "checkpoint",
+      "model_id": "gabox-voc-fv5",
+      "path": "reports\\release_assets_stage\\gabox-voc-fv5.ckpt",
+      "sha256": "c4dff354d81152d1b4321f6491f242c060919148239fbfe22a1015513de4a7fe"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-fv5.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-fv5",
+      "path": "reports\\release_assets_stage\\gabox-voc-fv5.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-fv6.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-fv6",
+      "path": "reports\\release_assets_stage\\gabox-voc-fv6.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-gabox2.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-gabox2",
+      "path": "reports\\release_assets_stage\\gabox-voc-gabox2.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 789,
+      "filename": "lew-apollo-universal.yaml",
+      "kind": "config",
+      "model_id": "lew-apollo-universal",
+      "path": "reports\\release_assets_stage\\lew-apollo-universal.yaml",
+      "sha256": "e211b2da829c9dfe2fd6a6da45250d30f0fdb70a0deee2a0974a42ebd11d3526"
+    },
+    {
+      "bytes": 194278526,
+      "filename": "lew-apollo-vocal.ckpt",
+      "kind": "checkpoint",
+      "model_id": "lew-apollo-vocal",
+      "path": "reports\\release_assets_stage\\lew-apollo-vocal.ckpt",
+      "sha256": "59e1311f93e1f0fde6d5d11fa69d97e41cdee39be38f0cf4ccb80cfce34b2a2b"
+    },
+    {
+      "bytes": 519,
+      "filename": "lew-apollo-vocal.yaml",
+      "kind": "config",
+      "model_id": "lew-apollo-vocal",
+      "path": "reports\\release_assets_stage\\lew-apollo-vocal.yaml",
+      "sha256": "0b7a0bbc12e0b23101895ff5b290c914fbadcf32f3241cb7c81c7c12dd5fa895"
+    },
+    {
+      "bytes": 59074342,
+      "filename": "mdx-net-hq4.onnx",
+      "kind": "checkpoint",
+      "model_id": "mdx-net-hq4",
+      "path": "reports\\release_assets_stage\\mdx-net-hq4.onnx",
+      "sha256": "811cb24095d865763752310848b7ec86aeede0626cb05749ab35350e46897000"
+    },
+    {
+      "bytes": 59074342,
+      "filename": "mdx-net-hq5.onnx",
+      "kind": "checkpoint",
+      "model_id": "mdx-net-hq5",
+      "path": "reports\\release_assets_stage\\mdx-net-hq5.onnx",
+      "sha256": "811cb24095d865763752310848b7ec86aeede0626cb05749ab35350e46897000"
+    },
+    {
+      "bytes": 437652699,
+      "filename": "mdx23c-drumsep-6stem.ckpt",
+      "kind": "checkpoint",
+      "model_id": "mdx23c-drumsep-6stem",
+      "path": "reports\\release_assets_stage\\mdx23c-drumsep-6stem.ckpt",
+      "sha256": "d2a4aa53eb584d21eead358a4e66d1882ad182911be018f052b5da73be9096d0"
+    },
+    {
+      "bytes": 448101203,
+      "filename": "mdx23c-instvoc-hq.ckpt",
+      "kind": "checkpoint",
+      "model_id": "mdx23c-instvoc-hq",
+      "path": "reports\\release_assets_stage\\mdx23c-instvoc-hq.ckpt",
+      "sha256": "49d51472769e34a2501cd1da782346a3212555c3a5619fc2c53507445528d816"
+    },
+    {
+      "bytes": 1724,
+      "filename": "mel-band-karaoke-becruily.yaml",
+      "kind": "config",
+      "model_id": "mel-band-karaoke-becruily",
+      "path": "reports\\release_assets_stage\\mel-band-karaoke-becruily.yaml",
+      "sha256": "cd37b0dcc285fc22d88090415722ac7127ee1d9ea2f3346c3b8d8fcc61e0c74b"
+    },
+    {
+      "bytes": 168852258,
+      "filename": "scnet-large.ckpt",
+      "kind": "checkpoint",
+      "model_id": "scnet-large",
+      "path": "reports\\release_assets_stage\\scnet-large.ckpt",
+      "sha256": "65900dfa07d6b6e5d784c0f143920200a4bd281d6e78a806c549d0b912d5885e"
+    },
+    {
+      "bytes": 42434986,
+      "filename": "scnet-musdb18.ckpt",
+      "kind": "checkpoint",
+      "model_id": "scnet-musdb18",
+      "path": "reports\\release_assets_stage\\scnet-musdb18.ckpt",
+      "sha256": "1bc0d1abb20bfdf966dcd07637bafd03e4bc13653d09ef18bc9b3e342eafe2aa"
+    },
+    {
+      "bytes": 1739,
+      "filename": "scnet-musdb18.yaml",
+      "kind": "config",
+      "model_id": "scnet-musdb18",
+      "path": "reports\\release_assets_stage\\scnet-musdb18.yaml",
+      "sha256": "0d604738c9bd575938d97f0b0729673ef007598bd674da4dafafc2e124b81f5a"
+    },
+    {
+      "bytes": 455776577,
+      "filename": "sucial-dereverb-fused.ckpt",
+      "kind": "checkpoint",
+      "model_id": "sucial-dereverb-fused",
+      "path": "reports\\release_assets_stage\\sucial-dereverb-fused.ckpt",
+      "sha256": "1596b1063238f487d54a0510a8c92cb28c000c803a271dd618ac49efc99ef3f7"
+    },
+    {
+      "bytes": 1135,
+      "filename": "sucial-dereverb-fused.yaml",
+      "kind": "config",
+      "model_id": "sucial-dereverb-fused",
+      "path": "reports\\release_assets_stage\\sucial-dereverb-fused.yaml",
+      "sha256": "fb26df515b5acc81aa0a281920decd849588d8d09171e9c20fb8cbd5d2efc120"
+    },
+    {
+      "bytes": 332004435,
+      "filename": "unwa-inst-fno.ckpt",
+      "kind": "checkpoint",
+      "model_id": "unwa-inst-fno",
+      "path": "reports\\release_assets_stage\\unwa-inst-fno.ckpt",
+      "sha256": "f35bf6d87b2863372388e85c2d9679e5b7651e5c2ddd23aab1480f7af10b90ca"
+    },
+    {
+      "bytes": 2373,
+      "filename": "unwa-inst-fno.yaml",
+      "kind": "config",
+      "model_id": "unwa-inst-fno",
+      "path": "reports\\release_assets_stage\\unwa-inst-fno.yaml",
+      "sha256": "8e79699a9d75c31c407f02e84b00521d9c8e59ae323a4449f911dd8c10defeac"
+    },
+    {
+      "bytes": 1722,
+      "filename": "unwa-kim-ft2.yaml",
+      "kind": "config",
+      "model_id": "unwa-kim-ft2",
+      "path": "reports\\release_assets_stage\\unwa-kim-ft2.yaml",
+      "sha256": "0942cb7da8e86ac1be840cc7b9647831c11ffe00327a0b239df256031e6c8355"
+    },
+    {
+      "bytes": 1722,
+      "filename": "unwa-kim-ft2-bleedless.yaml",
+      "kind": "config",
+      "model_id": "unwa-kim-ft2-bleedless",
+      "path": "reports\\release_assets_stage\\unwa-kim-ft2-bleedless.yaml",
+      "sha256": "0942cb7da8e86ac1be840cc7b9647831c11ffe00327a0b239df256031e6c8355"
+    },
+    {
+      "bytes": 2382,
+      "filename": "unwa-revive-2.yaml",
+      "kind": "config",
+      "model_id": "unwa-revive-2",
+      "path": "reports\\release_assets_stage\\unwa-revive-2.yaml",
+      "sha256": "6b9d5fb6aeda6b0941f937e4e4883643e3187331ff403fb820c7aa6af4b02dbb"
+    }
+  ],
+  "started_at": 1767303610.2642357,
+  "unresolved": [
+    {
+      "filename": "amane-full-scratch.ckpt",
+      "kind": "checkpoint",
+      "model_id": "amane-full-scratch",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "amane-inst-fullness.ckpt",
+      "kind": "checkpoint",
+      "model_id": "amane-inst-fullness",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "amane-inst-fullness.yaml",
+      "kind": "config",
+      "model_id": "amane-inst-fullness",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "bs-roformer-4-stems.ckpt",
+      "kind": "checkpoint",
+      "model_id": "bs-roformer-4-stems",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "bs-roformer-4-stems.yaml",
+      "kind": "config",
+      "model_id": "bs-roformer-4-stems",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "drypd-side-extraction.pth",
+      "kind": "checkpoint",
+      "model_id": "drypd-side-extraction",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "neo-instvfx.ckpt",
+      "kind": "checkpoint",
+      "model_id": "neo-instvfx",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "neo-instvfx.yaml",
+      "kind": "config",
+      "model_id": "neo-instvfx",
+      "reason": "no_candidate_urls"
+    },
+    {
+      "filename": "unwa-inst-v1e-plus.ckpt",
+      "kind": "checkpoint",
+      "model_id": "unwa-inst-v1e-plus",
+      "reason": "no_candidate_urls"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=45", "wheel"]
+requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -18,11 +18,47 @@ dependencies = [
     "pydub",
 ]
 
-[tool.setuptools]
-packages = ["src"]
+[project.optional-dependencies]
+dev = [
+    # Runner
+    "pytest>=8.0.0",
 
-[tool.setuptools.package-dir]
-"" = "."
+    # Common imports used by tests/vendor paths
+    "PyYAML",
+    "requests",
+    "tqdm",
+
+    # ONNX imports (vendored audio-separator path)
+    "onnxruntime",
+
+    # Some architecture/vendor code paths import torchaudio
+    "torchaudio",
+]
+
+[tool.setuptools]
+# Explicit src-layout: all importable packages live under ./src
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+# Only expose the `stemsep` namespace (and its subpackages) as installable packages.
+where = ["src"]
+include = [
+    "stemsep",
+    "stemsep.*",
+]
+exclude = [
+    "tests",
+    "tests.*",
+    # Explicitly exclude any legacy top-level names if they ever reappear under src/
+    "audio",
+    "audio.*",
+    "core",
+    "core.*",
+    "models",
+    "models.*",
+    "ui",
+    "ui.*",
+]
 
 [tool.pylance]
 include = ["src", "tests"]

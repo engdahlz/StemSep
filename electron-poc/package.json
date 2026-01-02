@@ -5,12 +5,15 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "build": "vite build",
     "build:electron": "node build-electron.mjs",
-    "electron:dev": "concurrently \"npm run dev\" \"npm run build:electron && start_electron.bat\"",
+    "build:rust": "cd ../stemsep-backend && cargo build --release",
+    "electron:dev": "concurrently \"npm run dev -- --host 127.0.0.1 --port 5173 --strictPort\" \"npm run build:electron && start_electron.bat\"",
     "electron:start": "npm run build:electron && electron .",
-    "electron:build": "npm run build && npm run build:electron && electron-builder",
-    "test": "vitest"
+    "electron:build": "npm run build:rust && npm run build && npm run build:electron && electron-builder",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +23,7 @@
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/chokidar": "^1.7.5",
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
@@ -46,6 +50,7 @@
     "@radix-ui/react-slider": "^1.3.6",
     "chokidar": "^5.0.0",
     "date-fns": "^3.6.0",
+    "ffmpeg-static": "^5.2.0",
     "immer": "^10.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -59,12 +64,22 @@
     "directories": {
       "output": "release"
     },
+    "asarUnpack": [
+      "**/dist-electron/ffmpeg*"
+    ],
     "files": [
       "dist-electron/**/*",
       "dist-renderer/**/*"
     ],
     "extraResources": [
-      "python-bridge.py",
+      {
+        "from": "../stemsep-backend/target/release/stemsep-backend.exe",
+        "to": "stemsep-backend.exe"
+      },
+      {
+        "from": "../scripts/inference.py",
+        "to": "inference.py"
+      },
       {
         "from": "../StemSepApp",
         "to": "StemSepApp",

@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+type VolumeCompensation = import('./types/separation').VolumeCompensation
+type Recipe = import('./types/recipes').Recipe
+
 interface ElectronAPI {
     selectOutputDirectory: () => Promise<string | null>
     openAudioFileDialog: () => Promise<string[] | null>
@@ -20,7 +23,10 @@ interface ElectronAPI {
         ensembleConfig?: any,
         ensembleAlgorithm?: string,
         invert?: boolean,
-        phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }
+        splitFreq?: number,
+        phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number },
+        postProcessingSteps?: any[],
+        volumeCompensation?: VolumeCompensation
     ) => Promise<any>
     separateAudio: (
         inputFile: string,
@@ -37,7 +43,10 @@ interface ElectronAPI {
         ensembleConfig?: any,
         ensembleAlgorithm?: string,
         invert?: boolean,
-        phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }
+        splitFreq?: number,
+        phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number },
+        postProcessingSteps?: any[],
+        volumeCompensation?: VolumeCompensation
     ) => Promise<{ success: boolean; outputFiles: Record<string, string>; jobId?: string; error?: string }>
     cancelSeparation: (jobId: string) => Promise<any>
     saveJobOutput: (jobId: string) => Promise<{ success: boolean; outputFiles?: Record<string, string>; error?: string }>
@@ -47,14 +56,15 @@ interface ElectronAPI {
     reorderQueue: (jobIds: string[]) => Promise<void>
     exportOutput: (jobId: string, exportPath: string, format: string, bitrate: string) => Promise<{ success: boolean; error?: string }>
     exportFiles: (sourceFiles: Record<string, string>, exportPath: string, format: string, bitrate: string) => Promise<{ status: string; path: string }>
-    onSeparationProgress: (callback: (data: { progress: number; message: string }) => void) => () => void
+    onSeparationProgress: (callback: (data: { progress: number; message: string; jobId?: string }) => void) => () => void
+    onSeparationStarted: (callback: (data: { jobId: string }) => void) => () => void
     onSeparationComplete: (callback: (data: { outputFiles: Record<string, string> }) => void) => () => void
     onSeparationError: (callback: (data: { error: string }) => void) => () => void
 
     // Model operations
     getModels: () => Promise<any[]>
     getModelTech: (modelId: string) => Promise<any>
-    getRecipes: () => Promise<any[]>
+    getRecipes: () => Promise<Recipe[]>
     downloadModel: (modelId: string) => Promise<boolean>
     pauseDownload: (modelId: string) => Promise<any>
     resumeDownload: (modelId: string) => Promise<any>
@@ -85,6 +95,14 @@ interface ElectronAPI {
     // App Config
     saveAppConfig: (config: Record<string, any>) => Promise<boolean>
     getAppConfig: () => Promise<Record<string, any>>
+
+    // Hugging Face auth (optional)
+    setHuggingFaceToken: (token: string) => Promise<{ success: boolean; error?: string }>
+    clearHuggingFaceToken: () => Promise<{ success: boolean; error?: string }>
+    getHuggingFaceAuthStatus: () => Promise<{ configured: boolean }>
+
+    // External links
+    openExternalUrl: (url: string) => Promise<boolean>
 }
 
 interface Window {

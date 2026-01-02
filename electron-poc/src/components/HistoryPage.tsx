@@ -13,8 +13,7 @@ import {
 import { Badge } from './ui/badge'
 import { useStore, HistoryItem } from '../stores/useStore'
 import { cn } from '../lib/utils'
-
-type Page = 'home' | 'models' | 'settings' | 'history' | 'presets' | 'about' | 'results' | 'configure'
+import type { Page } from '../types/navigation'
 
 interface HistoryPageProps {
     onNavigate: (page: Page) => void

@@ -186,7 +186,7 @@
             "steps": [
                 {
                     "step_name": "dereverb",
-                    "model_id": "uvr-deecho-dereverb"
+                    "model_id": "anvuew-dereverb-room"
                 },
                 {
                     "step_name": "separation",
@@ -203,7 +203,7 @@
             "target": "instrumental",
             "steps": [
                 {
-                    "model_id": "scnet-xl",
+                    "model_id": "scnet-large",
                     "weight": 1.0
                 },
                 {
@@ -229,7 +229,7 @@
                     "weight": 1.0
                 },
                 {
-                    "model_id": "htdemucs_6s",
+                    "model_id": "htdemucs-6s",
                     "weight": 0.8
                 }
             ],
@@ -246,7 +246,7 @@
             "target": "piano",
             "steps": [
                 {
-                    "model_id": "htdemucs_6s",
+                    "model_id": "htdemucs-6s",
                     "weight": 1.0
                 }
             ],
@@ -271,14 +271,14 @@
                 {
                     "step": 2,
                     "name": "dereverb",
-                    "model_id": "anvuew-dereverb-v2",
+                    "model_id": "anvuew-dereverb-room",
                     "input_from": "isolation.vocals",
                     "output": "vocals"
                 },
                 {
                     "step": 3,
                     "name": "lead_isolation",
-                    "model_id": "becruily-karaoke",
+                    "model_id": "mel-band-karaoke-becruily",
                     "input_from": "dereverb.vocals",
                     "output": "lead_vocal"
                 }
@@ -311,7 +311,7 @@
                 {
                     "step": 3,
                     "name": "split_drums",
-                    "model_id": "mdx23c-drumsep-jarredou",
+                    "model_id": "mdx23c-drumsep-6stem",
                     "input_from": "extract_drums.drums",
                     "output": [
                         "kick",
@@ -354,7 +354,7 @@
             "target": "instrumental",
             "steps": [
                 {
-                    "model_id": "bs-roformer-resurrection",
+                    "model_id": "unwa-resurrection-inst",
                     "weight": 1.0
                 },
                 {
@@ -377,6 +377,10 @@
             "steps": [
                 {
                     "model_id": "bs-roformer-viperx-1297",
+                    "weight": 1.0
+                },
+                {
+                    "model_id": "scnet-large",
                     "weight": 1.0
                 },
                 {
@@ -517,7 +521,7 @@
             "steps": [
                 {
                     "step_name": "decrowd",
-                    "model_id": "mel-roformer-decrowd",
+                    "model_id": "aufr33-denoise-std",
                     "note": "Remove audience noise first"
                 },
                 {
@@ -528,13 +532,13 @@
                 },
                 {
                     "step_name": "dereverb",
-                    "model_id": "mel-roformer-dereverb-anvuew",
+                    "model_id": "sucial-dereverb-fused",
                     "input_source": "separation.vocals",
                     "note": "De-reverb vocals only, not full mix"
                 },
                 {
                     "step_name": "debleed",
-                    "model_id": "debleed-melband-roformer",
+                    "model_id": "gabox-denoise-debleed",
                     "input_source": "dereverb.vocals",
                     "note": "Final cleanup of drum bleed",
                     "optional": true
@@ -552,7 +556,7 @@
             "steps": [
                 {
                     "step_name": "decrowd",
-                    "model_id": "mel-roformer-decrowd"
+                    "model_id": "aufr33-denoise-std"
                 },
                 {
                     "step_name": "separation",
@@ -616,12 +620,12 @@
                 },
                 {
                     "action": "post_process",
-                    "model_id": "anvuew-dereverb",
+                    "model_id": "anvuew-dereverb-room",
                     "note": "Mono model - processes L/R separately"
                 },
                 {
                     "action": "post_process",
-                    "model_id": "becruily-karaoke",
+                    "model_id": "mel-band-karaoke-becruily",
                     "note": "Separate backing vocals to own file"
                 }
             ],
@@ -655,7 +659,7 @@
                 },
                 {
                     "action": "post_process",
-                    "model_id": "debleed-melband-roformer",
+                    "model_id": "gabox-denoise-debleed",
                     "note": "Removes last 5% vocal bleed"
                 }
             ],
@@ -675,7 +679,7 @@
             "steps": [
                 {
                     "action": "pre_process",
-                    "model_id": "mel-roformer-decrowd",
+                    "model_id": "aufr33-denoise-std",
                     "note": "CRITICAL: overlap=2 only - higher causes ghosting"
                 },
                 {
@@ -686,12 +690,12 @@
                 },
                 {
                     "action": "post_process",
-                    "model_id": "anvuew-dereverb",
+                    "model_id": "anvuew-dereverb-room",
                     "note": "Vocals only - dries the signal"
                 },
                 {
                     "action": "post_process",
-                    "model_id": "mel-roformer-denoise",
+                    "model_id": "aufr33-denoise-std",
                     "note": "Final cleanup - removes mic hiss"
                 }
             ],
@@ -710,7 +714,7 @@
             "target": "all",
             "steps": [
                 {
-                    "model_id": "mdx23c-instvochq",
+                    "model_id": "mdx23c-instvoc-hq",
                     "weight": 1.0,
                     "note": "~1.5dB lower SDR than Roformers but much faster"
                 }

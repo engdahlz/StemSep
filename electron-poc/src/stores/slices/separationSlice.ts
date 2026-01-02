@@ -85,7 +85,9 @@ export const createSeparationSlice: StateCreator<AppState, [["zustand/immer", ne
         item.status = 'cancelled'
         item.error = 'Cancelled by user'
         if (window.electronAPI?.cancelSeparation) {
-          window.electronAPI.cancelSeparation(item.id).catch(console.error)
+          // IMPORTANT: backend job id differs from our local queue item id.
+          const jobId = item.backendJobId || item.id
+          window.electronAPI.cancelSeparation(jobId).catch(console.error)
         }
       }
       state.separation.logs.push(`[${new Date().toLocaleTimeString()}] Separation cancelled by user.`)
@@ -135,7 +137,8 @@ export const createSeparationSlice: StateCreator<AppState, [["zustand/immer", ne
     // Also update the specific queue item
     const activeItem = state.separation.queue.find(i => i.status === 'processing')
     if (activeItem) {
-        activeItem.progress = progress
+      activeItem.progress = progress
+      activeItem.lastProgressTime = Date.now()
     }
   }),
 

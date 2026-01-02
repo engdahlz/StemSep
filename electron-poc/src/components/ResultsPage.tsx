@@ -17,6 +17,7 @@ interface ResultsPageProps {
 
 export function ResultsPage({ onBack }: ResultsPageProps) {
     const history = useStore(state => state.history)
+    const settings = useStore(state => state.settings)
     const sessionToLoad = useStore(state => state.sessionToLoad)
     const loadSession = useStore(state => state.loadSession)
     const removeFromHistory = useStore(state => state.removeFromHistory)
@@ -173,7 +174,7 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
                                             {new Date(activeSession.date).toLocaleString()}
                                         </span>
                                         <span className="flex items-center gap-1 text-sm">
-                                            <Badge variant="outline">{activeSession.modelName}</Badge>
+                                            <Badge variant="outline">{getDisplayName(activeSession)}</Badge>
                                         </span>
                                     </div>
                                 </div>
@@ -185,7 +186,7 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
 
                             <MultiTrackPlayer
                                 stems={activeSession.outputFiles}
-                                jobId={activeSession.id}
+                                jobId={activeSession.backendJobId || activeSession.id}
                                 onDiscard={() => {
                                     removeFromHistory(activeSession.id)
                                 }}
@@ -228,6 +229,8 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
                     outputFiles={activeSession.outputFiles}
                     defaultExportDir={defaultExportDir}
                     onDefaultDirChange={setDefaultExportDir}
+                    defaultExportFormat={settings?.advancedSettings?.outputFormat}
+                    defaultExportBitrate={settings?.advancedSettings?.bitrate}
                 />
             )}
         </div>

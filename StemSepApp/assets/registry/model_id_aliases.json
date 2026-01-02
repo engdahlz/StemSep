@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "description": "Backward-compatible model id aliases. Keys are old/deprecated ids; values are current canonical ids.",
+    "notes": [
+      "This file is intended to provide stable lookups after a registry id normalization.",
+      "Code that accepts model_id (UI/backend) should resolve using this mapping before registry matching.",
+      "Do not add aliases that change model meaning; only map truly identical models that were renamed."
+    ]
+  },
+  "aliases": {
+    "unwa-inst-v1e+": "unwa-inst-v1e-plus"
+  }
+}

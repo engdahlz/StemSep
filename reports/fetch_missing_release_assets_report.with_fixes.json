@@ -1,0 +1,475 @@
+{
+  "downloaded": [
+    {
+      "bytes": 725806842,
+      "filename": "amane-full-scratch.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68de10b437a27646c8508a09/c716dcd1a8d5f2c1b7d209e18a2d8896145c1b79ea573df03189646a7cea30cc?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T214129Z&X-Amz-Expires=3600&X-Amz-Signature=0307e356475bc014c064356f8f0b2fb50880970bd590ba38b959b1b4314b73a3&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27model_vocals.ckpt%3B+filename%3D%22model_vocals.ckpt%22%3B&x-id=GetObject&Expires=1767307289&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwNzI4OX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGRlMTBiNDM3YTI3NjQ2Yzg1MDhhMDkvYzcxNmRjZDFhOGQ1ZjJjMWI3ZDIwOWUxOGEyZDg4OTYxNDVjMWI3OWVhNTczZGYwMzE4OTY0NmE3Y2VhMzBjYyoifV19&Signature=lp6mJTqODDbaCDzVz4sOWuNfw6jsMHXawdUBgzto07UbA-XlxtrMSyC8v3BobCigVYtPfU3GruiXfOGpgzS7553awCKxFaCKW050SxYdk-7SGQ~UBLJpwg-B0dto7oBM6xGPZkGs0oIMyhAJeCrhFcYvMfVHqBqTqdeJeIZ7ADSMtfW1~9QPvglBvyI1NRM4mLItZWANXJ7dqjlivgtRjr3VlWRhRtRGbSk~l03bCb7AjL8XFF8cDnYF1UFC80JkqcEVn7PfzSmgiFBnvda4Ptyz-s0IE3gozjI-IHnzfxOOacipjSVgDgPfRkPySElP0iNZEk7HYxi0CSaQrXxYPw__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=None status=None",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/Aname-Tommy/Mel_Band_Roformer_Full_Scratch/resolve/main/model_vocals.ckpt",
+        "content_length": 725806842,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68de10b437a27646c8508a09/c716dcd1a8d5f2c1b7d209e18a2d8896145c1b79ea573df03189646a7cea30cc?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T214128Z&X-Amz-Expires=3600&X-Amz-Signature=89be621d46ea1b0ac2274efa2648975a9aeec70eb44f4f331892a3fe2ebe0aab&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27model_vocals.ckpt%3B+filename%3D%22model_vocals.ckpt%22%3B&x-id=GetObject&Expires=1767307288&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwNzI4OH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGRlMTBiNDM3YTI3NjQ2Yzg1MDhhMDkvYzcxNmRjZDFhOGQ1ZjJjMWI3ZDIwOWUxOGEyZDg4OTYxNDVjMWI3OWVhNTczZGYwMzE4OTY0NmE3Y2VhMzBjYyoifV19&Signature=anoJh9MU8~14GT2egdpN7tf2PuWAY4k1Dlo-UGDt-jPftlStsUviQ0B2Hou8iow6wJYBK2V6dQAfwPufVzlDHjNHhpP0fhQE~zAD44z1QcoNGN7eGKiEz5MyyvEgvydXGdmQUieVyRjrH3bpCXAEBofqNVweRLzflrPyDnl1gK4Tyi-sr0GbKNxuxKyg~dRokCXmU0KH6S4O3w2xKj05gGDYmv66KdXPZMxPRgQ1MEInzWhyLyRxefmPu9VQnKk4sF7RsyFS5okpIeNqa6683URVqPvfacuX33HIKwQkcMINSQKnnpzK7TpJugeeTN~xyWLbU6bC1d61L4jWimBS~g__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "amane-full-scratch",
+      "notes": "ok=None status=None",
+      "sha256": "e89b915fb0d4b1f23a9ebed8f499ada3c212256fa6f449e1b2c16412eeb3c38e",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/Aname-Tommy/Mel_Band_Roformer_Full_Scratch/resolve/main/model_vocals.ckpt"
+    },
+    {
+      "bytes": 913091027,
+      "filename": "amane-inst-fullness.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/677e49a8e80a49b80652dbbf/68a605a3537423ba5bf1daefe09d0190b265b5c9a336cfac6d1210f5bdbd6332?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T214241Z&X-Amz-Expires=3600&X-Amz-Signature=50178f5167b716644959bc060b3c956f5ddd27f62b31266891980f1f5cb48035&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27Fullness.ckpt%3B+filename%3D%22Fullness.ckpt%22%3B&x-id=GetObject&Expires=1767307361&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwNzM2MX19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NzdlNDlhOGU4MGE0OWI4MDY1MmRiYmYvNjhhNjA1YTM1Mzc0MjNiYTViZjFkYWVmZTA5ZDAxOTBiMjY1YjVjOWEzMzZjZmFjNmQxMjEwZjViZGJkNjMzMioifV19&Signature=rtVP4mkn502H6~g27JXjZcFyNQLIW1GUFnBacOyhGyUV~WQkxs1vxyPdx1dblVDn-cEmLp5RG7~zw-PgEDGEdusfvL-NAWqnS7IdJhMRuoKbs8deVyL1nj8hUghCx7xBIJAJAFwm84RpHI4FZmYq~uMXgXwFkOGoBj2IBuZWWO5kaKHp1JOsG8mQ0lwGu4YJtSkwr60tln9bAiiPiVbfBUr02cYXXsIogPed4vDj2cl3NfURibjlxsgKwknThjgSxaYnz5Tlch7QVTp07mvHx2GOAWFgWBWOkFw-VGyexTPt4XO37TKauPV4JY1SYRCAaOtXquaMwDACmwBoJHxcWQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=None status=None",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/Fullness.ckpt",
+        "content_length": 913091027,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/677e49a8e80a49b80652dbbf/68a605a3537423ba5bf1daefe09d0190b265b5c9a336cfac6d1210f5bdbd6332?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T214240Z&X-Amz-Expires=3600&X-Amz-Signature=406859cd44a4ceb81fe04fa3350b69ea724e3aef702b0401fc25f3e26a274235&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27Fullness.ckpt%3B+filename%3D%22Fullness.ckpt%22%3B&x-id=GetObject&Expires=1767307360&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwNzM2MH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82NzdlNDlhOGU4MGE0OWI4MDY1MmRiYmYvNjhhNjA1YTM1Mzc0MjNiYTViZjFkYWVmZTA5ZDAxOTBiMjY1YjVjOWEzMzZjZmFjNmQxMjEwZjViZGJkNjMzMioifV19&Signature=raWsSaY0-6sS-lVjR5xjlICA-Jlwm3Nc2xw943QZfTY0dwiJyBhNCFgW5~nUxhy09Rp6NtN9e85KzR0y9EpQOeSzUL63Oct6JSKvQczgVyFBFDhLmMCxJz6Nzvee-PSgz31FTar6W6bRMAii73Nn8bnQiNKrGyESRynHMZFLdrs4eg1GQMy9mVFpMguvSyOVdKxhYNCTEUzxP-D9ScIvo5fcLc25L3ukSI4jdt7gECbZpq4oBFkO9vymOutesRTsSZJgk89zmSiG6SsB1zL1sOno90bueW-Q1Kh2KxtNI1QERu0SNErZp5fe0cN0ZY9nnSCCWeF2ItVlMVO7HEoGGQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "amane-inst-fullness",
+      "notes": "ok=None status=None",
+      "sha256": "c67f47fa84146c8182f0061c194a51782439fe732e6ffecb810f0e4af7026f6d",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/Fullness.ckpt"
+    },
+    {
+      "bytes": 920,
+      "filename": "amane-inst-fullness.yaml",
+      "final_url": "https://huggingface.co/api/resolve-cache/models/GaboxR67/MelBandRoformers/f0c731812140f045fd1bc27c77b8df717f0a9832/melbandroformers%2Finstrumental%2Finst_gabox.yaml?%2FGaboxR67%2FMelBandRoformers%2Fresolve%2Fmain%2Fmelbandroformers%2Finstrumental%2Finst_gabox.yaml=&etag=%22b1395e978d64cb1c37d3015adc2feeb0805e3b94%22",
+      "head": {
+        "candidate_notes": "ok=None status=None",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
+        "content_length": 920,
+        "content_type": "text/plain; charset=utf-8",
+        "final_url": "https://huggingface.co/api/resolve-cache/models/GaboxR67/MelBandRoformers/f0c731812140f045fd1bc27c77b8df717f0a9832/melbandroformers%2Finstrumental%2Finst_gabox.yaml?%2FGaboxR67%2FMelBandRoformers%2Fresolve%2Fmain%2Fmelbandroformers%2Finstrumental%2Finst_gabox.yaml=&etag=%22b1395e978d64cb1c37d3015adc2feeb0805e3b94%22",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "amane-inst-fullness",
+      "notes": "ok=None status=None",
+      "sha256": "723af6755b5624be0a58351a13c930c472b51ef677cf2c7943394fefed7c3d4d",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml"
+    },
+    {
+      "bytes": 527245586,
+      "filename": "bs-roformer-4-stems.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/678954bfae57bdf934ae9016/7d805837fdee529e8b48dca0dd99a8a76c406ec973bc79114370cc28d0680512?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T214307Z&X-Amz-Expires=3600&X-Amz-Signature=a1da4642d6a4f191c01f3c75497dd1f8c9ce55290b1399aa12e580b5edad6d81&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27bs_roformer_4stems_ft.pth%3B+filename%3D%22bs_roformer_4stems_ft.pth%22%3B&x-id=GetObject&Expires=1767307387&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwNzM4N319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82Nzg5NTRiZmFlNTdiZGY5MzRhZTkwMTYvN2Q4MDU4MzdmZGVlNTI5ZThiNDhkY2EwZGQ5OWE4YTc2YzQwNmVjOTczYmM3OTExNDM3MGNjMjhkMDY4MDUxMioifV19&Signature=VmsqBkgUkyhv4ARqV87wej~ArVE00FuUXBZxKMZ5XeR9UoTSizNKFpNt8BV~YMJgokNDZ8yNRQWOuJPe6eA2LIx-KkTf~a0QobbUN31s9Rerodx12M7uK-G6yI47Z~NgnYQUDjm2Ybm063auewL2OedwDFgSJiH6fORWbOVgQC-9A-P6HE8fuDxXTWc8X3Elc8S1aDuC-J9O4RUvRFH9yDfipeeCUadc5D3wBg8j-Nfz4upz-04QEeF04yVX9-yrK2AEH--Ub550hV-nnJbUuhUuQUuFFAayHtlRxtaWr7tV9d8GWP7MDu4-BiHDQh2XySiSZla60k4DSM8VYf-0DA__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=None status=None",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/SYH99999/bs_roformer_4stems_ft/resolve/main/bs_roformer_4stems_ft.pth",
+        "content_length": 527245586,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/678954bfae57bdf934ae9016/7d805837fdee529e8b48dca0dd99a8a76c406ec973bc79114370cc28d0680512?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T214307Z&X-Amz-Expires=3600&X-Amz-Signature=a1da4642d6a4f191c01f3c75497dd1f8c9ce55290b1399aa12e580b5edad6d81&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27bs_roformer_4stems_ft.pth%3B+filename%3D%22bs_roformer_4stems_ft.pth%22%3B&x-id=GetObject&Expires=1767307387&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwNzM4N319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82Nzg5NTRiZmFlNTdiZGY5MzRhZTkwMTYvN2Q4MDU4MzdmZGVlNTI5ZThiNDhkY2EwZGQ5OWE4YTc2YzQwNmVjOTczYmM3OTExNDM3MGNjMjhkMDY4MDUxMioifV19&Signature=VmsqBkgUkyhv4ARqV87wej~ArVE00FuUXBZxKMZ5XeR9UoTSizNKFpNt8BV~YMJgokNDZ8yNRQWOuJPe6eA2LIx-KkTf~a0QobbUN31s9Rerodx12M7uK-G6yI47Z~NgnYQUDjm2Ybm063auewL2OedwDFgSJiH6fORWbOVgQC-9A-P6HE8fuDxXTWc8X3Elc8S1aDuC-J9O4RUvRFH9yDfipeeCUadc5D3wBg8j-Nfz4upz-04QEeF04yVX9-yrK2AEH--Ub550hV-nnJbUuhUuQUuFFAayHtlRxtaWr7tV9d8GWP7MDu4-BiHDQh2XySiSZla60k4DSM8VYf-0DA__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "bs-roformer-4-stems",
+      "notes": "ok=None status=None",
+      "sha256": "a64c61c5972fe3fdf331d98f06bb4d6e237147c83a4bc71fd4e00e254c9b7652",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/SYH99999/bs_roformer_4stems_ft/resolve/main/bs_roformer_4stems_ft.pth"
+    },
+    {
+      "bytes": 4566,
+      "filename": "bs-roformer-4-stems.yaml",
+      "final_url": "https://huggingface.co/api/resolve-cache/models/SYH99999/bs_roformer_4stems_ft/4502cc033600fed252c370857f2452518e137047/config.yaml?%2FSYH99999%2Fbs_roformer_4stems_ft%2Fresolve%2Fmain%2Fconfig.yaml=&etag=%22b2dc706b15ec068d9e03b10acba15bcb91e9082f%22",
+      "head": {
+        "candidate_notes": "ok=None status=None",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/SYH99999/bs_roformer_4stems_ft/resolve/main/config.yaml",
+        "content_length": 4566,
+        "content_type": "text/plain; charset=utf-8",
+        "final_url": "https://huggingface.co/api/resolve-cache/models/SYH99999/bs_roformer_4stems_ft/4502cc033600fed252c370857f2452518e137047/config.yaml?%2FSYH99999%2Fbs_roformer_4stems_ft%2Fresolve%2Fmain%2Fconfig.yaml=&etag=%22b2dc706b15ec068d9e03b10acba15bcb91e9082f%22",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "bs-roformer-4-stems",
+      "notes": "ok=None status=None",
+      "sha256": "fba3856cd6e2a165ef69dbca6703752bd00acc3bb18144006c4531c398efe664",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/SYH99999/bs_roformer_4stems_ft/resolve/main/config.yaml"
+    },
+    {
+      "bytes": 216189106,
+      "filename": "drypd-side-extraction.pth",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67b6e94f37f3d333b7e86f8e/b8c9e1599aac3240509b8038822c2ec8dc1729d7622dc9ab80260190d5bc6ccf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T214323Z&X-Amz-Expires=3600&X-Amz-Signature=d73ddf336339d233ed2e98dfd1091f957c96a14a5eaaa29f77e131a08a857c42&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27model_scnet_ep_54_sdr_9.8051.ckpt%3B+filename%3D%22model_scnet_ep_54_sdr_9.8051.ckpt%22%3B&x-id=GetObject&Expires=1767307403&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwNzQwM319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2I2ZTk0ZjM3ZjNkMzMzYjdlODZmOGUvYjhjOWUxNTk5YWFjMzI0MDUwOWI4MDM4ODIyYzJlYzhkYzE3MjlkNzYyMmRjOWFiODAyNjAxOTBkNWJjNmNjZioifV19&Signature=nvdSDYOTcZiGw3Oa~JRkTqfzRVCZSGET5EfKuKg0aa145QOD31p8IcdY-TvY~Nx~YYP~1OLMFU8XV-uf~MO2r~uzKYMRNFDO-3dEeDoJSKH4zJ7dLM~JApXJjp0aTSYmLQzkrW63MBuuAqI8zOolSGeZlmVWmuVTv9rit~z4DjUxqDyAIKSkZa98XjHtecmP5CoMiU2MSz8VqQz4GwkLi0G7XagUmUWFU8xOueEt-DQZumZOvYGDls-XrY8dy25zrx8LjgOq6jcm3DRtbmK2bh~qn0bda-K-NldOpQbnHyOPA-s8Q-bYtzgJxYXYzz7uG~3RQem0GU6ptr75JSvwHQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=None status=None",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt",
+        "content_length": 216189106,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/67b6e94f37f3d333b7e86f8e/b8c9e1599aac3240509b8038822c2ec8dc1729d7622dc9ab80260190d5bc6ccf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T214323Z&X-Amz-Expires=3600&X-Amz-Signature=d73ddf336339d233ed2e98dfd1091f957c96a14a5eaaa29f77e131a08a857c42&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27model_scnet_ep_54_sdr_9.8051.ckpt%3B+filename%3D%22model_scnet_ep_54_sdr_9.8051.ckpt%22%3B&x-id=GetObject&Expires=1767307403&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwNzQwM319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82N2I2ZTk0ZjM3ZjNkMzMzYjdlODZmOGUvYjhjOWUxNTk5YWFjMzI0MDUwOWI4MDM4ODIyYzJlYzhkYzE3MjlkNzYyMmRjOWFiODAyNjAxOTBkNWJjNmNjZioifV19&Signature=nvdSDYOTcZiGw3Oa~JRkTqfzRVCZSGET5EfKuKg0aa145QOD31p8IcdY-TvY~Nx~YYP~1OLMFU8XV-uf~MO2r~uzKYMRNFDO-3dEeDoJSKH4zJ7dLM~JApXJjp0aTSYmLQzkrW63MBuuAqI8zOolSGeZlmVWmuVTv9rit~z4DjUxqDyAIKSkZa98XjHtecmP5CoMiU2MSz8VqQz4GwkLi0G7XagUmUWFU8xOueEt-DQZumZOvYGDls-XrY8dy25zrx8LjgOq6jcm3DRtbmK2bh~qn0bda-K-NldOpQbnHyOPA-s8Q-bYtzgJxYXYzz7uG~3RQem0GU6ptr75JSvwHQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "drypd-side-extraction",
+      "notes": "ok=None status=None",
+      "sha256": "fd889cc1d97619ccac59280ecc859c190cd3cc1b1557fbe3a19b1610bb67e410",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt"
+    },
+    {
+      "bytes": 913090472,
+      "filename": "neo-instvfx.ckpt",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68da4a0af7574366a75288d6/bc1875c14d08ba5565f9707903546a6650b04e58e34236c2745569692210ad96?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T214334Z&X-Amz-Expires=3600&X-Amz-Signature=3cd5493b35a89a37c91b66dc3ec9aa52e88dfe04a5736c8405b2eecdd58dff30&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27Neo_InstVFX.ckpt%3B+filename%3D%22Neo_InstVFX.ckpt%22%3B&x-id=GetObject&Expires=1767307414&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwNzQxNH19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGRhNGEwYWY3NTc0MzY2YTc1Mjg4ZDYvYmMxODc1YzE0ZDA4YmE1NTY1Zjk3MDc5MDM1NDZhNjY1MGIwNGU1OGUzNDIzNmMyNzQ1NTY5NjkyMjEwYWQ5NioifV19&Signature=HS4mSlJdP3qLd7R0~AklhXNf2j6X~jGIvndBcQtebKu3scIHHpSh5VvngEOTlNPXGp2L6VQ8MQOiowbRswuHzS5xw7qmetZtIxzicBe5M-nE7XaMnm3bClYW-n7sgJev2JgGceOAVMd7xWaqwaKsppT0H2FSvjUngZMVn36bx~uNlFm4w5OcMgYMAGMDY1ZEA2896JEmtYOrhigg4RUWcKwIoJJl6bu4AL3054Jco4o6FZKxdho4cmNOqzfSOudAc4GhM4g~GS-bWZPJq3wok1JXHUjC50eQD3hV5M97ihc5bH5G1cDDx0vEaDgBrvMp-c2EZyZ-zCbOHZDMZVnA2A__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "head": {
+        "candidate_notes": "ok=None status=None",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/natanworkspace/melband_roformer/resolve/main/Neo_InstVFX.ckpt",
+        "content_length": 913090472,
+        "content_type": null,
+        "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68da4a0af7574366a75288d6/bc1875c14d08ba5565f9707903546a6650b04e58e34236c2745569692210ad96?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260101%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260101T214333Z&X-Amz-Expires=3600&X-Amz-Signature=7ee8d452a35db88a09456b0f14f94ef35b7595c07c045e1c45e39066601e0e16&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27Neo_InstVFX.ckpt%3B+filename%3D%22Neo_InstVFX.ckpt%22%3B&x-id=GetObject&Expires=1767307413&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc2NzMwNzQxM319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGRhNGEwYWY3NTc0MzY2YTc1Mjg4ZDYvYmMxODc1YzE0ZDA4YmE1NTY1Zjk3MDc5MDM1NDZhNjY1MGIwNGU1OGUzNDIzNmMyNzQ1NTY5NjkyMjEwYWQ5NioifV19&Signature=jU0XtVX4QbeD8vqkxRiJ3MrtrxaOcexvvWnb7-gsFDu588Mn9~mTxCAbrPlQYfZzMt7uXAZdk1AZ~~wHJ4PnCz8kYXCY4hkLevK7jvSlCIbkop2GDjMwootFFVaFXeJffVrjtqJnoLwcpMUdp3Q9USwba2uFSdpVQFqobCK7a462Xy-LcA7oGo2GEf~EGMT8k-LwTAKSeYxU9UQ07SL6UwOfLFJOPun6bzLF1F6dM9gprM6g21HNtn6L28Av0VBGKdkjAzmVrR0lqoCTWqgchVS8KxVu36rsT66AyUJRHma3W6vVnioeZDSmD4~JDEL0G~X-DVqeW9OMqwwPDpMUFw__&Key-Pair-Id=K2L8F4GPSG1IFC",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "checkpoint",
+      "model_id": "neo-instvfx",
+      "notes": "ok=None status=None",
+      "sha256": "10d95b882c81c2b462d54f35c4c5b81ac6eee04f6e3746af95a79066010b012a",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/natanworkspace/melband_roformer/resolve/main/Neo_InstVFX.ckpt"
+    },
+    {
+      "bytes": 1393,
+      "filename": "neo-instvfx.yaml",
+      "final_url": "https://huggingface.co/api/resolve-cache/models/natanworkspace/melband_roformer/6d08f28942d784bf4bea01136f303569ab3c074b/config_neo_inst.yaml?%2Fnatanworkspace%2Fmelband_roformer%2Fresolve%2Fmain%2Fconfig_neo_inst.yaml=&etag=%22f05a7fb06f86fa25ec231717dc44ef49e65dd4de%22",
+      "head": {
+        "candidate_notes": "ok=None status=None",
+        "candidate_source": "link_audit",
+        "candidate_url": "https://huggingface.co/natanworkspace/melband_roformer/resolve/main/config_neo_inst.yaml",
+        "content_length": 1393,
+        "content_type": "text/plain; charset=utf-8",
+        "final_url": "https://huggingface.co/api/resolve-cache/models/natanworkspace/melband_roformer/6d08f28942d784bf4bea01136f303569ab3c074b/config_neo_inst.yaml?%2Fnatanworkspace%2Fmelband_roformer%2Fresolve%2Fmain%2Fconfig_neo_inst.yaml=&etag=%22f05a7fb06f86fa25ec231717dc44ef49e65dd4de%22",
+        "ok": true,
+        "status": 200
+      },
+      "kind": "config",
+      "model_id": "neo-instvfx",
+      "notes": "ok=None status=None",
+      "sha256": "67c7015bb6e65c64c7ae2272fbac0cd1a5e2d7d7c89e193af6ecdfa3e7f8c7da",
+      "source": "link_audit",
+      "status": 200,
+      "url": "https://huggingface.co/natanworkspace/melband_roformer/resolve/main/config_neo_inst.yaml"
+    }
+  ],
+  "failed": [],
+  "finished_at": 1767303906.3938358,
+  "hf_suggestions": "reports\\hf_link_suggestions.json",
+  "link_audit": "reports\\link_audit.with_fixes.json",
+  "manifest": "reports\\mirror_upload_manifest.json",
+  "needs_total": 43,
+  "release_asset_count": null,
+  "release_check_enabled": false,
+  "release_repo": "engdahlz/stemsep-models",
+  "release_tag": "models-v2-2026-01-01",
+  "skipped_present_in_release": [],
+  "stage_dir": "reports\\release_assets_stage",
+  "staged_already": [
+    {
+      "bytes": 118128452,
+      "filename": "anvuew-dereverb-room.ckpt",
+      "kind": "checkpoint",
+      "model_id": "anvuew-dereverb-room",
+      "path": "reports\\release_assets_stage\\anvuew-dereverb-room.ckpt",
+      "sha256": "2edec521f09e26341c1923dc82c8c52dbc86478b42b9999f679535743c970cb3"
+    },
+    {
+      "bytes": 1973,
+      "filename": "anvuew-karaoke.yaml",
+      "kind": "config",
+      "model_id": "anvuew-karaoke",
+      "path": "reports\\release_assets_stage\\anvuew-karaoke.yaml",
+      "sha256": "5cb3f127ecbc6a8e37f31ea7e05f60f360a44da43e857bde805b7b68558f6338"
+    },
+    {
+      "bytes": 1846,
+      "filename": "anvuew-vocals.yaml",
+      "kind": "config",
+      "model_id": "anvuew-vocals",
+      "path": "reports\\release_assets_stage\\anvuew-vocals.yaml",
+      "sha256": "66963a9d60756076506a230b4e503c553a3beb7b4e9a10e6bcc73dee9dbd4866"
+    },
+    {
+      "bytes": 148891175,
+      "filename": "bandit-plus.ckpt",
+      "kind": "checkpoint",
+      "model_id": "bandit-plus",
+      "path": "reports\\release_assets_stage\\bandit-plus.ckpt",
+      "sha256": "c48284779f7d1258a6527d3aaa18a532d45c1f506e2dcc25d5ab179a8c5e2573"
+    },
+    {
+      "bytes": 1715,
+      "filename": "bandit-plus.yaml",
+      "kind": "config",
+      "model_id": "bandit-plus",
+      "path": "reports\\release_assets_stage\\bandit-plus.yaml",
+      "sha256": "c62d316a8ac066b78120f648665b81d33b507d25e2d9096f048ccc1bd91b1a78"
+    },
+    {
+      "bytes": 393068365,
+      "filename": "bs-roformer-1053.ckpt",
+      "kind": "checkpoint",
+      "model_id": "bs-roformer-1053",
+      "path": "reports\\release_assets_stage\\bs-roformer-1053.ckpt",
+      "sha256": "a2e825a03bc908cb04dbd88eddeefbf5147dd1cf1f95cebf453d9dbfabec494b"
+    },
+    {
+      "bytes": 2368,
+      "filename": "bs-roformer-1053.yaml",
+      "kind": "config",
+      "model_id": "bs-roformer-1053",
+      "path": "reports\\release_assets_stage\\bs-roformer-1053.yaml",
+      "sha256": "302b6cee54adf39743b097b145ad4f64c37f3bd31b84791da32f963fb3692d04"
+    },
+    {
+      "bytes": 639331213,
+      "filename": "bs-roformer-viperx-1297.ckpt",
+      "kind": "checkpoint",
+      "model_id": "bs-roformer-viperx-1297",
+      "path": "reports\\release_assets_stage\\bs-roformer-viperx-1297.ckpt",
+      "sha256": "5b84f37e8d444c8cb30c79d77f613a41c05868ff9c9ac6c7049c00aefae115aa"
+    },
+    {
+      "bytes": 2273,
+      "filename": "bs-roformer-viperx-1297.yaml",
+      "kind": "config",
+      "model_id": "bs-roformer-viperx-1297",
+      "path": "reports\\release_assets_stage\\bs-roformer-viperx-1297.yaml",
+      "sha256": "2bfdd16c656bd9519aba757cc4f8834b7ede675eb1e00ec4772d74ae1c41af7f"
+    },
+    {
+      "bytes": 1719116358,
+      "filename": "duality-v2-unwa.ckpt",
+      "kind": "checkpoint",
+      "model_id": "duality-v2-unwa",
+      "path": "reports\\release_assets_stage\\duality-v2-unwa.ckpt",
+      "sha256": "b4a69558708f2857e36ac86a0e03ed95c4e3d8b9c5b8113963987d0d7df7e20f"
+    },
+    {
+      "bytes": 913026650,
+      "filename": "gabox-voc-fv4.ckpt",
+      "kind": "checkpoint",
+      "model_id": "gabox-voc-fv4",
+      "path": "reports\\release_assets_stage\\gabox-voc-fv4.ckpt",
+      "sha256": "ff802a67501fac70587c3ff4e8dbc89c2558e7d8911c92222dfea2aaac208517"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-fv4.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-fv4",
+      "path": "reports\\release_assets_stage\\gabox-voc-fv4.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 913026650,
+      "filename": "gabox-voc-fv5.ckpt",
+      "kind": "checkpoint",
+      "model_id": "gabox-voc-fv5",
+      "path": "reports\\release_assets_stage\\gabox-voc-fv5.ckpt",
+      "sha256": "c4dff354d81152d1b4321f6491f242c060919148239fbfe22a1015513de4a7fe"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-fv5.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-fv5",
+      "path": "reports\\release_assets_stage\\gabox-voc-fv5.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-fv6.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-fv6",
+      "path": "reports\\release_assets_stage\\gabox-voc-fv6.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 968,
+      "filename": "gabox-voc-gabox2.yaml",
+      "kind": "config",
+      "model_id": "gabox-voc-gabox2",
+      "path": "reports\\release_assets_stage\\gabox-voc-gabox2.yaml",
+      "sha256": "32419582fa8c313199ab49be8f5cb2b5e3860769ca045b4788a960d72140cd39"
+    },
+    {
+      "bytes": 789,
+      "filename": "lew-apollo-universal.yaml",
+      "kind": "config",
+      "model_id": "lew-apollo-universal",
+      "path": "reports\\release_assets_stage\\lew-apollo-universal.yaml",
+      "sha256": "e211b2da829c9dfe2fd6a6da45250d30f0fdb70a0deee2a0974a42ebd11d3526"
+    },
+    {
+      "bytes": 194278526,
+      "filename": "lew-apollo-vocal.ckpt",
+      "kind": "checkpoint",
+      "model_id": "lew-apollo-vocal",
+      "path": "reports\\release_assets_stage\\lew-apollo-vocal.ckpt",
+      "sha256": "59e1311f93e1f0fde6d5d11fa69d97e41cdee39be38f0cf4ccb80cfce34b2a2b"
+    },
+    {
+      "bytes": 519,
+      "filename": "lew-apollo-vocal.yaml",
+      "kind": "config",
+      "model_id": "lew-apollo-vocal",
+      "path": "reports\\release_assets_stage\\lew-apollo-vocal.yaml",
+      "sha256": "0b7a0bbc12e0b23101895ff5b290c914fbadcf32f3241cb7c81c7c12dd5fa895"
+    },
+    {
+      "bytes": 59074342,
+      "filename": "mdx-net-hq4.onnx",
+      "kind": "checkpoint",
+      "model_id": "mdx-net-hq4",
+      "path": "reports\\release_assets_stage\\mdx-net-hq4.onnx",
+      "sha256": "811cb24095d865763752310848b7ec86aeede0626cb05749ab35350e46897000"
+    },
+    {
+      "bytes": 59074342,
+      "filename": "mdx-net-hq5.onnx",
+      "kind": "checkpoint",
+      "model_id": "mdx-net-hq5",
+      "path": "reports\\release_assets_stage\\mdx-net-hq5.onnx",
+      "sha256": "811cb24095d865763752310848b7ec86aeede0626cb05749ab35350e46897000"
+    },
+    {
+      "bytes": 437652699,
+      "filename": "mdx23c-drumsep-6stem.ckpt",
+      "kind": "checkpoint",
+      "model_id": "mdx23c-drumsep-6stem",
+      "path": "reports\\release_assets_stage\\mdx23c-drumsep-6stem.ckpt",
+      "sha256": "d2a4aa53eb584d21eead358a4e66d1882ad182911be018f052b5da73be9096d0"
+    },
+    {
+      "bytes": 448101203,
+      "filename": "mdx23c-instvoc-hq.ckpt",
+      "kind": "checkpoint",
+      "model_id": "mdx23c-instvoc-hq",
+      "path": "reports\\release_assets_stage\\mdx23c-instvoc-hq.ckpt",
+      "sha256": "49d51472769e34a2501cd1da782346a3212555c3a5619fc2c53507445528d816"
+    },
+    {
+      "bytes": 1724,
+      "filename": "mel-band-karaoke-becruily.yaml",
+      "kind": "config",
+      "model_id": "mel-band-karaoke-becruily",
+      "path": "reports\\release_assets_stage\\mel-band-karaoke-becruily.yaml",
+      "sha256": "cd37b0dcc285fc22d88090415722ac7127ee1d9ea2f3346c3b8d8fcc61e0c74b"
+    },
+    {
+      "bytes": 168852258,
+      "filename": "scnet-large.ckpt",
+      "kind": "checkpoint",
+      "model_id": "scnet-large",
+      "path": "reports\\release_assets_stage\\scnet-large.ckpt",
+      "sha256": "65900dfa07d6b6e5d784c0f143920200a4bd281d6e78a806c549d0b912d5885e"
+    },
+    {
+      "bytes": 42434986,
+      "filename": "scnet-musdb18.ckpt",
+      "kind": "checkpoint",
+      "model_id": "scnet-musdb18",
+      "path": "reports\\release_assets_stage\\scnet-musdb18.ckpt",
+      "sha256": "1bc0d1abb20bfdf966dcd07637bafd03e4bc13653d09ef18bc9b3e342eafe2aa"
+    },
+    {
+      "bytes": 1739,
+      "filename": "scnet-musdb18.yaml",
+      "kind": "config",
+      "model_id": "scnet-musdb18",
+      "path": "reports\\release_assets_stage\\scnet-musdb18.yaml",
+      "sha256": "0d604738c9bd575938d97f0b0729673ef007598bd674da4dafafc2e124b81f5a"
+    },
+    {
+      "bytes": 455776577,
+      "filename": "sucial-dereverb-fused.ckpt",
+      "kind": "checkpoint",
+      "model_id": "sucial-dereverb-fused",
+      "path": "reports\\release_assets_stage\\sucial-dereverb-fused.ckpt",
+      "sha256": "1596b1063238f487d54a0510a8c92cb28c000c803a271dd618ac49efc99ef3f7"
+    },
+    {
+      "bytes": 1135,
+      "filename": "sucial-dereverb-fused.yaml",
+      "kind": "config",
+      "model_id": "sucial-dereverb-fused",
+      "path": "reports\\release_assets_stage\\sucial-dereverb-fused.yaml",
+      "sha256": "fb26df515b5acc81aa0a281920decd849588d8d09171e9c20fb8cbd5d2efc120"
+    },
+    {
+      "bytes": 332004435,
+      "filename": "unwa-inst-fno.ckpt",
+      "kind": "checkpoint",
+      "model_id": "unwa-inst-fno",
+      "path": "reports\\release_assets_stage\\unwa-inst-fno.ckpt",
+      "sha256": "f35bf6d87b2863372388e85c2d9679e5b7651e5c2ddd23aab1480f7af10b90ca"
+    },
+    {
+      "bytes": 2373,
+      "filename": "unwa-inst-fno.yaml",
+      "kind": "config",
+      "model_id": "unwa-inst-fno",
+      "path": "reports\\release_assets_stage\\unwa-inst-fno.yaml",
+      "sha256": "8e79699a9d75c31c407f02e84b00521d9c8e59ae323a4449f911dd8c10defeac"
+    },
+    {
+      "bytes": 1722,
+      "filename": "unwa-kim-ft2.yaml",
+      "kind": "config",
+      "model_id": "unwa-kim-ft2",
+      "path": "reports\\release_assets_stage\\unwa-kim-ft2.yaml",
+      "sha256": "0942cb7da8e86ac1be840cc7b9647831c11ffe00327a0b239df256031e6c8355"
+    },
+    {
+      "bytes": 1722,
+      "filename": "unwa-kim-ft2-bleedless.yaml",
+      "kind": "config",
+      "model_id": "unwa-kim-ft2-bleedless",
+      "path": "reports\\release_assets_stage\\unwa-kim-ft2-bleedless.yaml",
+      "sha256": "0942cb7da8e86ac1be840cc7b9647831c11ffe00327a0b239df256031e6c8355"
+    },
+    {
+      "bytes": 2382,
+      "filename": "unwa-revive-2.yaml",
+      "kind": "config",
+      "model_id": "unwa-revive-2",
+      "path": "reports\\release_assets_stage\\unwa-revive-2.yaml",
+      "sha256": "6b9d5fb6aeda6b0941f937e4e4883643e3187331ff403fb820c7aa6af4b02dbb"
+    }
+  ],
+  "started_at": 1767303686.9091935,
+  "unresolved": [
+    {
+      "filename": "unwa-inst-v1e-plus.ckpt",
+      "kind": "checkpoint",
+      "model_id": "unwa-inst-v1e-plus",
+      "reason": "no_candidate_urls"
+    }
+  ]
+}

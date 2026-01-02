@@ -1,57 +1,19 @@
 """
-Setup script for StemSep application
+setup.py compatibility shim.
+
+This project uses `pyproject.toml` with the setuptools PEP 517/518 backend as the
+single source of truth for build/packaging metadata.
+
+Some tooling still expects a `setup.py` file to exist, and setuptools' backend
+may consult it when building an sdist. Keeping a non-functional stub (or raising
+in setup()) can break builds with errors like "No distribution was found".
+
+This shim delegates to setuptools using the configuration in `pyproject.toml`.
 """
 
-from setuptools import setup, find_packages
-from pathlib import Path
+from __future__ import annotations
 
-# Read README
-this_directory = Path(__file__).parent
-long_description = (this_directory / "README.md").read_text(encoding='utf-8')
+from setuptools import setup
 
-# Read requirements
-requirements = []
-with open('requirements.txt', 'r', encoding='utf-8') as f:
-    for line in f:
-        line = line.strip()
-        if line and not line.startswith('#'):
-            requirements.append(line)
-
-setup(
-    name="stemsep",
-    version="1.0.0",
-    author="Your Name",
-    author_email="your.email@example.com",
-    description="Advanced Audio Stem Separation using Local AI Models",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/stemsep",
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
-    classifiers=[
-        "Development Status :: 5 - Production/Stable",
-        "Intended Audience :: End Users/Desktop",
-        "Topic :: Multimedia :: Sound/Audio",
-        "License :: Other/Proprietary License",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Operating System :: Microsoft :: Windows",
-        "Operating System :: Microsoft :: Windows :: Windows 10",
-        "Operating System :: Microsoft :: Windows :: Windows 11",
-    ],
-    python_requires=">=3.8",
-    install_requires=requirements,
-    entry_points={
-        "console_scripts": [
-            "stemsep=main:main",
-        ],
-    },
-    include_package_data=True,
-    package_data={
-        "": ["*.yaml", "*.json", "*.txt", "*.md"],
-    },
-    zip_safe=False,
-)
+if __name__ == "__main__":
+    setup()

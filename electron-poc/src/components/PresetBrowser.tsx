@@ -16,18 +16,32 @@ const estimatePresetVRAM = (preset: Preset): number => {
     'scnet': 3
   }
 
+  const estimateModelId = (modelId: string): number => {
+    const type = Object.keys(baseVRAM).find(k => modelId.toLowerCase().includes(k))
+    return type ? baseVRAM[type] : 4
+  }
+
+  if (preset.isRecipe && preset.recipe?.requiredModels?.length) {
+    const required = preset.recipe.requiredModels
+    const maxOne = Math.max(...required.map(estimateModelId))
+    if (preset.recipe.type === 'ensemble') {
+      // Ensemble is closer to additive (not perfectly), so bump slightly.
+      return maxOne * (1 + Math.max(0, required.length - 1) * 0.3)
+    }
+    // Pipelines/chains are sequential, so max is a better approximation.
+    return maxOne
+  }
+
   if (preset.ensembleConfig) {
     // Ensemble needs memory for multiple models (roughly additive)
     const modelCount = preset.ensembleConfig.models.length
     return Math.max(...preset.ensembleConfig.models.map(m => {
-      const type = Object.keys(baseVRAM).find(k => m.model_id.toLowerCase().includes(k))
-      return type ? baseVRAM[type] : 4
+      return estimateModelId(m.model_id)
     })) * (1 + (modelCount - 1) * 0.3)
   }
 
   const modelId = preset.modelId || ''
-  const type = Object.keys(baseVRAM).find(k => modelId.toLowerCase().includes(k))
-  return type ? baseVRAM[type] : 4
+  return modelId ? estimateModelId(modelId) : 4
 }
 
 type PresetVRAMStatus = 'safe' | 'warning' | 'locked'
@@ -143,6 +157,20 @@ export function PresetBrowser({
                   }
                 }
 
+                if (preset.isRecipe && preset.recipe?.requiredModels?.length) {
+                  requiredModels = preset.recipe.requiredModels.map(id => ({
+                    id,
+                    name: availability?.[id]?.model_name || id
+                  }))
+
+                  if (availability) {
+                    isAvailable = preset.recipe.requiredModels.every(id => availability[id]?.available === true)
+                    missingModels = preset.recipe.requiredModels
+                      .filter(id => availability[id]?.available !== true)
+                      .map(id => availability[id]?.model_name || id)
+                  }
+                }
+
                 // Check VRAM status
                 const vramStatus = getVRAMStatus(preset)
                 const isVRAMLocked = vramStatus === 'locked'
@@ -197,6 +225,11 @@ export function PresetBrowser({
                           {!!preset.ensembleConfig && !preset.isRecipe && (
                             <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800 hover:bg-purple-100">
                               Ensemble
+                            </Badge>
+                          )}
+                          {!!preset.isRecipe && (
+                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 hover:bg-blue-100">
+                              Workflow{preset.recipe?.type ? `: ${preset.recipe.type}` : ''}
                             </Badge>
                           )}
                         </div>

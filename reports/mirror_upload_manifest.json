@@ -1,0 +1,708 @@
+{
+  "version": 1,
+  "kind": "github-release-upload-manifest",
+  "mirror_repo": "engdahlz/stemsep-models",
+  "release_tag": "models-v2-2026-01-01",
+  "filename_policy": {
+    "checkpoint_filename_template": "{model_id}{ext}",
+    "config_filename_template": "{model_id}.yaml",
+    "allowed_checkpoint_exts": [
+      ".ckpt",
+      ".pth",
+      ".onnx"
+    ],
+    "default_checkpoint_ext": ".ckpt"
+  },
+  "models": [
+    {
+      "model_id": "amane-full-scratch",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "amane-full-scratch.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/amane-full-scratch.ckpt"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "MISSING",
+          "status": null,
+          "host": "INVALID"
+        }
+      ]
+    },
+    {
+      "model_id": "amane-inst-fullness",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "amane-inst-fullness.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/amane-inst-fullness.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "amane-inst-fullness.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/amane-inst-fullness.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/roformers/mel_band_roformer_instrumental_fullness_v1.ckpt",
+          "status": 404,
+          "host": "huggingface.co"
+        },
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/roformers/config_mel_band_roformer_instrumental_fullness_v1.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "anvuew-dereverb-room",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "anvuew-dereverb-room.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/anvuew-dereverb-room.ckpt"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew.ckpt",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "anvuew-karaoke",
+      "needs": [
+        {
+          "kind": "config",
+          "filename": "anvuew-karaoke.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/anvuew-karaoke.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/model.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "anvuew-vocals",
+      "needs": [
+        {
+          "kind": "config",
+          "filename": "anvuew-vocals.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/anvuew-vocals.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/config_dereverb-echo_128_4_4_mel_band_roformer.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "bandit-plus",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "bandit-plus.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bandit-plus.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "bandit-plus.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bandit-plus.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://zenodo.org/records/10963739/files/bandit_plus.ckpt",
+          "status": 404,
+          "host": "zenodo.org"
+        },
+        {
+          "kind": "config",
+          "url": "https://raw.githubusercontent.com/karnwatcharasupat/bandit/main/expt/bandit_plus/hparams.yaml",
+          "status": 404,
+          "host": "raw.githubusercontent.com"
+        }
+      ]
+    },
+    {
+      "model_id": "bs-roformer-1053",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "bs-roformer-1053.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-1053.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "bs-roformer-1053.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-1053.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/bvl/bs-roformer-viperx-1053/resolve/main/model_bs_roformer_ep_937_sdr_10.5309.ckpt",
+          "status": 401,
+          "host": "huggingface.co"
+        },
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/bvl/bs-roformer-viperx-1053/resolve/main/model_bs_roformer_ep_937_sdr_10.5309.yaml",
+          "status": 401,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "bs-roformer-4-stems",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "bs-roformer-4-stems.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-4-stems.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "bs-roformer-4-stems.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-4-stems.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/zijianhuang/bs-roformer-4stems/resolve/main/model.ckpt",
+          "status": 401,
+          "host": "huggingface.co"
+        },
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/zijianhuang/bs-roformer-4stems/resolve/main/config.yaml",
+          "status": 401,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "bs-roformer-viperx-1297",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "bs-roformer-viperx-1297.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-viperx-1297.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "bs-roformer-viperx-1297.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-viperx-1297.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/bvl/bs-roformer-viperx-1297/resolve/main/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+          "status": 401,
+          "host": "huggingface.co"
+        },
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/bvl/bs-roformer-viperx-1297/resolve/main/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+          "status": 401,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "drypd-side-extraction",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "drypd-side-extraction.pth",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/drypd-side-extraction.pth"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/drypd/scnet-side-extraction/resolve/main/model.pth",
+          "status": 401,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "duality-v2-unwa",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "duality-v2-unwa.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/duality-v2-unwa.ckpt"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/melband_roformer_instvoc_duality_v2.ckpt",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "gabox-voc-fv4",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "gabox-voc-fv4.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv4.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "gabox-voc-fv4.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv4.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/melbandroformers/vocals/resolve/main/voc_gabox.ckpt",
+          "status": 401,
+          "host": "huggingface.co"
+        },
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/melbandroformers/vocals/resolve/main/config_voc_gabox.yaml",
+          "status": 401,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "gabox-voc-fv5",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "gabox-voc-fv5.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv5.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "gabox-voc-fv5.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv5.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/voc_gaboxFv1.ckpt",
+          "status": 404,
+          "host": "huggingface.co"
+        },
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/config_voc_gaboxFv1.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "gabox-voc-fv6",
+      "needs": [
+        {
+          "kind": "config",
+          "filename": "gabox-voc-fv6.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv6.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/config_voc_gaboxFv1.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "gabox-voc-gabox2",
+      "needs": [
+        {
+          "kind": "config",
+          "filename": "gabox-voc-gabox2.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-gabox2.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/melbandroformers/vocals/resolve/main/config_voc_gabox.yaml",
+          "status": 401,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "lew-apollo-universal",
+      "needs": [
+        {
+          "kind": "config",
+          "filename": "lew-apollo-universal.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/lew-apollo-universal.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/apollo_model.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "lew-apollo-vocal",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "lew-apollo-vocal.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/lew-apollo-vocal.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "lew-apollo-vocal.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/lew-apollo-vocal.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/baicai1145/Apollo-vocal-msst/resolve/main/apollo_vocal_msst.ckpt",
+          "status": 404,
+          "host": "huggingface.co"
+        },
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/baicai1145/Apollo-vocal-msst/resolve/main/config.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "mdx-net-hq4",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "mdx-net-hq4.onnx",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx-net-hq4.onnx"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/MDXNet_models/UVR-MDX-NET-Inst_HQ_4.onnx",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "mdx-net-hq5",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "mdx-net-hq5.onnx",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx-net-hq5.onnx"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/MDXNet_models/UVR-MDX-NET-Inst_HQ_5.onnx",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "mdx23c-drumsep-6stem",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "mdx23c-drumsep-6stem.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx23c-drumsep-6stem.ckpt"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/MDX23C_models/MDX23C-DrumSep-aufr33-jarredou.ckpt",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "mdx23c-instvoc-hq",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "mdx23c-instvoc-hq.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx23c-instvoc-hq.ckpt"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/MDX23C_models/MDX23C-8KFFT-InstVoc_HQ.ckpt",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "mel-band-karaoke-becruily",
+      "needs": [
+        {
+          "kind": "config",
+          "filename": "mel-band-karaoke-becruily.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mel-band-karaoke-becruily.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/becruily/mel-band-roformer-karaoke/resolve/main/config_mel_band_roformer_karaoke.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "neo-instvfx",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "neo-instvfx.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/neo-instvfx.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "neo-instvfx.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/neo-instvfx.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/neo/instvfx-roformer/resolve/main/model.ckpt",
+          "status": 401,
+          "host": "huggingface.co"
+        },
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/neo/instvfx-roformer/resolve/main/config.yaml",
+          "status": 401,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "scnet-large",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "scnet-large.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/scnet-large.ckpt"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/SCnet_models/SCNet-large_starrytong_fixed.ckpt",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "scnet-musdb18",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "scnet-musdb18.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/scnet-musdb18.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "scnet-musdb18.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/scnet-musdb18.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://github.com/starrytong/SCNet/releases/download/v1.0.0/scnet_checkpoint_musdb18.ckpt",
+          "status": 404,
+          "host": "github.com"
+        },
+        {
+          "kind": "config",
+          "url": "https://raw.githubusercontent.com/starrytong/SCNet/main/configs/scnet.yaml",
+          "status": 404,
+          "host": "raw.githubusercontent.com"
+        }
+      ]
+    },
+    {
+      "model_id": "sucial-dereverb-fused",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "sucial-dereverb-fused.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/sucial-dereverb-fused.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "sucial-dereverb-fused.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/sucial-dereverb-fused.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/fused_dereverb_echo.ckpt",
+          "status": 404,
+          "host": "huggingface.co"
+        },
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/configs/fused_dereverb_echo.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "unwa-inst-fno",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "unwa-inst-fno.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-fno.ckpt"
+        },
+        {
+          "kind": "config",
+          "filename": "unwa-inst-fno.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-fno.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/bs_roformer_inst_fno.ckpt",
+          "status": 404,
+          "host": "huggingface.co"
+        },
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/config_bs_roformer_inst_fno.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "unwa-inst-v1e-plus",
+      "needs": [
+        {
+          "kind": "checkpoint",
+          "filename": "unwa-inst-v1e-plus.ckpt",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-v1e-plus.ckpt"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "checkpoint",
+          "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/melband_roformer_inst_v1e_plus.ckpt",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "unwa-kim-ft2",
+      "needs": [
+        {
+          "kind": "config",
+          "filename": "unwa-kim-ft2.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-kim-ft2.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft2_bleedless.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "unwa-kim-ft2-bleedless",
+      "needs": [
+        {
+          "kind": "config",
+          "filename": "unwa-kim-ft2-bleedless.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-kim-ft2-bleedless.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft2_bleedless.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    },
+    {
+      "model_id": "unwa-revive-2",
+      "needs": [
+        {
+          "kind": "config",
+          "filename": "unwa-revive-2.yaml",
+          "mirror_url": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-revive-2.yaml"
+        }
+      ],
+      "sources": [
+        {
+          "kind": "config",
+          "url": "https://huggingface.co/pcunwa/BS-Roformer-Revive/resolve/main/model.yaml",
+          "status": 404,
+          "host": "huggingface.co"
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import type { RecipeDefaults, RecipeStep, RecipeType } from './types/recipes'
+
 export interface PostProcessingStep {
   type: 'phase_fix' | 'de_reverb' | 'de_bleed' | 'de_noise' | 'de_breath'
   modelId: string
@@ -17,6 +19,15 @@ export interface Preset {
   tags: string[]
   modelId?: string // For single-model presets
   isRecipe?: boolean // For workflow recipes
+  recipe?: {
+    type: RecipeType
+    target?: string
+    warning?: string
+    source?: string
+    defaults?: RecipeDefaults
+    requiredModels: string[]
+    steps: RecipeStep[]
+  }
   ensembleConfig?: {
     models: { model_id: string; weight?: number }[]
     algorithm: 'average' | 'avg_wave' | 'max_spec' | 'min_spec' | 'phase_fix'
@@ -195,7 +206,7 @@ export const ALL_PRESETS: Preset[] = [
   },
 
   // ============================================================================
-  // INSTRUMENTAL PRESETS (5)
+  // INSTRUMENTAL PRESETS
   // ============================================================================
 
   // Fast preview - Kim model (fast & low resource)
@@ -224,6 +235,21 @@ export const ALL_PRESETS: Preset[] = [
     estimatedVram: 6,
     tags: ['balanced', 'everyday', 'bleedless'],
     modelId: 'gabox-inst-fv7z'
+  },
+
+  // Guide mentions newer instrumental models (e.g. HyperACE v2, Inst_GaboxFv9, inst_fv7b),
+  // but they are not currently shipped in the in-app registry. Closest shipped alternatives:
+  {
+    id: 'gabox_inst_fullness',
+    name: 'GaBox Instrumental Fullness',
+    description: 'Fuller GaBox instrumental option (shipped). Good when you want more body than fv7z.',
+    stems: ['instrumental', 'vocals'],
+    recommended: false,
+    category: 'instrumental',
+    qualityLevel: 'quality',
+    estimatedVram: 6,
+    tags: ['gabox', 'fullness', 'alternative'],
+    modelId: 'gabox-inst-v6n'
   },
 
   // High Quality - Unwa Inst v1e+ (Fullness: 37.89, industry standard)
@@ -373,7 +399,7 @@ export const ALL_PRESETS: Preset[] = [
   },
 
   // ============================================================================
-  // UTILITY PRESETS (4)
+  // UTILITY PRESETS
   // ============================================================================
 
   // Best Karaoke - ensemble
@@ -422,7 +448,33 @@ export const ALL_PRESETS: Preset[] = [
     qualityLevel: 'balanced',
     estimatedVram: 6,
     tags: ['de-noise', 'cleanup', 'hiss'],
-    modelId: 'aufr33-denoise'
+    modelId: 'aufr33-denoise-std'
+  },
+
+  {
+    id: 'de_noise_aggressive',
+    name: 'De-Noise (Aggressive)',
+    description: 'Stronger background suppression than standard denoise. Can dull transients.',
+    stems: ['clean', 'noise'],
+    recommended: false,
+    category: 'utility',
+    qualityLevel: 'quality',
+    estimatedVram: 6,
+    tags: ['de-noise', 'cleanup', 'aggressive'],
+    modelId: 'aufr33-denoise-aggressive'
+  },
+
+  {
+    id: 'de_crowd',
+    name: 'De-Crowd (Audience Removal)',
+    description: 'Targets crowd/ambience noise. Useful on live recordings.',
+    stems: ['clean', 'crowd'],
+    recommended: false,
+    category: 'utility',
+    qualityLevel: 'quality',
+    estimatedVram: 6,
+    tags: ['crowd', 'live', 'cleanup'],
+    modelId: 'mel-band-crowd'
   },
 
   // De-Bleed (remove vocal residue from instrumental)
@@ -520,8 +572,13 @@ export function getRequiredModels(preset: Preset): string[] {
   const models: Set<string> = new Set()
 
   // Main model
-  if (preset.modelId) {
+  if (preset.modelId && !preset.isRecipe) {
     models.add(preset.modelId)
+  }
+
+  // Recipe step models (recipes execute via modelId=recipe.id, but dependencies are the step models)
+  if (preset.isRecipe && preset.recipe?.requiredModels) {
+    preset.recipe.requiredModels.forEach(m => models.add(m))
   }
 
   // Ensemble models

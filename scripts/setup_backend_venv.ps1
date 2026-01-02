@@ -270,6 +270,46 @@ try {
     "import psutil, yaml, aiohttp; print('OK imports:', 'psutil', psutil.__version__, 'yaml', getattr(yaml,'__version__','?'), 'aiohttp', aiohttp.__version__)"
   ) -WorkingDirectory $script:BackendDir
 
+  # CUDA readiness checks (best-effort; do not fail setup)
+  Write-Log "Checking CUDA readiness (best-effort)..."
+  try {
+    $torchCheck = "import importlib.util, sys; spec=importlib.util.find_spec('torch'); " +
+      "(print('TORCH: not installed') or sys.exit(0)) if spec is None else None; " +
+      "import torch; ver=getattr(torch,'__version__','?'); " +
+      "has_cuda=bool(getattr(torch,'cuda',None)) and bool(torch.cuda.is_available()); " +
+      "dev_count=int(torch.cuda.device_count()) if has_cuda else 0; " +
+      "name0=torch.cuda.get_device_name(0) if has_cuda and dev_count>0 else None; " +
+      "print('TORCH:', ver, '| cuda_available=', has_cuda, '| device_count=', dev_count, '| gpu0=', name0); " +
+      "print('TORCH WARNING: CPU-only build detected (install CUDA wheels).') if sys.platform=='win32' and str(ver).endswith('+cpu') else None"
+
+    $onnxCheck = "import importlib.util, sys; spec=importlib.util.find_spec('onnxruntime'); " +
+      "(print('ONNXRUNTIME: not installed') or sys.exit(0)) if spec is None else None; " +
+      "import onnxruntime as ort; providers=list(ort.get_available_providers()) if hasattr(ort,'get_available_providers') else []; " +
+      "print('ONNXRUNTIME:', getattr(ort,'__version__','?'), '| providers=', providers); " +
+      "print('ONNXRUNTIME NOTE: CUDAExecutionProvider not present (install onnxruntime-gpu and ensure it overrides CPU binaries).') if 'CUDAExecutionProvider' not in providers else None"
+
+    Exec -FilePath $venvPython -Arguments @("-c", $torchCheck) -WorkingDirectory $script:BackendDir
+
+    # Optional: run the repo's check_cuda.py for an explicit torch CUDA report
+    $checkCudaScript = Join-Path $repoRoot "check_cuda.py"
+    if (Test-Path $checkCudaScript) {
+      try {
+        Exec -FilePath $venvPython -Arguments @($checkCudaScript) -WorkingDirectory $repoRoot
+      } catch {
+        Write-Log "check_cuda.py failed (continuing): $($_.Exception.Message)" "WARN"
+      }
+    }
+
+    Exec -FilePath $venvPython -Arguments @("-c", $onnxCheck) -WorkingDirectory $script:BackendDir
+
+    Exec -FilePath $venvPython -Arguments @(
+      "-c",
+      "print('CUDA readiness check complete.')"
+    ) -WorkingDirectory $script:BackendDir
+  } catch {
+    Write-Log "CUDA readiness check failed (continuing): $($_.Exception.Message)" "WARN"
+  }
+
   Write-Log "SUCCESS: Backend venv is ready."
   Write-Log "Next: start the Electron app from repo root:"
   Write-Log "  cd electron-poc"

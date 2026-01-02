@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "kind": "github-releases-mirror-config",
+  "description": "Configuration for mirroring vendor model artifacts (checkpoints/configs/etc.) onto GitHub Releases so the registry can point at stable, public direct-download URLs.",
+  "mirror": {
+    "provider": "github",
+    "type": "releases",
+    "owner": "engdahlz",
+    "repo": "stemsep-models",
+    "tag": "models-v2-2026-01-01",
+    "base_url_template": "https://github.com/{owner}/{repo}/releases/download/{tag}/{filename}"
+  },
+  "filename_policy": {
+    "notes": "Keep filenames stable across releases. Prefer deterministic names based on model_id so registry URLs don't depend on upstream naming conventions.",
+    "checkpoint_filename_template": "{model_id}{ext}",
+    "config_filename_template": "{model_id}.yaml",
+    "allowed_checkpoint_exts": [
+      ".ckpt",
+      ".pth",
+      ".onnx"
+    ],
+    "additional_artifacts": {
+      "enabled": false,
+      "filename_template": "{model_id}.{name}{ext}"
+    }
+  },
+  "usage": {
+    "registry_fields": [
+      "models[].links.checkpoint",
+      "models[].links.config",
+      "models[].artifacts.primary.filename",
+      "models[].artifacts.config.filename"
+    ],
+    "direct_download_expectations": [
+      "URLs must return 200 without authentication",
+      "Do not use gated Hugging Face URLs in registry unless you also support tokens at runtime",
+      "Prefer mirroring any 401/403 (gated) or unstable upstream links"
+    ]
+  },
+  "known_needing_mirror_or_fix": [
+    "amane-full-scratch",
+    "amane-inst-fullness",
+    "anvuew-dereverb-room",
+    "anvuew-karaoke",
+    "anvuew-vocals",
+    "bandit-plus",
+    "bs-roformer-1053",
+    "bs-roformer-4-stems",
+    "bs-roformer-viperx-1297",
+    "drypd-side-extraction",
+    "duality-v2-unwa",
+    "gabox-voc-fv4",
+    "gabox-voc-fv5",
+    "gabox-voc-fv6",
+    "gabox-voc-gabox2",
+    "lew-apollo-universal",
+    "lew-apollo-vocal",
+    "mdx-net-hq4",
+    "mdx-net-hq5",
+    "mdx23c-drumsep-6stem",
+    "mdx23c-instvoc-hq",
+    "mel-band-karaoke-becruily",
+    "neo-instvfx",
+    "scnet-large",
+    "scnet-musdb18",
+    "sucial-dereverb-fused",
+    "unwa-inst-fno",
+    "unwa-inst-v1e-plus",
+    "unwa-kim-ft2",
+    "unwa-kim-ft2-bleedless",
+    "unwa-revive-2"
+  ],
+  "notes": [
+    "This file is configuration only; it does not itself upload assets. Upload the mirrored files as release assets under the configured tag, using the filenames implied by filename_policy.",
+    "After uploading assets, update the model registry to point links.* at the mirror base_url_template and ensure artifacts.*.filename matches the uploaded asset filenames."
+  ]
+}
