@@ -5049,7 +5049,7 @@
       "stems": [],
       "links": {
         "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx23c-drumsep-6stem.ckpt",
-        "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml",
+        "config": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/config_drumsep_mdx23c.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -5060,7 +5060,7 @@
         },
         "config": {
           "kind": "config",
-          "filename": "model_2_stem_full_band_8k.yaml",
+          "filename": "config_drumsep_mdx23c.yaml",
           "sha256": null
         },
         "additional": []

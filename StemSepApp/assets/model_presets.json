@@ -275,7 +275,7 @@
       "stems": ["vocals", "instrumental"],
       "models": [
         {
-          "model_id": "unwa-inst-v1e+",
+          "model_id": "unwa-inst-v1e-plus",
           "weight": 1.0
         },
         {
