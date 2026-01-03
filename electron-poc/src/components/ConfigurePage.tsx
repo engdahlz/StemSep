@@ -1475,9 +1475,20 @@ export function ConfigurePage({
                     <input
                       type="number"
                       className="w-full p-2 rounded border bg-background"
-                      value={advancedParams.segmentSize}
+                      value={advancedParams.segmentSize === 0 ? "" : advancedParams.segmentSize}
+                      placeholder="Auto"
                       onChange={(e) => {
-                        const next = parseInt(e.target.value, 10);
+                        const raw = e.target.value;
+                        if (raw.trim() === "") {
+                          setAdvancedParamsDirty(true);
+                          setAdvancedParams((p) => ({
+                            ...p,
+                            segmentSize: 0,
+                          }));
+                          return;
+                        }
+
+                        const next = parseInt(raw, 10);
                         if (!Number.isFinite(next)) return;
                         setAdvancedParamsDirty(true);
                         setAdvancedParams((p) => ({
