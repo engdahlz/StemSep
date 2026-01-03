@@ -125,6 +125,7 @@ msgpack==1.1.2
 multidict==6.7.0
 nest-asyncio==1.6.0
 networkx==3.5
+neuraloperator; python_version < "3.14"
 nh3==0.3.2
 nltk==3.9.2
 # numba is optional but can significantly speed up some DSP paths.

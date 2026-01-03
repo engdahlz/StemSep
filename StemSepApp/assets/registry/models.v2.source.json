@@ -62,7 +62,8 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "variant": "fno"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -82,7 +83,9 @@
           "rocm": []
         },
         "pip": {
-          "packages": []
+          "packages": [
+            "neuraloperator"
+          ]
         },
         "files": {
           "expects": [],
@@ -7324,12 +7327,12 @@
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "bs_roformer_inst_fno.ckpt",
+          "filename": "unwa-inst-fno.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "config_bs_roformer_inst_fno.yaml",
+          "filename": "unwa-inst-fno.yaml",
           "sha256": null
         },
         "additional": []
@@ -8250,7 +8253,8 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "variant": "hyperace_v1"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -8311,6 +8315,230 @@
             "vram_required"
           ]
         },
+        "strict_spec": {
+          "routing_default": "msst_only_for_roformer"
+        }
+      }
+    },
+    {
+      "id": "unwa-hyperace-v2-inst",
+      "name": "Unwa HyperACE v2 Inst",
+      "type": "Roformer - Instrumental",
+      "architecture": "BS-Roformer",
+      "description": "Inst (HyperACE v2)",
+      "tags": [
+        "instrumental"
+      ],
+      "stems": [],
+      "links": {
+        "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_inst/bs_roformer_inst_hyperacev2.ckpt",
+        "config": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_inst/config.yaml",
+        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "bs_roformer_inst_hyperacev2.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "config.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 0.0,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 8.0,
+      "recommended_settings": {
+        "segment_size": null,
+        "batch_size": null,
+        "tta": null,
+        "overlap": null,
+        "shifts": null,
+        "bit_depth": null
+      },
+      "settings_semantics": {
+        "overlap": {
+          "meaning_by_runtime": {
+            "audio-separator": "auto",
+            "stemsep-legacy": "auto",
+            "msst": "divisor"
+          },
+          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
+        }
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "variant": "hyperace_v2"
+      },
+      "compatibility": {
+        "uvr_compatible": null,
+        "audio_separator_compatible": false,
+        "msst_compatible": true,
+        "known_issues": []
+      },
+      "requirements": {
+        "python": {
+          "min": "3.10",
+          "max": null
+        },
+        "torch": {
+          "min": null,
+          "max": null,
+          "cuda": [],
+          "rocm": []
+        },
+        "pip": {
+          "packages": []
+        },
+        "files": {
+          "expects": [],
+          "provides": []
+        },
+        "manual_steps": []
+      },
+      "phase_fix": {
+        "is_valid_reference": null,
+        "recommended_params": {
+          "lowHz": null,
+          "highHz": null,
+          "highFreqWeight": null
+        },
+        "recommended_usage": []
+      },
+      "capabilities": {
+        "stems": [],
+        "roles": [
+          "separation"
+        ],
+        "supports_mono": null,
+        "supports_stereo": null
+      },
+      "notes": {
+        "strict_spec": {
+          "routing_default": "msst_only_for_roformer"
+        }
+      }
+    },
+    {
+      "id": "unwa-hyperace-v2-voc",
+      "name": "Unwa HyperACE v2 Voc",
+      "type": "Roformer - Vocals",
+      "architecture": "BS-Roformer",
+      "description": "Vocals (HyperACE v2)",
+      "tags": [
+        "vocals"
+      ],
+      "stems": [],
+      "links": {
+        "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_voc/bs_roformer_voc_hyperacev2.ckpt",
+        "config": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_voc/config.yaml",
+        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "bs_roformer_voc_hyperacev2.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "config.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 0.0,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 8.0,
+      "recommended_settings": {
+        "segment_size": null,
+        "batch_size": null,
+        "tta": null,
+        "overlap": null,
+        "shifts": null,
+        "bit_depth": null
+      },
+      "settings_semantics": {
+        "overlap": {
+          "meaning_by_runtime": {
+            "audio-separator": "auto",
+            "stemsep-legacy": "auto",
+            "msst": "divisor"
+          },
+          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
+        }
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "variant": "hyperace_v2"
+      },
+      "compatibility": {
+        "uvr_compatible": null,
+        "audio_separator_compatible": false,
+        "msst_compatible": true,
+        "known_issues": []
+      },
+      "requirements": {
+        "python": {
+          "min": "3.10",
+          "max": null
+        },
+        "torch": {
+          "min": null,
+          "max": null,
+          "cuda": [],
+          "rocm": []
+        },
+        "pip": {
+          "packages": []
+        },
+        "files": {
+          "expects": [],
+          "provides": []
+        },
+        "manual_steps": []
+      },
+      "phase_fix": {
+        "is_valid_reference": null,
+        "recommended_params": {
+          "lowHz": null,
+          "highHz": null,
+          "highFreqWeight": null
+        },
+        "recommended_usage": []
+      },
+      "capabilities": {
+        "stems": [],
+        "roles": [
+          "separation"
+        ],
+        "supports_mono": null,
+        "supports_stereo": null
+      },
+      "notes": {
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }

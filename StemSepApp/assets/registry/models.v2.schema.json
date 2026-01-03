@@ -261,6 +261,9 @@
         "preferred": { "$ref": "#/$defs/runtimeId" },
         "blocking_reason": {
           "anyOf": [{ "type": "string" }, { "type": "null" }]
+        },
+        "variant": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }]
         }
       }
     },

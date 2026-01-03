@@ -654,29 +654,44 @@ fn remove_model_files(cfg: &BackendConfig, model_id: &str) -> Result<usize> {
 }
 
 fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -> bool {
-    // If registry declares explicit files, require all declared files.
-    let mut required: Vec<PathBuf> = Vec::new();
+    // If registry declares explicit files, require checkpoint + config.
     if let Some(links) = model_obj.get("links") {
+        let mut ok_ckpt = true;
+        let mut ok_cfg = true;
+
         if let Some(ckpt) = links.get("checkpoint").and_then(|v| v.as_str()) {
             if !ckpt.trim().is_empty() {
-                if ckpt.to_lowercase().contains(".onnx") {
-                    required.push(models_dir.join(format!("{model_id}.onnx")));
+                ok_ckpt = if ckpt.to_lowercase().contains(".onnx") {
+                    models_dir.join(format!("{model_id}.onnx")).exists()
                 } else if let Some(base) = url_basename(ckpt) {
-                    required.push(models_dir.join(base));
-                }
+                    models_dir.join(base).exists()
+                } else {
+                    false
+                };
             }
         }
+
         if let Some(cfg) = links.get("config").and_then(|v| v.as_str()) {
             if !cfg.trim().is_empty() {
-                if let Some(base) = url_basename(cfg) {
-                    required.push(models_dir.join(base));
-                }
+                // Prefer stable per-model config filenames to avoid collisions like "config.yaml".
+                // Still accept historical basename installs.
+                let alias_yaml = models_dir.join(format!("{model_id}.yaml"));
+                let alias_yml = models_dir.join(format!("{model_id}.yml"));
+                let base_ok = url_basename(cfg)
+                    .map(|base| models_dir.join(base).exists())
+                    .unwrap_or(false);
+                ok_cfg = alias_yaml.exists() || alias_yml.exists() || base_ok;
             }
         }
-    }
 
-    if !required.is_empty() {
-        return required.into_iter().all(|p| p.exists());
+        if !ok_ckpt || !ok_cfg {
+            return false;
+        }
+
+        // If links exist and both resolved OK, consider installed.
+        if links.get("checkpoint").is_some() || links.get("config").is_some() {
+            return true;
+        }
     }
 
     // Fallback heuristic for models without explicit links.
@@ -1957,12 +1972,16 @@ fn main() -> Result<()> {
                         dest_path: ckpt_dest.clone(),
                     }];
                     if let Some(u) = cfg_url {
-                        if let Some(base) = url_basename(&u) {
-                            files.push(DownloadFile {
-                                url: u,
-                                dest_path: cfg.models_dir.join(base),
-                            });
-                        }
+                        let cfg_dest = match url_basename(&u) {
+                            Some(base) if base.to_lowercase().ends_with(".yml") => {
+                                cfg.models_dir.join(format!("{model_id}.yml"))
+                            }
+                            _ => cfg.models_dir.join(format!("{model_id}.yaml")),
+                        };
+                        files.push(DownloadFile {
+                            url: u,
+                            dest_path: cfg_dest,
+                        });
                     }
 
                     downloads.start(&model_id, files.clone(), stdout.clone());
@@ -2034,12 +2053,16 @@ fn main() -> Result<()> {
                             dest_path: ckpt_dest,
                         }];
                         if let Some(u) = cfg_url {
-                            if let Some(base) = url_basename(&u) {
-                                files.push(DownloadFile {
-                                    url: u,
-                                    dest_path: cfg.models_dir.join(base),
-                                });
-                            }
+                            let cfg_dest = match url_basename(&u) {
+                                Some(base) if base.to_lowercase().ends_with(".yml") => {
+                                    cfg.models_dir.join(format!("{model_id}.yml"))
+                                }
+                                _ => cfg.models_dir.join(format!("{model_id}.yaml")),
+                            };
+                            files.push(DownloadFile {
+                                url: u,
+                                dest_path: cfg_dest,
+                            });
                         }
                         downloads.start(&model_id, files, stdout.clone());
                     }
