@@ -23,8 +23,7 @@ const MISSING_MODELS_EVENT = "stemsep:missing-models";
 
 type MissingModelEventItem = {
   modelId: string;
-  reason?: "not_installed" | "runtime_blocked";
-  details?: string;
+  reason?: "not_installed";
 };
 
 type MissingModelsEventDetail = {

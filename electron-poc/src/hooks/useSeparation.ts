@@ -110,29 +110,26 @@ export const useSeparation = () => {
           const modelId = plan.effectiveModelId;
           const stems = plan.effectiveStems;
 
-          // Block early if we already know models are missing/blocked
+          // Block early if we already know models are missing
           if (!plan.canProceed) {
             const missingList = plan.missingModels
               .map((m) => {
-                if (m.reason === "runtime_blocked") {
-                  return `Blocked: ${m.modelId}${m.details ? ` — ${m.details}` : ""}`;
-                }
                 return `Missing: ${m.modelId}`;
               })
               .join(", ");
 
             const actionable =
-              "Open the Model Browser to install missing models or update the registry for blocked ones.";
+              "Open the Model Browser to install the missing models.";
 
             // Update item status to failed with a clear, actionable error
             updateQueueItem(item.id, {
               status: "failed",
-              error: `Missing/blocked models: ${missingList}`,
+              error: `Missing models: ${missingList}`,
             });
 
             // Show actionable toasts (only once per batch to avoid spam)
             if (processedCount === 0) {
-              toast.error("Cannot start: missing or blocked models.", {
+              toast.error("Cannot start: missing models.", {
                 action: {
                   label: "Model Browser",
                   onClick: () => {
@@ -157,7 +154,7 @@ export const useSeparation = () => {
               });
               toast.message(actionable);
             } else {
-              toast.error(`Skipped ${fileName}: missing/blocked models`);
+              toast.error(`Skipped ${fileName}: missing models`);
             }
 
             addLog(`[useSeparation] Skipped "${fileName}": ${missingList}`);

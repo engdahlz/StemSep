@@ -7,7 +7,6 @@ import {
   Zap,
   Cpu,
   Layers,
-  AlertCircle,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -49,10 +48,6 @@ export function ModelDetails({
     };
     void run();
   }, [model]);
-
-  const runtimeAllowed = resolvedModel.runtime?.allowed;
-  const runtimeBlockedReason = resolvedModel.runtime?.blocking_reason;
-  const isBlocked = runtimeAllowed === false || !!runtimeBlockedReason;
 
   const phaseFixValid = !!resolvedModel.phase_fix?.is_valid_reference;
   const phaseFixRef = resolvedModel.phase_fix?.reference_model_id;
@@ -116,18 +111,6 @@ export function ModelDetails({
               <Layers className="mr-1 h-3 w-3" />{" "}
               {resolvedModel.stems.join(", ")}
             </Badge>
-            {isBlocked && (
-              <Badge
-                variant="outline"
-                className="bg-destructive/10 border-destructive/20 text-destructive"
-                title={
-                  runtimeBlockedReason ||
-                  "This model is blocked by runtime constraints"
-                }
-              >
-                <AlertCircle className="mr-1 h-3 w-3" /> Blocked
-              </Badge>
-            )}
             {phaseFixValid && (
               <Badge
                 variant="outline"
@@ -147,23 +130,8 @@ export function ModelDetails({
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Runtime / Compatibility Notes */}
-          {(isBlocked || phaseFixValid) && (
+          {phaseFixValid && (
             <div className="space-y-3 rounded-lg border border-border/50 bg-secondary/20 p-4">
-              {isBlocked && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-destructive" />
-                    <h3 className="text-sm font-medium text-destructive uppercase tracking-wider">
-                      Blocked
-                    </h3>
-                  </div>
-                  <p className="text-sm text-foreground/90 whitespace-pre-wrap">
-                    {runtimeBlockedReason ||
-                      "This model is blocked by runtime constraints."}
-                  </p>
-                </div>
-              )}
-
               {phaseFixValid && (
                 <div className="space-y-1">
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
@@ -352,23 +320,12 @@ export function ModelDetails({
               <Button
                 onClick={() => onDownload?.(resolvedModel.id)}
                 className="gap-2"
-                disabled={resolvedModel.downloading || isBlocked}
-                title={
-                  isBlocked
-                    ? runtimeBlockedReason ||
-                      "This model is blocked by runtime constraints"
-                    : undefined
-                }
+                disabled={resolvedModel.downloading}
               >
                 {resolvedModel.downloading ? (
                   <>
                     <Download className="h-4 w-4 animate-bounce" />
                     Downloading...
-                  </>
-                ) : isBlocked ? (
-                  <>
-                    <AlertCircle className="h-4 w-4" />
-                    Blocked
                   </>
                 ) : (
                   <>

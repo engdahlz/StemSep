@@ -44,6 +44,13 @@ export interface Preset {
   }
   pipelineNote?: string // Notes about post-processing pipeline
   postProcessingSteps?: PostProcessingStep[] // Auto-applicable post-processing
+  advancedDefaults?: {
+    overlap?: number
+    segmentSize?: number
+    shifts?: number
+    tta?: boolean
+    bitrate?: string
+  }
 }
 
 // ============================================================================
@@ -73,7 +80,8 @@ export const ALL_PRESETS: Preset[] = [
       ],
       algorithm: 'max_spec'
     },
-    pipelineNote: 'Guide favorite ensemble - best balance of fullness and clarity'
+    pipelineNote: 'Guide favorite ensemble - best balance of fullness and clarity',
+    advancedDefaults: { overlap: 4 }
   },
 
   {
@@ -86,7 +94,8 @@ export const ALL_PRESETS: Preset[] = [
     qualityLevel: 'quality',
     estimatedVram: 6,
     tags: ['bleedless', 'clean', 'best'],
-    modelId: 'bs-roformer-viperx-1297'
+    modelId: 'bs-roformer-viperx-1297',
+    advancedDefaults: { overlap: 4 }
   },
 
   // HyperACE + Viperx 1297 - Guide's "My favorite ensemble right now" (dca100fb8)
@@ -107,7 +116,8 @@ export const ALL_PRESETS: Preset[] = [
       ],
       algorithm: 'max_spec'
     },
-    pipelineNote: 'Official guide recommendation - best balance of fullness and clarity'
+    pipelineNote: 'Official guide recommendation - best balance of fullness and clarity',
+    advancedDefaults: { overlap: 4 }
   },
 
   // ============================================================================
@@ -125,7 +135,8 @@ export const ALL_PRESETS: Preset[] = [
     qualityLevel: 'quality',
     estimatedVram: 6,
     tags: ['bleedless', 'clean', 'rvc', 'production'],
-    modelId: 'bs-roformer-viperx-1297'
+    modelId: 'bs-roformer-viperx-1297',
+    advancedDefaults: { overlap: 4 }
   },
 
   // Best fullness vocals - Unwa Revive 3e has Fullness: 21.43
@@ -174,7 +185,8 @@ export const ALL_PRESETS: Preset[] = [
       ],
       algorithm: 'max_spec'
     },
-    pipelineNote: 'Follow with Anvuew De-Reverb for dry studio acapella'
+    pipelineNote: 'Follow with Anvuew De-Reverb for dry studio acapella',
+    advancedDefaults: { overlap: 4 }
   },
 
   // Karaoke / Lead-Back separator - Anvuew karaoke
@@ -272,7 +284,8 @@ export const ALL_PRESETS: Preset[] = [
         description: 'Phase Fix with Becruily Vocal',
         targetStem: 'instrumental'
       }
-    ]
+    ],
+    advancedDefaults: { overlap: 4 }
   },
 
   {
@@ -297,7 +310,8 @@ export const ALL_PRESETS: Preset[] = [
         highHz: 5000,
         highFreqWeight: 2.0
       }
-    }
+    },
+    advancedDefaults: { overlap: 4 }
   },
 
   {
@@ -320,7 +334,8 @@ export const ALL_PRESETS: Preset[] = [
         vocals: 'max_spec',
         instrumental: 'min_spec'
       }
-    }
+    },
+    advancedDefaults: { overlap: 4 }
   },
 
   // Ultra Clean - Gabox Inst Fv7z (Bleedless: 44.95)
@@ -355,7 +370,8 @@ export const ALL_PRESETS: Preset[] = [
       ],
       algorithm: 'max_spec'
     },
-    pipelineNote: 'Per guide: best instrument preservation ensemble'
+    pipelineNote: 'Per guide: best instrument preservation ensemble',
+    advancedDefaults: { overlap: 4 }
   },
 
   // v1e+ Becruily ensemble - per guide recommendation
@@ -375,7 +391,8 @@ export const ALL_PRESETS: Preset[] = [
         { model_id: 'becruily-inst', weight: 1.0 }
       ],
       algorithm: 'max_spec'
-    }
+    },
+    advancedDefaults: { overlap: 4 }
   },
 
   // Gabox bleedless ensemble
@@ -419,7 +436,8 @@ export const ALL_PRESETS: Preset[] = [
         { model_id: 'bs-roformer-karaoke-becruily' }
       ],
       algorithm: 'max_spec'
-    }
+    },
+    advancedDefaults: { overlap: 4 }
   },
 
   // De-Reverb
@@ -507,7 +525,8 @@ export const ALL_PRESETS: Preset[] = [
     estimatedVram: 6,
     tags: ['drums', 'drumsep', 'sampling', 'kit'],
     modelId: 'mel-roformer-drumsep-5stem',
-    pipelineNote: 'Use 5-10 shifts (TTA) for best transient quality'
+    pipelineNote: 'Use 5-10 shifts (TTA) for best transient quality',
+    advancedDefaults: { overlap: 4 }
   },
 
   // Full 6-stem separation

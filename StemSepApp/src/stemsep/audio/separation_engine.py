@@ -698,6 +698,14 @@ class SeparationEngine:
             ]
             use_zfturbo_engine = any(z in arch for z in zfturbo_archs)
 
+            runtime = model_info.get("runtime") if isinstance(model_info, dict) else None
+            variant = runtime.get("variant") if isinstance(runtime, dict) else None
+            if isinstance(variant, str) and variant.strip():
+                use_zfturbo_engine = False
+                self.logger.info(
+                    f"runtime.variant={variant} detected - using legacy path with ModelFactory"
+                )
+
             # IMPORTANT: HyperACE needs our custom BSRoformerHyperACE implementation (with SegmModel),
             # NOT audio-separator's BS-Roformer which lacks the HyperACE modules.
             # Force legacy path for HyperACE to use ModelFactory->BSRoformerHyperACE.
@@ -1135,6 +1143,13 @@ class SeparationEngine:
                         model_id, architecture=model_info.get("architecture")
                     )
 
+            runtime = model_info.get("runtime") if isinstance(model_info, dict) else None
+            variant = runtime.get("variant") if isinstance(runtime, dict) else None
+            if isinstance(variant, str) and variant.strip() and isinstance(config, dict):
+                # Internal routing key consumed by ModelFactory to choose the correct
+                # vendorized Roformer implementation.
+                config["__stemsep_variant"] = variant.strip()
+
             # Some model families (e.g., ONNX-based loaders) accept `model_path` and load
             # weights during construction. Our PyTorch/ZFTurbo models (BandIt/Apollo/SCNet/
             # Roformer) do not, and passing it breaks instantiation.
@@ -1182,6 +1197,10 @@ class SeparationEngine:
                 # NOTE: Skip for HyperACE - its checkpoint already has matching keys and remapping breaks it
                 arch_lower = model_info.get("architecture", "").lower()
                 skip_remap = "hyperace" in arch_lower
+                runtime = model_info.get("runtime") if isinstance(model_info, dict) else None
+                variant = runtime.get("variant") if isinstance(runtime, dict) else None
+                if isinstance(variant, str) and "hyperace" in variant.lower():
+                    skip_remap = True
 
                 if not skip_remap:
                     try:

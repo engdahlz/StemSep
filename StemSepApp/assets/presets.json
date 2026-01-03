@@ -22,7 +22,7 @@
             "id": "instrumental_fullness",
             "name": "Instrumental - Max Fullness",
             "description": "Uses Unwa v1e+ for maximum instrumental fullness.",
-            "model_id": "unwa-inst-v1e+",
+            "model_id": "unwa-inst-v1e-plus",
             "settings": {
                 "overlap": 4
             }
@@ -96,7 +96,7 @@
             "algorithm": "max_spec",
             "models": [
                 {
-                    "model_id": "unwa-inst-v1e+",
+                    "model_id": "unwa-inst-v1e-plus",
                     "weight": 1.0
                 },
                 {
