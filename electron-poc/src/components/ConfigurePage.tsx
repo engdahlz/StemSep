@@ -115,40 +115,26 @@ const computeAutoTunedAdvancedParams = (args: {
     (Array.isArray(ensembleConfig) && ensembleConfig.length > 0
       ? ensembleConfig.length
       : 1);
-
-  // --- Segment size (quality-first) ---
-  // Quality-first target:
-  // - Roformer: 485100 (≈11s) if VRAM allows
-  // - otherwise: 352800
-  // - low VRAM: 112455
-  //
-  // For CPU, keep 352800 as a reasonable default (performance will be slow anyway).
   const HQ = 485100;
   const MID = 352800;
   const LOW = 112455;
+  const MID_LOW = 200000;
 
   let desiredSegment = MID;
 
-  if (isRoformer) {
-    if (isCuda && vram >= 10) desiredSegment = HQ;
-    else if (isCuda && vram >= 7.5) desiredSegment = MID;
-    else if (isCuda && vram >= 4) desiredSegment = LOW;
-    else desiredSegment = MID; // CPU/unknown VRAM: keep MID, user can change
-  } else {
-    // Non-roformer: keep MID by default, but don't drop to the "tiny" chunk unless needed.
-    desiredSegment = MID;
+  if (isRoformer && isCuda && vram >= 8) {
+    desiredSegment = HQ;
+  } else if (!isCuda || vram < 4) {
+    desiredSegment = LOW;
+  } else if (vram < 5) {
+    desiredSegment = MID_LOW;
   }
 
-  // Extra headroom when multiple models are combined (ensemble/phase-fix workflows).
-  // Keep quality-first but avoid obvious OOM:
   if (isCuda && activeModelsCount >= 2) {
     if (vram > 0 && vram < 8) desiredSegment = Math.min(desiredSegment, LOW);
     else if (vram > 0 && vram < 10)
       desiredSegment = Math.min(desiredSegment, MID);
   }
-
-  // Respect explicit model recommended settings when present in Advanced single-model mode.
-  // This is only a hint; quality intent still tries to stay high.
   if (mode === "advanced" && !isEnsembleMode && modelForDefaults) {
     const modelRec =
       modelForDefaults.recommended_settings?.segment_size ??
@@ -159,50 +145,48 @@ const computeAutoTunedAdvancedParams = (args: {
       Number.isFinite(modelRec) &&
       modelRec > 0
     ) {
-      // If model recommends bigger than our computed value and we have VRAM, allow it.
       desiredSegment = Math.max(desiredSegment, modelRec);
     }
   }
 
   next.segmentSize = desiredSegment;
 
-  // --- Overlap ---
-  // Internally we treat overlap as a proportion [0..1] in most of the pipeline.
-  // The UI currently allows 0..50; keep internal sane by clamping.
-  //
-  // Quality-first: prefer a slightly higher overlap for Roformer, especially when VRAM allows.
-  let desiredOverlap = current.overlap ?? 0.25;
-  if (isRoformer) {
-    if (isCuda && vram >= 10) desiredOverlap = 0.35;
-    else desiredOverlap = 0.25;
-  } else {
-    desiredOverlap = 0.25;
-  }
+  let desiredOverlap = current.overlap ?? 4;
+  if (mode !== "simple") {
+    if (isRoformer) {
+      if (isCuda && vram >= 10) desiredOverlap = 8;
+      else desiredOverlap = 4;
+    } else {
+      desiredOverlap = 4;
+    }
 
-  // Ensemble tends to benefit from more stability; keep modest.
-  if (activeModelsCount >= 2) desiredOverlap = Math.max(desiredOverlap, 0.25);
+    if (activeModelsCount >= 2) desiredOverlap = Math.max(desiredOverlap, 4);
 
-  // Respect per-model recommended overlap if available in advanced mode.
-  if (mode === "advanced" && !isEnsembleMode && modelForDefaults) {
-    const modelOverlap = modelForDefaults.recommended_settings?.overlap;
-    if (typeof modelOverlap === "number" && Number.isFinite(modelOverlap)) {
-      desiredOverlap = modelOverlap;
+    if (mode === "advanced" && !isEnsembleMode && modelForDefaults) {
+      const modelOverlap = modelForDefaults.recommended_settings?.overlap;
+      if (typeof modelOverlap === "number" && Number.isFinite(modelOverlap)) {
+        desiredOverlap = modelOverlap;
+      }
     }
   }
 
-  next.overlap = clamp(desiredOverlap, 0, 1);
+  next.overlap = clamp(desiredOverlap, 2, 50);
 
-  // --- Shifts / TTA ---
-  // Quality-first: keep modest shifts; TTA is expensive and can increase artifacts in some cases.
-  // Keep your existing defaults unless we decide to lock quality higher later.
   next.shifts = Number.isFinite(current.shifts) ? current.shifts : 1;
   next.tta = !!current.tta;
 
-  // --- Bitrate ---
-  // Keep existing / global default.
   next.bitrate = current.bitrate || globalAdvancedSettings?.bitrate || "320k";
 
   return next;
+};
+
+const computeBestSegmentSizeFromVRAM = (availableVRAM: number) => {
+  const vram = Number.isFinite(availableVRAM) ? availableVRAM : 0;
+  if (vram <= 0) return 0;
+  if (vram >= 8.0) return 485100;
+  if (vram >= 5.0) return 352800;
+  if (vram >= 4.0) return 112455;
+  return 56227;
 };
 
 export type { SeparationConfig } from "../types/separation";
@@ -236,12 +220,23 @@ export function ConfigurePage({
     (state) => state.settings.advancedSettings,
   );
 
+  const normalizeOverlap = (value: unknown) => {
+    const n = typeof value === "number" ? value : Number(value);
+    if (!Number.isFinite(n)) return 4;
+    if (n < 1) {
+      const denom = Math.max(1e-6, 1 - n);
+      return Math.max(2, Math.min(50, Math.round(1 / denom)));
+    }
+    return Math.max(2, Math.min(50, Math.round(n)));
+  };
+
   const setAdvancedSettings = useStore((state) => state.setAdvancedSettings);
   const phaseParams = useStore((state) => state.settings.phaseParams);
   const startDownload = useStore((state) => state.startDownload);
   const resumeDownload = useStore((state) => state.resumeDownload);
   const setDownloadError = useStore((state) => state.setDownloadError);
   const [mode, setMode] = useState<"simple" | "advanced">("simple");
+  const [simpleSpeed, setSimpleSpeed] = useState<number>(70);
   const [selectedPresetId, setSelectedPresetId] = useState<string>(
     initialPresetId || (presets.length > 0 ? presets[0].id : ""),
   );
@@ -264,8 +259,8 @@ export function ConfigurePage({
   const [bitDepth, _setBitDepth] = useState("16");
   const [_splitFreq, _setSplitFreq] = useState(750);
   const [advancedParams, setAdvancedParams] = useState<AdvancedParams>({
-    overlap: globalAdvancedSettings?.overlap || 0.25,
-    segmentSize: globalAdvancedSettings?.segmentSize || 256,
+    overlap: normalizeOverlap(globalAdvancedSettings?.overlap ?? 4),
+    segmentSize: globalAdvancedSettings?.segmentSize ?? 0,
     shifts: globalAdvancedSettings?.shifts || 1,
     tta: false,
     bitrate: globalAdvancedSettings?.bitrate || "320k",
@@ -370,7 +365,7 @@ export function ConfigurePage({
     if (mode === "advanced" && selectedModelId && !advancedParamsDirty) {
       const model = models.find((m) => m.id === selectedModelId);
       if (model) {
-        const defaultOverlap = 0.25;
+        const defaultOverlap = 4;
         const defaultSegmentSize = 352800; // Safe default for most models
 
         // Use model's recommended settings if available
@@ -385,7 +380,8 @@ export function ConfigurePage({
         setAdvancedParams((prev) => ({
           ...prev,
           overlap: recommendedOverlap,
-          segmentSize: recommendedSegmentSize,
+          // Preserve Auto (0) so the backend can apply model/machine recommended defaults.
+          segmentSize: prev.segmentSize > 0 ? recommendedSegmentSize : prev.segmentSize,
         }));
       }
     }
@@ -421,6 +417,10 @@ export function ConfigurePage({
     // Note: we intentionally do NOT set outputFormat, etc. here; the resolver only cares
     // about model/preset/ensemble/post-processing/phase params.
     const usePresetId = mode === "simple" ? selectedPresetId : undefined;
+    const preset =
+      mode === "simple"
+        ? presets.find((p) => p.id === selectedPresetId)
+        : undefined;
 
     const config: any = {
       mode,
@@ -439,10 +439,7 @@ export function ConfigurePage({
           : undefined,
     };
 
-    // Simple mode is locked to preset definitions.
     if (mode === "simple") {
-      const preset = presets.find((p) => p.id === selectedPresetId);
-
       if (preset?.ensembleConfig) {
         config.ensembleConfig = preset.ensembleConfig as any;
         config.modelId = undefined;
@@ -480,7 +477,7 @@ export function ConfigurePage({
     phaseParams,
   ]);
 
-  // Canonical missing/blocked dependencies from the separation plan
+  // Canonical missing dependencies from the separation plan
   const missingModels = useMemo(() => {
     return separationPlan.missingModels.map((m) => m.modelId);
   }, [separationPlan.missingModels]);
@@ -493,13 +490,29 @@ export function ConfigurePage({
     }
   }, [missingModels.length]);
 
-  // Check if separation can proceed (no missing or runtime-blocked dependencies)
+  // Check if separation can proceed (no missing dependencies)
   const canStartSeparation = separationPlan.canProceed;
 
   const handleConfirm = () => {
-    // Presets are only meaningful in Simple mode. In Advanced mode, avoid carrying a stale
-    // presetId (it can cause Results to show the preset label even when a custom modelId ran).
+    const preset = mode === "simple" ? presets.find((p) => p.id === selectedPresetId) : undefined;
     const usePresetId = mode === "simple" ? selectedPresetId : undefined;
+    const presetOverlap = (() => {
+      const explicit =
+        preset?.advancedDefaults?.overlap ?? preset?.recipe?.defaults?.overlap;
+      if (typeof explicit === "number" && Number.isFinite(explicit)) return explicit;
+
+      const byQuality = (() => {
+        const q = preset?.qualityLevel;
+        if (q === "fast") return 2;
+        if (q === "balanced") return 4;
+        if (q === "quality") return 4;
+        if (q === "ultra") return 8;
+        return 4;
+      })();
+
+      const withEnsembleFloor = preset?.ensembleConfig ? Math.max(byQuality, 4) : byQuality;
+      return withEnsembleFloor;
+    })();
 
     const config: SeparationConfig = {
       mode,
@@ -522,7 +535,21 @@ export function ConfigurePage({
         ensembleAlgorithm === "frequency_split"
           ? _splitFreq
           : undefined,
-      advancedParams: mode === "advanced" ? advancedParams : undefined,
+      advancedParams:
+        mode === "advanced"
+          ? advancedParams
+          : {
+              segmentSize: (() => {
+                const maxSafe = computeBestSegmentSizeFromVRAM(availableVRAM);
+                const segmentSize = maxSafe > 0 ? maxSafe : 0;
+                return segmentSize;
+              })(),
+              shifts: (() => {
+                const speed = clamp(simpleSpeed, 0, 100);
+                return speed >= 85 ? 1 : speed >= 65 ? 2 : speed >= 35 ? 3 : 4;
+              })(),
+              overlap: presetOverlap,
+            },
       ensembleConfig:
         mode === "advanced" && isEnsembleMode
           ? {
@@ -609,13 +636,8 @@ export function ConfigurePage({
     advancedParams.tta,
   );
   const isCPUOnly = !hasCuda;
+  const maxSafeSegmentSize = computeBestSegmentSizeFromVRAM(availableVRAM);
 
-  // Auto-tune advanced params (quality-first) when inputs change, unless the user has manually tweaked them.
-  // Triggered for:
-  // - preset/model changes
-  // - device changes (including selecting a different GPU)
-  // - ensemble changes that affect VRAM/memory needs
-  // - system VRAM changes (different GPU selected)
   useEffect(() => {
     if (advancedParamsDirty) return;
 
@@ -691,6 +713,39 @@ export function ConfigurePage({
                 onSelectPreset={setSelectedPresetId}
                 availability={availability}
               />
+
+              <Card className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">Speed</div>
+                    <div className="text-xs text-muted-foreground">
+                      {maxSafeSegmentSize > 0
+                        ? `Machine limit: ${maxSafeSegmentSize}`
+                        : "Machine limit: Auto"}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSimpleSpeed(70)}
+                  >
+                    Best for my machine
+                  </Button>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={simpleSpeed}
+                  onChange={(e) => setSimpleSpeed(parseInt(e.target.value, 10))}
+                  className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Quality</span>
+                  <span>Speed</span>
+                </div>
+              </Card>
 
               {/* Selected preset info */}
               {selectedPreset && (
@@ -1343,13 +1398,13 @@ export function ConfigurePage({
                     </label>
                     <input
                       type="number"
-                      step="0.05"
-                      min="0"
+                      step="1"
+                      min="1"
                       max="50"
                       className="w-full p-2 rounded border bg-background"
                       value={advancedParams.overlap}
                       onChange={(e) => {
-                        const next = parseFloat(e.target.value);
+                        const next = parseInt(e.target.value);
                         if (!Number.isFinite(next)) return;
                         setAdvancedParamsDirty(true);
                         setAdvancedParams((p) => ({ ...p, overlap: next }));
@@ -1357,18 +1412,47 @@ export function ConfigurePage({
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground">
-                      Segment Size
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs text-muted-foreground">
+                        Segment Size ({advancedParams.segmentSize === 0 ? "Auto" : advancedParams.segmentSize})
+                      </label>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setAdvancedParamsDirty(true);
+                            setAdvancedParams((p) => ({ ...p, segmentSize: 0 }));
+                          }}
+                        >
+                          Auto
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const best = maxSafeSegmentSize > 0 ? maxSafeSegmentSize : 0;
+                            setAdvancedParamsDirty(true);
+                            setAdvancedParams((p) => ({ ...p, segmentSize: best }));
+                          }}
+                        >
+                          Best for my machine
+                        </Button>
+                      </div>
+                    </div>
                     <input
                       type="number"
                       className="w-full p-2 rounded border bg-background"
                       value={advancedParams.segmentSize}
                       onChange={(e) => {
+                        const next = parseInt(e.target.value, 10);
+                        if (!Number.isFinite(next)) return;
                         setAdvancedParamsDirty(true);
                         setAdvancedParams((p) => ({
                           ...p,
-                          segmentSize: parseInt(e.target.value),
+                          segmentSize: next,
                         }));
                       }}
                     />

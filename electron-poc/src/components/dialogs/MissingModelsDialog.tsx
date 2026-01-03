@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Progress } from "../ui/progress";
 
-export type MissingModelReason = "not_installed" | "runtime_blocked";
+export type MissingModelReason = "not_installed";
 
 export type MissingModel = {
   modelId: string;
@@ -63,8 +63,8 @@ function formatSizeMb(bytes: number | undefined): string | null {
 export function MissingModelsDialog(props: MissingModelsDialogProps) {
   const {
     open,
-    title = "Missing / Blocked Models",
-    description = "This run requires models that are not installed or are blocked:",
+    title = "Missing Models",
+    description = "This run requires models that are not installed:",
     missing,
     models,
     onClose,
@@ -112,7 +112,6 @@ export function MissingModelsDialog(props: MissingModelsDialogProps) {
               <ul className="text-sm mt-3 space-y-2">
                 {missing.map((m) => {
                   const model = models.find((x) => x.id === m.modelId);
-                  const isRuntimeBlocked = m.reason === "runtime_blocked";
 
                   const isDownloading = !!model?.downloading;
                   const isPaused = !!model?.downloadPaused;
@@ -123,11 +122,6 @@ export function MissingModelsDialog(props: MissingModelsDialogProps) {
 
                   const sizeText = formatSizeMb(model?.file_size);
 
-                  const blockDetails =
-                    typeof m.details === "string" && m.details.trim()
-                      ? m.details.trim()
-                      : null;
-
                   return (
                     <li key={m.modelId} className="space-y-1">
                       <div className="flex items-center justify-between gap-3">
@@ -136,12 +130,6 @@ export function MissingModelsDialog(props: MissingModelsDialogProps) {
                           <span className="truncate">
                             {model?.name || m.modelId}
                           </span>
-
-                          {isRuntimeBlocked && (
-                            <span className="text-[11px] rounded-full border border-destructive/40 bg-destructive/10 text-destructive px-2 py-0.5 shrink-0">
-                              Blocked
-                            </span>
-                          )}
 
                           {sizeText && (
                             <span className="text-muted-foreground text-xs shrink-0">
@@ -166,31 +154,21 @@ export function MissingModelsDialog(props: MissingModelsDialogProps) {
                               model?.downloadError ? "destructive" : "outline"
                             }
                             disabled={
-                              isRuntimeBlocked || isDownloading || model?.installed
+                              isDownloading || model?.installed
                             }
                             onClick={() => onQuickDownload(m.modelId)}
                           >
                             <Download className="w-4 h-4 mr-2" />
-                            {isRuntimeBlocked
-                              ? "Blocked"
-                              : model?.installed
-                                ? "Installed"
-                                : isPaused
-                                  ? "Resume"
-                                  : model?.downloadError
-                                    ? "Retry"
-                                    : "Quick download"}
+                            {model?.installed
+                              ? "Installed"
+                              : isPaused
+                                ? "Resume"
+                                : model?.downloadError
+                                  ? "Retry"
+                                  : "Quick download"}
                           </Button>
                         </div>
                       </div>
-
-                      {isRuntimeBlocked && (
-                        <div className="text-xs text-muted-foreground pl-5">
-                          {blockDetails
-                            ? `Reason: ${blockDetails}`
-                            : "Reason: This model is blocked by the registry/runtime policy."}
-                        </div>
-                      )}
                     </li>
                   );
                 })}

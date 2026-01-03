@@ -7,8 +7,6 @@ import {
   RotateCw,
   Pause,
   Play,
-  Cpu,
-  Zap,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
@@ -56,10 +54,6 @@ export function ModelCard({
 }: ModelCardProps) {
   const stems = Array.isArray(model.stems) ? model.stems : [];
 
-  const runtimeAllowed = model.runtime?.allowed;
-  const runtimeBlockedReason = model.runtime?.blocking_reason;
-  const isBlocked = runtimeAllowed === false || !!runtimeBlockedReason;
-
   const phaseFixValid = !!model.phase_fix?.is_valid_reference;
   const phaseFixTitle = (() => {
     if (!phaseFixValid) return undefined;
@@ -96,14 +90,7 @@ export function ModelCard({
         isSelected
           ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
           : "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5",
-        isBlocked ? "opacity-70" : "",
       )}
-      title={
-        isBlocked
-          ? runtimeBlockedReason ||
-            "This model is blocked by runtime constraints"
-          : undefined
-      }
     >
       {/* Selection Overlay (visible on hover or selected) */}
       <div
@@ -122,22 +109,9 @@ export function ModelCard({
 
       {(model.recommended ||
         model.is_custom ||
-        isBlocked ||
         phaseFixValid ||
         tags.length > 0) && (
         <div className="absolute top-3 right-3 z-20 flex flex-col gap-1 items-end">
-          {isBlocked && (
-            <Badge
-              variant="default"
-              className="bg-destructive/90 hover:bg-destructive text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md"
-              title={
-                runtimeBlockedReason ||
-                "This model is blocked by runtime constraints"
-              }
-            >
-              Blocked
-            </Badge>
-          )}
           {phaseFixValid && (
             <Badge
               variant="default"
@@ -195,23 +169,6 @@ export function ModelCard({
             >
               {model.name}
             </h3>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1 bg-secondary/50 px-2 py-0.5 rounded-md">
-              <Zap className="w-3 h-3" /> {model.architecture}
-            </span>
-
-            <span className="flex items-center gap-1 bg-secondary/50 px-2 py-0.5 rounded-md">
-              <Cpu className="w-3 h-3" /> {model.vram_required}GB
-            </span>
-            {model.recommended_settings && (
-              <span
-                className="flex items-center gap-1 bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-md border border-blue-500/20"
-                title="Has optimized settings"
-              >
-                <Zap className="w-3 h-3" /> Tuned
-              </span>
-            )}
           </div>
         </div>
 
@@ -334,8 +291,6 @@ export function ModelCard({
             onClick={() => onResume(model.id)}
             className="flex-1"
             variant="outline"
-            disabled={isBlocked}
-            title={isBlocked ? runtimeBlockedReason || "Blocked" : undefined}
           >
             <Play className="mr-2 h-4 w-4" />
             Resume
@@ -343,39 +298,19 @@ export function ModelCard({
         ) : (
           <Button
             onClick={
-              isBlocked
-                ? undefined
-                : model.downloading
-                  ? () => onPause(model.id)
-                  : () => onDownload(model.id)
+              model.downloading ? () => onPause(model.id) : () => onDownload(model.id)
             }
             className={cn(
               "flex-1 transition-all duration-300",
               model.downloading
                 ? "bg-secondary text-secondary-foreground"
                 : "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40",
-              isBlocked ? "cursor-not-allowed opacity-60" : "",
             )}
             variant={
-              isBlocked
-                ? "secondary"
-                : model.downloadError
-                  ? "destructive"
-                  : "default"
-            }
-            disabled={isBlocked}
-            title={
-              isBlocked
-                ? runtimeBlockedReason ||
-                  "This model is blocked (missing checkpoints / unverified URL / manual steps required)"
-                : undefined
+              model.downloadError ? "destructive" : "default"
             }
           >
-            {isBlocked ? (
-              <>
-                <AlertCircle className="mr-2 h-4 w-4" /> Blocked
-              </>
-            ) : model.downloading ? (
+            {model.downloading ? (
               <>
                 <Pause className="mr-2 h-4 w-4" /> Pause
               </>

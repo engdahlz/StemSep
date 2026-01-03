@@ -55,7 +55,6 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
   const [archFilter, setArchFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
-  const [showBlockedModels, setShowBlockedModels] = useState(false);
 
   // Tag filtering
   // - "all" shows everything
@@ -80,7 +79,6 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
       setDownloadedFilter("all");
       setArchFilter("all");
       setSourceFilter("all");
-      setShowBlockedModels(true);
       setTagFilter("all");
 
       setSelectedModels(new Set([preSelectedModel]));
@@ -116,7 +114,6 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
       setDownloadedFilter("all");
       setArchFilter("all");
       setSourceFilter("all");
-      setShowBlockedModels(true);
       setTagFilter("all");
 
       setSelectedModels(new Set(ids));
@@ -267,12 +264,6 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
       // Exclude ensembles - they are presets, not actual AI models
       if (model.architecture === "Ensemble") return false;
 
-      // Hide blocked models by default (unless user toggles them on)
-      const runtimeAllowed = model.runtime?.allowed;
-      const runtimeBlockedReason = model.runtime?.blocking_reason;
-      const isBlocked = runtimeAllowed === false || !!runtimeBlockedReason;
-      if (isBlocked && !showBlockedModels) return false;
-
       const matchesSource =
         sourceFilter === "all" ||
         (sourceFilter === "custom" && !!model.is_custom) ||
@@ -328,7 +319,6 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
     downloadedFilter,
     archFilter,
     sourceFilter,
-    showBlockedModels,
     tagFilter,
   ]);
 
@@ -557,7 +547,7 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
             </div>
             <p className="text-muted-foreground mt-1 ml-14">
               Manage your AI separation models.{" "}
-              {models.filter((m) => m.installed).length} installed.
+              {models.length} total, {models.filter((m) => m.installed).length} installed.
             </p>
           </div>
           <div className="flex gap-3">
@@ -576,15 +566,6 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
                 Download Selected ({selectedModels.size})
               </Button>
             )}
-
-            <Button
-              variant="outline"
-              onClick={() => setShowBlockedModels((v) => !v)}
-              className={showBlockedModels ? "border-primary/40" : ""}
-              title="Toggle visibility of models blocked by runtime constraints (missing checkpoints, unverified URLs, etc.)"
-            >
-              {showBlockedModels ? "Hide Blocked" : "Show Blocked"}
-            </Button>
 
             <Button variant="outline" onClick={handleUploadCustom}>
               <Upload className="mr-2 h-4 w-4" />

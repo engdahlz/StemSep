@@ -63,11 +63,21 @@ export default function SettingsDialog({
   const advancedSettings = useStore((state) => state.settings.advancedSettings);
   const setAdvancedSettings = useStore((state) => state.setAdvancedSettings);
 
+  const normalizeOverlap = (value: unknown) => {
+    const n = typeof value === "number" ? value : Number(value);
+    if (!Number.isFinite(n)) return 4;
+    if (n < 1) {
+      const denom = Math.max(1e-6, 1 - n);
+      return Math.max(2, Math.min(50, Math.round(1 / denom)));
+    }
+    return Math.max(2, Math.min(50, Math.round(n)));
+  };
+
   const [localAdvanced, setLocalAdvanced] = useState({
     device: advancedSettings?.device || "auto",
     shifts: advancedSettings?.shifts || 1,
-    overlap: advancedSettings?.overlap || 0.25,
-    segmentSize: advancedSettings?.segmentSize || 256,
+    overlap: normalizeOverlap(advancedSettings?.overlap ?? 4),
+    segmentSize: advancedSettings?.segmentSize ?? 0,
     outputFormat: advancedSettings?.outputFormat || "wav",
     bitrate: advancedSettings?.bitrate || "320k",
   });
@@ -78,13 +88,33 @@ export default function SettingsDialog({
       setLocalAdvanced({
         device: advancedSettings.device || "auto",
         shifts: advancedSettings.shifts,
-        overlap: advancedSettings.overlap,
+        overlap: normalizeOverlap(advancedSettings.overlap),
         segmentSize: advancedSettings.segmentSize,
         outputFormat: advancedSettings.outputFormat,
         bitrate: advancedSettings.bitrate,
       });
     }
   }, [advancedSettings]);
+
+  const computeBestSegmentSize = () => {
+    const vram =
+      systemInfo?.recommended_profile?.vram_gb ??
+      devices.find((d) => d.recommended)?.memory_gb ??
+      0;
+
+    const CHUNK_11S = 485100;
+    const CHUNK_8S = 352800;
+    const CHUNK_2_5S = 112455;
+
+    if (!vram || !Number.isFinite(vram)) {
+      return 0;
+    }
+
+    if (vram >= 8.0) return CHUNK_11S;
+    if (vram >= 5.0) return CHUNK_8S;
+    if (vram >= 4.0) return CHUNK_2_5S;
+    return Math.floor(CHUNK_2_5S / 2);
+  };
 
   useEffect(() => {
     const loadInfo = async () => {
@@ -109,6 +139,7 @@ export default function SettingsDialog({
             cuda_version: info.cuda_version,
             gpu_count: devicesList.length,
             memory_total_gb: info.system_info?.memory_total_gb,
+            recommended_profile: info.recommended_profile || undefined,
           });
         } else {
           // toast.error('No GPU info returned') // Silent fail on init often better
@@ -542,33 +573,54 @@ export default function SettingsDialog({
               {/* Overlap */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Overlap ({(localAdvanced.overlap * 100).toFixed(0)}%)
+                  Overlap (x{localAdvanced.overlap})
                 </label>
                 <input
                   type="range"
-                  min="0.1"
-                  max="0.9"
-                  step="0.05"
+                  min="2"
+                  max="16"
+                  step="1"
                   value={localAdvanced.overlap}
                   onChange={(e) =>
                     setLocalAdvanced((prev) => ({
                       ...prev,
-                      overlap: parseFloat(e.target.value),
+                      overlap: parseInt(e.target.value),
                     }))
                   }
                   className="w-full h-2 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
                 <p className="text-xs text-neutral-400 mt-1">
-                  Amount of overlap between prediction segments. Higher values
-                  can smooth out transitions but increase time.
+                  Guide-style overlap divisor. Higher values can improve blending but increase time/VRAM.
                 </p>
               </div>
 
               {/* Segment Size */}
               <div>
                 <label className="block text-sm font-medium text-white mb-2">
-                  Segment Size ({localAdvanced.segmentSize})
+                  Segment Size ({localAdvanced.segmentSize === 0 ? "Auto" : localAdvanced.segmentSize})
                 </label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const best = computeBestSegmentSize();
+                      setLocalAdvanced((prev) => ({ ...prev, segmentSize: best }));
+                      if (best === 0) {
+                        toast.message(
+                          "Could not detect a stable VRAM profile. Using Auto segment size (click Save Changes to persist).",
+                        );
+                      } else {
+                        toast.success(
+                          `Applied best segment size for this machine: ${best} (click Save Changes to persist)`,
+                        );
+                      }
+                    }}
+                  >
+                    Apply best configuration for my machine
+                  </Button>
+                </div>
                 <select
                   value={localAdvanced.segmentSize}
                   onChange={(e) =>
@@ -579,10 +631,11 @@ export default function SettingsDialog({
                   }
                   className="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-primary focus:border-transparent"
                 >
-                  <option value="256">256 (Default)</option>
-                  <option value="320">320</option>
-                  <option value="400">400</option>
-                  <option value="512">512 (High VRAM)</option>
+                  <option value="0">Auto (Recommended)</option>
+                  <option value="56227">~1.3s (Very Low VRAM)</option>
+                  <option value="112455">~2.5s (Low VRAM)</option>
+                  <option value="352800">~8s (Balanced)</option>
+                  <option value="485100">~11s (High VRAM / Best quality)</option>
                 </select>
                 <p className="text-xs text-neutral-400 mt-1">
                   Length of audio segments processed at once. Larger segments

@@ -33,10 +33,6 @@ export type GlobalPhaseParams = {
 export type ModelLike = {
   id: string;
   installed?: boolean;
-  runtime?: {
-    allowed?: boolean;
-    blocking_reason?: string;
-  };
   phase_fix?: {
     recommended_params?: Partial<PhaseFixParams>;
     is_valid_reference?: boolean;
@@ -100,8 +96,7 @@ export type ResolveInputs = {
 
 export type MissingModel = {
   modelId: string;
-  reason: "not_installed" | "runtime_blocked";
-  details?: string;
+  reason: "not_installed";
 };
 
 export type SeparationPlan = {
@@ -133,7 +128,7 @@ export type SeparationPlan = {
   effectiveGlobalPhaseParams?: GlobalPhaseParams;
 
   /**
-   * Missing/blocked dependency models (not installed or runtime blocked).
+   * Missing dependency models (not installed).
    * Use this to block starting a separation and prompt for downloads.
    */
   missingModels: MissingModel[];
@@ -171,16 +166,6 @@ function findModel(
 ) {
   if (!modelId || !Array.isArray(models)) return undefined;
   return models.find((m) => m.id === modelId);
-}
-
-function isRuntimeBlocked(model: ModelLike | undefined): {
-  blocked: boolean;
-  reason?: string;
-} {
-  const allowed = model?.runtime?.allowed;
-  const reason = model?.runtime?.blocking_reason;
-  const blocked = allowed === false || !!reason;
-  return { blocked, reason };
 }
 
 function isInstalled(model: ModelLike | undefined): boolean {
@@ -300,7 +285,7 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
     ? globalPhaseParams
     : undefined;
 
-  // --- Step 5: Validate dependencies (installed and runtime) ---
+  // --- Step 5: Validate dependencies (installed) ---
   // Model(s) to validate:
   // - if ensemble: validate each referenced model_id
   // - else: validate effectiveModelId (unless it's a recipe id - we can't know here reliably)
@@ -309,17 +294,6 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
   // to block early whenever possible for better UX.
   const validateModelId = (mid: string) => {
     const m = findModel(models, mid);
-    const { blocked, reason } = isRuntimeBlocked(m);
-
-    if (blocked) {
-      addMissing(missingModels, mid, {
-        modelId: mid,
-        reason: "runtime_blocked",
-        details: reason,
-      });
-      return;
-    }
-
     if (!isInstalled(m)) {
       addMissing(missingModels, mid, {
         modelId: mid,

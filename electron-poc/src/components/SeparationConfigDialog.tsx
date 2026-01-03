@@ -39,6 +39,15 @@ export default function SeparationConfigDialog({
     onShowModelDetails
 }: SeparationConfigDialogProps) {
     const globalAdvancedSettings = useStore(state => state.settings.advancedSettings)
+    const normalizeOverlap = (value: any) => {
+        const n = typeof value === 'number' ? value : Number(value)
+        if (!Number.isFinite(n)) return 4
+        if (n < 1) {
+            const denom = Math.max(1e-6, 1 - n)
+            return Math.max(2, Math.min(50, Math.round(1 / denom)))
+        }
+        return Math.max(2, Math.min(50, Math.round(n)))
+    }
     const [mode, setMode] = useState<'simple' | 'advanced'>('simple')
     const [selectedPresetId, setSelectedPresetId] = useState<string>(initialPresetId || (presets.length > 0 ? presets[0].id : ''))
     const [selectedModelId, setSelectedModelId] = useState<string>('')
@@ -51,8 +60,8 @@ export default function SeparationConfigDialog({
     const [bitDepth, setBitDepth] = useState('16')
     const [splitFreq, setSplitFreq] = useState(750)
     const [advancedParams, setAdvancedParams] = useState({
-        overlap: globalAdvancedSettings?.overlap || 0.25,
-        segmentSize: globalAdvancedSettings?.segmentSize || 256,
+        overlap: normalizeOverlap(globalAdvancedSettings?.overlap ?? 4),
+        segmentSize: globalAdvancedSettings?.segmentSize ?? 0,
         shifts: globalAdvancedSettings?.shifts || 1,
         tta: false,
         bitrate: globalAdvancedSettings?.bitrate || '320k'

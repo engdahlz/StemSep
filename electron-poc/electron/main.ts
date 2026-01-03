@@ -674,6 +674,26 @@ function ensurePythonBridge() {
 
     if (rustExe) {
       const rustArgs: string[] = [];
+
+      const assetsDir = (() => {
+        const candidates: string[] = [
+          path.join(process.resourcesPath, "StemSepApp", "assets"),
+          path.join(__dirname, "../../StemSepApp/assets"),
+        ];
+
+        for (const c of candidates) {
+          try {
+            if (fs.existsSync(c)) return c;
+          } catch {
+            // ignore
+          }
+        }
+        return null;
+      })();
+
+      if (assetsDir) {
+        rustArgs.push("--assets-dir", assetsDir);
+      }
       if (modelsDir) {
         rustArgs.push("--models-dir", modelsDir);
       }
@@ -842,6 +862,25 @@ function ensurePythonBridge() {
     stdio: ["pipe", "pipe", "pipe"],
     env: {
       ...process.env,
+      ...(typeof modelsDir === "string" && modelsDir.trim()
+        ? { STEMSEP_MODELS_DIR: modelsDir }
+        : {}),
+      ...(() => {
+        const candidates: string[] = [
+          path.join(process.resourcesPath, "StemSepApp", "assets"),
+          path.join(__dirname, "../../StemSepApp/assets"),
+        ];
+
+        for (const c of candidates) {
+          try {
+            if (fs.existsSync(c)) return { STEMSEP_ASSETS_DIR: c };
+          } catch {
+            // ignore
+          }
+        }
+
+        return {};
+      })(),
       PYTHONIOENCODING: "utf-8",
       ...(hfToken
         ? {

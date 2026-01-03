@@ -48,13 +48,12 @@ export default function SeparatePage({
   // --- State ---
   const [isDragging, setIsDragging] = useState(false);
 
-  // Missing/blocked models dialog (for single-file runs started from this page)
+  // Missing models dialog (for single-file runs started from this page)
   const [missingDialogOpen, setMissingDialogOpen] = useState(false);
   const [missingDialogItems, setMissingDialogItems] = useState<
     {
       modelId: string;
-      reason: "not_installed" | "runtime_blocked";
-      details?: string;
+      reason: "not_installed";
     }[]
   >([]);
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -510,7 +509,7 @@ export default function SeparatePage({
       if (queueItem) {
         updateQueueItem(queueItem.id, {
           status: "failed",
-          error: "Missing/blocked models (see dialog)",
+          error: "Missing models (see dialog)",
         });
       }
 

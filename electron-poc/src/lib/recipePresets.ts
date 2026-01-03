@@ -74,6 +74,16 @@ export function recipeToPreset(recipe: Recipe): Preset {
   const requiredModels = getRecipeRequiredModels(recipe)
   const stems = recipeDisplayStems(recipe)
 
+  const defaults = recipe.defaults
+  const advancedDefaults = defaults
+    ? {
+        overlap: defaults.overlap,
+        segmentSize: defaults.segment_size ?? defaults.chunk_size,
+        shifts: defaults.shifts,
+        tta: defaults.tta,
+      }
+    : undefined
+
   return {
     id: recipe.id,
     name: recipe.name,
@@ -96,6 +106,7 @@ export function recipeToPreset(recipe: Recipe): Preset {
       requiredModels,
       steps: recipe.steps || [],
     },
+    advancedDefaults,
   }
 }
 

@@ -7957,6 +7957,132 @@
       }
     },
     {
+      "id": "unwa-hyperace",
+      "name": "Unwa HyperACE",
+      "type": "Roformer - Instrumental",
+      "architecture": "BS-Roformer",
+      "description": "Inst (HyperACE)",
+      "tags": [
+        "instrumental"
+      ],
+      "stems": [],
+      "links": {
+        "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/bs_hyperace.ckpt",
+        "config": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/config.yaml",
+        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "bs_hyperace.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "config.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 0.0,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 8.0,
+      "recommended_settings": {
+        "segment_size": null,
+        "batch_size": null,
+        "tta": null,
+        "overlap": null,
+        "shifts": null,
+        "bit_depth": null
+      },
+      "settings_semantics": {
+        "overlap": {
+          "meaning_by_runtime": {
+            "audio-separator": "auto",
+            "stemsep-legacy": "auto",
+            "msst": "divisor"
+          },
+          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
+        }
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+      },
+      "compatibility": {
+        "uvr_compatible": null,
+        "audio_separator_compatible": false,
+        "msst_compatible": true,
+        "known_issues": []
+      },
+      "requirements": {
+        "python": {
+          "min": "3.10",
+          "max": null
+        },
+        "torch": {
+          "min": null,
+          "max": null,
+          "cuda": [],
+          "rocm": []
+        },
+        "pip": {
+          "packages": []
+        },
+        "files": {
+          "expects": [],
+          "provides": []
+        },
+        "manual_steps": []
+      },
+      "phase_fix": {
+        "is_valid_reference": null,
+        "recommended_params": {
+          "lowHz": null,
+          "highHz": null,
+          "highFreqWeight": null
+        },
+        "recommended_usage": []
+      },
+      "capabilities": {
+        "stems": [],
+        "roles": [
+          "separation"
+        ],
+        "supports_mono": null,
+        "supports_stereo": null
+      },
+      "notes": {
+        "migration": {
+          "from": "legacy",
+          "legacy_fields_present": [
+            "architecture",
+            "bleedless",
+            "description",
+            "fullness",
+            "id",
+            "links",
+            "name",
+            "sdr",
+            "type",
+            "vram_required"
+          ]
+        },
+        "strict_spec": {
+          "routing_default": "msst_only_for_roformer"
+        }
+      }
+    },
+    {
       "id": "unwa-resurrection-voc",
       "name": "Unwa Resurrection Voc",
       "type": "Roformer - Vocals",
