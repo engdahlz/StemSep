@@ -36,6 +36,17 @@ export const useSeparation = () => {
     return [...ALL_PRESETS, ...recipesToPresets(recipes)];
   }, [recipes]);
 
+  const toBackendOverlap = useCallback((value: unknown) => {
+    const n = typeof value === "number" ? value : Number(value);
+    if (!Number.isFinite(n)) return undefined;
+    if (n <= 0) return undefined;
+
+    // UI uses an integer divisor (2..50). Backend expects a 0..1 ratio.
+    // Keep legacy ratio values (0..1) as-is.
+    if (n >= 1) return 1 / n;
+    return n;
+  }, []);
+
   const handleSelectOutputDirectory = useCallback(async () => {
     if (!window.electronAPI) return;
 
@@ -110,6 +121,8 @@ export const useSeparation = () => {
           const modelId = plan.effectiveModelId;
           const stems = plan.effectiveStems;
 
+          const backendOverlap = toBackendOverlap(config.advancedParams?.overlap);
+
           // Block early if we already know models are missing
           if (!plan.canProceed) {
             const missingList = plan.missingModels
@@ -178,7 +191,7 @@ export const useSeparation = () => {
                 config.device && config.device !== "auto"
                   ? config.device
                   : undefined,
-                config.advancedParams?.overlap,
+                backendOverlap,
                 config.advancedParams?.segmentSize,
                 config.advancedParams?.shifts,
                 "wav",
@@ -215,7 +228,7 @@ export const useSeparation = () => {
             config.device && config.device !== "auto"
               ? config.device
               : undefined,
-            config.advancedParams?.overlap,
+            backendOverlap,
             config.advancedParams?.segmentSize,
             config.advancedParams?.shifts,
             "wav",
