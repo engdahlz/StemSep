@@ -13,6 +13,7 @@ import MissingModelsDialog from "./dialogs/MissingModelsDialog";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { useStore } from "../stores/useStore";
+import { toast } from "sonner";
 import { Preset } from "../presets";
 import type { SeparationConfig } from "../types/separation";
 import { EnsembleBuilder } from "./EnsembleBuilder";
@@ -541,8 +542,13 @@ export function ConfigurePage({
           : {
               segmentSize: (() => {
                 const maxSafe = computeBestSegmentSizeFromVRAM(availableVRAM);
-                const segmentSize = maxSafe > 0 ? maxSafe : 0;
-                return segmentSize;
+                if (maxSafe > 0) return maxSafe;
+                const fallback =
+                  (globalAdvancedSettings?.segmentSize ?? advancedParams.segmentSize) ||
+                  0;
+                return typeof fallback === "number" && Number.isFinite(fallback)
+                  ? fallback
+                  : 0;
               })(),
               shifts: (() => {
                 const speed = clamp(simpleSpeed, 0, 100);
@@ -589,7 +595,19 @@ export function ConfigurePage({
   const cudaGpus = useMemo(() => {
     const gpus = gpuInfo?.gpus;
     if (!Array.isArray(gpus)) return [];
-    return gpus.filter((g: any) => g?.type === "cuda");
+    return gpus.filter((g: any) => {
+      const type = typeof g?.type === "string" ? g.type.toLowerCase() : "";
+      if (type === "cuda" || type === "nvidia") return true;
+      const id = typeof g?.id === "string" ? g.id.toLowerCase() : "";
+      if (id.startsWith("cuda:")) return true;
+      // Fallbacks for older payloads.
+      if (Number.isFinite(g?.index) && id.includes("cuda")) return true;
+      const name = typeof g?.name === "string" ? g.name.toLowerCase() : "";
+      if (name.includes("nvidia") || name.includes("geforce") || name.includes("rtx")) {
+        return true;
+      }
+      return false;
+    });
   }, [gpuInfo]);
 
   const hasCuda = !!gpuInfo?.has_cuda || cudaGpus.length > 0;
@@ -1399,7 +1417,7 @@ export function ConfigurePage({
                     <input
                       type="number"
                       step="1"
-                      min="1"
+                      min="2"
                       max="50"
                       className="w-full p-2 rounded border bg-background"
                       value={advancedParams.overlap}
@@ -1407,7 +1425,10 @@ export function ConfigurePage({
                         const next = parseInt(e.target.value);
                         if (!Number.isFinite(next)) return;
                         setAdvancedParamsDirty(true);
-                        setAdvancedParams((p) => ({ ...p, overlap: next }));
+                        setAdvancedParams((p) => ({
+                          ...p,
+                          overlap: clamp(next, 2, 50),
+                        }));
                       }}
                     />
                   </div>
@@ -1433,9 +1454,18 @@ export function ConfigurePage({
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const best = maxSafeSegmentSize > 0 ? maxSafeSegmentSize : 0;
+                            const best = maxSafeSegmentSize > 0 ? maxSafeSegmentSize : null;
+                            if (!best) {
+                              toast.message(
+                                "Could not detect GPU VRAM reliably. Leaving segment size unchanged.",
+                              );
+                              return;
+                            }
                             setAdvancedParamsDirty(true);
                             setAdvancedParams((p) => ({ ...p, segmentSize: best }));
+                            toast.success(
+                              `Applied best segment size for this machine: ${best}`,
+                            );
                           }}
                         >
                           Best for my machine
