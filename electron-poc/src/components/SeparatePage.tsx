@@ -544,6 +544,31 @@ export default function SeparatePage({
     addLog(`Starting separation of ${filePath.split(/[\\/]/).pop()}...`);
 
     try {
+      const resolveBackendOverlap = (value: unknown) => {
+        const n = typeof value === "number" ? value : Number(value);
+        if (!Number.isFinite(n)) return undefined;
+        if (n <= 0) return undefined;
+
+        // UI uses overlap as an integer divisor (2..50).
+        // Backend expects a 0..1 overlap ratio.
+        // divisor -> ratio: (n - 1) / n (e.g. 4 -> 0.75)
+        if (n < 1) return Math.min(0.99, Math.max(0, n));
+        const ratio = (n - 1) / n;
+        return Math.min(0.99, Math.max(0, ratio));
+      };
+
+      const resolveBackendSegmentSize = (value: unknown) => {
+        const n = typeof value === "number" ? value : Number(value);
+        if (!Number.isFinite(n)) return undefined;
+        if (n <= 0) return undefined;
+        return Math.trunc(n);
+      };
+
+      const backendOverlap = resolveBackendOverlap(config.advancedParams?.overlap);
+      const backendSegmentSize = resolveBackendSegmentSize(
+        config.advancedParams?.segmentSize,
+      );
+
       const preflight = window.electronAPI.separationPreflight
         ? await window.electronAPI.separationPreflight(
             filePath,
@@ -553,8 +578,8 @@ export default function SeparatePage({
             config.device && config.device !== "auto"
               ? config.device
               : undefined,
-            config.advancedParams?.overlap,
-            config.advancedParams?.segmentSize,
+            backendOverlap,
+            backendSegmentSize,
             config.advancedParams?.shifts,
             "wav",
             config.advancedParams?.bitrate,
@@ -588,8 +613,8 @@ export default function SeparatePage({
         targetOutputDir,
         stems,
         config.device && config.device !== "auto" ? config.device : undefined,
-        config.advancedParams?.overlap,
-        config.advancedParams?.segmentSize,
+        backendOverlap,
+        backendSegmentSize,
         config.advancedParams?.shifts,
         "wav",
         config.advancedParams?.bitrate,
