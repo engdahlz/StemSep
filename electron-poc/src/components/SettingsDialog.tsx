@@ -96,18 +96,41 @@ export default function SettingsDialog({
     }
   }, [advancedSettings]);
 
-  const computeBestSegmentSize = () => {
-    const vram =
-      systemInfo?.recommended_profile?.vram_gb ??
-      devices.find((d) => d.recommended)?.memory_gb ??
-      0;
+  const computeBestSegmentSize = (): number | null => {
+    const vramCandidates: number[] = [];
+
+    const fromProfile = systemInfo?.recommended_profile?.vram_gb;
+    if (typeof fromProfile === "number" && Number.isFinite(fromProfile) && fromProfile > 0) {
+      vramCandidates.push(fromProfile);
+    }
+
+    const fromRecommended = devices.find((d) => d.recommended)?.memory_gb;
+    if (typeof fromRecommended === "number" && Number.isFinite(fromRecommended) && fromRecommended > 0) {
+      vramCandidates.push(fromRecommended);
+    }
+
+    const fromSelected = devices.find((d) => d.id === selectedDevice)?.memory_gb;
+    if (typeof fromSelected === "number" && Number.isFinite(fromSelected) && fromSelected > 0) {
+      vramCandidates.push(fromSelected);
+    }
+
+    // Fallback: pick the largest reported CUDA VRAM.
+    for (const d of devices) {
+      if (d.type !== "cuda") continue;
+      const mem = d.memory_gb;
+      if (typeof mem === "number" && Number.isFinite(mem) && mem > 0) {
+        vramCandidates.push(mem);
+      }
+    }
+
+    const vram = vramCandidates.length ? Math.max(...vramCandidates) : 0;
 
     const CHUNK_11S = 485100;
     const CHUNK_8S = 352800;
     const CHUNK_2_5S = 112455;
 
     if (!vram || !Number.isFinite(vram)) {
-      return 0;
+      return null;
     }
 
     if (vram >= 8.0) return CHUNK_11S;
@@ -601,17 +624,18 @@ export default function SettingsDialog({
                 </label>
                 <div className="flex gap-2">
                   <Button
-                    type="button"
+                    className="w-full"
                     variant="outline"
                     size="sm"
                     onClick={() => {
                       const best = computeBestSegmentSize();
-                      setLocalAdvanced((prev) => ({ ...prev, segmentSize: best }));
-                      if (best === 0) {
+                      if (!best) {
                         toast.message(
-                          "Could not detect a stable VRAM profile. Using Auto segment size (click Save Changes to persist).",
+                          "Could not detect GPU VRAM reliably. Leaving segment size unchanged.",
                         );
+                        return;
                       } else {
+                        setLocalAdvanced((prev) => ({ ...prev, segmentSize: best }));
                         toast.success(
                           `Applied best segment size for this machine: ${best} (click Save Changes to persist)`,
                         );

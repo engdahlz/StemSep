@@ -84,6 +84,8 @@ rust-sdk/
 models/
 !StemSepApp/src/models/
 !StemSepApp/src/models/**
+!StemSepApp/src/stemsep/models/
+!StemSepApp/src/stemsep/models/**
 StemSepApp/src/models/**/__pycache__/
 models_cache/
 models_test/

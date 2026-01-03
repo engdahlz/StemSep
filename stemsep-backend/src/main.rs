@@ -711,14 +711,56 @@ fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -
     false
 }
 
+fn locate_nvidia_smi() -> Option<std::path::PathBuf> {
+    // Prefer PATH first.
+    if Command::new("nvidia-smi").arg("-h").output().is_ok() {
+        return Some(std::path::PathBuf::from("nvidia-smi"));
+    }
+
+    // Common Windows install locations.
+    if cfg!(target_os = "windows") {
+        let candidates = [
+            r"C:\\Windows\\System32\\nvidia-smi.exe",
+            r"C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe",
+            r"C:\\Program Files (x86)\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe",
+        ];
+        for c in candidates {
+            let p = std::path::PathBuf::from(c);
+            if p.exists() {
+                return Some(p);
+            }
+        }
+    }
+
+    // Common Linux location.
+    if cfg!(target_os = "linux") {
+        let candidates = ["/usr/bin/nvidia-smi", "/bin/nvidia-smi"];
+        for c in candidates {
+            let p = std::path::PathBuf::from(c);
+            if p.exists() {
+                return Some(p);
+            }
+        }
+    }
+
+    None
+}
+
 fn detect_gpus() -> Value {
     // Best-effort on Windows/Linux: try nvidia-smi if present.
-    let output = Command::new("nvidia-smi")
+    let nvidia_smi = locate_nvidia_smi();
+    let output = match &nvidia_smi {
+        Some(cmd) => Command::new(cmd)
         .args([
             "--query-gpu=name,memory.total",
             "--format=csv,noheader,nounits",
         ])
-        .output();
+        .output(),
+        None => Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "nvidia-smi not found",
+        )),
+    };
 
     let mut gpus: Vec<Value> = Vec::new();
     if let Ok(out) = output {
@@ -790,18 +832,21 @@ fn detect_gpus() -> Value {
         })
     };
 
-    let cuda_version: Option<String> = Command::new("nvidia-smi")
-        .args(["--query-gpu=driver_version", "--format=csv,noheader"])
-        .output()
-        .ok()
-        .and_then(|out| {
-            if !out.status.success() {
-                return None;
-            }
-            String::from_utf8(out.stdout).ok()
-        })
-        .and_then(|s| s.lines().next().map(|l| l.trim().to_string()))
-        .filter(|s| !s.is_empty());
+    let cuda_version: Option<String> = match &nvidia_smi {
+        Some(cmd) => Command::new(cmd)
+            .args(["--query-gpu=driver_version", "--format=csv,noheader"])
+            .output()
+            .ok()
+            .and_then(|out| {
+                if !out.status.success() {
+                    return None;
+                }
+                String::from_utf8(out.stdout).ok()
+            })
+            .and_then(|s| s.lines().next().map(|l| l.trim().to_string()))
+            .filter(|s| !s.is_empty()),
+        None => None,
+    };
 
     let has_cuda = !gpus.is_empty();
     let gpu_count = gpus.len();
