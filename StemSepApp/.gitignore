@@ -117,7 +117,12 @@ dmypy.json
 models/
 !assets/models/
 !src/models/
-!src/models/**
+!src/stemsep/models/
+src/stemsep/models/**
+!src/stemsep/models/__init__.py
+!src/stemsep/models/model_config.py
+!src/stemsep/models/model_factory.py
+!src/stemsep/models/model_manager.py
 temp/
 logs/
 output/
