@@ -827,8 +827,6 @@ export default function SeparatePage({
     >
       <div className="flex-1 overflow-y-auto relative scroll-smooth">
         {/* Background Ambient Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
-
         <div className="flex flex-col max-w-4xl mx-auto w-full p-6 gap-8 relative z-10 animate-in fade-in duration-700">
           {/* 1. Header */}
           <div className="flex items-center justify-between">
@@ -857,7 +855,7 @@ export default function SeparatePage({
           <div className="flex-1 min-h-[400px] flex flex-col">
             <Card
               className={`flex-1 border-2 border-dashed transition-all duration-500 overflow-hidden group relative flex flex-col
-                ${isDragging ? "border-primary bg-primary/10 scale-[1.01] shadow-2xl shadow-primary/20" : "border-border/50 hover:border-primary/50 hover:bg-accent/5"}
+                ${isDragging ? "border-primary bg-muted" : "border-border/60 hover:border-border"}
                 `}
             >
               {/* Interactive Overlay - Handles all events */}
@@ -880,16 +878,12 @@ export default function SeparatePage({
               />
 
               {/* Background Glow */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-0 transition-opacity duration-500 pointer-events-none ${isDragging ? "opacity-100" : "group-hover:opacity-50"}`}
-              />
-
               <CardContent className="flex-1 flex flex-col items-center justify-center text-center space-y-8 relative z-10 pointer-events-none py-20">
                 <div
-                  className={`p-8 rounded-full bg-background/80 backdrop-blur-sm shadow-xl transition-all duration-500 group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-primary/20 ${isDragging ? "scale-125 bg-primary/20 text-primary" : "text-muted-foreground"}`}
+                  className={`p-8 border border-border bg-background transition-colors duration-200 ${isDragging ? "text-foreground" : "text-muted-foreground"}`}
                 >
                   <Upload
-                    className={`w-16 h-16 transition-all duration-500 ${isDragging ? "animate-bounce" : ""}`}
+                    className={`w-16 h-16 transition-all duration-200 ${isDragging ? "" : ""}`}
                   />
                 </div>
                 <div className="space-y-4 max-w-md mx-auto">
@@ -904,25 +898,25 @@ export default function SeparatePage({
                   <div className="flex flex-wrap justify-center gap-2 pt-4">
                     <Badge
                       variant="secondary"
-                      className="bg-background/50 backdrop-blur-sm border-border/50 text-xs px-3 py-1"
+                      className="bg-background border-border text-xs px-3 py-1"
                     >
                       MP3
                     </Badge>
                     <Badge
                       variant="secondary"
-                      className="bg-background/50 backdrop-blur-sm border-border/50 text-xs px-3 py-1"
+                      className="bg-background border-border text-xs px-3 py-1"
                     >
                       WAV
                     </Badge>
                     <Badge
                       variant="secondary"
-                      className="bg-background/50 backdrop-blur-sm border-border/50 text-xs px-3 py-1"
+                      className="bg-background border-border text-xs px-3 py-1"
                     >
                       FLAC
                     </Badge>
                     <Badge
                       variant="secondary"
-                      className="bg-background/50 backdrop-blur-sm border-border/50 text-xs px-3 py-1"
+                      className="bg-background border-border text-xs px-3 py-1"
                     >
                       M4A
                     </Badge>
@@ -979,7 +973,7 @@ export default function SeparatePage({
               />
 
               {/* Action Bar */}
-              <div className="sticky bottom-6 bg-background/80 backdrop-blur-md p-4 rounded-2xl border shadow-lg flex items-center justify-between gap-4 z-[60]">
+              <div className="sticky bottom-6 bg-background p-4 border flex items-center justify-between gap-4 z-[60]">
                 <div className="text-sm text-muted-foreground pl-2">
                   {isProcessing ? (
                     <span className="flex items-center gap-2 text-primary font-medium">
@@ -1012,7 +1006,7 @@ export default function SeparatePage({
                   <Button
                     size="lg"
                     variant="destructive"
-                    className="px-8 shadow-lg shadow-destructive/20 text-base font-semibold"
+                    className="px-8 text-base font-semibold"
                     onClick={cancelSeparation}
                   >
                     Cancel
@@ -1020,7 +1014,7 @@ export default function SeparatePage({
                 ) : (
                   <Button
                     size="lg"
-                    className="px-8 shadow-lg shadow-primary/20 text-base font-semibold"
+                    className="px-8 text-base font-semibold"
                     disabled={queue.length === 0}
                     onClick={() => {
                       const item = queue[0];

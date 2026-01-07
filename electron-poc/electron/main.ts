@@ -766,6 +766,9 @@ function ensurePythonBridge() {
 
       backendProcess = pythonBridge;
 
+      pythonBridge.stdout?.setMaxListeners(50);
+      pythonBridge.stderr?.setMaxListeners(50);
+
       // Continue with shared stdout handling + restart logic below.
     } else {
       const msg = "Rust backend not found.";
@@ -932,6 +935,9 @@ function ensurePythonBridge() {
   });
 
   backendProcess = pythonBridge;
+
+  pythonBridge.stdout?.setMaxListeners(50);
+  pythonBridge.stderr?.setMaxListeners(50);
   }
 
   // Global stdout listener that always forwards download events to renderer
@@ -2521,6 +2527,10 @@ ipcMain.handle("read-audio-file", async (_event, filePath: string) => {
       }
     }
 
+    if (!fs.existsSync(resolvedPath)) {
+      return { success: false, error: "Audio file not found" };
+    }
+
     const data = fs.readFileSync(resolvedPath);
     const base64 = data.toString("base64");
     // Determine MIME type from extension
@@ -2554,7 +2564,7 @@ ipcMain.handle(
 
 // Get GPU devices
 ipcMain.handle("get-gpu-devices", async () => {
-  return sendPythonCommandWithRetry("get-gpu-devices", {}, 15000);
+  return sendPythonCommandWithRetry("get-gpu-devices", {}, 30000);
 });
 
 // Get workflow types (Live vs Studio)
