@@ -476,12 +476,35 @@ function resolveBundledPythonForRustBackend(): string | null {
   // The Rust backend spawns `scripts/inference.py`. On Windows, it defaults to using the `py` launcher,
   // which may select a Python without our dependencies. Provide an explicit interpreter when possible.
   try {
+    const venv = (process.env.VIRTUAL_ENV || "").trim();
+    if (venv) {
+      if (process.platform === "win32") {
+        const p = path.join(venv, "Scripts", "python.exe");
+        try {
+          if (fs.existsSync(p)) return p;
+        } catch {
+          // ignore
+        }
+      } else {
+        const p = path.join(venv, "bin", "python");
+        try {
+          if (fs.existsSync(p)) return p;
+        } catch {
+          // ignore
+        }
+      }
+    }
+
     if (process.platform === "win32") {
       const candidates = [
         // Packaged app: extraResources ships ".venv" next to the app
         path.join(process.resourcesPath, ".venv", "Scripts", "python.exe"),
+        // Dev repo: root venv (preferred)
+        path.join(process.cwd(), ".venv", "Scripts", "python.exe"),
         // Dev repo: prefer StemSepApp venv if present
         path.join(__dirname, "../../StemSepApp/.venv/Scripts/python.exe"),
+        // Dev repo: prefer StemSepApp venv from current working directory (more robust than __dirname)
+        path.join(process.cwd(), "StemSepApp", ".venv", "Scripts", "python.exe"),
         // Dev repo: root venv (legacy)
         path.join(__dirname, "../../.venv/Scripts/python.exe"),
       ];
@@ -498,7 +521,9 @@ function resolveBundledPythonForRustBackend(): string | null {
 
     const candidates = [
       path.join(process.resourcesPath, ".venv", "bin", "python"),
+      path.join(process.cwd(), ".venv", "bin", "python"),
       path.join(__dirname, "../../StemSepApp/.venv/bin/python"),
+      path.join(process.cwd(), "StemSepApp", ".venv", "bin", "python"),
       path.join(__dirname, "../../.venv/bin/python"),
     ];
 
@@ -699,6 +724,14 @@ function ensurePythonBridge() {
       }
 
       const explicitPython = resolveBundledPythonForRustBackend();
+
+      if (explicitPython) {
+        log("Pinning Rust backend Python via STEMSEP_PYTHON:", explicitPython);
+      } else {
+        log(
+          "WARNING: Could not resolve explicit Python interpreter for Rust backend; it may fall back to 'py' launcher.",
+        );
+      }
 
       log("Spawning Rust backend:", rustExe, rustArgs);
       pythonBridge = spawn(rustExe, rustArgs, {
@@ -1035,6 +1068,104 @@ function ensurePythonBridge() {
   return pythonBridge;
 }
 
+function resolveAssetsDirForLocalOps(): string | null {
+  const candidates: string[] = [
+    path.join(process.resourcesPath, "StemSepApp", "assets"),
+    path.join(__dirname, "../../StemSepApp/assets"),
+    path.join(process.cwd(), "StemSepApp", "assets"),
+  ];
+  for (const c of candidates) {
+    try {
+      if (fs.existsSync(c)) return c;
+    } catch {
+      // ignore
+    }
+  }
+  return null;
+}
+
+function urlBasename(url: unknown): string | null {
+  if (typeof url !== "string") return null;
+  const u = url.split("?")[0].replace(/\/+$/, "");
+  const parts = u.split("/");
+  const last = parts[parts.length - 1];
+  return last ? last : null;
+}
+
+function removeModelLocal(modelId: string): { success: true; removedFiles: string[] } {
+  const modelsDir = getStoredModelsDir();
+  if (!modelsDir) {
+    throw new Error("Models directory is not configured.");
+  }
+
+  const assetsDir = resolveAssetsDirForLocalOps();
+  if (!assetsDir) {
+    throw new Error("Assets directory not found (cannot resolve model registry).");
+  }
+
+  const registryPath = path.join(assetsDir, "models.json.bak");
+  let model: any = null;
+  try {
+    const raw = fs.readFileSync(registryPath, "utf-8");
+    const json = JSON.parse(raw);
+    const models = Array.isArray(json?.models) ? json.models : [];
+    model = models.find((m: any) => m && m.id === modelId) || null;
+  } catch (e: any) {
+    throw new Error(
+      `Failed to read model registry at ${registryPath}: ${e?.message || String(e)}`,
+    );
+  }
+
+  const removed: string[] = [];
+
+  const links = model?.links && typeof model.links === "object" ? model.links : null;
+  const ckptBase = urlBasename(links?.checkpoint);
+  const cfgBase = urlBasename(links?.config);
+
+  // NOTE: Avoid deleting generic config.yaml/config.yml because it may be shared between models.
+  const genericConfig = new Set(["config.yaml", "config.yml"]);
+
+  const candidateNames = new Set<string>();
+
+  if (ckptBase) candidateNames.add(ckptBase);
+  if (cfgBase && !genericConfig.has(cfgBase.toLowerCase())) candidateNames.add(cfgBase);
+
+  // Per-model aliases we create / accept
+  for (const ext of [
+    ".ckpt",
+    ".chpt",
+    ".pth",
+    ".pt",
+    ".safetensors",
+    ".onnx",
+    ".yaml",
+    ".yml",
+  ]) {
+    candidateNames.add(`${modelId}${ext}`);
+  }
+
+  // Known special-case aliases
+  if (modelId === "mel-band-roformer-kim") {
+    candidateNames.add("MelBandRoformer.ckpt");
+    candidateNames.add("vocals_mel_band_roformer.ckpt");
+    candidateNames.add("vocals_mel_band_roformer.yaml");
+  }
+
+  for (const name of Array.from(candidateNames)) {
+    const p = path.join(modelsDir, name);
+    try {
+      if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+        fs.unlinkSync(p);
+        removed.push(p);
+      }
+    } catch {
+      // ignore individual failures to keep batch delete resilient
+    }
+  }
+
+  return { success: true, removedFiles: removed };
+}
+
 // Health check state
 let healthCheckInterval: NodeJS.Timeout | null = null;
 let consecutiveHealthCheckFailures = 0;
@@ -1079,6 +1210,16 @@ function stopHealthChecks() {
 
 let mainWindow: InstanceType<typeof BrowserWindow> | null = null;
 let isCreatingMainWindow = false;
+
+const lastProgressByJobId = new Map<string, number>();
+const modelInfoByJobId = new Map<
+  string,
+  {
+    requestedModelId: string;
+    effectiveModelId: string;
+    inputFile: string;
+  }
+>();
 
 // Avoid multiple Electron instances (common in dev when scripts rerun), which otherwise
 // results in multiple app windows.
@@ -1792,13 +1933,27 @@ ipcMain.handle(
           // For now, we forward all progress events to the UI, which filters by active job if needed.
 
           if (msg.type === "separation_progress") {
+            const jobId = msg.job_id;
+            const next = Number(msg.progress);
+            const prev = lastProgressByJobId.get(jobId) ?? 0;
+            const clamped = Number.isFinite(next)
+              ? Math.max(prev, Math.max(0, Math.min(100, next)))
+              : prev;
+            lastProgressByJobId.set(jobId, clamped);
+
+            const modelInfo = modelInfoByJobId.get(jobId);
+            const modelTag = modelInfo
+              ? ` requestedModelId=${modelInfo.requestedModelId} effectiveModelId=${modelInfo.effectiveModelId}`
+              : "";
+
             console.log(
-              `Separation Progress: ${msg.progress}% - ${msg.message}`,
+              `Separation Progress: job_id=${jobId}${modelTag} progress=${clamped}% (raw: ${msg.progress}%) message=${msg.message}`,
             );
+
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.send("separation-progress", {
-                jobId: msg.job_id,
-                progress: msg.progress,
+                jobId,
+                progress: clamped,
                 message: msg.message,
                 device: msg.device,
               });
@@ -1895,13 +2050,27 @@ ipcMain.handle(
 
           // Always forward progress events to the UI (UI can correlate by jobId).
           if (msg.type === "separation_progress") {
+            const jobId = msg.job_id;
+            const next = Number(msg.progress);
+            const prev = lastProgressByJobId.get(jobId) ?? 0;
+            const clamped = Number.isFinite(next)
+              ? Math.max(prev, Math.max(0, Math.min(100, next)))
+              : prev;
+            lastProgressByJobId.set(jobId, clamped);
+
+            const modelInfo = modelInfoByJobId.get(jobId);
+            const modelTag = modelInfo
+              ? ` requestedModelId=${modelInfo.requestedModelId} effectiveModelId=${modelInfo.effectiveModelId}`
+              : "";
+
             console.log(
-              `Separation Progress (event): job_id=${msg.job_id} progress=${msg.progress}% message=${msg.message}`,
+              `Separation Progress (event): job_id=${jobId}${modelTag} progress=${clamped}% (raw=${msg.progress}%) message=${msg.message}`,
             );
+
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.send("separation-progress", {
-                jobId: msg.job_id,
-                progress: msg.progress,
+                jobId,
+                progress: clamped,
                 message: msg.message,
                 device: msg.device,
               });
@@ -1926,12 +2095,18 @@ ipcMain.handle(
                 outputDir: previewDir,
               });
             }
+            if (msg.job_id) {
+              lastProgressByJobId.delete(msg.job_id);
+              modelInfoByJobId.delete(msg.job_id);
+            }
           }
 
           // If we see a progress/completion event matching our job ID:
           if (myJobId && msg.job_id === myJobId) {
              if (msg.type === "separation_complete") {
                 cleanup();
+                lastProgressByJobId.delete(msg.job_id);
+                modelInfoByJobId.delete(msg.job_id);
                 resolve({
                   success: true,
                   outputFiles: msg.output_files,
@@ -1940,9 +2115,17 @@ ipcMain.handle(
                 });
              } else if (msg.type === "separation_error") {
                 cleanup();
+                if (msg.job_id) {
+                  lastProgressByJobId.delete(msg.job_id);
+                  modelInfoByJobId.delete(msg.job_id);
+                }
                 reject(new Error(msg.error || "Separation failed"));
              } else if (msg.type === "separation_cancelled") {
                 cleanup();
+                if (msg.job_id) {
+                  lastProgressByJobId.delete(msg.job_id);
+                  modelInfoByJobId.delete(msg.job_id);
+                }
                 reject(new Error("Separation cancelled"));
              }
           }
@@ -1961,7 +2144,17 @@ ipcMain.handle(
         .then((response) => {
            if (response.job_id) {
              myJobId = response.job_id;
-             console.log(`Started separation job: ${myJobId}`);
+             modelInfoByJobId.set(myJobId, {
+               requestedModelId: String(modelId || ""),
+               effectiveModelId: String(effectiveModelId || ""),
+               inputFile: String(inputFile || ""),
+             });
+
+             console.log(
+               `Started separation job: job_id=${myJobId} requestedModelId=${modelId} effectiveModelId=${effectiveModelId}`,
+             );
+
+             lastProgressByJobId.set(myJobId, 0);
 
              // Immediately notify the renderer so it can bind this queue item to the backend job id
              // and show non-zero progress even if the first real progress event is delayed.
@@ -2489,7 +2682,34 @@ ipcMain.handle("remove-model", async (event, modelId: string) => {
     log("remove-model completed", { modelId, res });
     return res;
   } catch (e: any) {
+    const msg = (e?.message || String(e) || "").toLowerCase();
     log("remove-model failed", { modelId, error: e?.message || String(e) });
+
+    // Fallback: allow uninstall even if python proxy is missing.
+    if (
+      msg.includes("python proxy unavailable") ||
+      msg.includes("python-bridge.py") ||
+      msg.includes("backend_unavailable") ||
+      msg.includes("backend not available")
+    ) {
+      try {
+        const local = removeModelLocal(modelId);
+        log("remove-model local fallback succeeded", {
+          modelId,
+          removed: local.removedFiles.length,
+        });
+        return local;
+      } catch (localErr: any) {
+        log("remove-model local fallback FAILED", {
+          modelId,
+          error: localErr?.message || String(localErr),
+        });
+        throw new Error(
+          `BACKEND_UNAVAILABLE: ${e?.message || String(e)}\n\nLocal delete failed: ${localErr?.message || String(localErr)}`,
+        );
+      }
+    }
+
     throw e;
   }
 });
