@@ -51,6 +51,26 @@ def _read_json_from_queue(proc: subprocess.Popen, q: "queue.Queue[dict]", timeou
         raise TimeoutError("Timed out waiting for backend output")
 
 
+def _read_response(proc: subprocess.Popen, q: "queue.Queue[dict]", expected_id: int, timeout_s: float):
+    """Read messages until we get a response envelope with the given id.
+
+    The backend may emit asynchronous events (e.g. recipe_plan) interleaved with
+    the request/response stream. This helper filters those out.
+    """
+    deadline = time.time() + timeout_s
+    while True:
+        remaining = max(0.1, deadline - time.time())
+        msg = _read_json_from_queue(proc, q, timeout_s=remaining)
+        # Responses have an explicit id field.
+        if msg.get("id") == expected_id:
+            return msg
+
+        # Print/ignore asynchronous events while waiting for the response.
+        t = msg.get("type")
+        if t:
+            print(f"event: {t} - {json.dumps(msg, ensure_ascii=False)}", flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run a headless separation via stemsep-backend JSONL protocol")
     parser.add_argument("--backend", required=False, default=str(Path("stemsep-backend") / "target" / "release" / "stemsep-backend.exe"))
@@ -195,9 +215,7 @@ def main():
         }
         _send(proc, sep_req)
 
-        sep_resp = _read_json_from_queue(proc, out_q, timeout_s=60)
-        if sep_resp.get("id") != 2:
-            print("Unexpected separate_audio response:", sep_resp, flush=True)
+        sep_resp = _read_response(proc, out_q, expected_id=2, timeout_s=60)
         if not sep_resp.get("success"):
             raise RuntimeError(sep_resp.get("error") or "separate_audio failed")
 
