@@ -95,7 +95,7 @@ class RoformerLoader:
                 raise ValueError(f"Unknown model type: {model_type}")
 
             if os.path.exists(model_path):
-                state_dict = torch.load(model_path, map_location=device)
+                state_dict = torch.load(model_path, map_location=device, weights_only=False)
                 if isinstance(state_dict, dict) and 'state_dict' in state_dict:
                     model.load_state_dict(state_dict['state_dict'])
                 elif isinstance(state_dict, dict) and 'model' in state_dict:
@@ -220,7 +220,7 @@ class RoformerLoader:
 
         # Load checkpoint as raw state dict (legacy behavior)
         try:
-            checkpoint = torch.load(model_path, map_location='cpu', weights_only=True)
+            checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
         except TypeError:
             # For older torch versions without weights_only
             checkpoint = torch.load(model_path, map_location='cpu')
