@@ -7318,7 +7318,7 @@
       "tags": [
         "instrumental"
       ],
-      "stems": [],
+      "stems": ["instrumental"],
       "links": {
         "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-fno.ckpt",
         "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-fno.yaml",
@@ -7369,7 +7369,8 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "variant": "fno"
       },
       "compatibility": {
         "uvr_compatible": null,
