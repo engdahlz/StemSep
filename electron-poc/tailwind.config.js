@@ -6,12 +6,16 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    borderRadius: {
+      DEFAULT: "var(--radius)",
+      sm: "calc(var(--radius) + 0px)",
+      md: "calc(var(--radius) + 0px)",
+      lg: "var(--radius)",
+      xl: "var(--radius)",
+      "2xl": "var(--radius)",
+      "3xl": "var(--radius)",
+    },
     extend: {
-      borderRadius: {
-        lg: '0.5rem',
-        md: '0.375rem',
-        sm: '0.25rem'
-      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -39,7 +43,7 @@ export default {
           foreground: "hsl(var(--accent-foreground))",
         },
       }
-    }
+    },
   },
   plugins: [],
 }

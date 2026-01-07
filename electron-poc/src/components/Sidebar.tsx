@@ -14,19 +14,32 @@ interface SidebarProps {
 export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
-  const menuItems = [
-    { id: 'home' as Page, icon: Home, label: 'Separate' },
-    { id: 'results' as Page, icon: PlayCircle, label: 'Results' },
-    { id: 'models' as Page, icon: Music, label: 'Models' },
-    { id: 'history' as Page, icon: Clock, label: 'History' },
-    { id: 'settings' as Page, icon: Settings, label: 'Settings' },
-    { id: 'about' as Page, icon: Info, label: 'About' },
+  const navSections = [
+    {
+      title: 'Workspace',
+      items: [
+        { id: 'home' as Page, icon: Home, label: 'Home' },
+        { id: 'results' as Page, icon: PlayCircle, label: 'Results' },
+        { id: 'history' as Page, icon: Clock, label: 'History' },
+      ],
+    },
+    {
+      title: 'Storage',
+      items: [{ id: 'models' as Page, icon: Music, label: 'Model Library' }],
+    },
+    {
+      title: 'System',
+      items: [
+        { id: 'settings' as Page, icon: Settings, label: 'Settings' },
+        { id: 'about' as Page, icon: Info, label: 'About' },
+      ],
+    },
   ]
 
   return (
     <div
       className={cn(
-        "flex flex-col h-full bg-secondary border-r border-border transition-all duration-300",
+        "flex flex-col h-full bg-background border-r border-border transition-all duration-300",
         isCollapsed ? "w-16" : "w-64"
       )}
     >
@@ -49,27 +62,38 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-2 space-y-1">
-        {menuItems.map((item) => {
-          const Icon = item.icon
-          const isActive = currentPage === item.id
+      <nav className="flex-1 p-2 space-y-3">
+        {navSections.map((section) => (
+          <div key={section.title} className="space-y-1">
+            {!isCollapsed && (
+              <div className="px-3 pt-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                {section.title}
+              </div>
+            )}
+            <div className="space-y-1">
+              {section.items.map((item) => {
+                const Icon = item.icon
+                const isActive = currentPage === item.id
 
-          return (
-            <Button
-              key={item.id}
-              variant={isActive ? "secondary" : "ghost"}
-              className={cn(
-                "w-full justify-start gap-3 btn-hover btn-active",
-                isCollapsed && "justify-center",
-                isActive && "bg-accent"
-              )}
-              onClick={() => onPageChange(item.id)}
-            >
-              <Icon size={20} />
-              {!isCollapsed && <span>{item.label}</span>}
-            </Button>
-          )
-        })}
+                return (
+                  <Button
+                    key={item.id}
+                    variant="ghost"
+                    className={cn(
+                      "w-full justify-start gap-3 text-muted-foreground hover:text-foreground",
+                      isCollapsed && "justify-center",
+                      isActive && "bg-muted text-foreground"
+                    )}
+                    onClick={() => onPageChange(item.id)}
+                  >
+                    <Icon size={18} />
+                    {!isCollapsed && <span className="text-sm">{item.label}</span>}
+                  </Button>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* System Status */}
