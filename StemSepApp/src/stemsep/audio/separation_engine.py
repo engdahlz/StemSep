@@ -706,6 +706,35 @@ class SeparationEngine:
                     f"runtime.variant={variant} detected - using legacy path with ModelFactory"
                 )
 
+                if variant.strip().lower() == "fno":
+                    use_amp = False
+                    self.logger.info("runtime.variant=fno - disabling AMP/autocast")
+
+            # Strict-spec / registry routing: some models are explicitly MSST-only.
+            # In those cases we must NOT run audio-separator (supported-model whitelist / YAML expectations).
+            # Instead, we use our MSST/ZFTurbo-style path (ModelFactory + demix loop).
+            if isinstance(runtime, dict):
+                preferred_rt = runtime.get("preferred")
+                allowed_rt = runtime.get("allowed")
+                preferred_rt = str(preferred_rt).strip().lower() if preferred_rt else None
+                allowed_rt_norm = None
+                if isinstance(allowed_rt, list):
+                    allowed_rt_norm = [str(x).strip().lower() for x in allowed_rt if x]
+
+                if preferred_rt == "msst":
+                    use_zfturbo_engine = False
+                    self.logger.info(
+                        f"runtime.preferred=msst - forcing MSST/ZFTurbo path for {model_id}"
+                    )
+                elif allowed_rt_norm and ("msst" in allowed_rt_norm) and (
+                    "audio-separator" not in allowed_rt_norm
+                    and "audio_separator" not in allowed_rt_norm
+                ):
+                    use_zfturbo_engine = False
+                    self.logger.info(
+                        f"runtime.allowed={allowed_rt_norm} - forcing MSST/ZFTurbo path for {model_id}"
+                    )
+
             # IMPORTANT: HyperACE needs our custom BSRoformerHyperACE implementation (with SegmModel),
             # NOT audio-separator's BS-Roformer which lacks the HyperACE modules.
             # Force legacy path for HyperACE to use ModelFactory->BSRoformerHyperACE.
@@ -1186,7 +1215,7 @@ class SeparationEngine:
                 # Load state dict
                 # Map location is important to avoid OOM if loading directly to GPU
                 state_dict = torch.load(
-                    checkpoint_path, map_location="cpu", weights_only=True
+                    checkpoint_path, map_location="cpu", weights_only=False
                 )
 
                 # Handle potential state dict mismatch (e.g. 'state_dict' key wrapper)
@@ -1430,7 +1459,6 @@ class SeparationEngine:
                         if outputs.ndim == 3:
                             # (batch, channels, samples) -> single stem output?
                             # Or (stems, channels, samples) if batch=1?
-                            # If input was [B, C, T], output usually [B, Stems, C, T] or [B, C, T]
                             if batch_tensor.shape[0] == 1 and outputs.shape[0] != 1:
                                 # This might be [Stems, C, T] for a single batch
                                 outputs = outputs.unsqueeze(0)

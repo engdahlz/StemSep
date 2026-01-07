@@ -423,6 +423,122 @@ def _normalize_output_files(output_files: dict) -> dict:
     return normalized
 
 
+def _audio_sanity_check(input_path: str, output_files: dict) -> tuple[dict, str]:
+    if sf is None:
+        return ({"ok": True, "skipped": True}, "soundfile not available")
+    if not isinstance(output_files, dict) or not output_files:
+        return ({"ok": True, "skipped": True}, "no outputs")
+
+    try:
+        in_info = sf.info(input_path)
+        in_sr = int(getattr(in_info, "samplerate", 0) or 0)
+        in_frames = int(getattr(in_info, "frames", 0) or 0)
+        if in_sr <= 0 or in_frames <= 0:
+            return ({"ok": True, "skipped": True}, "input metadata unavailable")
+        in_dur_s = in_frames / float(in_sr)
+    except Exception as e:
+        return ({"ok": True, "skipped": True}, f"could not inspect input: {e}")
+
+    report: dict[str, Any] = {
+        "ok": True,
+        "input": {
+            "sr": in_sr,
+            "frames": in_frames,
+            "duration_s": round(in_dur_s, 6),
+        },
+        "stems": {},
+    }
+
+    # Lightweight reads (no resampling). This is best-effort and should never fail the run.
+    # We intentionally cap the number of frames read for sanity metrics.
+    max_frames = min(in_frames, in_sr * 30)  # up to first 30 seconds
+    try:
+        in_audio, in_audio_sr = sf.read(input_path, always_2d=True, frames=max_frames)
+        if int(in_audio_sr) != in_sr:
+            # Keep sr from info but note mismatch
+            report["input"]["sr_read"] = int(in_audio_sr)
+        in_audio = in_audio.astype("float32", copy=False)
+    except Exception as e:
+        report["ok"] = True
+        report["skipped"] = True
+        return (report, f"could not read input audio: {e}")
+
+    def _rms(a):
+        return float((a * a).mean() ** 0.5) if a.size else 0.0
+
+    def _peak(a):
+        return float(abs(a).max()) if a.size else 0.0
+
+    # Per-stem metrics
+    for stem, path in output_files.items():
+        if not isinstance(path, str) or not path:
+            continue
+        try:
+            info = sf.info(path)
+            sr = int(getattr(info, "samplerate", 0) or 0)
+            frames = int(getattr(info, "frames", 0) or 0)
+            dur_s = round(frames / float(sr), 6) if sr > 0 and frames > 0 else None
+
+            audio, sr_read = sf.read(path, always_2d=True, frames=max_frames)
+            audio = audio.astype("float32", copy=False)
+            # Use first N frames (matching input slice length for comparison)
+            n = min(len(in_audio), len(audio))
+            audio_n = audio[:n]
+
+            rms = _rms(audio_n)
+            peak = _peak(audio_n)
+            is_silent = rms < 1e-4
+            is_clipping = peak > 0.999
+
+            report["stems"][stem] = {
+                "sr": sr,
+                "frames": frames,
+                "duration_s": dur_s,
+                "rms": round(rms, 8),
+                "peak": round(peak, 6),
+                "silent": bool(is_silent),
+                "clipping": bool(is_clipping),
+                "sr_read": int(sr_read),
+            }
+
+            if is_silent:
+                report["ok"] = False
+                report.setdefault("warnings", []).append(f"{stem}: near-silent")
+            if is_clipping:
+                report["ok"] = False
+                report.setdefault("warnings", []).append(f"{stem}: possible clipping")
+        except Exception as e:
+            report["ok"] = False
+            report.setdefault("warnings", []).append(f"{stem}: read failed: {e}")
+
+    # Simple reconstruction check when we have vocals + instrumental.
+    try:
+        if "vocals" in output_files and "instrumental" in output_files:
+            v, _ = sf.read(output_files["vocals"], always_2d=True, frames=max_frames)
+            i, _ = sf.read(output_files["instrumental"], always_2d=True, frames=max_frames)
+            v = v.astype("float32", copy=False)
+            i = i.astype("float32", copy=False)
+            n = min(len(in_audio), len(v), len(i))
+            if n > 0:
+                mix = v[:n] + i[:n]
+                ref = in_audio[:n]
+                diff = mix - ref
+                rms_in = _rms(ref)
+                rms_diff = _rms(diff)
+                rel = (rms_diff / rms_in) if rms_in > 1e-12 else None
+                report["reconstruction"] = {
+                    "window_s": round(n / float(in_sr), 6),
+                    "rms_in": round(rms_in, 8),
+                    "rms_diff": round(rms_diff, 8),
+                    "rel_diff": round(float(rel), 6) if rel is not None else None,
+                }
+    except Exception:
+        # Best-effort only
+        pass
+
+    return (report, "ok" if report.get("ok") else "warnings")
+
+
 async def main():
     if len(sys.argv) < 2:
         send_ipc({"type": "error", "error": "Usage: inference.py <json_config>"})
@@ -563,6 +679,20 @@ async def main():
                 if ok or attempt == 2:
                     normalized_outputs = _normalize_output_files(job.output_files)
 
+                    sanity_report, sanity_reason = _audio_sanity_check(
+                        file_path, normalized_outputs
+                    )
+
+                    send_ipc(
+                        {
+                            "type": "separation_progress",
+                            "job_id": job.job_id,
+                            "progress": 99.5,
+                            "message": f"Sanity check: {sanity_reason}",
+                            "meta": {"attempt": attempt, "sanity_check": sanity_report},
+                        }
+                    )
+
                     # Ensure UI sees an explicit terminal progress update before completion.
                     send_ipc(
                         {
@@ -578,7 +708,11 @@ async def main():
                             "type": "separation_complete",
                             "job_id": job.job_id,
                             "output_files": normalized_outputs,
-                            "meta": {"attempt": attempt, "output_validation": reason},
+                            "meta": {
+                                "attempt": attempt,
+                                "output_validation": reason,
+                                "sanity_check": sanity_report,
+                            },
                         }
                     )
                     break
