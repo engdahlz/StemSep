@@ -34,6 +34,18 @@ struct RequestEnvelope {
     extra: Map<String, Value>,
 }
 
+fn check_torch_available() -> bool {
+    let python = locate_python_exe();
+    let out = Command::new(&python)
+        .arg("-c")
+        .arg("import torch  # noqa: F401")
+        .output();
+    match out {
+        Ok(out) => out.status.success(),
+        Err(_) => false,
+    }
+}
+
 #[derive(Debug, Serialize)]
 struct ResponseEnvelope {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -654,55 +666,55 @@ fn remove_model_files(cfg: &BackendConfig, model_id: &str) -> Result<usize> {
 }
 
 fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -> bool {
-    // If registry declares explicit files, require checkpoint + config.
+    // If registry declares explicit files, require checkpoint.
+    // Config is optional for some models (e.g. standard ones), but checkpoint is mandatory.
     if let Some(links) = model_obj.get("links") {
-        let mut ok_ckpt = true;
+        let ok_ckpt;
         let mut ok_cfg = true;
 
-        if let Some(ckpt) = links.get("checkpoint").and_then(|v| v.as_str()) {
-            if !ckpt.trim().is_empty() {
-                ok_ckpt = if ckpt.to_lowercase().contains(".onnx") {
-                    models_dir.join(format!("{model_id}.onnx")).exists()
-                } else if let Some(base) = url_basename(ckpt) {
-                    models_dir.join(base).exists()
-                } else {
-                    false
-                };
-            }
+        let ckpt_link = links.get("checkpoint").and_then(|v| v.as_str()).unwrap_or("");
+        if !ckpt_link.trim().is_empty() {
+            ok_ckpt = if ckpt_link.to_lowercase().contains(".onnx") {
+                models_dir.join(format!("{model_id}.onnx")).exists()
+            } else if let Some(base) = url_basename(ckpt_link) {
+                models_dir.join(base).exists()
+            } else {
+                false
+            };
+        } else {
+            // If checkpoint link is empty in registry, it can't be "installed" via registry path.
+            ok_ckpt = false;
         }
 
-        if let Some(cfg) = links.get("config").and_then(|v| v.as_str()) {
-            if !cfg.trim().is_empty() {
-                // Prefer stable per-model config filenames to avoid collisions like "config.yaml".
-                // Still accept historical basename installs.
-                let alias_yaml = models_dir.join(format!("{model_id}.yaml"));
-                let alias_yml = models_dir.join(format!("{model_id}.yml"));
-                let base_ok = url_basename(cfg)
-                    .map(|base| models_dir.join(base).exists())
-                    .unwrap_or(false);
-                ok_cfg = alias_yaml.exists() || alias_yml.exists() || base_ok;
-            }
+        let cfg_link = links.get("config").and_then(|v| v.as_str()).unwrap_or("");
+        if !cfg_link.trim().is_empty() {
+            // Prefer stable per-model config filenames to avoid collisions like "config.yaml".
+            // Still accept historical basename installs.
+            let alias_yaml = models_dir.join(format!("{model_id}.yaml"));
+            let alias_yml = models_dir.join(format!("{model_id}.yml"));
+            let base_ok = url_basename(cfg_link)
+                .map(|base| models_dir.join(base).exists())
+                .unwrap_or(false);
+            ok_cfg = alias_yaml.exists() || alias_yml.exists() || base_ok;
         }
 
-        if !ok_ckpt || !ok_cfg {
-            return false;
-        }
-
-        // If links exist and both resolved OK, consider installed.
-        if links.get("checkpoint").is_some() || links.get("config").is_some() {
+        if ok_ckpt && ok_cfg {
             return true;
+        }
+        // If we had links and failed, don't fall back to heuristic (to avoid false positives)
+        if !ckpt_link.trim().is_empty() || !cfg_link.trim().is_empty() {
+            return false;
         }
     }
 
-    // Fallback heuristic for models without explicit links.
+    // Fallback heuristic for models without explicit links or custom models.
+    // MUST find at least one checkpoint-like file.
     for ext in [
         ".ckpt",
         ".pth",
         ".pt",
         ".onnx",
         ".safetensors",
-        ".yaml",
-        ".yml",
     ] {
         if models_dir.join(format!("{model_id}{ext}")).exists() {
             return true;
@@ -1126,6 +1138,113 @@ fn locate_python_exe() -> String {
     "python3".to_string()
 }
 
+fn check_neuralop_available() -> Result<()> {
+    let python = locate_python_exe();
+    let code = r#"import sys
+try:
+    try:
+        from neuralop.models import FNO1d  # noqa: F401
+    except Exception:
+        from neuralop.models import FNO  # noqa: F401
+except Exception as e:
+    sys.stderr.write("FNO models require the 'neuraloperator' (neuralop) dependency. ")
+    sys.stderr.write("Install it in the Python runtime used by StemSep and restart. ")
+    sys.stderr.write("Original import error: " + repr(e) + "\n")
+    sys.exit(1)
+"#;
+
+    let out = Command::new(&python)
+        .arg("-c")
+        .arg(code)
+        .output()
+        .with_context(|| format!("spawn python for neuralop import check (python={python})"))?;
+
+    if out.status.success() {
+        return Ok(());
+    }
+
+    let mut msg = String::from_utf8_lossy(&out.stderr).to_string();
+    msg = msg.trim().to_string();
+    if msg.is_empty() {
+        msg = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    }
+    if msg.is_empty() {
+        msg = "Failed to import neuralop.models.FNO1d/FNO (no stderr)".to_string();
+    }
+
+    Err(anyhow!(msg))
+}
+
+fn python_runtime_fingerprint(python: &str) -> Value {
+    let code = r#"import json, sys, platform
+data = {
+  "executable": sys.executable,
+  "version": sys.version,
+  "version_info": list(sys.version_info),
+  "platform": platform.platform(),
+}
+try:
+  import torch
+  data["torch"] = {
+    "version": getattr(torch, "__version__", None),
+    "cuda_available": bool(torch.cuda.is_available()),
+  }
+  if torch.cuda.is_available():
+    try:
+      data["torch"]["cuda_device_count"] = int(torch.cuda.device_count())
+      data["torch"]["cuda_device_name_0"] = str(torch.cuda.get_device_name(0)) if torch.cuda.device_count() > 0 else None
+    except Exception as e:
+      data["torch"]["cuda_probe_error"] = repr(e)
+except Exception as e:
+  data["torch_error"] = repr(e)
+
+try:
+  import neuralop
+  data["neuralop"] = {"version": getattr(neuralop, "__version__", None)}
+  try:
+    try:
+      from neuralop.models import FNO1d  # noqa: F401
+      data["neuralop"]["fno1d_import_ok"] = True
+    except Exception as e:
+      data["neuralop"]["fno1d_import_ok"] = False
+      data["neuralop"]["fno1d_import_error"] = repr(e)
+
+    try:
+      from neuralop.models import FNO  # noqa: F401
+      data["neuralop"]["fno_import_ok"] = True
+    except Exception as e:
+      data["neuralop"]["fno_import_ok"] = False
+      data["neuralop"]["fno_import_error"] = repr(e)
+  except Exception as e:
+    data["neuralop"]["import_probe_error"] = repr(e)
+except Exception as e:
+  data["neuralop_error"] = repr(e)
+
+print(json.dumps(data))
+"#;
+
+    let out = Command::new(python).arg("-c").arg(code).output();
+    match out {
+        Ok(out) => {
+            let stdout = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if let Ok(v) = serde_json::from_str::<Value>(&stdout) {
+                return v;
+            }
+            serde_json::json!({
+                "python": python,
+                "status": if out.status.success() { "ok" } else { "error" },
+                "stdout": stdout,
+                "stderr": String::from_utf8_lossy(&out.stderr).trim().to_string()
+            })
+        }
+        Err(e) => serde_json::json!({
+            "python": python,
+            "status": "spawn_failed",
+            "error": e.to_string()
+        }),
+    }
+}
+
 fn spawn_python_proxy(cfg: &BackendConfig, stdout: Arc<Mutex<io::Stdout>>) -> Result<PythonProxy> {
     let script = locate_python_bridge_script()
         .ok_or_else(|| anyhow!("python-bridge.py not found (set STEMSEP_PYTHON_BRIDGE)"))?;
@@ -1483,9 +1602,11 @@ impl SeparationManager {
         let config_str = serde_json::to_string(&config).context("serialize job config")?;
 
         let mut child = Command::new(python)
+            .arg("-u")
             .arg(script)
             .arg(config_str)
             .env("STEMSEP_MODELS_DIR", &cfg.models_dir) // Ensure subprocess sees correct models dir
+            .env("PYTHONUNBUFFERED", "1")
             .stdin(Stdio::piped()) // Not really used but good practice
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -1520,7 +1641,7 @@ impl SeparationManager {
             last_progress_value: Option<f64>,
         }
 
-        let heartbeat_ms = env_u64("STEMSEP_PROGRESS_HEARTBEAT_MS", 3000);
+        let heartbeat_ms = env_u64("STEMSEP_PROGRESS_HEARTBEAT_MS", 15000);
         let heartbeat_interval = if heartbeat_ms == 0 {
             None
         } else {
@@ -1826,6 +1947,13 @@ fn main() -> Result<()> {
         .map(|a| !a.is_empty())
         .unwrap_or(false);
 
+    let python = locate_python_exe();
+    let runtime_fingerprint = python_runtime_fingerprint(&python);
+    eprintln!(
+        "[runtime_fingerprint] {}",
+        serde_json::to_string(&runtime_fingerprint).unwrap_or_else(|_| "{}".to_string())
+    );
+
     let mut caps: Vec<Value> = vec![];
     if models_count > 0 {
         caps.push(Value::from("models"));
@@ -1949,9 +2077,14 @@ fn main() -> Result<()> {
                     req.id,
                     serde_json::json!({
                         "status": "ok",
-                        "timestamp": now_ts_seconds()
+                        "ok": true,
+                        "rust_backend": true,
+                        "has_gpu": has_gpu,
                     }),
                 )?;
+            }
+            "get_runtime_fingerprint" => {
+                send_ok(&stdout, req.id, runtime_fingerprint.clone())?;
             }
             "get_models" => {
                 let models_json = read_json_file(&cfg.assets_dir.join("models.json.bak"))?;
@@ -2209,8 +2342,19 @@ fn main() -> Result<()> {
                     .get("device")
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string());
-                let overlap_req = req.extra.get("overlap").and_then(|v| v.as_f64());
-                let segment_size_req = req.extra.get("segment_size").and_then(|v| v.as_i64());
+
+                // Flexible numeric parsing for overlap and segment_size (handle strings from UI)
+                let overlap_req = req.extra.get("overlap").and_then(|v| {
+                    if let Some(f) = v.as_f64() { Some(f) }
+                    else if let Some(s) = v.as_str() { s.parse::<f64>().ok() }
+                    else { None }
+                });
+                let segment_size_req = req.extra.get("segment_size").and_then(|v| {
+                    if let Some(i) = v.as_i64() { Some(i) }
+                    else if let Some(s) = v.as_str() { s.parse::<i64>().ok() }
+                    else { None }
+                });
+
                 let batch_size_req = req.extra.get("batch_size").and_then(|v| v.as_i64());
                 let tta_req = req
                     .extra
@@ -2232,8 +2376,10 @@ fn main() -> Result<()> {
 
                 // Ensemble/phase-fix fields are passed through in `resolved` so the UI has a single place
                 // to read final values.
+                let ensemble_cfg_val = req.extra.get("ensemble_config").or_else(|| req.extra.get("ensembleConfig"));
+
                 let (ensemble_algorithm, phase_fix_enabled, phase_fix_params) =
-                    match req.extra.get("ensemble_config") {
+                    match ensemble_cfg_val {
                         Some(Value::Object(o)) => {
                             let alg = o
                                 .get("algorithm")
@@ -2425,7 +2571,7 @@ fn main() -> Result<()> {
                     }
                 }
 
-                if let Some(Value::Object(o)) = req.extra.get("ensemble_config") {
+                if let Some(Value::Object(o)) = ensemble_cfg_val {
                     // Expected shape from UI: { models: [{model_id, weight?}, ...], algorithm, ... }
                     if let Some(Value::Array(models)) = o.get("models") {
                         for m in models {
@@ -2491,6 +2637,7 @@ fn main() -> Result<()> {
 
                 // For each referenced model_id, check if any expected local file exists.
                 // This mirrors Python's ability to load checkpoints/configs (ckpt/pth/yaml/onnx/etc).
+                let mut needs_fno_dependency = false;
                 for mid in &requested_model_ids {
                     let model_obj = models_json
                         .get("models")
@@ -2501,6 +2648,18 @@ fn main() -> Result<()> {
                         })
                         .cloned()
                         .unwrap_or(Value::Null);
+
+                    // Detect FNO models by runtime.variant
+                    if let Some(variant) = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.as_object())
+                        .and_then(|o| o.get("variant"))
+                        .and_then(|v| v.as_str())
+                    {
+                        if variant.trim().eq_ignore_ascii_case("fno") {
+                            needs_fno_dependency = true;
+                        }
+                    }
 
                     let exists = any_model_file_exists(&cfg.models_dir, mid, &model_obj);
                     if !exists {
@@ -2518,6 +2677,13 @@ fn main() -> Result<()> {
                             .join(", "),
                         cfg.models_dir.display()
                     ));
+                }
+
+                // FNO dependency preflight: fail early with a clear message when neuralop is missing.
+                if needs_fno_dependency {
+                    if let Err(e) = check_neuralop_available() {
+                        errors.push(e.to_string());
+                    }
                 }
 
                 let model_id_resolved = resolved_model_id.unwrap_or_default();
@@ -2549,15 +2715,20 @@ fn main() -> Result<()> {
                 // Apply defaults similar to Python bridge.
                 let mut resolved_overlap = overlap_req.unwrap_or(0.25);
                 if !(0.0..=0.99).contains(&resolved_overlap) {
-                    warnings.push(format!(
-                        "overlap out of expected range (0..1): {resolved_overlap}; using 0.25"
-                    ));
-                    resolved_overlap = 0.25;
+                    // Special case: if UI sends percentage (e.g. 25 instead of 0.25)
+                    if (1.0..100.0).contains(&resolved_overlap) {
+                        resolved_overlap /= 100.0;
+                    } else {
+                        warnings.push(format!(
+                            "overlap out of expected range (0..1): {resolved_overlap}; using 0.25"
+                        ));
+                        resolved_overlap = 0.25;
+                    }
                 }
-                let mut resolved_segment_size = segment_size_req.unwrap_or(352800).max(1) as i64;
-                if resolved_segment_size == 256 {
-                    warnings
-                        .push("segment_size was 256; bumping to safe default 352800".to_string());
+
+                let mut resolved_segment_size = segment_size_req.unwrap_or(352800);
+                if resolved_segment_size <= 0 || resolved_segment_size == 256 {
+                    // 0 = Auto, 256 = legacy/invalid. Use safe default.
                     resolved_segment_size = 352800;
                 }
 
@@ -2593,6 +2764,7 @@ fn main() -> Result<()> {
                 // NOTE: We intentionally do not attempt ONNX introspection here.
                 // Rust-native inference is not the current execution path; this preflight is a compatibility shim.
 
+                let torch_available = check_torch_available();
                 let can_proceed = errors.is_empty();
                 let report = serde_json::json!({
                     "can_proceed": can_proceed,
@@ -2600,7 +2772,7 @@ fn main() -> Result<()> {
                     "warnings": warnings,
                     "audio": audio_info,
                     "missing_models": missing_models,
-                    "torch_available": false,
+                    "torch_available": torch_available,
                     "resolved": {
                         "model_id": if model_id_resolved.is_empty() { Value::Null } else { Value::String(model_id_resolved) },
                         "recipe": recipe_plan.unwrap_or(Value::Null),
