@@ -993,6 +993,10 @@ class SeparationManager:
                 if check_cancelled():
                     raise asyncio.CancelledError()
 
+                steps_total = max(1, len(job.pipeline_config))
+                step_base = 10 + (i / steps_total * 80)
+                step_span = 80 / steps_total
+
                 step_name = step.get("step_name", f"step_{i}")
                 action = (step.get("action") or "separate").lower()
                 model_id = step.get("model_id")
@@ -1001,7 +1005,7 @@ class SeparationManager:
                 label = model_id or source_model or action
                 self._update_job_progress(
                     job.id,
-                    10 + (i / len(job.pipeline_config) * 80),
+                    step_base,
                     f"Running step {i + 1}: {step_name} ({label})",
                 )
 
@@ -1110,7 +1114,11 @@ class SeparationManager:
                         batch_size=ref_batch_size,
                         tta=ref_tta,
                         shifts=job.shifts,
-                        progress_callback=lambda p, m: None,
+                        progress_callback=lambda p, m: self._update_job_progress(
+                            job.id,
+                            min(step_base + step_span * 0.7, step_base + (step_span * 0.7) * (float(p) / 100.0)),
+                            f"{step_name} (ref): {m}",
+                        ),
                         check_cancelled=check_cancelled,
                     )
 
@@ -1199,6 +1207,12 @@ class SeparationManager:
                     )
                     self._write_metadata(str(out_path), metadata, apply_to)
 
+                    self._update_job_progress(
+                        job.id,
+                        step_base + step_span,
+                        f"{step_name}: phase fix complete",
+                    )
+
                     # Carry forward previous outputs, but replace the applied stem
                     new_outputs = dict(prev_outputs)
                     new_outputs[apply_to] = str(out_path)
@@ -1253,7 +1267,11 @@ class SeparationManager:
                     batch_size=step_batch_size,
                     tta=step_tta,
                     shifts=job.shifts,
-                    progress_callback=lambda p, m: None,
+                    progress_callback=lambda p, m: self._update_job_progress(
+                        job.id,
+                        step_base + step_span * (float(p) / 100.0),
+                        f"{step_name}: {m}",
+                    ),
                     check_cancelled=check_cancelled,
                 )
 
@@ -1622,6 +1640,7 @@ class SeparationManager:
                 weights.append(weight)
 
                 progress_start = 10 + (i / total_models) * 80
+                progress_span = 80 / max(1, total_models)
                 self._update_job_progress(
                     job.id,
                     progress_start,
@@ -1654,6 +1673,11 @@ class SeparationManager:
                     batch_size=current_batch_size,
                     tta=current_tta,
                     shifts=getattr(job, "shifts", 1),
+                    progress_callback=lambda p, m: self._update_job_progress(
+                        job.id,
+                        progress_start + progress_span * (float(p) / 100.0),
+                        f"{model_id}: {m}",
+                    ),
                     check_cancelled=check_cancelled,
                 )
                 job.actual_device = used_device  # Update with latest used device
@@ -2034,6 +2058,11 @@ class SeparationManager:
                         batch_size=getattr(job, "batch_size", 1),
                         tta=job.tta,
                         shifts=getattr(job, "shifts", 1),
+                        progress_callback=lambda p, m: self._update_job_progress(
+                            job.id,
+                            93.0 + 1.5 * (float(p) / 100.0),
+                            f"Post-processing ({model_id}): {m}",
+                        ),
                         check_cancelled=check_cancelled,
                     )
                     job.actual_device = used_device

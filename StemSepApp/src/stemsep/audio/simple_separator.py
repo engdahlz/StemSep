@@ -68,7 +68,7 @@ class SimpleSeparator:
         # Mel Roformer Viperx
         "mel-roformer-viperx-1143": "model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt",
         # Kim / Standard Mel-Band Roformer
-        "mel-band-roformer-kim": "mel_band_roformer_kim.ckpt",
+        "mel-band-roformer-kim": "vocals_mel_band_roformer.ckpt",
         # Karaoke models
         "mel-roformer-karaoke-aufr33-viperx": "mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
         "mel-roformer-karaoke-gabox": "mel_band_roformer_karaoke_gabox.ckpt",
@@ -203,6 +203,10 @@ class SimpleSeparator:
         """
         # These models should use audio-separator's built-in handling, not our direct-load path
         model_lower = model_id.lower()
+        # KimberleyJSN/melbandroformer (mel-band-roformer-kim) should use audio-separator's
+        # official built-in config/whitelist entry. Do not attempt YAML direct-load.
+        if model_lower == "mel-band-roformer-kim":
+            return False
         # HyperACE checkpoints require a custom model definition (SegmModel/HyperACE modules)
         # not provided by audio-separator's RoformerLoader.
         if "hyperace" in model_lower:

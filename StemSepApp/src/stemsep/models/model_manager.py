@@ -323,6 +323,12 @@ class ModelManager:
         if not m:
             return None
 
+        # Special-case: KimberleyJSN/melbandroformer provides a standalone checkpoint named
+        # "MelBandRoformer.ckpt" without a config. Our runtime uses audio-separator, which
+        # has a built-in Roformer entry expecting the canonical filename below.
+        if model_id == "mel-band-roformer-kim":
+            return "vocals_mel_band_roformer.ckpt"
+
         links = m.links or {}
         ckpt_url = links.get("checkpoint") if isinstance(links, dict) else None
         cfg_url = links.get("config") if isinstance(links, dict) else None
@@ -407,6 +413,25 @@ class ModelManager:
                             shutil.copy2(cfg_src, yaml_alias)
             except Exception:
                 # Never fail readiness due to repair attempts.
+                pass
+
+        # Special-case: mel-band-roformer-kim
+        # Registry points at KimberleyJSN/melbandroformer's MelBandRoformer.ckpt (no config).
+        # audio-separator has an official built-in Roformer entry that expects:
+        #   vocals_mel_band_roformer.ckpt + vocals_mel_band_roformer.yaml
+        # Instead of inventing a YAML (which may mismatch weights), create a local alias
+        # so the official audio-separator path can be used.
+        if auto_repair_filenames and model_id == "mel-band-roformer-kim":
+            try:
+                ckpt_src = self.models_dir / "MelBandRoformer.ckpt"
+                ckpt_alias = self.models_dir / "vocals_mel_band_roformer.ckpt"
+                if ckpt_src.exists() and not ckpt_alias.exists():
+                    try:
+                        os.link(str(ckpt_src), str(ckpt_alias))
+                    except Exception:
+                        if copy_instead_of_rename:
+                            shutil.copy2(ckpt_src, ckpt_alias)
+            except Exception:
                 pass
 
         # Refresh after any repair attempts.
