@@ -741,14 +741,22 @@ fn remove_model_files(cfg: &BackendConfig, model_id: &str) -> Result<usize> {
 fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -> bool {
     // If registry declares explicit files, require checkpoint.
     // Config is optional for some models (e.g. standard ones), but checkpoint is mandatory.
+    let mut artifact_ckpt_ok = false;
+    let mut artifact_cfg_ok = false;
     if let Some(artifacts) = model_obj.get("artifacts").and_then(|v| v.as_object()) {
         if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
             if let Some(fname) = primary.get("filename").and_then(|v| v.as_str()) {
                 let f = fname.trim();
                 if !f.is_empty() && !f.contains(".MISSING") {
-                    if models_dir.join(f).exists() {
-                        return true;
-                    }
+                    artifact_ckpt_ok = models_dir.join(f).exists();
+                }
+            }
+        }
+        if let Some(cfg_obj) = artifacts.get("config").and_then(|v| v.as_object()) {
+            if let Some(fname) = cfg_obj.get("filename").and_then(|v| v.as_str()) {
+                let f = fname.trim();
+                if !f.is_empty() && !f.contains(".MISSING") {
+                    artifact_cfg_ok = models_dir.join(f).exists();
                 }
             }
         }
@@ -759,7 +767,9 @@ fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -
         let mut ok_cfg = true;
 
         let ckpt_link = links.get("checkpoint").and_then(|v| v.as_str()).unwrap_or("");
-        if !ckpt_link.trim().is_empty() {
+        if artifact_ckpt_ok {
+            ok_ckpt = true;
+        } else if !ckpt_link.trim().is_empty() {
             ok_ckpt = if ckpt_link.to_lowercase().contains(".onnx") {
                 models_dir.join(format!("{model_id}.onnx")).exists()
             } else if let Some(base) = url_basename(ckpt_link) {
@@ -781,7 +791,7 @@ fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -
             let base_ok = url_basename(cfg_link)
                 .map(|base| models_dir.join(base).exists())
                 .unwrap_or(false);
-            ok_cfg = alias_yaml.exists() || alias_yml.exists() || base_ok;
+            ok_cfg = artifact_cfg_ok || alias_yaml.exists() || alias_yml.exists() || base_ok;
         }
 
         if ok_ckpt && ok_cfg {
@@ -791,6 +801,11 @@ fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -
         if !ckpt_link.trim().is_empty() || !cfg_link.trim().is_empty() {
             return false;
         }
+    }
+
+    // If model has no declared links but has explicit artifact naming, accept that as installed.
+    if artifact_ckpt_ok {
+        return true;
     }
 
     // Fallback heuristic for models without explicit links or custom models.
