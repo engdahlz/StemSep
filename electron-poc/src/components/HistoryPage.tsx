@@ -13,6 +13,7 @@ import {
 import { Badge } from './ui/badge'
 import { useStore, HistoryItem } from '../stores/useStore'
 import { cn } from '../lib/utils'
+import { PageShell } from './PageShell'
 import type { Page } from '../types/navigation'
 
 interface HistoryPageProps {
@@ -37,8 +38,9 @@ export function HistoryPage({ onNavigate }: HistoryPageProps) {
     }
 
     return (
-        <div className="h-full overflow-auto p-8">
-            <div className="max-w-6xl mx-auto space-y-6">
+        <PageShell>
+            <div className="p-6">
+                <div className="max-w-6xl mx-auto space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold mb-2">History</h1>
@@ -161,7 +163,8 @@ export function HistoryPage({ onNavigate }: HistoryPageProps) {
                         )}
                     </CardContent>
                 </Card>
+                </div>
             </div>
-        </div>
+        </PageShell>
     )
 }

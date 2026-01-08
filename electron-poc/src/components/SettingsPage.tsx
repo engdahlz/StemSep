@@ -10,6 +10,7 @@ import {
 } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { PageShell } from "./PageShell";
 import {
   Monitor,
   Moon,
@@ -125,53 +126,53 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="h-full flex flex-col p-6 gap-6 overflow-hidden">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-3">
-          <Settings2 className="w-8 h-8" />
-          Settings
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Configure application preferences and defaults.
-        </p>
-      </div>
+    <PageShell>
+      <div className="flex flex-col max-w-4xl mx-auto w-full p-6 gap-6">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <Settings2 className="w-8 h-8" />
+            Settings
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Configure application preferences and defaults.
+          </p>
+        </div>
 
-      {/* Custom Tabs */}
-      <div className="flex gap-2 border-b border-border">
-        <button
-          onClick={() => setActiveTab("general")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "general"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          General
-        </button>
-        <button
-          onClick={() => setActiveTab("audio")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "audio"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Audio & Models
-        </button>
-        <button
-          onClick={() => setActiveTab("advanced")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "advanced"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Advanced
-        </button>
-      </div>
+        {/* Custom Tabs */}
+        <div className="flex gap-2 border-b border-border">
+          <button
+            onClick={() => setActiveTab("general")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "general"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            General
+          </button>
+          <button
+            onClick={() => setActiveTab("audio")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "audio"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Audio & Models
+          </button>
+          <button
+            onClick={() => setActiveTab("advanced")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "advanced"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Advanced
+          </button>
+        </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl space-y-6">
+        <div className="space-y-6">
           {/* General Tab */}
           {activeTab === "general" && (
             <>
@@ -552,6 +553,6 @@ export function SettingsPage() {
           )}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

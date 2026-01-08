@@ -67,6 +67,7 @@ gcp-oauth.keys.*.json
 # IDE/settings
 .vscode/
 .idea/
+*.code-workspace
 
 # AI/dev tool state
 .kilocode/
@@ -146,3 +147,5 @@ docs/notes/artifacts/**
 # Coverage
 htmlcov/
 .coverage*
+
+manus.im_app*.json

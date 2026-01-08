@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns'
 import ExportDialog from './ExportDialog'
 import { SeparationHistory } from '../utils/separationHistory'
 import { ALL_PRESETS } from '../presets'
+import { PageShell } from './PageShell'
 
 interface ResultsPageProps {
     onBack?: () => void
@@ -56,6 +57,7 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
     const activeSession = sessionToLoad || (completedItems.length > 0 ? completedItems[0] : null)
 
     return (
+        <PageShell scroll={false}>
         <div className="h-full flex flex-col bg-background text-foreground">
             {/* Header */}
             <header className="border-b border-border/40 bg-background/95 backdrop-blur p-4 flex items-center gap-4 sticky top-0 z-10">
@@ -234,6 +236,7 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
                 />
             )}
         </div>
+        </PageShell>
     )
 }
 

@@ -18,6 +18,7 @@ import "./App.css";
 import type { Page } from "./types/navigation";
 
 import { ResultsPage } from "./components/ResultsPage";
+import { PageShell } from "./components/PageShell";
 
 const MISSING_MODELS_EVENT = "stemsep:missing-models";
 
@@ -231,12 +232,16 @@ function App() {
         return <HistoryPage onNavigate={setCurrentPage} />;
       case "about":
         return (
-          <div className="p-8">
-            <h1 className="text-3xl font-bold">About</h1>
-            <p className="text-muted-foreground mt-2">
-              StemSep - Advanced Audio Stem Separation
-            </p>
-          </div>
+          <PageShell>
+            <div className="flex flex-col max-w-4xl mx-auto w-full p-6 gap-8">
+              <div>
+                <h1 className="text-3xl font-bold">About</h1>
+                <p className="text-muted-foreground mt-2">
+                  StemSep - Advanced Audio Stem Separation
+                </p>
+              </div>
+            </div>
+          </PageShell>
         );
       default:
         return <SeparatePage />;

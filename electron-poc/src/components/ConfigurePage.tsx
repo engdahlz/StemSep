@@ -23,6 +23,7 @@ import { CPUOnlyWarning, LowVRAMWarning, EnsembleTip } from "./ui/warning-tip";
 import { bestVolumeCompensation } from "../utils/volumeCompensation";
 import { SimplePresetPicker } from "./simple/SimplePresetPicker";
 import { CollapsibleSection } from "./ui/collapsible-section";
+import { PageShell } from "./PageShell";
 
 type AdvancedParams = {
   overlap: number;
@@ -687,6 +688,7 @@ export function ConfigurePage({
   ]);
 
   return (
+    <PageShell scroll={false}>
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
       <div className="border-b bg-card/50 px-6 py-4">
@@ -1546,5 +1548,6 @@ export function ConfigurePage({
         </div>
       </div>
     </div>
+    </PageShell>
   );
 }

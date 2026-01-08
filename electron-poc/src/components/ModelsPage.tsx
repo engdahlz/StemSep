@@ -11,6 +11,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { ModelCard } from "./ModelCard";
 import { ModelDetails } from "./ModelDetails";
+import { PageShell } from "./PageShell";
 import { logger } from "../utils/logger";
 import { useStore, Model } from "../stores/useStore";
 
@@ -525,9 +526,10 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
   const sources = ["all", "builtin", "custom"];
 
   return (
-    <div className="h-full flex flex-col bg-background/50">
+    <PageShell>
+      <div className="flex flex-col max-w-7xl mx-auto w-full p-6 gap-6">
       {/* Header Section */}
-      <div className="p-6 pb-0 space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-4 mb-2">
@@ -536,7 +538,7 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
                   variant="ghost"
                   size="icon"
                   onClick={onBack}
-                  className="rounded-full hover:bg-primary/10"
+                  className="hover:bg-muted"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </Button>
@@ -560,7 +562,7 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
               <Button
                 onClick={handleBatchDownload}
                 disabled={batchDownloading}
-                className="shadow-lg shadow-primary/20"
+                className=""
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download Selected ({selectedModels.size})
@@ -591,14 +593,14 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
         </div>
 
         {/* Filters Bar */}
-        <div className="flex flex-col md:flex-row gap-4 items-center bg-card/30 p-4 rounded-xl border border-border/40 backdrop-blur-sm">
+        <div className="flex flex-col md:flex-row gap-4 items-center bg-card p-4 border border-border/40">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search models, architectures..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-background/50 border-border/50 focus:bg-background transition-all"
+              className="pl-9"
             />
           </div>
 
@@ -672,22 +674,22 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
               <option value="vocal">Vocal</option>
             </select>
 
-            <div className="flex bg-background/50 rounded-md border border-border/50 p-1">
+            <div className="flex bg-background border border-border/50 p-1">
               <button
                 onClick={() => setDownloadedFilter("all")}
-                className={`px-3 py-1 text-xs rounded-sm transition-all ${downloadedFilter === "all" ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted"}`}
+                className={`px-3 py-1 text-xs rounded-sm transition-colors ${downloadedFilter === "all" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
               >
                 All
               </button>
               <button
                 onClick={() => setDownloadedFilter("downloaded")}
-                className={`px-3 py-1 text-xs rounded-sm transition-all ${downloadedFilter === "downloaded" ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted"}`}
+                className={`px-3 py-1 text-xs rounded-sm transition-colors ${downloadedFilter === "downloaded" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
               >
                 Installed
               </button>
               <button
                 onClick={() => setDownloadedFilter("not-downloaded")}
-                className={`px-3 py-1 text-xs rounded-sm transition-all ${downloadedFilter === "not-downloaded" ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted"}`}
+                className={`px-3 py-1 text-xs rounded-sm transition-colors ${downloadedFilter === "not-downloaded" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
               >
                 Available
               </button>
@@ -697,7 +699,7 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
       </div>
 
       {/* Content Grid */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div>
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -743,6 +745,8 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
         )}
       </div>
 
+      </div>
+
       {detailsModel && (
         <ModelDetails
           model={detailsModel}
@@ -751,6 +755,6 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
           onRemove={handleRemove}
         />
       )}
-    </div>
+    </PageShell>
   );
 }
