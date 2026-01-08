@@ -53,9 +53,15 @@ class ModelManager:
     def __init__(
         self, models_dir: Optional[Path] = None, assets_dir: Optional[Path] = None
     ):
-        self.models_dir = (
-            Path(models_dir) if models_dir else (Path.home() / ".stemsep" / "models")
-        )
+        if models_dir:
+            self.models_dir = Path(models_dir)
+        else:
+            env_models = os.environ.get("STEMSEP_MODELS_DIR")
+            if env_models and env_models.strip():
+                self.models_dir = Path(env_models.strip())
+            else:
+                d_models = Path(r"D:\\StemSep Models")
+                self.models_dir = d_models if d_models.exists() else (Path.home() / ".stemsep" / "models")
         # Repo layout: StemSepApp/assets (sibling to src/)
         # NOTE: This file lives at StemSepApp/src/stemsep/models/model_manager.py
         # so parents[2] == StemSepApp/src (WRONG for assets). We want parents[3] == StemSepApp.
