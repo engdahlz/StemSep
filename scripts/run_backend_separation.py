@@ -71,11 +71,36 @@ def _read_response(proc: subprocess.Popen, q: "queue.Queue[dict]", expected_id: 
             print(f"event: {t} - {json.dumps(msg, ensure_ascii=False)}", flush=True)
 
 
+def _resolve_models_dir(arg_models_dir: str | None) -> Path:
+    candidates: list[Path] = []
+
+    env_dir = os.environ.get("STEMSEP_MODELS_DIR")
+    if env_dir and env_dir.strip():
+        candidates.append(Path(env_dir.strip()))
+
+    if arg_models_dir and str(arg_models_dir).strip():
+        candidates.append(Path(str(arg_models_dir).strip()))
+
+    candidates.append(Path(r"D:\StemSep Models"))
+    candidates.append(Path.home() / ".stemsep" / "models")
+
+    for p in candidates:
+        try:
+            if p.exists() and p.is_dir():
+                return p
+        except Exception:
+            continue
+
+    raise SystemExit(
+        "Models dir not found. Provide --models-dir or set STEMSEP_MODELS_DIR."
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run a headless separation via stemsep-backend JSONL protocol")
     parser.add_argument("--backend", required=False, default=str(Path("stemsep-backend") / "target" / "release" / "stemsep-backend.exe"))
     parser.add_argument("--assets-dir", required=False, default=str(Path("StemSepApp") / "assets"))
-    parser.add_argument("--models-dir", required=True)
+    parser.add_argument("--models-dir", required=False, default=None)
     parser.add_argument("--input", required=True)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--device", default="cuda:0")
@@ -94,7 +119,7 @@ def main():
 
     backend_path = Path(args.backend)
     assets_dir = Path(args.assets_dir)
-    models_dir = Path(args.models_dir)
+    models_dir = _resolve_models_dir(args.models_dir)
     input_path = Path(args.input)
     output_dir = Path(args.output_dir)
 
