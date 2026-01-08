@@ -5923,7 +5923,7 @@
       "stems": [],
       "links": {
         "checkpoint": "https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt",
-        "config": null,
+        "config": "https://raw.githubusercontent.com/KimberleyJensen/Mel-Band-Roformer-Vocal-Model/main/configs/config_vocals_mel_band_roformer.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -5932,7 +5932,11 @@
           "filename": "MelBandRoformer.ckpt",
           "sha256": null
         },
-        "config": null,
+        "config": {
+          "kind": "config",
+          "filename": "mel-band-roformer-kim.yaml",
+          "sha256": null
+        },
         "additional": []
       },
       "metrics": {
