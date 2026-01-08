@@ -397,8 +397,14 @@ class SeparationManager:
                 split_freq if split_freq != 750 else r_defaults.get("split_freq", 750)
             )
             # Use recipe segment size if provided, otherwise keep passed value (0 = auto)
+            # NOTE: recipes.json historically used `chunk_size` for this field.
+            recipe_segment_size = (
+                r_defaults.get("segment_size")
+                if isinstance(r_defaults, dict) and r_defaults.get("segment_size") is not None
+                else (r_defaults.get("chunk_size") if isinstance(r_defaults, dict) else None)
+            )
             final_segment_size = (
-                segment_size if segment_size != 0 else r_defaults.get("segment_size", 0)
+                segment_size if segment_size != 0 else (recipe_segment_size or 0)
             )
 
             if recipe_def.get("type") in ["pipeline", "chained"]:
