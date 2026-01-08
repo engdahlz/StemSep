@@ -24,7 +24,7 @@
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "amane-4-stems-large.MISSING",
+          "filename": "dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
           "sha256": null
         },
         "config": null,
@@ -147,7 +147,7 @@
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "amane-4-stems-xl.MISSING",
+          "filename": "dereverb_mel_band_roformer_anvuew_sdr_19.1729.ckpt",
           "sha256": null
         },
         "config": null,
@@ -269,7 +269,7 @@
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "amane-full-scratch.MISSING",
+          "filename": "amane-full-scratch.ckpt",
           "sha256": null
         },
         "config": null,

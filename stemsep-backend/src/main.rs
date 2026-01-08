@@ -190,6 +190,57 @@ fn url_basename(url: &str) -> Option<String> {
     })
 }
 
+fn lookup_model_artifact_filenames(
+    cfg: &BackendConfig,
+    model_id: &str,
+) -> Result<(Option<String>, Option<String>)> {
+    let model_id = resolve_model_id_alias(cfg, model_id);
+    let models_json = read_json_file(&cfg.assets_dir.join("models.json.bak"))?;
+    let models = models_json
+        .get("models")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    for m in models {
+        let id = m.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        if id != model_id {
+            continue;
+        }
+
+        let artifacts = m.get("artifacts").and_then(|v| v.as_object());
+        if artifacts.is_none() {
+            return Ok((None, None));
+        }
+        let artifacts = artifacts.unwrap();
+
+        let mut ckpt: Option<String> = None;
+        let mut cfg_name: Option<String> = None;
+
+        if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
+            if let Some(fname) = primary.get("filename").and_then(|v| v.as_str()) {
+                let f = fname.trim();
+                if !f.is_empty() && !f.contains(".MISSING") {
+                    ckpt = Some(f.to_string());
+                }
+            }
+        }
+
+        if let Some(c) = artifacts.get("config").and_then(|v| v.as_object()) {
+            if let Some(fname) = c.get("filename").and_then(|v| v.as_str()) {
+                let f = fname.trim();
+                if !f.is_empty() && !f.contains(".MISSING") {
+                    cfg_name = Some(f.to_string());
+                }
+            }
+        }
+
+        return Ok((ckpt, cfg_name));
+    }
+
+    Ok((None, None))
+}
+
 fn lookup_model_links(
     cfg: &BackendConfig,
     model_id: &str,
@@ -612,6 +663,28 @@ fn remove_model_files(cfg: &BackendConfig, model_id: &str) -> Result<usize> {
         .iter()
         .find(|m| m.get("id").and_then(|v| v.as_str()) == Some(model_id))
     {
+        // Prefer explicit artifact filenames when present.
+        if let Some(artifacts) = m.get("artifacts").and_then(|v| v.as_object()) {
+            if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
+                if let Some(fname) = primary.get("filename").and_then(|v| v.as_str()) {
+                    let f = fname.trim();
+                    if !f.is_empty() && !f.contains(".MISSING") {
+                        candidates.push(cfg.models_dir.join(f));
+                        candidates.push(cfg.models_dir.join(format!("{f}.part")));
+                    }
+                }
+            }
+            if let Some(c) = artifacts.get("config").and_then(|v| v.as_object()) {
+                if let Some(fname) = c.get("filename").and_then(|v| v.as_str()) {
+                    let f = fname.trim();
+                    if !f.is_empty() && !f.contains(".MISSING") {
+                        candidates.push(cfg.models_dir.join(f));
+                        candidates.push(cfg.models_dir.join(format!("{f}.part")));
+                    }
+                }
+            }
+        }
+
         if let Some(links) = m.get("links") {
             for key in ["checkpoint", "config"] {
                 if let Some(u) = links.get(key).and_then(|v| v.as_str()) {
@@ -668,6 +741,19 @@ fn remove_model_files(cfg: &BackendConfig, model_id: &str) -> Result<usize> {
 fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -> bool {
     // If registry declares explicit files, require checkpoint.
     // Config is optional for some models (e.g. standard ones), but checkpoint is mandatory.
+    if let Some(artifacts) = model_obj.get("artifacts").and_then(|v| v.as_object()) {
+        if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
+            if let Some(fname) = primary.get("filename").and_then(|v| v.as_str()) {
+                let f = fname.trim();
+                if !f.is_empty() && !f.contains(".MISSING") {
+                    if models_dir.join(f).exists() {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
     if let Some(links) = model_obj.get("links") {
         let ok_ckpt;
         let mut ok_cfg = true;
@@ -2137,8 +2223,13 @@ fn main() -> Result<()> {
                         anyhow!("No checkpoint URL found for model_id: {model_id}")
                     })?;
 
+                    let (artifact_ckpt, _artifact_cfg) =
+                        lookup_model_artifact_filenames(&cfg, &model_id).unwrap_or((None, None));
+
                     let ckpt_dest = if ckpt_url.to_lowercase().contains(".onnx") {
                         cfg.models_dir.join(format!("{model_id}.onnx"))
+                    } else if let Some(fname) = &artifact_ckpt {
+                        cfg.models_dir.join(fname)
                     } else if let Some(base) = url_basename(&ckpt_url) {
                         cfg.models_dir.join(base)
                     } else {
@@ -2219,8 +2310,13 @@ fn main() -> Result<()> {
                         let ckpt_url = ckpt_url.ok_or_else(|| {
                             anyhow!("No checkpoint URL found for model_id: {model_id}")
                         })?;
+
+                        let (artifact_ckpt, _artifact_cfg) =
+                            lookup_model_artifact_filenames(&cfg, &model_id).unwrap_or((None, None));
                         let ckpt_dest = if ckpt_url.to_lowercase().contains(".onnx") {
                             cfg.models_dir.join(format!("{model_id}.onnx"))
+                        } else if let Some(fname) = &artifact_ckpt {
+                            cfg.models_dir.join(fname)
                         } else if let Some(base) = url_basename(&ckpt_url) {
                             cfg.models_dir.join(base)
                         } else {
@@ -2715,12 +2811,16 @@ fn main() -> Result<()> {
                 // Apply defaults similar to Python bridge.
                 let mut resolved_overlap = overlap_req.unwrap_or(0.25);
                 if !(0.0..=0.99).contains(&resolved_overlap) {
+                    // Accept guide-style integer overlaps (2/3/4/8...) used by MSST/UVR-style chunking.
+                    if (2.0..=50.0).contains(&resolved_overlap) {
+                        // Keep as-is; Python will normalize/interpret semantics per runtime.
+                    }
                     // Special case: if UI sends percentage (e.g. 25 instead of 0.25)
-                    if (1.0..100.0).contains(&resolved_overlap) {
+                    else if (1.0..100.0).contains(&resolved_overlap) {
                         resolved_overlap /= 100.0;
                     } else {
                         warnings.push(format!(
-                            "overlap out of expected range (0..1): {resolved_overlap}; using 0.25"
+                            "overlap out of expected range (ratio 0..1, divisor 2..50): {resolved_overlap}; using 0.25"
                         ));
                         resolved_overlap = 0.25;
                     }
