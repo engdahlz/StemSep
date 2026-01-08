@@ -220,49 +220,72 @@ class ModelManager:
         parts = [p for p in url.split("/") if p]
         return parts[-1] if parts else None
 
+    def _artifact_filename(self, model: Optional[ModelInfo], key: str) -> Optional[str]:
+        if not model:
+            return None
+        artifacts = getattr(model, "artifacts", None)
+        if not isinstance(artifacts, dict):
+            return None
+        obj = artifacts.get(key)
+        if not isinstance(obj, dict):
+            return None
+        fn = obj.get("filename")
+        if not isinstance(fn, str):
+            return None
+        fn = fn.strip()
+        if not fn or ".MISSING" in fn:
+            return None
+        return fn
+
     def _is_installed(self, model_id: str, model: Optional[ModelInfo]) -> bool:
         if not model_id:
             return False
 
-        required: List[Path] = []
+        ckpt_url = None
+        cfg_url = None
         if model and isinstance(model.links, dict):
-            ckpt = model.links.get("checkpoint")
-            cfg = model.links.get("config")
+            ckpt_url = model.links.get("checkpoint")
+            cfg_url = model.links.get("config")
 
-            if isinstance(ckpt, str) and ckpt.strip():
-                if ".onnx" in ckpt.lower():
-                    required.append(self.models_dir / f"{model_id}.onnx")
-                else:
-                    base = self._url_basename(ckpt)
-                    if base:
-                        required.append(self.models_dir / base)
+        artifact_ckpt = self._artifact_filename(model, "primary")
+        artifact_cfg = self._artifact_filename(model, "config")
 
-            if isinstance(cfg, str) and cfg.strip():
-                # Prefer stable per-model config filename to avoid collisions like "config.yaml"
-                # across different models (e.g. HyperACE v1/v2). Still accept legacy basename installs.
-                required.append(self.models_dir / f"{model_id}.yaml")
-                required.append(self.models_dir / f"{model_id}.yml")
-                base = self._url_basename(cfg)
-                if base:
-                    required.append(self.models_dir / base)
+        # Checkpoint requirement
+        ok_ckpt = False
+        if artifact_ckpt:
+            ok_ckpt = (self.models_dir / artifact_ckpt).exists()
+        elif isinstance(ckpt_url, str) and ckpt_url.strip():
+            if ".onnx" in ckpt_url.lower():
+                ok_ckpt = (self.models_dir / f"{model_id}.onnx").exists()
+            else:
+                base = self._url_basename(ckpt_url)
+                ok_ckpt = bool(base and (self.models_dir / base).exists())
 
-        if required:
-            # For configs we accept either alias or basename; don't require all of them.
-            # Weight file requirements remain strict since they don't collide the same way.
-            weight_required = []
-            cfg_candidates = []
-            for p in required:
-                if p.suffix.lower() in (".yaml", ".yml"):
-                    cfg_candidates.append(p)
-                else:
-                    weight_required.append(p)
+        # Config requirement (only if registry declares a config link)
+        ok_cfg = True
+        if isinstance(cfg_url, str) and cfg_url.strip():
+            cfg_candidates: List[Path] = []
+            if artifact_cfg:
+                cfg_candidates.append(self.models_dir / artifact_cfg)
 
-            ok_weights = all(p.exists() for p in weight_required)
-            ok_cfg = True
-            if cfg_candidates:
-                ok_cfg = any(p.exists() for p in cfg_candidates)
-            return ok_weights and ok_cfg
+            cfg_candidates.append(self.models_dir / f"{model_id}.yaml")
+            cfg_candidates.append(self.models_dir / f"{model_id}.yml")
+            base = self._url_basename(cfg_url)
+            if base:
+                cfg_candidates.append(self.models_dir / base)
 
+            ok_cfg = any(p.exists() for p in cfg_candidates)
+
+        # If registry provides any explicit requirements (links or artifact filenames), be strict.
+        if (
+            artifact_ckpt
+            or artifact_cfg
+            or (isinstance(ckpt_url, str) and ckpt_url.strip())
+            or (isinstance(cfg_url, str) and cfg_url.strip())
+        ):
+            return ok_ckpt and ok_cfg
+
+        # Fallback heuristic for models without explicit links/artifacts.
         for ext in [".ckpt", ".pth", ".pt", ".onnx", ".safetensors", ".yaml", ".yml"]:
             if (self.models_dir / f"{model_id}{ext}").exists():
                 return True
@@ -271,6 +294,14 @@ class ModelManager:
 
     def _candidate_files(self, model_id: str, model: Optional[ModelInfo]) -> List[Path]:
         candidates: List[Path] = []
+
+        # Prefer explicit artifact filenames when present
+        ckpt_fn = self._artifact_filename(model, "primary")
+        if ckpt_fn:
+            candidates.append(self.models_dir / ckpt_fn)
+        cfg_fn = self._artifact_filename(model, "config")
+        if cfg_fn:
+            candidates.append(self.models_dir / cfg_fn)
 
         # Try explicit filename from links
         if model and model.links:
@@ -322,6 +353,11 @@ class ModelManager:
         m = self.models.get(model_id)
         if not m:
             return None
+
+        # Prefer explicit artifact filename when available
+        artifact_ckpt = self._artifact_filename(m, "primary")
+        if artifact_ckpt:
+            return artifact_ckpt
 
         # Special-case: KimberleyJSN/melbandroformer provides a standalone checkpoint named
         # "MelBandRoformer.ckpt" without a config. Our runtime uses audio-separator, which
