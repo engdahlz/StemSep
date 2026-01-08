@@ -36,9 +36,6 @@ try:
     HAS_PYDUB = True
 except ImportError:
     HAS_PYDUB = False
-    logging.getLogger("StemSep").warning(
-        "pydub or static-ffmpeg not found. MP3 export will be disabled."
-    )
 
 # Import mutagen for metadata
 try:
@@ -50,9 +47,26 @@ try:
     HAS_MUTAGEN = True
 except ImportError:
     HAS_MUTAGEN = False
-    logging.getLogger("StemSep").warning(
-        "mutagen not found. Metadata preservation will be disabled."
-    )
+
+
+_WARNED_NO_PYDUB = False
+_WARNED_NO_MUTAGEN = False
+
+
+def _warn_no_pydub_once(logger: logging.Logger):
+    global _WARNED_NO_PYDUB
+    if _WARNED_NO_PYDUB:
+        return
+    _WARNED_NO_PYDUB = True
+    logger.warning("pydub or static-ffmpeg not found. MP3 export will be disabled.")
+
+
+def _warn_no_mutagen_once(logger: logging.Logger):
+    global _WARNED_NO_MUTAGEN
+    if _WARNED_NO_MUTAGEN:
+        return
+    _WARNED_NO_MUTAGEN = True
+    logger.warning("mutagen not found. Metadata preservation will be disabled.")
 
 
 class SeparationManager:
@@ -2747,9 +2761,7 @@ class SeparationManager:
             sf.write(path, data, sr, format="FLAC", subtype=subtype)
         elif format == "mp3":
             if not HAS_PYDUB:
-                self.logger.warning(
-                    "MP3 export requested but pydub not available. Falling back to WAV."
-                )
+                _warn_no_pydub_once(self.logger)
                 sf.write(path.replace(".mp3", ".wav"), data, sr, subtype=subtype)
                 return
 
@@ -2779,6 +2791,7 @@ class SeparationManager:
     def _extract_metadata(self, file_path: str) -> Dict[str, str]:
         """Extract metadata from source file"""
         if not HAS_MUTAGEN:
+            _warn_no_mutagen_once(self.logger)
             return {}
 
         try:
@@ -2801,9 +2814,46 @@ class SeparationManager:
             self.logger.warning(f"Failed to extract metadata from {file_path}: {e}")
             return {}
 
+    def _write_audio(self, path: str, data: np.ndarray, sr: int, format: str, subtype: str, bitrate: str):
+        """Write audio to output file"""
+        if format == "wav":
+            sf.write(path, data, sr, subtype=subtype)
+        elif format == "flac":
+            sf.write(path, data, sr, format="FLAC", subtype=subtype)
+        elif format == "mp3":
+            if not HAS_PYDUB:
+                _warn_no_pydub_once(self.logger)
+                sf.write(path.replace(".mp3", ".wav"), data, sr, subtype=subtype)
+                return
+
+            # Convert numpy array to AudioSegment
+            # Ensure data is float32/float64, convert to int16 for pydub mp3 export
+            # Note: pydub works with int16 mostly.
+            if data.dtype in [np.float32, np.float64]:
+                audio_data = (data * 32767).astype(np.int16)
+            else:
+                audio_data = data
+
+            # Handle stereo/mono
+            channels = 1
+            if len(data.shape) > 1:
+                channels = data.shape[1]
+
+            audio_segment = AudioSegment(
+                audio_data.tobytes(), frame_rate=sr, sample_width=2, channels=channels
+            )
+
+            audio_segment.export(path, format="mp3", bitrate=bitrate)
+        else:
+            # Fallback to WAV
+            self.logger.warning(f"Unknown format {format}, falling back to WAV")
+            sf.write(path, data, sr, subtype=subtype)
+
     def _write_metadata(self, file_path: str, metadata: Dict[str, str], stem_name: str):
         """Write metadata to output file"""
         if not HAS_MUTAGEN or not metadata:
+            if not HAS_MUTAGEN and metadata:
+                _warn_no_mutagen_once(self.logger)
             return
 
         try:
