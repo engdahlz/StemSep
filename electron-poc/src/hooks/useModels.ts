@@ -25,7 +25,7 @@ export function useModels() {
                 const convertedModels = modelsArray.map((m: any) => ({
                     ...m,
                     category: m.category || 'primary',
-                    installed: m.installed || false,
+                    installed: m.installed === true,
                     downloading: false,
                     downloadPaused: false,
                     downloadProgress: 0,

@@ -24,7 +24,7 @@ export function PageShell({
     >
       <div
         className={cn(
-          "flex-1 relative scroll-smooth",
+          "flex-1 min-h-0 relative scroll-smooth",
           scroll && "overflow-y-auto",
           contentClassName,
         )}

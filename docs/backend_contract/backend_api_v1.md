@@ -152,15 +152,44 @@ Cancels an active job.
 
 - Request: `{ "command": "cancel_job", "id": N, "job_id": "..." }`
 
+### 3.8 `quality_baseline_create`
+Creates a reproducible quality manifest from model/config/output artifacts.
+
+- Request: `{ "command": "quality_baseline_create", "id": N, ... }`
+- Accepted payload fields (additive):
+  - `name` (string, optional)
+  - `model_ids` (string[] or string, optional)
+  - `config` (object, optional)
+  - `output_files` (object `{ stem: path }`, optional)
+  - `output_paths` (string[], optional)
+  - `metrics` (object, optional)
+  - `manifest_path` (string, optional; writes manifest to disk)
+- Response `data`:
+  - Full manifest JSON including `manifest_hash`, `config_hash`, `models[]`, `outputs[]`, `output_hashes`.
+
+### 3.9 `quality_compare`
+Compares a baseline manifest with a candidate manifest.
+
+- Request: `{ "command": "quality_compare", "id": N, ... }`
+- Accepted payload fields (additive):
+  - `baseline_manifest_path` or `baseline_manifest`
+  - `candidate_manifest_path` or `candidate_manifest`
+  - or `candidate` spec compatible with `quality_baseline_create` fields
+- Response `data`:
+  - `baseline` manifest
+  - `candidate` manifest
+  - `comparison` object with `compatible`, `quality_score`, `differences[]`, `metrics_delta`
+
+### Quality Events
+
+- `quality_progress`: `{ type, stage, progress (0..100), message, ts, meta? }`
+- `quality_complete`: `{ type, action, ts, ...summary fields }`
+
 ## 4. Hard Quality Policy Hooks (v1)
 
-v1 introduces a way to run user-provided regression without bundling audio in the repo.
+`quality_baseline_create` and `quality_compare` provide regression-ready quality workflows without bundling audio in the repo.
 
-Recommended future commands (not required for v1 stub):
-- `quality_baseline_create`
-- `quality_compare`
-
-Both should produce a JSON manifest with:
+Manifests include:
 - model ids + hashes
 - config hash
 - output stem hashes (optionally tolerant/feature-based)

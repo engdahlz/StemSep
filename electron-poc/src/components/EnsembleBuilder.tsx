@@ -73,7 +73,7 @@ export function EnsembleBuilder({
     onVolumeCompEnabledChange,
     onChange
 }: EnsembleBuilderProps) {
-    const availableModels = models.filter(m => m.installed !== false)
+    const availableModels = models.filter(m => m.installed === true)
     const [showAdvanced, setShowAdvanced] = useState(false)
     const [stemAlgoPreset, setStemAlgoPreset] = useState<string>('balanced')
     const [phasePreset, setPhasePreset] = useState<string>('standard')

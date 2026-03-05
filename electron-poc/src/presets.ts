@@ -53,20 +53,11 @@ export interface Preset {
   }
 }
 
-// ============================================================================
-// EXPERT PRESETS - Based on NotebookLM/MSST/UVR community recommendations
-// ============================================================================
-
 export const ALL_PRESETS: Preset[] = [
-  // ============================================================================
-  // TOP ENSEMBLE - Based on official guide recommendation
-  // ============================================================================
-
-  // Defaults referenced by SeparatePage favorites/selection
   {
     id: 'best_instrumental',
     name: 'Best Instrumental (Guide Pick)',
-    description: 'Top guide pick: HyperACE + Viperx 1297 with Max Spec blending.',
+    description: 'Guide-oriented ensemble for high-quality instrumentals.',
     stems: ['instrumental', 'vocals'],
     recommended: true,
     category: 'instrumental',
@@ -76,354 +67,31 @@ export const ALL_PRESETS: Preset[] = [
     ensembleConfig: {
       models: [
         { model_id: 'unwa-hyperace', weight: 1.0 },
-        { model_id: 'bs-roformer-viperx-1297', weight: 1.0 }
+        { model_id: 'bs-roformer-viperx-1297', weight: 1.0 },
       ],
-      algorithm: 'max_spec'
+      algorithm: 'max_spec',
     },
-    pipelineNote: 'Guide favorite ensemble - best balance of fullness and clarity',
-    advancedDefaults: { overlap: 4 }
+    advancedDefaults: { overlap: 4 },
   },
 
   {
     id: 'best_vocals',
-    name: 'Best Vocals (Clean SDR)',
-    description: 'Cleanest vocals with minimal instrument bleed (great for RVC / production).',
+    name: 'Best Vocals (Clean)',
+    description: 'Clean vocals with minimal bleed. Great for production workflows.',
     stems: ['vocals', 'instrumental'],
     recommended: true,
     category: 'vocals',
     qualityLevel: 'quality',
     estimatedVram: 6,
-    tags: ['bleedless', 'clean', 'best'],
+    tags: ['clean', 'bleedless', 'best'],
     modelId: 'bs-roformer-viperx-1297',
-    advancedDefaults: { overlap: 4 }
+    advancedDefaults: { overlap: 4 },
   },
 
-  // HyperACE + Viperx 1297 - Guide's "My favorite ensemble right now" (dca100fb8)
-  {
-    id: 'hyperace_ultimate',
-    name: 'HyperACE Ultimate (Top Rated)',
-    description: 'Guide\'s favorite ensemble: HyperACE + Viperx 1297 with Max Spec.',
-    stems: ['instrumental', 'vocals'],
-    recommended: true,
-    category: 'instrumental',
-    qualityLevel: 'ultra',
-    estimatedVram: 14,
-    tags: ['ensemble', 'best', 'guide-favorite', 'hyperace'],
-    ensembleConfig: {
-      models: [
-        { model_id: 'unwa-hyperace', weight: 1.0 },
-        { model_id: 'bs-roformer-viperx-1297', weight: 1.0 }
-      ],
-      algorithm: 'max_spec'
-    },
-    pipelineNote: 'Official guide recommendation - best balance of fullness and clarity',
-    advancedDefaults: { overlap: 4 }
-  },
-
-  // ============================================================================
-  // VOCALS PRESETS (5)
-  // ============================================================================
-
-  // Best bleedless vocals - Viperx 1297 for clean SDR
-  {
-    id: 'studio_clean_vocals',
-    name: 'Studio Clean Vocals',
-    description: 'Maximum purity with minimal instrument bleed. Best for RVC training.',
-    stems: ['vocals', 'instrumental'],
-    recommended: true,
-    category: 'vocals',
-    qualityLevel: 'quality',
-    estimatedVram: 6,
-    tags: ['bleedless', 'clean', 'rvc', 'production'],
-    modelId: 'bs-roformer-viperx-1297',
-    advancedDefaults: { overlap: 4 }
-  },
-
-  // Best fullness vocals - Unwa Revive 3e has Fullness: 21.43
-  {
-    id: 'natural_body_vocals',
-    name: 'Natural Body Vocals',
-    description: 'Preserves warmth and body in voice. Some bleed tolerated for richness.',
-    stems: ['vocals', 'instrumental'],
-    recommended: false,
-    category: 'vocals',
-    qualityLevel: 'quality',
-    estimatedVram: 8,
-    tags: ['fullness', 'warm', 'natural', 'listening'],
-    modelId: 'unwa-revive-3e'
-  },
-
-  // Resurrection vocal - good backing vocal capture
-  {
-    id: 'resurrection_vocals',
-    name: 'Resurrection Vocals',
-    description: 'Good at capturing backing vocals and harmonies.',
-    stems: ['vocals', 'instrumental'],
-    recommended: false,
-    category: 'vocals',
-    qualityLevel: 'quality',
-    estimatedVram: 6,
-    tags: ['backing-vocals', 'harmonies', 'resurrection'],
-    modelId: 'unwa-resurrection-voc'
-  },
-
-  // Ultimate vocals ensemble - Viperx + Resurrection
-  {
-    id: 'ultimate_vocals',
-    name: 'Ultimate Studio Vocals',
-    description: 'Ensemble: Viperx 1297 (clean) + Resurrection (warmth).',
-    stems: ['vocals', 'instrumental'],
-    recommended: true,
-    category: 'vocals',
-    qualityLevel: 'ultra',
-    estimatedVram: 12,
-    tags: ['ensemble', 'best', 'studio', 'production'],
-    ensembleConfig: {
-      models: [
-        { model_id: 'bs-roformer-viperx-1297', weight: 1.0 },  // SDR champion
-        { model_id: 'unwa-resurrection-voc', weight: 0.8 }      // Backing vocals
-      ],
-      algorithm: 'max_spec'
-    },
-    pipelineNote: 'Follow with Anvuew De-Reverb for dry studio acapella',
-    advancedDefaults: { overlap: 4 }
-  },
-
-  // Karaoke / Lead-Back separator - Anvuew karaoke
-  {
-    id: 'backing_vocals',
-    name: 'Lead + Backing Vocals (Karaoke)',
-    description: 'Separates lead vocals from backing vocals and harmonies.',
-    stems: ['lead_vocal', 'backing_vocals'],
-    recommended: false,
-    category: 'vocals',
-    qualityLevel: 'quality',
-    estimatedVram: 8,
-    tags: ['karaoke', 'harmonies', 'backing', 'lead'],
-    modelId: 'anvuew-karaoke'
-  },
-
-  // Low VRAM vocals option
-  {
-    id: 'low_vram_vocals',
-    name: 'Low VRAM Vocals',
-    description: 'Good quality vocals for 4-6GB GPUs. Use chunk_size 132300.',
-    stems: ['vocals', 'instrumental'],
-    recommended: false,
-    category: 'vocals',
-    qualityLevel: 'balanced',
-    estimatedVram: 4,
-    tags: ['low-vram', 'fast', '4gb', '6gb'],
-    modelId: 'mel-band-roformer-kim'
-  },
-
-  // ============================================================================
-  // INSTRUMENTAL PRESETS
-  // ============================================================================
-
-  // Fast preview - Kim model (fast & low resource)
-  {
-    id: 'fast_instrumental',
-    name: 'Fast Instrumental',
-    description: 'Quick preview quality. Good for checking if separation works.',
-    stems: ['instrumental', 'vocals'],
-    recommended: false,
-    category: 'instrumental',
-    qualityLevel: 'fast',
-    estimatedVram: 4,
-    tags: ['fast', 'preview', 'quick'],
-    modelId: 'mel-band-roformer-kim'
-  },
-
-  // Balanced - Gabox Inst Fv7z (best bleedless)
-  {
-    id: 'balanced_instrumental',
-    name: 'Balanced Instrumental',
-    description: 'Good balance between fullness and cleanliness. Least noise.',
-    stems: ['instrumental', 'vocals'],
-    recommended: false,
-    category: 'instrumental',
-    qualityLevel: 'balanced',
-    estimatedVram: 6,
-    tags: ['balanced', 'everyday', 'bleedless'],
-    modelId: 'gabox-inst-fv7z'
-  },
-
-  // Guide mentions newer instrumental models (e.g. HyperACE v2, Inst_GaboxFv9, inst_fv7b),
-  // but they are not currently shipped in the in-app registry. Closest shipped alternatives:
-  {
-    id: 'gabox_inst_fullness',
-    name: 'GaBox Instrumental Fullness',
-    description: 'Fuller GaBox instrumental option (shipped). Good when you want more body than fv7z.',
-    stems: ['instrumental', 'vocals'],
-    recommended: false,
-    category: 'instrumental',
-    qualityLevel: 'quality',
-    estimatedVram: 6,
-    tags: ['gabox', 'fullness', 'alternative'],
-    modelId: 'gabox-inst-v6n'
-  },
-
-  // High Quality - Unwa Inst v1e+ (Fullness: 37.89, industry standard)
-  {
-    id: 'high_quality_instrumental',
-    name: 'High Quality Instrumental',
-    description: 'Industry standard. Rich detail but may need Phase Fix.',
-    stems: ['instrumental', 'vocals'],
-    recommended: true,
-    category: 'instrumental',
-    qualityLevel: 'quality',
-    estimatedVram: 8,
-    tags: ['high-quality', 'fullness', 'detail', 'industry'],
-    modelId: 'unwa-inst-v1e-plus',
-    pipelineNote: 'May benefit from Phase Fix with Becruily Vocal as source',
-    postProcessingSteps: [
-      {
-        type: 'phase_fix',
-        modelId: 'becruily-vocal',
-        description: 'Phase Fix with Becruily Vocal',
-        targetStem: 'instrumental'
-      }
-    ],
-    advancedDefaults: { overlap: 4 }
-  },
-
-  {
-    id: 'phase_fix_instrumental',
-    name: 'Phase Fix Instrumental (Recommended)',
-    description: 'Fixes Roformer buzzing/noise by phase-correcting a high-fullness instrumental using a clean vocal phase reference (500-5000Hz).',
-    stems: ['instrumental', 'vocals'],
-    recommended: true,
-    category: 'instrumental',
-    qualityLevel: 'ultra',
-    estimatedVram: 12,
-    tags: ['phase-fix', 'buzzing', 'guide-recommended', 'ensemble'],
-    ensembleConfig: {
-      models: [
-        { model_id: 'unwa-inst-v1e-plus', weight: 1.0 },
-        { model_id: 'becruily-vocal', weight: 1.0 }
-      ],
-      algorithm: 'average',
-      phaseFixEnabled: true,
-      phaseFixParams: {
-        lowHz: 500,
-        highHz: 5000,
-        highFreqWeight: 2.0
-      }
-    },
-    advancedDefaults: { overlap: 4 }
-  },
-
-  {
-    id: 'cleanest_instrumental_maxmin',
-    name: 'Cleanest Instrumental (Max/Min)',
-    description: 'Per-stem blending: Max Spec for vocals extraction and Min Spec for instrumental to minimize vocal bleed while keeping detail.',
-    stems: ['instrumental', 'vocals'],
-    recommended: true,
-    category: 'instrumental',
-    qualityLevel: 'quality',
-    estimatedVram: 10,
-    tags: ['max-min', 'bleedless', 'ensemble', 'guide-recommended'],
-    ensembleConfig: {
-      models: [
-        { model_id: 'bs-roformer-viperx-1297', weight: 1.0 },
-        { model_id: 'mel-band-roformer-kim', weight: 1.0 }
-      ],
-      algorithm: 'average',
-      stemAlgorithms: {
-        vocals: 'max_spec',
-        instrumental: 'min_spec'
-      }
-    },
-    advancedDefaults: { overlap: 4 }
-  },
-
-  // Ultra Clean - Gabox Inst Fv7z (Bleedless: 44.95)
-  {
-    id: 'ultra_clean_instrumental',
-    name: 'Ultra Clean Instrumental',
-    description: 'Maximum bleedless score. Extremely clean from vocal residue.',
-    stems: ['instrumental', 'vocals'],
-    recommended: false,
-    category: 'instrumental',
-    qualityLevel: 'quality',
-    estimatedVram: 6,
-    tags: ['bleedless', 'clean', 'no-vocals'],
-    modelId: 'gabox-inst-fv7z'
-  },
-
-  // Ultimate instrumental ensemble
-  {
-    id: 'ultimate_instrumental',
-    name: 'Ultimate Instrumental',
-    description: 'Ensemble for maximum detail and texture.',
-    stems: ['instrumental', 'vocals'],
-    recommended: true,
-    category: 'instrumental',
-    qualityLevel: 'ultra',
-    estimatedVram: 14,
-    tags: ['ensemble', 'best', 'ultra', 'restoration'],
-    ensembleConfig: {
-      models: [
-        { model_id: 'unwa-inst-v1e-plus', weight: 1.0 }, // Fullness champion
-        { model_id: 'becruily-inst', weight: 1.0 }       // Per guide: best preservation
-      ],
-      algorithm: 'max_spec'
-    },
-    pipelineNote: 'Per guide: best instrument preservation ensemble',
-    advancedDefaults: { overlap: 4 }
-  },
-
-  // v1e+ Becruily ensemble - per guide recommendation
-  {
-    id: 'v1e_becruily_ensemble',
-    name: 'v1e+ Becruily Ensemble',
-    description: 'Per guide: best instrument preservation with Max Spec.',
-    stems: ['instrumental', 'vocals'],
-    recommended: true,
-    category: 'instrumental',
-    qualityLevel: 'ultra',
-    estimatedVram: 12,
-    tags: ['ensemble', 'preservation', 'guide-recommended'],
-    ensembleConfig: {
-      models: [
-        { model_id: 'unwa-inst-v1e-plus', weight: 1.0 },
-        { model_id: 'becruily-inst', weight: 1.0 }
-      ],
-      algorithm: 'max_spec'
-    },
-    advancedDefaults: { overlap: 4 }
-  },
-
-  // Gabox bleedless ensemble
-  {
-    id: 'gabox_bleedless_ensemble',
-    name: 'Gabox Bleedless Ensemble',
-    description: 'Gabox Fv7z + Viperx 1297. Minimal noise and vocal bleed.',
-    stems: ['instrumental', 'vocals'],
-    recommended: false,
-    category: 'instrumental',
-    qualityLevel: 'quality',
-    estimatedVram: 10,
-    tags: ['ensemble', 'bleedless', 'clean'],
-    ensembleConfig: {
-      models: [
-        { model_id: 'gabox-inst-fv7z', weight: 1.0 },
-        { model_id: 'bs-roformer-viperx-1297', weight: 1.0 }
-      ],
-      algorithm: 'max_spec'
-    }
-  },
-
-  // ============================================================================
-  // UTILITY PRESETS
-  // ============================================================================
-
-  // Best Karaoke - ensemble
   {
     id: 'best_karaoke',
     name: 'Best Karaoke',
-    description: 'Cleanest backing tracks with all vocals removed.',
+    description: 'High-quality vocal removal for karaoke / backing tracks.',
     stems: ['no_vocals', 'vocals'],
     recommended: true,
     category: 'utility',
@@ -432,54 +100,148 @@ export const ALL_PRESETS: Preset[] = [
     tags: ['karaoke', 'no-vocals', 'backing-track'],
     ensembleConfig: {
       models: [
-        { model_id: 'mel-band-karaoke-becruily' },
-        { model_id: 'bs-roformer-karaoke-becruily' }
+        { model_id: 'mel-band-karaoke-becruily', weight: 1.0 },
+        { model_id: 'bs-roformer-karaoke-becruily', weight: 1.0 },
       ],
-      algorithm: 'max_spec'
+      algorithm: 'max_spec',
     },
-    advancedDefaults: { overlap: 4 }
+    advancedDefaults: { overlap: 4 },
   },
 
-  // De-Reverb
   {
-    id: 'de_reverb',
-    name: 'De-Reverb (Remove Echo)',
-    description: 'Removes room reverb for dry studio sound. Run on vocals only!',
+    id: 'fast_preview',
+    name: 'Fast Preview (MDX23C)',
+    description: 'Fast separation preview for quick checking before running heavier presets.',
+    stems: ['vocals', 'instrumental'],
+    recommended: false,
+    category: 'instrumental',
+    qualityLevel: 'fast',
+    estimatedVram: 3,
+    tags: ['fast', 'preview'],
+    modelId: 'mdx23c-instvoc-hq',
+    advancedDefaults: { overlap: 2 },
+  },
+
+  {
+    id: 'high_quality_instrumental',
+    name: 'High Quality Instrumental (Fullness)',
+    description: 'High-fullness instrumental. If you hear buzzing, use a Phase Fix workflow preset.',
+    stems: ['instrumental', 'vocals'],
+    recommended: true,
+    category: 'instrumental',
+    qualityLevel: 'quality',
+    estimatedVram: 8,
+    tags: ['fullness', 'detail'],
+    modelId: 'unwa-inst-v1e-plus',
+    advancedDefaults: { overlap: 4 },
+  },
+
+  {
+    id: 'balanced_instrumental',
+    name: 'Balanced Instrumental (Bleedless)',
+    description: 'Cleaner/bleedless instrumental option with lower noise.',
+    stems: ['instrumental', 'vocals'],
+    recommended: false,
+    category: 'instrumental',
+    qualityLevel: 'balanced',
+    estimatedVram: 6,
+    tags: ['bleedless', 'balanced'],
+    modelId: 'gabox-inst-fv7z',
+    advancedDefaults: { overlap: 4 },
+  },
+
+  {
+    id: 'cleanest_instrumental_maxmin',
+    name: 'Cleanest Instrumental (Max/Min)',
+    description: 'Per-stem blending to reduce vocal bleed while keeping detail.',
+    stems: ['instrumental', 'vocals'],
+    recommended: true,
+    category: 'instrumental',
+    qualityLevel: 'quality',
+    estimatedVram: 10,
+    tags: ['ensemble', 'max-min', 'clean'],
+    ensembleConfig: {
+      models: [
+        { model_id: 'bs-roformer-viperx-1297', weight: 1.0 },
+        { model_id: 'mel-band-roformer-kim', weight: 1.0 },
+      ],
+      algorithm: 'average',
+      stemAlgorithms: {
+        vocals: 'max_spec',
+        instrumental: 'min_spec',
+      },
+    },
+    advancedDefaults: { overlap: 4 },
+  },
+
+  {
+    id: 'natural_body_vocals',
+    name: 'Natural Body Vocals',
+    description: 'Preserves warmth/body in vocals. Some bleed tolerated for richness.',
+    stems: ['vocals', 'instrumental'],
+    recommended: false,
+    category: 'vocals',
+    qualityLevel: 'quality',
+    estimatedVram: 8,
+    tags: ['fullness', 'warm'],
+    modelId: 'unwa-revive-3e',
+    advancedDefaults: { overlap: 4 },
+  },
+
+  {
+    id: 'resurrection_vocals',
+    name: 'Resurrection Vocals (Backing/Harmonies)',
+    description: 'Good at capturing backing vocals and harmonies.',
+    stems: ['vocals', 'instrumental'],
+    recommended: false,
+    category: 'vocals',
+    qualityLevel: 'quality',
+    estimatedVram: 6,
+    tags: ['harmonies', 'backing-vocals'],
+    modelId: 'unwa-resurrection-voc',
+    advancedDefaults: { overlap: 4 },
+  },
+
+  {
+    id: 'de_reverb_room',
+    name: 'De-Reverb (Room)',
+    description: 'Remove room reverb. Best applied to separated vocals, not full mix.',
     stems: ['dry', 'reverb'],
     recommended: false,
     category: 'utility',
     qualityLevel: 'quality',
     estimatedVram: 6,
-    tags: ['de-reverb', 'cleanup', 'dry', 'studio'],
-    modelId: 'mel-roformer-dereverb-anvuew-v2',
-    pipelineNote: 'Only run on separated vocals, NOT full mix (destroys drums)'
+    tags: ['de-reverb', 'cleanup'],
+    modelId: 'anvuew-dereverb-room',
+    advancedDefaults: { overlap: 4 },
   },
 
-  // De-Noise
   {
     id: 'de_noise',
-    name: 'De-Noise (Remove Background)',
-    description: 'Reduces background noise and hiss.',
+    name: 'De-Noise',
+    description: 'Reduce background noise and hiss.',
     stems: ['clean', 'noise'],
     recommended: false,
     category: 'utility',
     qualityLevel: 'balanced',
     estimatedVram: 6,
-    tags: ['de-noise', 'cleanup', 'hiss'],
-    modelId: 'aufr33-denoise-std'
+    tags: ['de-noise', 'cleanup'],
+    modelId: 'aufr33-denoise-std',
+    advancedDefaults: { overlap: 4 },
   },
 
   {
     id: 'de_noise_aggressive',
     name: 'De-Noise (Aggressive)',
-    description: 'Stronger background suppression than standard denoise. Can dull transients.',
+    description: 'Stronger noise suppression. Can dull transients.',
     stems: ['clean', 'noise'],
     recommended: false,
     category: 'utility',
     qualityLevel: 'quality',
     estimatedVram: 6,
     tags: ['de-noise', 'cleanup', 'aggressive'],
-    modelId: 'aufr33-denoise-aggressive'
+    modelId: 'aufr33-denoise-aggressive',
+    advancedDefaults: { overlap: 4 },
   },
 
   {
@@ -492,71 +254,51 @@ export const ALL_PRESETS: Preset[] = [
     qualityLevel: 'quality',
     estimatedVram: 6,
     tags: ['crowd', 'live', 'cleanup'],
-    modelId: 'mel-band-crowd'
+    modelId: 'mel-band-crowd',
+    advancedDefaults: { overlap: 4 },
   },
 
-  // De-Bleed (remove vocal residue from instrumental)
   {
     id: 'de_bleed',
-    name: 'De-Bleed (Remove Vocal Residue)',
-    description: 'Removes vocal bleed from instrumental tracks.',
+    name: 'De-Bleed (Vocal Residue)',
+    description: 'Remove vocal bleed from instrumentals.',
     stems: ['clean', 'bleed'],
     recommended: false,
     category: 'utility',
     qualityLevel: 'quality',
     estimatedVram: 6,
-    tags: ['de-bleed', 'cleanup', 'instrumental'],
-    modelId: 'mel-roformer-debleed'
+    tags: ['de-bleed', 'cleanup'],
+    modelId: 'gabox-denoise-debleed',
+    advancedDefaults: { overlap: 4 },
   },
 
-  // ============================================================================
-  // INSTRUMENTS PRESETS (3)
-  // ============================================================================
-
-  // DrumSep 5-stem
   {
     id: 'drumsep_5stem',
     name: 'DrumSep 5-Stem',
-    description: 'Separates drums into Kick, Snare, Toms, Hi-Hat, Cymbals.',
+    description: 'Split drums into Kick/Snare/Toms/Hi-Hat/Cymbals.',
     stems: ['kick', 'snare', 'toms', 'hihat', 'cymbals'],
     recommended: true,
     category: 'instruments',
     qualityLevel: 'quality',
     estimatedVram: 6,
-    tags: ['drums', 'drumsep', 'sampling', 'kit'],
+    tags: ['drums', 'drumsep'],
     modelId: 'mel-roformer-drumsep-5stem',
-    pipelineNote: 'Use 5-10 shifts (TTA) for best transient quality',
-    advancedDefaults: { overlap: 4 }
+    advancedDefaults: { overlap: 4 },
   },
 
-  // Full 6-stem separation
-  {
-    id: 'full_separation_6stem',
-    name: 'Full 6-Stem Separation',
-    description: 'Separates into Drums, Bass, Vocals, Guitar, Piano, Other.',
-    stems: ['drums', 'bass', 'vocals', 'guitar', 'piano', 'other'],
-    recommended: false,
-    category: 'instruments',
-    qualityLevel: 'balanced',
-    estimatedVram: 4,
-    tags: ['6-stem', 'full', 'demucs', 'all-instruments'],
-    modelId: 'htdemucs-6s',
-    pipelineNote: 'Use 5-10 shifts for better quality'
-  },
-
-  // Guitar isolation
   {
     id: 'guitar_isolation',
     name: 'Guitar Isolation',
-    description: 'Extracts guitar from the mix.',
+    description: 'Extract guitar from the mix.',
     stems: ['guitar', 'other'],
     recommended: false,
     category: 'instruments',
     qualityLevel: 'quality',
     estimatedVram: 6,
-    tags: ['guitar', 'instrument', 'isolation'],
-    modelId: 'becruily-guitar'
-  }
+    tags: ['guitar', 'isolation'],
+    modelId: 'becruily-guitar',
+    advancedDefaults: { overlap: 4 },
+  },
 ]
 
 // ============================================================================

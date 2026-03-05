@@ -7,6 +7,7 @@
     "ui:dev": "npm --prefix electron-poc run dev",
     "ui:typecheck": "npm --prefix electron-poc run typecheck",
     "ui:test": "npm --prefix electron-poc run test:run",
+    "python:test": "powershell -ExecutionPolicy Bypass -File .\\scripts\\run_pytest.ps1",
     "electron:dev": "npm --prefix electron-poc run electron:dev",
     "electron:build": "npm --prefix electron-poc run electron:build",
     "backend:build": "cd stemsep-backend && cargo build --release"

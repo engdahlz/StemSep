@@ -1660,6 +1660,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "sha2",
  "sysinfo",
  "tract-onnx",
  "uuid",

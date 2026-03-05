@@ -52,6 +52,7 @@ New Files/
 # Reports
 # Do not blanket-ignore reports (some are source-of-truth, e.g. mirror manifests).
 # If you have large/generated outputs, add targeted patterns here instead.
+reports/guide_sync/
 
 # Electron dev logs (generated)
 dev-electron.log

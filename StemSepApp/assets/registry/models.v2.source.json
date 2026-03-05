@@ -7,6 +7,7 @@
     "commit": null,
     "notes": "Enriched via update_registry.py (Missing blocks, Phase Fix refs, Restoration roles) | Tags enriched via update_registry_tags.py"
   },
+  "guide_revision": "2026-03-04",
   "models": [
     {
       "id": "amane-4-stems-large",

@@ -7,6 +7,7 @@ import { ModelsPage } from "./components/ModelsPage";
 import { HistoryPage } from "./components/HistoryPage";
 import { SettingsPage } from "./components/SettingsPage";
 import { ConfigurePage, SeparationConfig } from "./components/ConfigurePage";
+import QualityLabPage from "./components/QualityLabPage";
 import { logger } from "./utils/logger";
 import { useModelEvents } from "./hooks/useModelEvents";
 import { useModels } from "./hooks/useModels";
@@ -230,6 +231,8 @@ function App() {
         return <SettingsPage />;
       case "history":
         return <HistoryPage onNavigate={setCurrentPage} />;
+      case "quality":
+        return <QualityLabPage />;
       case "about":
         return (
           <PageShell>

@@ -90,6 +90,8 @@ class SeparationManager:
         self.job_lock = threading.Lock()
         self.paused = False
         self.queue = []
+        # Startup hygiene: clear stale temp/checkpoint artifacts from previous sessions.
+        self._cleanup_old_temp_dirs()
 
     def _get_model_recommended_settings(self, model_id: str) -> Dict[str, Any]:
         minfo = self.model_manager.get_model(model_id) if model_id else None
@@ -161,9 +163,6 @@ class SeparationManager:
                     pass
 
         return out_overlap, out_segment_size, out_batch_size, out_tta
-
-        # Cleanup old temp dirs on startup
-        self._cleanup_old_temp_dirs()
 
     def _cleanup_old_temp_dirs(self):
         """Delete temp directories older than 24 hours"""
@@ -706,17 +705,9 @@ class SeparationManager:
 
             # Graceful degradation for Phase Fix
             if phase_fix_enabled:
-                if len(valid_config) >= 1:
-                    self.logger.warning(
-                        "Phase Fix reference or target missing. Falling back to single model separation with: "
-                        + valid_config[0]["model_id"]
-                    )
-                    phase_fix_enabled = False  # Disable since can't do proper phase fix
-                    ensemble_config = [valid_config[0]]
-                else:
-                    raise RuntimeError(
-                        f"All models for Phase Fix are missing: {missing_models}"
-                    )
+                raise RuntimeError(
+                    f"Cannot start ensemble with Phase Fix enabled. Missing models: {missing_models}. Please download them first."
+                )
             else:
                 raise RuntimeError(
                     f"Cannot start ensemble. Missing models: {missing_models}. Please download them first."
@@ -1659,6 +1650,23 @@ class SeparationManager:
                 weight = model_cfg.get("weight", 1.0)
                 weights.append(weight)
 
+                # For single-stem models (e.g. instrumental-only), request both stems during
+                # ensemble runs so the engine computes a residual complement (vocals/instrumental).
+                # This ensures ensemble blending and Phase Fix have the expected number of sources.
+                stems_for_model = None
+                if job.stems is not None:
+                    stems_for_model = job.stems
+                else:
+                    try:
+                        m = self.model_manager.get_model(model_id)
+                        m_stems = getattr(m, "stems", None)
+                        if isinstance(m_stems, list) and len(m_stems) == 1:
+                            s0 = str(m_stems[0]).strip().lower()
+                            if s0 in ("instrumental", "other", "vocals", "vocal"):
+                                stems_for_model = ["vocals", "instrumental"]
+                    except Exception:
+                        stems_for_model = None
+
                 progress_start = 10 + (i / total_models) * 80
                 progress_span = 80 / max(1, total_models)
                 self._update_job_progress(
@@ -1687,6 +1695,7 @@ class SeparationManager:
                     job.file_path,
                     model_id,
                     str(model_output_dir),
+                    stems=stems_for_model,
                     device=job.device,
                     overlap=current_overlap,
                     segment_size=current_seg_size,

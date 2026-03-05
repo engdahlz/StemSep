@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Home, Music, Settings, Clock, Info, ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react'
+import { Home, Music, Settings, Clock, Info, ChevronLeft, ChevronRight, PlayCircle, Beaker } from 'lucide-react'
 import { Button } from './ui/button'
 import { cn } from '../lib/utils'
 import { SystemStatus } from './SystemStatus'
@@ -30,6 +30,7 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
     {
       title: 'System',
       items: [
+        { id: 'quality' as Page, icon: Beaker, label: 'Quality Lab' },
         { id: 'settings' as Page, icon: Settings, label: 'Settings' },
         { id: 'about' as Page, icon: Info, label: 'About' },
       ],

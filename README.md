@@ -31,6 +31,7 @@ If your PowerShell profile tries to auto-activate a missing venv, use the repo h
 ```powershell
 .\scripts\run_py.ps1 .\scripts\registry\validate_model_registry.py
 .\scripts\run_py.ps1 .\scripts\download_configs.py --help
+.\scripts\run_pytest.ps1 -q StemSepApp/tests
 ```
 
 ### Running Python utilities reliably (macOS/Linux)

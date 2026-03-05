@@ -31,6 +31,7 @@ or are called by other parts of the system:
 - `verify_backend.py` — backend verification / smoke checks (useful for CI and environment validation)
 - `backend_headless_download.py` / `backend_headless_separate.py` / `run_backend_separation.py` — backend orchestration helpers
 - `run_py.ps1` / `run_py.sh` — repo helpers for running Python scripts reliably without relying on shell venv activation
+- `run_pytest.ps1` — Windows-first pytest entrypoint that selects the right venv deterministically
 
 If you move or rename any of these, update all call sites (Electron, Rust backend, docs, and CI).
 
@@ -116,6 +117,10 @@ Use:
 - `registry/validate_model_registry.py`
   - Purpose: Validate model registry consistency and expected local filenames.
   - Typical use: Safe validator (no downloads); run after registry edits.
+
+- `registry/sync_guide_knowledge.py`
+  - Purpose: Fetch Google guide export, diff against local snapshot, and emit machine-readable sync/coverage reports.
+  - Typical use: Keep guide-driven model knowledge in sync with registry and enforce CI divergence thresholds.
 
 - `download_configs.py`
   - Purpose: Fetch/download YAML config files referenced by model entries.

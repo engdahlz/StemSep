@@ -17,6 +17,7 @@ import { ModelDetails } from "./ModelDetails";
 import { ALL_PRESETS, Preset } from "../presets";
 import { recipesToPresets } from "@/lib/recipePresets";
 import { resolveSeparationPlan } from "@/lib/separation/resolveSeparationPlan";
+import { recommendModelChain } from "@/lib/policy/recommendationPolicy";
 import MissingModelsDialog from "./dialogs/MissingModelsDialog";
 
 // --- Constants & Types ---
@@ -63,6 +64,7 @@ export default function SeparatePage({
 
   const [selectedPreset, setSelectedPreset] =
     useState<string>("best_instrumental");
+  const [presetUserLocked, setPresetUserLocked] = useState(false);
   const [showPresetBrowser, setShowPresetBrowser] = useState(false);
   const [favoritePresetIds, setFavoritePresetIds] = useState<string[]>(() => {
     const saved = localStorage.getItem("favoritePresets");
@@ -159,6 +161,40 @@ export default function SeparatePage({
 
     return [...ALL_PRESETS, ...recipesToPresets(recipes)];
   }, [recipes]);
+
+  useEffect(() => {
+    if (presetUserLocked) return;
+    if (!Array.isArray(models) || models.length === 0) return;
+    if (!Array.isArray(combinedPresets) || combinedPresets.length === 0) return;
+
+    const rec = recommendModelChain("instrumental", models as any, {
+      device: gpuVRAM > 0 ? "cuda:0" : "cpu",
+      vramGb: gpuVRAM,
+    });
+    if (rec.blocked || rec.chain.length === 0) return;
+
+    const installed = new Set(
+      models.filter((m) => m.installed).map((m) => m.id),
+    );
+
+    const ensemblePick = combinedPresets.find((p) => {
+      if (!p.ensembleConfig?.models?.length) return false;
+      const mids = p.ensembleConfig.models.map((m) => m.model_id);
+      if (!mids.every((mid) => rec.chain.includes(mid))) return false;
+      return mids.every((mid) => installed.has(mid));
+    });
+
+    const singlePick =
+      combinedPresets.find(
+        (p) => p.modelId && p.modelId === rec.chain[0] && installed.has(p.modelId),
+      ) ||
+      combinedPresets.find((p) => p.id === "best_instrumental");
+
+    const pick = ensemblePick || singlePick;
+    if (pick && pick.id !== selectedPreset) {
+      setSelectedPreset(pick.id);
+    }
+  }, [combinedPresets, gpuVRAM, models, presetUserLocked, selectedPreset]);
 
   const activeDetailsModel = useMemo(() => {
     return models.find((m) => m.id === detailsModelId) || null;
@@ -422,6 +458,11 @@ export default function SeparatePage({
     );
   }, []);
 
+  const handleSelectPreset = useCallback((presetId: string) => {
+    setPresetUserLocked(true);
+    setSelectedPreset(presetId);
+  }, []);
+
   const handleFileSelect = async () => {
     if (!window.electronAPI) {
       toast.error("Electron API not available");
@@ -564,9 +605,22 @@ export default function SeparatePage({
         return Math.trunc(n);
       };
 
-      const backendOverlap = resolveBackendOverlap(config.advancedParams?.overlap);
+      const policyTarget =
+        stems?.includes("no_vocals") || modelId.toLowerCase().includes("karaoke")
+          ? "karaoke"
+          : stems?.length === 1 && stems[0] === "vocals"
+            ? "vocals"
+            : "instrumental";
+      const policyRec = recommendModelChain(policyTarget as any, models as any, {
+        device: config.device || (gpuVRAM > 0 ? "cuda:0" : "cpu"),
+        vramGb: gpuVRAM,
+      });
+
+      const backendOverlap = resolveBackendOverlap(
+        config.advancedParams?.overlap ?? policyRec.guardrails.overlap,
+      );
       const backendSegmentSize = resolveBackendSegmentSize(
-        config.advancedParams?.segmentSize,
+        config.advancedParams?.segmentSize ?? policyRec.guardrails.segmentSize,
       );
 
       const preflight = window.electronAPI.separationPreflight
@@ -1045,7 +1099,7 @@ export default function SeparatePage({
         presets={combinedPresets}
         favoriteIds={favoritePresetIds}
         onToggleFavorite={toggleFavorite}
-        onSelectPreset={setSelectedPreset}
+        onSelectPreset={handleSelectPreset}
         availability={presetAvailability}
         onNavigateToModels={() => onNavigateToModels?.()}
         onShowModelDetails={setDetailsModelId}

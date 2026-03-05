@@ -62,6 +62,20 @@ fn read_json_line(reader: &mut BufReader<std::process::ChildStdout>) -> Value {
     serde_json::from_str::<Value>(line.trim()).expect("parse json")
 }
 
+fn read_response_for_id(
+    reader: &mut BufReader<std::process::ChildStdout>,
+    id: i64,
+    max_lines: usize,
+) -> Value {
+    for _ in 0..max_lines {
+        let msg = read_json_line(reader);
+        if msg.get("id").and_then(|v| v.as_i64()) == Some(id) {
+            return msg;
+        }
+    }
+    panic!("did not receive response for id={id}");
+}
+
 #[test]
 fn separate_audio_forwards_volume_compensation_env_gated() {
     if std::env::var("STEMSEP_RUN_VC_TESTS").ok().as_deref() != Some("1") {
@@ -429,6 +443,132 @@ fn get_recipes_returns_array() {
     assert_eq!(resp.get("id").and_then(|v| v.as_i64()), Some(3));
     assert_eq!(resp.get("success").and_then(|v| v.as_bool()), Some(true));
     assert!(resp.get("data").and_then(|v| v.as_array()).is_some());
+}
+
+#[test]
+fn quality_baseline_manifest_hash_is_deterministic() {
+    let mut child = spawn_backend();
+    let stdin = child.stdin.as_mut().expect("stdin");
+    let stdout = child.stdout.take().expect("stdout");
+    let mut reader = BufReader::new(stdout);
+
+    // consume bridge_ready
+    let _ = read_json_line(&mut reader);
+
+    let tmp = std::env::temp_dir();
+    let out_file = tmp.join(format!("stemsep_quality_det_{}.wav", std::process::id()));
+    std::fs::write(&out_file, b"abc123").expect("write fixture output file");
+
+    let req1 = serde_json::json!({
+        "command": "quality_baseline_create",
+        "id": 501,
+        "name": "determinism-check",
+        "model_ids": [],
+        "config": {"overlap": 0.75, "segment_size": 352800},
+        "output_files": {"vocals": out_file.to_string_lossy()}
+    });
+    stdin
+        .write_all(format!("{}\n", req1).as_bytes())
+        .expect("write quality_baseline_create #1");
+    stdin.flush().ok();
+    let resp1 = read_response_for_id(&mut reader, 501, 500);
+    assert_eq!(resp1.get("success").and_then(|v| v.as_bool()), Some(true));
+    let hash1 = resp1
+        .get("data")
+        .and_then(|d| d.get("manifest_hash"))
+        .and_then(|v| v.as_str())
+        .expect("manifest_hash #1")
+        .to_string();
+
+    let req2 = serde_json::json!({
+        "command": "quality_baseline_create",
+        "id": 502,
+        "name": "determinism-check",
+        "model_ids": [],
+        "config": {"segment_size": 352800, "overlap": 0.75}, // reversed order should still hash same
+        "output_files": {"vocals": out_file.to_string_lossy()}
+    });
+    stdin
+        .write_all(format!("{}\n", req2).as_bytes())
+        .expect("write quality_baseline_create #2");
+    stdin.flush().ok();
+    let resp2 = read_response_for_id(&mut reader, 502, 500);
+    assert_eq!(resp2.get("success").and_then(|v| v.as_bool()), Some(true));
+    let hash2 = resp2
+        .get("data")
+        .and_then(|d| d.get("manifest_hash"))
+        .and_then(|v| v.as_str())
+        .expect("manifest_hash #2")
+        .to_string();
+
+    assert_eq!(hash1, hash2, "manifest hash should be deterministic");
+}
+
+#[test]
+fn quality_compare_detects_output_hash_mismatch() {
+    let mut child = spawn_backend();
+    let stdin = child.stdin.as_mut().expect("stdin");
+    let stdout = child.stdout.take().expect("stdout");
+    let mut reader = BufReader::new(stdout);
+
+    // consume bridge_ready
+    let _ = read_json_line(&mut reader);
+
+    let tmp = std::env::temp_dir();
+    let file_a = tmp.join(format!("stemsep_quality_cmp_a_{}.wav", std::process::id()));
+    let file_b = tmp.join(format!("stemsep_quality_cmp_b_{}.wav", std::process::id()));
+    std::fs::write(&file_a, b"baseline-bytes").expect("write file_a");
+    std::fs::write(&file_b, b"candidate-bytes").expect("write file_b");
+
+    // First create a baseline manifest.
+    let mk_baseline = serde_json::json!({
+        "command": "quality_baseline_create",
+        "id": 601,
+        "name": "baseline",
+        "model_ids": [],
+        "config": {"device": "cpu"},
+        "output_files": {"vocals": file_a.to_string_lossy()}
+    });
+    stdin
+        .write_all(format!("{}\n", mk_baseline).as_bytes())
+        .expect("write baseline create");
+    stdin.flush().ok();
+    let baseline_resp = read_response_for_id(&mut reader, 601, 500);
+    let baseline_manifest = baseline_resp.get("data").cloned().expect("baseline data");
+
+    // Compare against candidate spec built from file_b.
+    let cmp_req = serde_json::json!({
+        "command": "quality_compare",
+        "id": 602,
+        "baseline_manifest": baseline_manifest,
+        "candidate": {
+            "name": "candidate",
+            "model_ids": [],
+            "config": {"device": "cpu"},
+            "output_files": {"vocals": file_b.to_string_lossy()}
+        }
+    });
+    stdin
+        .write_all(format!("{}\n", cmp_req).as_bytes())
+        .expect("write quality_compare");
+    stdin.flush().ok();
+    let cmp_resp = read_response_for_id(&mut reader, 602, 800);
+    assert_eq!(cmp_resp.get("success").and_then(|v| v.as_bool()), Some(true));
+    let comparison = cmp_resp
+        .get("data")
+        .and_then(|d| d.get("comparison"))
+        .expect("comparison");
+    assert_eq!(
+        comparison.get("compatible").and_then(|v| v.as_bool()),
+        Some(false)
+    );
+    assert!(
+        comparison
+            .get("difference_count")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0)
+            >= 1
+    );
 }
 
 #[test]

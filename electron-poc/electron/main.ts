@@ -940,77 +940,15 @@ function ensurePythonBridge() {
   pythonBridge.stderr?.setMaxListeners(50);
   }
 
-  // Global stdout listener that always forwards download events to renderer
-  // This ensures progress updates reach the UI even when other handlers are active
-  const globalDownloadHandler = createLineBuffer((line) => {
-    try {
-      const msg = JSON.parse(line);
-
-      // Handle bridge_ready event - signal frontend that Python bridge is fully initialized
-      if (msg.type === "bridge_ready" && mainWindow && !mainWindow.isDestroyed()) {
-        log(`Bridge ready! Capabilities: ${msg.capabilities?.join(', ')}, Models: ${msg.models_count}, Recipes: ${msg.recipes_count}`);
-        mainWindow.webContents.send("bridge-ready", {
-          capabilities: msg.capabilities,
-          modelsCount: msg.models_count,
-          recipesCount: msg.recipes_count
-        });
-      }
-      // Forward download-related events to renderer
-      else if (
-        msg.type === "progress" &&
-        msg.model_id &&
-        mainWindow &&
-        !mainWindow.isDestroyed()
-      ) {
-        console.log(
-          `[Global] Download progress for ${msg.model_id}: ${msg.progress}%`,
-        );
-        mainWindow.webContents.send("download-progress", {
-          modelId: msg.model_id,
-          progress: msg.progress,
-        });
-      } else if (
-        msg.type === "complete" &&
-        msg.model_id &&
-        mainWindow &&
-        !mainWindow.isDestroyed()
-      ) {
-        console.log(`[Global] Download complete for ${msg.model_id}`);
-        mainWindow.webContents.send("download-complete", {
-          modelId: msg.model_id,
-        });
-      } else if (
-        msg.type === "error" &&
-        msg.model_id &&
-        mainWindow &&
-        !mainWindow.isDestroyed()
-      ) {
-        console.log(
-          `[Global] Download error for ${msg.model_id}: ${msg.error}`,
-        );
-        mainWindow.webContents.send("download-error", {
-          modelId: msg.model_id,
-          error: msg.error,
-        });
-      } else if (
-        msg.type === "paused" &&
-        msg.model_id &&
-        mainWindow &&
-        !mainWindow.isDestroyed()
-      ) {
-        console.log(`[Global] Download paused for ${msg.model_id}`);
-        mainWindow.webContents.send("download-paused", {
-          modelId: msg.model_id,
-        });
-      }
-    } catch (e) {
-      // Not JSON or not a download message - ignore
-    }
-  });
-  pythonBridge.stdout?.on("data", globalDownloadHandler);
+  // Attach a single stdout message router for responses + events.
+  attachBackendMessageRouter(pythonBridge);
 
   pythonBridge.on("exit", (code) => {
     log("Python bridge exited with code:", code);
+    rejectAllPendingBackendCommands(
+      new Error(`Backend bridge exited with code ${code ?? "unknown"}`),
+    );
+    detachBackendMessageRouter();
     pythonBridge = null;
     backendProcess = null;
 
@@ -1727,7 +1665,212 @@ const createLineBuffer = (onLine: (line: string) => void) => {
   };
 };
 
-// Helper to send a command to Python and await a single JSON response
+type PendingBackendCommand = {
+  command: string;
+  resolve: (value: any) => void;
+  reject: (reason?: any) => void;
+  timeout: NodeJS.Timeout;
+};
+
+const pendingBackendCommands = new Map<string, PendingBackendCommand>();
+const backendEventSubscribers = new Map<string, Set<(msg: any) => void>>();
+let backendMessageRouter: ((data: Buffer) => void) | null = null;
+
+function subscribeBackendEvent(
+  eventType: string,
+  handler: (msg: any) => void,
+): () => void {
+  const set = backendEventSubscribers.get(eventType) || new Set();
+  set.add(handler);
+  backendEventSubscribers.set(eventType, set);
+  return () => {
+    const existing = backendEventSubscribers.get(eventType);
+    if (!existing) return;
+    existing.delete(handler);
+    if (existing.size === 0) {
+      backendEventSubscribers.delete(eventType);
+    }
+  };
+}
+
+function emitBackendEvent(msg: any) {
+  const eventType = typeof msg?.type === "string" ? msg.type : "";
+  if (!eventType) return;
+  const listeners = backendEventSubscribers.get(eventType);
+  if (!listeners || listeners.size === 0) return;
+  for (const cb of Array.from(listeners)) {
+    try {
+      cb(msg);
+    } catch (e) {
+      log(`backend event subscriber failed (${eventType})`, e);
+    }
+  }
+}
+
+function rejectAllPendingBackendCommands(error: Error) {
+  for (const [key, pending] of Array.from(pendingBackendCommands.entries())) {
+    clearTimeout(pending.timeout);
+    pendingBackendCommands.delete(key);
+    pending.reject(error);
+  }
+}
+
+function routeBackendMessage(msg: any) {
+  const hasResponseShape =
+    msg && Object.prototype.hasOwnProperty.call(msg, "id") &&
+    typeof msg.success === "boolean";
+
+  if (hasResponseShape) {
+    const key = String(msg.id);
+    const pending = pendingBackendCommands.get(key);
+    if (pending) {
+      clearTimeout(pending.timeout);
+      pendingBackendCommands.delete(key);
+      if (msg.success) {
+        pending.resolve(msg.data);
+      } else {
+        pending.reject(new Error(msg.error || "Unknown error from backend"));
+      }
+    }
+  }
+
+  if (msg?.type === "bridge_ready" && mainWindow && !mainWindow.isDestroyed()) {
+    log(
+      `Bridge ready! Capabilities: ${msg.capabilities?.join(", ")}, Models: ${msg.models_count}, Recipes: ${msg.recipes_count}`,
+    );
+    mainWindow.webContents.send("bridge-ready", {
+      capabilities: msg.capabilities,
+      modelsCount: msg.models_count,
+      recipesCount: msg.recipes_count,
+    });
+  } else if (
+    msg?.type === "progress" &&
+    msg?.model_id &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    mainWindow.webContents.send("download-progress", {
+      modelId: msg.model_id,
+      progress: msg.progress,
+    });
+  } else if (
+    msg?.type === "complete" &&
+    msg?.model_id &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    mainWindow.webContents.send("download-complete", {
+      modelId: msg.model_id,
+    });
+  } else if (
+    msg?.type === "error" &&
+    msg?.model_id &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    mainWindow.webContents.send("download-error", {
+      modelId: msg.model_id,
+      error: msg.error,
+    });
+  } else if (
+    msg?.type === "paused" &&
+    msg?.model_id &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    mainWindow.webContents.send("download-paused", {
+      modelId: msg.model_id,
+    });
+  } else if (
+    msg?.type === "separation_progress" &&
+    msg?.job_id &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    const jobId = msg.job_id;
+    const next = Number(msg.progress);
+    const prev = lastProgressByJobId.get(jobId) ?? 0;
+    const clamped = Number.isFinite(next)
+      ? Math.max(prev, Math.max(0, Math.min(100, next)))
+      : prev;
+    lastProgressByJobId.set(jobId, clamped);
+    mainWindow.webContents.send("separation-progress", {
+      jobId,
+      progress: clamped,
+      message: msg.message,
+      device: msg.device,
+    });
+  } else if (
+    msg?.type === "separation_error" &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    if (msg?.job_id) {
+      lastProgressByJobId.delete(msg.job_id);
+      modelInfoByJobId.delete(msg.job_id);
+    }
+    mainWindow.webContents.send("separation-error", {
+      jobId: msg.job_id,
+      error: msg.error || "Separation failed",
+    });
+  } else if (
+    msg?.type === "separation_complete" &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    if (msg?.job_id) {
+      lastProgressByJobId.delete(msg.job_id);
+      modelInfoByJobId.delete(msg.job_id);
+    }
+    mainWindow.webContents.send("separation-complete", {
+      outputFiles: msg.output_files,
+      jobId: msg.job_id,
+    });
+  } else if (
+    msg?.type === "youtube_progress" &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    mainWindow.webContents.send("youtube-progress", msg);
+  } else if (
+    msg?.type === "quality_progress" &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    mainWindow.webContents.send("quality-progress", msg);
+  } else if (
+    msg?.type === "quality_complete" &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    mainWindow.webContents.send("quality-complete", msg);
+  }
+
+  emitBackendEvent(msg);
+}
+
+function attachBackendMessageRouter(process: ReturnType<typeof spawn>) {
+  if (backendMessageRouter) return;
+  backendMessageRouter = createLineBuffer((line) => {
+    try {
+      const msg = JSON.parse(line);
+      routeBackendMessage(msg);
+    } catch {
+      // Ignore non-JSON lines on stdout.
+    }
+  });
+  process.stdout?.on("data", backendMessageRouter);
+}
+
+function detachBackendMessageRouter() {
+  if (!backendMessageRouter) return;
+  if (pythonBridge?.stdout) {
+    pythonBridge.stdout.removeListener("data", backendMessageRouter);
+  }
+  backendMessageRouter = null;
+}
+
+// Helper to send a command to backend and await a single JSON response.
 let commandIdCounter = 0;
 
 async function sendPythonCommand(
@@ -1739,52 +1882,30 @@ async function sendPythonCommand(
   if (!process) throw new Error("Backend not available");
 
   const cmdId = ++commandIdCounter;
+  const cmdKey = String(cmdId);
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
-      cleanup();
+      pendingBackendCommands.delete(cmdKey);
       reject(
         new Error(`Backend command '${command}' timed out after ${timeoutMs}ms`),
       );
     }, timeoutMs);
 
-    const dataHandler = createLineBuffer((line) => {
-      try {
-        const response = JSON.parse(line);
-
-        // Check ID match (if response has ID)
-        if (response.id === cmdId) {
-          if (response.success !== undefined) {
-            cleanup();
-            if (response.success) {
-              resolve(response.data);
-            } else {
-              reject(
-                new Error(
-                  response.error || "Unknown error from backend",
-                ),
-              );
-            }
-          }
-        }
-      } catch (e) {
-        console.error(`Error parsing JSON response for '${command}':`, e);
-      }
+    pendingBackendCommands.set(cmdKey, {
+      command,
+      resolve,
+      reject,
+      timeout,
     });
-
-    const cleanup = () => {
-      clearTimeout(timeout);
-      process.stdout?.removeListener("data", dataHandler);
-    };
-
-    process.stdout?.on("data", dataHandler);
 
     try {
       process.stdin?.write(
         JSON.stringify({ command, id: cmdId, ...payload }) + "\n",
       );
     } catch (e) {
-      cleanup();
+      clearTimeout(timeout);
+      pendingBackendCommands.delete(cmdKey);
       reject(
         new Error(
           `Failed to write command '${command}' to backend: ${e}`,
@@ -1919,265 +2040,95 @@ ipcMain.handle(
     const effectiveInputFile = await ensureWavInput(inputFile, previewDir);
 
     return new Promise((resolve, reject) => {
-      // 60 minute timeout for separation jobs (some models are slow)
-      const timeout = setTimeout(
-        () => {
-          reject(new Error("Separation timeout (60 minutes)"));
-        },
-        60 * 60 * 1000,
-      );
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error("Separation timeout (60 minutes)"));
+      }, 60 * 60 * 1000);
 
-      let resolved = false;
-
-      const messageHandler = createLineBuffer((line) => {
-        try {
-          const msg = JSON.parse(line);
-
-          // IMPORTANT: Rust backend emits 'separation_progress' events with job_id
-          // We must ensure we're listening to the correct job if multiple are running,
-          // though the current architecture mostly serializes or we rely on the bridge filtering.
-          // For now, we forward all progress events to the UI, which filters by active job if needed.
-
-          if (msg.type === "separation_progress") {
-            const jobId = msg.job_id;
-            const next = Number(msg.progress);
-            const prev = lastProgressByJobId.get(jobId) ?? 0;
-            const clamped = Number.isFinite(next)
-              ? Math.max(prev, Math.max(0, Math.min(100, next)))
-              : prev;
-            lastProgressByJobId.set(jobId, clamped);
-
-            const modelInfo = modelInfoByJobId.get(jobId);
-            const modelTag = modelInfo
-              ? ` requestedModelId=${modelInfo.requestedModelId} effectiveModelId=${modelInfo.effectiveModelId}`
-              : "";
-
-            console.log(
-              `Separation Progress: job_id=${jobId}${modelTag} progress=${clamped}% (raw: ${msg.progress}%) message=${msg.message}`,
-            );
-
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send("separation-progress", {
-                jobId,
-                progress: clamped,
-                message: msg.message,
-                device: msg.device,
-              });
-            }
-          } else if (msg.type === "separation_complete") {
-            // Check if this completion matches our request?
-            // The rust backend should send a response to the command with the job_id,
-            // AND emit an event.
-            // Wait, this specific block is for the *streaming event* approach.
-            // The Rust backend responds to the initial "separate_audio" command with { "job_id": "...", "status": "started" }
-            // Then it emits "separation_complete" events later.
-            //
-            // THE PROBLEM: The original code used a "request-response" pattern for `separate-audio` IPC that waited indefinitely
-            // for completion.
-            // Rust backend returns immediately with "started".
-            // So we need to adapt this handler to resolve ONLY when the completion event arrives.
-
-            // Note: We might need to filter by job_id if we had it.
-            // But we don't have the job_id until we send the command.
-            // Actually, we can just resolve when we get *a* completion event if we assume single-tasking,
-            // but better is to read the immediate response to get job_id, then wait for event.
-            //
-            // HOWEVER, the existing frontend expects `ipcRenderer.invoke('separate-audio')` to resolve with the result.
-            // So we must keep this Promise pending until the job finishes.
-
-            if (msg.job_id) {
-               // Good, we have a job_id. We should match it.
-               // But we haven't sent the command yet, so we don't know our job_id.
-               // We need to capture the job_id from the initial command response first.
-            }
-
-            if (!resolved) {
-               // We'll optimistically resolve on the first completion event for now,
-               // or we'd need to refactor to wait for the command response to get job_id.
-               // Let's assume the backend won't spam completion events for unknown jobs.
-               // Actually, let's fix this properly below.
-            }
-          }
-        } catch (e) {
-          // ignore
-        }
-      });
-
-      // We attach the global listener temporarily.
-      process.stdout?.on("data", messageHandler);
-
-      // Send start command
-      // We wrap the write in a separate async call effectively, but here we just write.
-      // We need to get the immediate response to know the job_id.
-      // But `bridge.stdin.write` is fire-and-forget.
-      // We should use `sendPythonCommand` which waits for the response!
-      //
-      // Refactoring to use sendPythonCommand for the initial kick-off:
+      let myJobId: string | null = null;
       const payload = {
-          file_path: effectiveInputFile,
-          model_id: effectiveModelId,
-          output_dir: previewDir,
-          stems,
-          device,
-          shifts: shifts || 0,
-          overlap,
-          segment_size: segmentSize,
-          tta,
-          output_format: outputFormat,
-          bitrate,
-          ensemble_config: ensembleConfig,
-          ensemble_algorithm: ensembleAlgorithm,
-          invert,
-          split_freq: splitFreq,
-          phase_params: phaseParams,
-          post_processing_steps: postProcessingSteps,
-          export_mixes: exportMixes,
-          volume_compensation: volumeCompensation,
+        file_path: effectiveInputFile,
+        model_id: effectiveModelId,
+        output_dir: previewDir,
+        stems,
+        device,
+        shifts: shifts || 0,
+        overlap,
+        segment_size: segmentSize,
+        tta,
+        output_format: outputFormat,
+        bitrate,
+        ensemble_config: ensembleConfig,
+        ensemble_algorithm: ensembleAlgorithm,
+        invert,
+        split_freq: splitFreq,
+        phase_params: phaseParams,
+        post_processing_steps: postProcessingSteps,
+        export_mixes: exportMixes,
+        volume_compensation: volumeCompensation,
       };
 
-      // We can't easily use sendPythonCommand inside this Promise because of the complex event listener setup needed *before* sending.
-      // Instead, let's manually replicate the send-and-wait-for-completion logic more carefully.
+      const onDone = (msg: any) => {
+        if (!myJobId || msg?.job_id !== myJobId) return;
+        cleanup();
+        resolve({
+          success: true,
+          outputFiles: msg.output_files,
+          jobId: msg.job_id,
+          outputDir: previewDir,
+        });
+      };
 
-      // 1. Send command and get Job ID.
-      // 2. Wait for event with that Job ID.
+      const onError = (msg: any) => {
+        if (!myJobId || msg?.job_id !== myJobId) return;
+        cleanup();
+        reject(new Error(msg.error || "Separation failed"));
+      };
 
-      // Clean up the temporary global listener from above, it's not safe.
-      process.stdout?.removeListener("data", messageHandler);
+      const onCancelled = (msg: any) => {
+        if (!myJobId || msg?.job_id !== myJobId) return;
+        cleanup();
+        reject(new Error("Separation cancelled"));
+      };
 
-      // New approach:
-      let myJobId: string | null = null;
-
-      const smartHandler = createLineBuffer((line) => {
-        try {
-          const msg = JSON.parse(line);
-
-          // 1. Capture Job ID from immediate response (if we used manual write, we'd need to track cmdId)
-          // But here we are listening to ALL events.
-
-          // Always forward progress events to the UI (UI can correlate by jobId).
-          if (msg.type === "separation_progress") {
-            const jobId = msg.job_id;
-            const next = Number(msg.progress);
-            const prev = lastProgressByJobId.get(jobId) ?? 0;
-            const clamped = Number.isFinite(next)
-              ? Math.max(prev, Math.max(0, Math.min(100, next)))
-              : prev;
-            lastProgressByJobId.set(jobId, clamped);
-
-            const modelInfo = modelInfoByJobId.get(jobId);
-            const modelTag = modelInfo
-              ? ` requestedModelId=${modelInfo.requestedModelId} effectiveModelId=${modelInfo.effectiveModelId}`
-              : "";
-
-            console.log(
-              `Separation Progress (event): job_id=${jobId}${modelTag} progress=${clamped}% (raw=${msg.progress}%) message=${msg.message}`,
-            );
-
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send("separation-progress", {
-                jobId,
-                progress: clamped,
-                message: msg.message,
-                device: msg.device,
-              });
-            }
-          }
-
-          // Also forward errors globally for visibility (but keep Promise rejection job-scoped below).
-          if (msg.type === "separation_error") {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send("separation-error", {
-                jobId: msg.job_id,
-                error: msg.error || "Separation failed",
-              });
-            }
-          }
-
-          if (msg.type === "separation_complete") {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send("separation-complete", {
-                outputFiles: msg.output_files,
-                jobId: msg.job_id,
-                outputDir: previewDir,
-              });
-            }
-            if (msg.job_id) {
-              lastProgressByJobId.delete(msg.job_id);
-              modelInfoByJobId.delete(msg.job_id);
-            }
-          }
-
-          // If we see a progress/completion event matching our job ID:
-          if (myJobId && msg.job_id === myJobId) {
-             if (msg.type === "separation_complete") {
-                cleanup();
-                lastProgressByJobId.delete(msg.job_id);
-                modelInfoByJobId.delete(msg.job_id);
-                resolve({
-                  success: true,
-                  outputFiles: msg.output_files,
-                  jobId: msg.job_id,
-                outputDir: previewDir,
-                });
-             } else if (msg.type === "separation_error") {
-                cleanup();
-                if (msg.job_id) {
-                  lastProgressByJobId.delete(msg.job_id);
-                  modelInfoByJobId.delete(msg.job_id);
-                }
-                reject(new Error(msg.error || "Separation failed"));
-             } else if (msg.type === "separation_cancelled") {
-                cleanup();
-                if (msg.job_id) {
-                  lastProgressByJobId.delete(msg.job_id);
-                  modelInfoByJobId.delete(msg.job_id);
-                }
-                reject(new Error("Separation cancelled"));
-             }
-          }
-        } catch (e) { }
-      });
-
-      process.stdout?.on("data", smartHandler);
+      const unsubComplete = subscribeBackendEvent("separation_complete", onDone);
+      const unsubError = subscribeBackendEvent("separation_error", onError);
+      const unsubCancelled = subscribeBackendEvent(
+        "separation_cancelled",
+        onCancelled,
+      );
 
       const cleanup = () => {
         clearTimeout(timeout);
-        process.stdout?.removeListener("data", smartHandler);
+        unsubComplete();
+        unsubError();
+        unsubCancelled();
       };
 
-      // Use the helper to send the command and get the immediate { job_id, status } response
       sendPythonCommand("separate_audio", payload)
         .then((response) => {
-           if (response.job_id) {
-             myJobId = response.job_id;
-             modelInfoByJobId.set(myJobId, {
-               requestedModelId: String(modelId || ""),
-               effectiveModelId: String(effectiveModelId || ""),
-               inputFile: String(inputFile || ""),
-             });
-
-             console.log(
-               `Started separation job: job_id=${myJobId} requestedModelId=${modelId} effectiveModelId=${effectiveModelId}`,
-             );
-
-             lastProgressByJobId.set(myJobId, 0);
-
-             // Immediately notify the renderer so it can bind this queue item to the backend job id
-             // and show non-zero progress even if the first real progress event is delayed.
-             if (mainWindow && !mainWindow.isDestroyed()) {
-               mainWindow.webContents.send("separation-started", {
-                 jobId: myJobId,
-               });
-               mainWindow.webContents.send("separation-progress", {
-                 jobId: myJobId,
-                 progress: 1,
-                 message: "Starting separation...",
-               });
-             }
-           } else {
-             cleanup();
-             reject(new Error("Backend did not return a job ID"));
-           }
+          if (!response?.job_id) {
+            cleanup();
+            reject(new Error("Backend did not return a job ID"));
+            return;
+          }
+          myJobId = String(response.job_id);
+          modelInfoByJobId.set(myJobId, {
+            requestedModelId: String(modelId || ""),
+            effectiveModelId: String(effectiveModelId || ""),
+            inputFile: String(inputFile || ""),
+          });
+          lastProgressByJobId.set(myJobId, 0);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("separation-started", {
+              jobId: myJobId,
+            });
+            mainWindow.webContents.send("separation-progress", {
+              jobId: myJobId,
+              progress: 1,
+              message: "Starting separation...",
+            });
+          }
         })
         .catch((err) => {
           cleanup();
@@ -2189,65 +2140,7 @@ ipcMain.handle(
 
 // Resolve YouTube URL to a local temp audio file (WAV)
 ipcMain.handle("resolve-youtube-url", async (event, { url }: { url: string }) => {
-  const process = ensureBackend();
-  if (!process) {
-    return Promise.reject(new Error("Backend not available."));
-  }
-
-  // Use the new smart handler approach or the simple command wrapper?
-  // The YouTube resolver emits progress events that we need to capture.
-  // Standard sendPythonCommand waits for the final response but doesn't expose a way to hook stream events during the wait.
-  // So we need a custom implementation similar to separate-audio.
-
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error("YouTube resolve timeout (10 minutes)"));
-    }, 10 * 60 * 1000);
-
-    const messageHandler = createLineBuffer((line) => {
-      try {
-        const msg = JSON.parse(line);
-
-        if (msg.type === "youtube_progress") {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send("youtube-progress", msg);
-          }
-          return;
-        }
-        
-        // We can't rely on `msg.success` here because it might be a response to a DIFFERENT command if we are sharing the stream.
-        // However, resolve_youtube is blocking in the legacy python bridge.
-        // In the new Rust backend, it might be proxied.
-        // If it's proxied, the ID matching in `sendPythonCommand` handles the final response.
-        // But `sendPythonCommand` doesn't let us see the progress events.
-        
-        // Strategy:
-        // 1. Attach a global listener for "youtube_progress" events (which don't have IDs usually).
-        // 2. Use `sendPythonCommand` to await the final result.
-      } catch (e) {
-        // ignore
-      }
-    });
-
-    const cleanup = () => {
-      clearTimeout(timeout);
-      process.stdout?.removeListener("data", messageHandler);
-    };
-
-    process.stdout?.on("data", messageHandler);
-
-    // Send command via the standard helper to handle ID matching/response
-    sendPythonCommand("resolve_youtube", { url }, 10 * 60 * 1000)
-      .then((data) => {
-        cleanup();
-        resolve(data);
-      })
-      .catch((err) => {
-        cleanup();
-        reject(err);
-      });
-  });
+  return sendPythonCommand("resolve_youtube", { url }, 10 * 60 * 1000);
 });
 
 // Cancel separation
@@ -2668,6 +2561,22 @@ ipcMain.handle(
 // Get recipes
 ipcMain.handle("get-recipes", async () => {
   return sendPythonCommandWithRetry("get_recipes", {}, 10000);
+});
+
+ipcMain.handle("quality-baseline-create", async (_event, payload: Record<string, any>) => {
+  return sendPythonCommandWithRetry(
+    "quality_baseline_create",
+    payload || {},
+    5 * 60 * 1000,
+  );
+});
+
+ipcMain.handle("quality-compare", async (_event, payload: Record<string, any>) => {
+  return sendPythonCommandWithRetry(
+    "quality_compare",
+    payload || {},
+    5 * 60 * 1000,
+  );
 });
 
 // Download model

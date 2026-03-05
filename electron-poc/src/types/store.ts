@@ -73,6 +73,23 @@ export interface Model {
       sha256?: string;
     }>;
   };
+  guide_revision?: string | null;
+  quality_profile?: {
+    target_roles?: Array<
+      "vocals" | "instrumental" | "karaoke" | "restoration" | "multi_stem"
+    >;
+    quality_tier?: "fast" | "balanced" | "quality" | "ultra" | null;
+    deterministic_priority?: number | null;
+  };
+  hardware_tiers?: Array<{
+    tier?: "low_vram" | "mid_vram" | "high_vram" | "cpu_only";
+    min_vram_gb?: number | null;
+    max_vram_gb?: number | null;
+    recommended_segment_size?: number | null;
+    recommended_overlap?: number | null;
+    notes?: string;
+  }>;
+  stability_notes?: string[];
 }
 
 export type Recipe = import("./recipes").Recipe;

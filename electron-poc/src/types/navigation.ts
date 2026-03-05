@@ -6,3 +6,4 @@ export type Page =
   | 'about'
   | 'results'
   | 'configure'
+  | 'quality'

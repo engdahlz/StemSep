@@ -65,6 +65,8 @@ interface ElectronAPI {
     getModels: () => Promise<any[]>
     getModelTech: (modelId: string) => Promise<any>
     getRecipes: () => Promise<Recipe[]>
+    qualityBaselineCreate: (payload: Record<string, any>) => Promise<any>
+    qualityCompare: (payload: Record<string, any>) => Promise<any>
     downloadModel: (modelId: string) => Promise<boolean>
     pauseDownload: (modelId: string) => Promise<any>
     resumeDownload: (modelId: string) => Promise<any>
@@ -86,6 +88,8 @@ interface ElectronAPI {
     openDirectoryDialog: () => Promise<{ canceled: boolean; filePaths: string[] }>
     onBackendError: (callback: (data: { error: string }) => void) => () => void
     onBridgeReady: (callback: (data: { capabilities: string[]; modelsCount: number; recipesCount: number }) => void) => () => void
+    onQualityProgress: (callback: (data: any) => void) => () => void
+    onQualityComplete: (callback: (data: any) => void) => () => void
     saveQueue: (queue: any[]) => Promise<{ success: boolean; error?: string }>
     loadQueue: () => Promise<any[] | null>
     startWatchMode: (path: string) => Promise<boolean>

@@ -1003,25 +1003,12 @@ class SeparationEngine:
             if self.model_manager and not is_demucs:
                 if not self.model_manager.is_model_installed(model_id):
                     # IMPORTANT: Do not silently substitute a different model.
-                    # If the selected model is missing, we attempt exactly one explicit download
-                    # (consistent with the UI "Download" action). If it still isn't installed,
-                    # we fail fast with a clear message.
-                    self.logger.info(
-                        f"Model {model_id} not found locally. Downloading..."
+                    # Separation should be deterministic and UI-driven: model installs/downloads
+                    # must happen explicitly via the UI/Model Browser, not implicitly during a run.
+                    raise FileNotFoundError(
+                        f"Model '{model_id}' is not installed. "
+                        f"Please download/install it first and try again."
                     )
-                    self._notify_progress(20.0, f"Downloading {model_info['name']}...")
-
-                    success = await self.model_manager.download_model(model_id)
-
-                    if not success or not self.model_manager.is_model_installed(
-                        model_id
-                    ):
-                        raise FileNotFoundError(
-                            f"Model '{model_id}' could not be downloaded/installed. "
-                            f"No fallback model will be used. Please install/download the selected model and try again."
-                        )
-
-                    self.logger.info(f"Download complete for {model_id}")
 
                 # Ensure standard alias filenames exist (e.g. `<model_id>.yaml`) so
                 # legacy loaders can always find the config/checkpoint regardless of

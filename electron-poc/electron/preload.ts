@@ -57,6 +57,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getModels: () => ipcRenderer.invoke('get-models'),
   getModelTech: (modelId: string) => ipcRenderer.invoke('get-model-tech', modelId),
   getRecipes: () => ipcRenderer.invoke('get-recipes'),
+  qualityBaselineCreate: (payload: Record<string, any>) =>
+    ipcRenderer.invoke('quality-baseline-create', payload),
+  qualityCompare: (payload: Record<string, any>) =>
+    ipcRenderer.invoke('quality-compare', payload),
   downloadModel: (modelId: string) => ipcRenderer.invoke('download-model', modelId),
   pauseDownload: (modelId: string) => ipcRenderer.invoke('pause-download', modelId),
   resumeDownload: (modelId: string) => ipcRenderer.invoke('resume-download', modelId),
@@ -102,6 +106,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('bridge-ready', handler)
     return () => ipcRenderer.removeListener('bridge-ready', handler)
+  },
+  onQualityProgress: (callback: (data: any) => void) => {
+    const handler = (_event: any, data: any) => callback(data)
+    ipcRenderer.on('quality-progress', handler)
+    return () => ipcRenderer.removeListener('quality-progress', handler)
+  },
+  onQualityComplete: (callback: (data: any) => void) => {
+    const handler = (_event: any, data: any) => callback(data)
+    ipcRenderer.on('quality-complete', handler)
+    return () => ipcRenderer.removeListener('quality-complete', handler)
   },
 
   // Queue Persistence

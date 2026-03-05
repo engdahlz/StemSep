@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use sysinfo::System;
@@ -1019,6 +1020,471 @@ fn env_u64(key: &str, default_value: u64) -> u64 {
 
 fn send_event(stdout: &Arc<Mutex<io::Stdout>>, event: Value) {
     let _ = write_json_line_locked(stdout, &event);
+}
+
+fn send_quality_progress(
+    stdout: &Arc<Mutex<io::Stdout>>,
+    stage: &str,
+    progress: f64,
+    message: &str,
+    meta: Option<Value>,
+) {
+    let mut evt = serde_json::json!({
+        "type": "quality_progress",
+        "stage": stage,
+        "progress": progress,
+        "message": message,
+        "ts": now_ts_seconds()
+    });
+    if let Some(m) = meta {
+        if let Some(obj) = evt.as_object_mut() {
+            obj.insert("meta".to_string(), m);
+        }
+    }
+    send_event(stdout, evt);
+}
+
+fn canonicalize_json(value: &Value) -> Value {
+    match value {
+        Value::Object(obj) => {
+            let mut keys: Vec<&String> = obj.keys().collect();
+            keys.sort();
+            let mut out = Map::new();
+            for k in keys {
+                if let Some(v) = obj.get(k) {
+                    out.insert(k.clone(), canonicalize_json(v));
+                }
+            }
+            Value::Object(out)
+        }
+        Value::Array(arr) => Value::Array(arr.iter().map(canonicalize_json).collect()),
+        _ => value.clone(),
+    }
+}
+
+fn canonical_json_string(value: &Value) -> Result<String> {
+    serde_json::to_string(&canonicalize_json(value)).context("serialize canonical json")
+}
+
+fn sha256_hex_bytes(bytes: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    format!("{:x}", hasher.finalize())
+}
+
+fn sha256_file(path: &Path) -> Result<(String, u64)> {
+    let mut file = std::fs::File::open(path).with_context(|| format!("open {}", path.display()))?;
+    let mut hasher = Sha256::new();
+    let mut buf = [0u8; 1024 * 64];
+    let mut total = 0u64;
+    loop {
+        let n = file
+            .read(&mut buf)
+            .with_context(|| format!("read {}", path.display()))?;
+        if n == 0 {
+            break;
+        }
+        total += n as u64;
+        hasher.update(&buf[..n]);
+    }
+    Ok((format!("{:x}", hasher.finalize()), total))
+}
+
+fn parse_string_array(value: Option<&Value>) -> Vec<String> {
+    match value {
+        Some(Value::Array(arr)) => arr
+            .iter()
+            .filter_map(|v| v.as_str().map(|s| s.trim().to_string()))
+            .filter(|s| !s.is_empty())
+            .collect(),
+        Some(Value::String(s)) if !s.trim().is_empty() => vec![s.trim().to_string()],
+        _ => vec![],
+    }
+}
+
+fn parse_output_items(extra: &Map<String, Value>) -> Vec<(String, String)> {
+    // Preferred shape: output_files: { stem: "path.wav", ... }
+    if let Some(Value::Object(obj)) = extra
+        .get("output_files")
+        .or_else(|| extra.get("outputFiles"))
+    {
+        let mut out: Vec<(String, String)> = obj
+            .iter()
+            .filter_map(|(k, v)| v.as_str().map(|p| (k.clone(), p.to_string())))
+            .collect();
+        out.sort_by(|a, b| a.0.cmp(&b.0));
+        return out;
+    }
+
+    // Alternative: output_paths: ["a.wav", "b.wav"]
+    if let Some(Value::Array(arr)) = extra
+        .get("output_paths")
+        .or_else(|| extra.get("outputPaths"))
+    {
+        let mut out: Vec<(String, String)> = arr
+            .iter()
+            .enumerate()
+            .filter_map(|(i, v)| {
+                v.as_str()
+                    .map(|p| (format!("output_{:03}", i + 1), p.to_string()))
+            })
+            .collect();
+        out.sort_by(|a, b| a.0.cmp(&b.0));
+        return out;
+    }
+
+    vec![]
+}
+
+fn collect_model_candidate_paths(model_obj: &Value, models_dir: &Path, model_id: &str) -> Vec<PathBuf> {
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Some(artifacts) = model_obj.get("artifacts").and_then(|v| v.as_object()) {
+        if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
+            if let Some(fname) = primary.get("filename").and_then(|v| v.as_str()) {
+                let f = fname.trim();
+                if !f.is_empty() && !f.contains(".MISSING") {
+                    candidates.push(models_dir.join(f));
+                }
+            }
+        }
+        if let Some(cfg_obj) = artifacts.get("config").and_then(|v| v.as_object()) {
+            if let Some(fname) = cfg_obj.get("filename").and_then(|v| v.as_str()) {
+                let f = fname.trim();
+                if !f.is_empty() && !f.contains(".MISSING") {
+                    candidates.push(models_dir.join(f));
+                }
+            }
+        }
+    }
+    if let Some(links) = model_obj.get("links").and_then(|v| v.as_object()) {
+        for key in ["checkpoint", "config"] {
+            if let Some(u) = links.get(key).and_then(|v| v.as_str()) {
+                if let Some(base) = url_basename(u) {
+                    candidates.push(models_dir.join(base));
+                }
+            }
+        }
+    }
+    for ext in [".ckpt", ".pth", ".pt", ".onnx", ".safetensors", ".yaml", ".yml"] {
+        candidates.push(models_dir.join(format!("{model_id}{ext}")));
+    }
+    candidates.sort();
+    candidates.dedup();
+    candidates
+}
+
+fn build_quality_manifest(
+    cfg: &BackendConfig,
+    extra: &Map<String, Value>,
+    stdout: &Arc<Mutex<io::Stdout>>,
+) -> Result<Value> {
+    let name = extra
+        .get("name")
+        .or_else(|| extra.get("baseline_name"))
+        .or_else(|| extra.get("baselineName"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let model_ids = parse_string_array(
+        extra
+            .get("model_ids")
+            .or_else(|| extra.get("modelIds"))
+            .or_else(|| extra.get("models")),
+    );
+    let config = extra.get("config").cloned().unwrap_or(Value::Object(Map::new()));
+    let metrics = extra.get("metrics").cloned().unwrap_or(Value::Null);
+    let output_items = parse_output_items(extra);
+
+    let config_hash = sha256_hex_bytes(canonical_json_string(&config)?.as_bytes());
+
+    send_quality_progress(
+        stdout,
+        "resolve_models",
+        10.0,
+        "Resolving model artifacts",
+        Some(serde_json::json!({ "model_count": model_ids.len() })),
+    );
+
+    let models_json = read_json_file(&cfg.assets_dir.join("models.json.bak")).unwrap_or(Value::Null);
+    let registry_models = models_json
+        .get("models")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let mut model_rows: Vec<Value> = Vec::new();
+    for (idx, model_id) in model_ids.iter().enumerate() {
+        let m_obj = registry_models
+            .iter()
+            .find(|m| m.get("id").and_then(|v| v.as_str()) == Some(model_id.as_str()))
+            .cloned()
+            .unwrap_or(Value::Null);
+        let candidates = collect_model_candidate_paths(&m_obj, &cfg.models_dir, model_id);
+        let existing = candidates.into_iter().find(|p| p.exists());
+        match existing {
+            Some(path) => {
+                let (hash, bytes) = sha256_file(&path)?;
+                model_rows.push(serde_json::json!({
+                    "id": model_id,
+                    "found": true,
+                    "path": path.to_string_lossy(),
+                    "sha256": hash,
+                    "bytes": bytes
+                }));
+            }
+            None => {
+                model_rows.push(serde_json::json!({
+                    "id": model_id,
+                    "found": false,
+                    "path": Value::Null,
+                    "sha256": Value::Null,
+                    "bytes": Value::Null
+                }));
+            }
+        }
+        let p = if model_ids.is_empty() {
+            35.0
+        } else {
+            10.0 + ((idx + 1) as f64 / model_ids.len() as f64) * 25.0
+        };
+        send_quality_progress(
+            stdout,
+            "hash_models",
+            p,
+            &format!("Processed model {}", model_id),
+            None,
+        );
+    }
+    model_rows.sort_by(|a, b| {
+        let aid = a.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let bid = b.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        aid.cmp(bid)
+    });
+
+    let mut output_rows: Vec<Value> = Vec::new();
+    let mut output_hashes_obj = Map::new();
+    for (idx, (label, out_path)) in output_items.iter().enumerate() {
+        let p = PathBuf::from(out_path);
+        if p.exists() {
+            let (hash, bytes) = sha256_file(&p)?;
+            output_hashes_obj.insert(label.clone(), Value::String(hash.clone()));
+            output_rows.push(serde_json::json!({
+                "label": label,
+                "path": out_path,
+                "exists": true,
+                "sha256": hash,
+                "bytes": bytes
+            }));
+        } else {
+            output_rows.push(serde_json::json!({
+                "label": label,
+                "path": out_path,
+                "exists": false,
+                "sha256": Value::Null,
+                "bytes": Value::Null
+            }));
+        }
+        let p = if output_items.is_empty() {
+            70.0
+        } else {
+            35.0 + ((idx + 1) as f64 / output_items.len() as f64) * 35.0
+        };
+        send_quality_progress(
+            stdout,
+            "hash_outputs",
+            p,
+            &format!("Processed output {}", label),
+            None,
+        );
+    }
+    output_rows.sort_by(|a, b| {
+        let al = a.get("label").and_then(|v| v.as_str()).unwrap_or("");
+        let bl = b.get("label").and_then(|v| v.as_str()).unwrap_or("");
+        al.cmp(bl)
+    });
+
+    let created_at = now_ts_seconds();
+    let mut manifest_obj = Map::new();
+    manifest_obj.insert("manifest_version".to_string(), Value::String("1.0".to_string()));
+    manifest_obj.insert("created_at".to_string(), Value::from(created_at));
+    manifest_obj.insert(
+        "name".to_string(),
+        name.map(Value::String).unwrap_or(Value::Null),
+    );
+    manifest_obj.insert("model_ids".to_string(), Value::Array(model_ids.into_iter().map(Value::String).collect()));
+    manifest_obj.insert("models".to_string(), Value::Array(model_rows));
+    manifest_obj.insert("config".to_string(), config);
+    manifest_obj.insert("config_hash".to_string(), Value::String(config_hash));
+    manifest_obj.insert("outputs".to_string(), Value::Array(output_rows));
+    manifest_obj.insert("output_hashes".to_string(), Value::Object(output_hashes_obj));
+    manifest_obj.insert("metrics".to_string(), metrics);
+
+    let mut deterministic_obj = manifest_obj.clone();
+    deterministic_obj.remove("created_at");
+    let manifest_hash = sha256_hex_bytes(canonical_json_string(&Value::Object(deterministic_obj))?.as_bytes());
+    manifest_obj.insert("manifest_hash".to_string(), Value::String(manifest_hash));
+
+    send_quality_progress(stdout, "finalize", 95.0, "Finalizing manifest", None);
+    Ok(Value::Object(manifest_obj))
+}
+
+fn load_manifest_from_value(value: &Value) -> Result<Value> {
+    if let Some(path) = value.as_str() {
+        return read_json_file(&PathBuf::from(path)).with_context(|| format!("read manifest path {path}"));
+    }
+    if value.is_object() {
+        return Ok(value.clone());
+    }
+    Err(anyhow!("manifest input must be a path string or object"))
+}
+
+fn parse_manifest_input(
+    cfg: &BackendConfig,
+    extra: &Map<String, Value>,
+    stdout: &Arc<Mutex<io::Stdout>>,
+    prefix: &str,
+) -> Result<Value> {
+    // Accepted forms:
+    // - "<prefix>_manifest_path": "path.json"
+    // - "<prefix>_manifest": { ... } | "path.json"
+    // - "<prefix>": { model_ids/config/output_files... } (spec for inline build)
+    let key_manifest_path = format!("{prefix}_manifest_path");
+    let key_manifest = format!("{prefix}_manifest");
+    let key_manifest_path_camel = format!("{prefix}ManifestPath");
+    let key_manifest_camel = format!("{prefix}Manifest");
+    if let Some(v) = extra
+        .get(&key_manifest_path)
+        .or_else(|| extra.get(&key_manifest_path_camel))
+    {
+        return load_manifest_from_value(v);
+    }
+    if let Some(v) = extra.get(&key_manifest).or_else(|| extra.get(&key_manifest_camel)) {
+        return load_manifest_from_value(v);
+    }
+    if let Some(Value::Object(spec)) = extra.get(prefix) {
+        return build_quality_manifest(cfg, spec, stdout);
+    }
+    // Fallback for candidate: if caller passed top-level fields for candidate creation.
+    if prefix == "candidate" {
+        return build_quality_manifest(cfg, extra, stdout);
+    }
+    Err(anyhow!("missing {prefix} manifest input"))
+}
+
+fn compare_quality_manifests(baseline: &Value, candidate: &Value) -> Value {
+    let mut differences: Vec<Value> = Vec::new();
+
+    let b_cfg = baseline.get("config_hash").and_then(|v| v.as_str()).unwrap_or("");
+    let c_cfg = candidate.get("config_hash").and_then(|v| v.as_str()).unwrap_or("");
+    if b_cfg != c_cfg {
+        differences.push(serde_json::json!({
+            "type": "config_hash",
+            "baseline": b_cfg,
+            "candidate": c_cfg
+        }));
+    }
+
+    let b_models = baseline
+        .get("models")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let c_models = candidate
+        .get("models")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let b_model_map: HashMap<String, String> = b_models
+        .iter()
+        .filter_map(|m| {
+            let id = m.get("id").and_then(|v| v.as_str())?;
+            let hash = m.get("sha256").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            Some((id.to_string(), hash))
+        })
+        .collect();
+    let c_model_map: HashMap<String, String> = c_models
+        .iter()
+        .filter_map(|m| {
+            let id = m.get("id").and_then(|v| v.as_str())?;
+            let hash = m.get("sha256").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            Some((id.to_string(), hash))
+        })
+        .collect();
+
+    let mut all_model_ids: Vec<String> = b_model_map.keys().chain(c_model_map.keys()).cloned().collect();
+    all_model_ids.sort();
+    all_model_ids.dedup();
+    for id in all_model_ids {
+        let b = b_model_map.get(&id).cloned().unwrap_or_default();
+        let c = c_model_map.get(&id).cloned().unwrap_or_default();
+        if b != c {
+            differences.push(serde_json::json!({
+                "type": "model_hash",
+                "id": id,
+                "baseline": b,
+                "candidate": c
+            }));
+        }
+    }
+
+    let b_outputs = baseline
+        .get("output_hashes")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    let c_outputs = candidate
+        .get("output_hashes")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    let mut labels: Vec<String> = b_outputs
+        .keys()
+        .chain(c_outputs.keys())
+        .cloned()
+        .collect();
+    labels.sort();
+    labels.dedup();
+    let mut output_mismatch = 0usize;
+    for label in labels {
+        let b = b_outputs.get(&label).and_then(|v| v.as_str()).unwrap_or("");
+        let c = c_outputs.get(&label).and_then(|v| v.as_str()).unwrap_or("");
+        if b != c {
+            output_mismatch += 1;
+            differences.push(serde_json::json!({
+                "type": "output_hash",
+                "label": label,
+                "baseline": b,
+                "candidate": c
+            }));
+        }
+    }
+
+    let mut metrics_delta = Map::new();
+    let b_metrics = baseline.get("metrics").and_then(|v| v.as_object()).cloned().unwrap_or_default();
+    let c_metrics = candidate.get("metrics").and_then(|v| v.as_object()).cloned().unwrap_or_default();
+    let mut metric_keys: Vec<String> = b_metrics.keys().chain(c_metrics.keys()).cloned().collect();
+    metric_keys.sort();
+    metric_keys.dedup();
+    for key in metric_keys {
+        let b = b_metrics.get(&key).and_then(|v| v.as_f64());
+        let c = c_metrics.get(&key).and_then(|v| v.as_f64());
+        if let (Some(bv), Some(cv)) = (b, c) {
+            metrics_delta.insert(key.clone(), Value::from(cv - bv));
+        }
+    }
+
+    let diff_count = differences.len() as i64;
+    let quality_score = (100 - diff_count * 10).max(0);
+    serde_json::json!({
+        "compatible": differences.is_empty(),
+        "quality_score": quality_score,
+        "difference_count": differences.len(),
+        "output_mismatch_count": output_mismatch,
+        "differences": differences,
+        "metrics_delta": metrics_delta,
+        "baseline_manifest_hash": baseline.get("manifest_hash").cloned().unwrap_or(Value::Null),
+        "candidate_manifest_hash": candidate.get("manifest_hash").cloned().unwrap_or(Value::Null),
+    })
 }
 
 #[allow(dead_code)]
@@ -2065,6 +2531,7 @@ fn main() -> Result<()> {
     if has_gpu {
         caps.push(Value::from("gpu"));
     }
+    caps.push(Value::from("quality"));
     // Separation is currently provided via Python proxy (until fully ported).
     if enable_py_proxy {
         caps.push(Value::from("separation"));
@@ -2217,6 +2684,80 @@ fn main() -> Result<()> {
                     .cloned()
                     .unwrap_or(Value::Array(vec![]));
                 send_ok(&stdout, req.id, recipes)?;
+            }
+            "quality_baseline_create" => {
+                let manifest = build_quality_manifest(&cfg, &req.extra, &stdout)?;
+                if let Some(path) = req
+                    .extra
+                    .get("manifest_path")
+                    .or_else(|| req.extra.get("manifestPath"))
+                    .and_then(|v| v.as_str())
+                {
+                    let p = PathBuf::from(path);
+                    if let Some(parent) = p.parent() {
+                        std::fs::create_dir_all(parent)
+                            .with_context(|| format!("create dir for {}", p.display()))?;
+                    }
+                    std::fs::write(
+                        &p,
+                        serde_json::to_string_pretty(&manifest)
+                            .context("serialize quality manifest")?,
+                    )
+                    .with_context(|| format!("write manifest {}", p.display()))?;
+                }
+
+                send_event(
+                    &stdout,
+                    serde_json::json!({
+                        "type": "quality_complete",
+                        "action": "quality_baseline_create",
+                        "manifest_hash": manifest.get("manifest_hash").cloned().unwrap_or(Value::Null),
+                        "ts": now_ts_seconds()
+                    }),
+                );
+                send_ok(&stdout, req.id, manifest)?;
+            }
+            "quality_compare" => {
+                send_quality_progress(
+                    &stdout,
+                    "load_manifests",
+                    5.0,
+                    "Loading baseline and candidate manifests",
+                    None,
+                );
+                let baseline = parse_manifest_input(&cfg, &req.extra, &stdout, "baseline")?;
+                send_quality_progress(
+                    &stdout,
+                    "load_manifests",
+                    35.0,
+                    "Baseline manifest loaded",
+                    None,
+                );
+                let candidate = parse_manifest_input(&cfg, &req.extra, &stdout, "candidate")?;
+                send_quality_progress(
+                    &stdout,
+                    "compare",
+                    70.0,
+                    "Comparing manifests",
+                    None,
+                );
+                let comparison = compare_quality_manifests(&baseline, &candidate);
+                send_event(
+                    &stdout,
+                    serde_json::json!({
+                        "type": "quality_complete",
+                        "action": "quality_compare",
+                        "compatible": comparison.get("compatible").cloned().unwrap_or(Value::Bool(false)),
+                        "quality_score": comparison.get("quality_score").cloned().unwrap_or(Value::Null),
+                        "ts": now_ts_seconds()
+                    }),
+                );
+
+                let mut out = Map::new();
+                out.insert("baseline".to_string(), baseline);
+                out.insert("candidate".to_string(), candidate);
+                out.insert("comparison".to_string(), comparison);
+                send_ok(&stdout, req.id, Value::Object(out))?;
             }
             "get-gpu-devices" | "get_gpu_devices" => {
                 send_ok(&stdout, req.id, gpu_info.clone())?;

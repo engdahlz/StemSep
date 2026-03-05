@@ -484,6 +484,13 @@ export function ConfigurePage({
     return separationPlan.missingModels.map((m) => m.modelId);
   }, [separationPlan.missingModels]);
 
+  const validEnsembleModels = useMemo(() => {
+    if (!Array.isArray(ensembleConfig)) return [];
+    return ensembleConfig.filter(
+      (m) => typeof m?.model_id === "string" && m.model_id.trim().length > 0,
+    );
+  }, [ensembleConfig]);
+
   useEffect(() => {
     if (missingModels.length > 0) {
       setMissingDialogOpen(true);
@@ -496,6 +503,16 @@ export function ConfigurePage({
   const canStartSeparation = separationPlan.canProceed;
 
   const handleConfirm = () => {
+    if (mode === "advanced" && isEnsembleMode) {
+      if (validEnsembleModels.length < 2) {
+        toast.error("Ensemble requires at least 2 models.", {
+          description:
+            "Add another model in Ensemble mode (or install more models) and try again.",
+        });
+        return;
+      }
+    }
+
     const preset = mode === "simple" ? presets.find((p) => p.id === selectedPresetId) : undefined;
     const usePresetId = mode === "simple" ? selectedPresetId : undefined;
     const presetOverlap = (() => {
@@ -560,7 +577,7 @@ export function ConfigurePage({
       ensembleConfig:
         mode === "advanced" && isEnsembleMode
           ? {
-              models: ensembleConfig,
+              models: validEnsembleModels,
               algorithm: ensembleAlgorithm as any,
               stemAlgorithms: stemAlgorithms,
               phaseFixEnabled: phaseFixEnabled,
@@ -689,7 +706,7 @@ export function ConfigurePage({
 
   return (
     <PageShell scroll={false}>
-    <div className="h-full flex flex-col bg-background">
+    <div className="h-full min-h-0 flex flex-col bg-background">
       {/* Header */}
       <div className="border-b bg-card/50 px-6 py-4">
         <div className="flex items-center gap-4">
@@ -707,7 +724,7 @@ export function ConfigurePage({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 min-h-0 overflow-y-auto p-6">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Mode Tabs */}
           <div className="grid w-full grid-cols-2 bg-muted p-1 rounded-lg">
@@ -1434,6 +1451,55 @@ export function ConfigurePage({
                       }}
                     />
                   </div>
+
+                  <div>
+                    <label className="text-xs text-muted-foreground">
+                      Shifts
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      max="20"
+                      className="w-full p-2 rounded border bg-background"
+                      value={advancedParams.shifts}
+                      onChange={(e) => {
+                        const next = parseInt(e.target.value, 10)
+                        if (!Number.isFinite(next)) return
+                        setAdvancedParamsDirty(true)
+                        setAdvancedParams((p) => ({
+                          ...p,
+                          shifts: clamp(next, 1, 20),
+                        }))
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-muted-foreground">
+                      TTA
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdvancedParamsDirty(true)
+                        setAdvancedParams((p) => ({ ...p, tta: !p.tta }))
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded border transition-colors ${
+                        advancedParams.tta
+                          ? "bg-emerald-500/10 border-emerald-500/30"
+                          : "bg-background border-border"
+                      }`}
+                    >
+                      <span className="text-sm">{advancedParams.tta ? "ON" : "OFF"}</span>
+                      <span
+                        className={`text-xs ${advancedParams.tta ? "text-emerald-400" : "text-muted-foreground"}`}
+                      >
+                        Test-time augmentation
+                      </span>
+                    </button>
+                  </div>
+
                   <div>
                     <div className="flex items-center justify-between">
                       <label className="text-xs text-muted-foreground">
@@ -1539,7 +1605,7 @@ export function ConfigurePage({
               (mode === "advanced" && !isEnsembleMode && !selectedModelId) ||
               (mode === "advanced" &&
                 isEnsembleMode &&
-                ensembleConfig.length === 0)
+                validEnsembleModels.length < 2)
             }
           >
             <Zap className="w-4 h-4 mr-2" />
