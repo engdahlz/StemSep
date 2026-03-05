@@ -7,6 +7,7 @@ from torch import nn, einsum
 import torch.nn.functional as F
 
 from einops import rearrange, reduce
+from stemsep.audio.torch_compat import sdpa_kernel_context
 
 # constants
 
@@ -75,7 +76,7 @@ class Attend(nn.Module):
             config = FlashAttentionConfig(False, True, True)
 
         # pytorch 2.0 flash attn: q, k, v, mask, dropout, softmax_scale
-        with torch.backends.cuda.sdp_kernel(**config._asdict()):
+        with sdpa_kernel_context(**config._asdict()):
             out = F.scaled_dot_product_attention(q, k, v, dropout_p=self.dropout if self.training else 0.0)
 
         return out

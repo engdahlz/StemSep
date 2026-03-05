@@ -1,5 +1,6 @@
 import asyncio
 import gc
+import json
 import logging
 import os
 import shutil
@@ -165,33 +166,115 @@ class SeparationManager:
         return out_overlap, out_segment_size, out_batch_size, out_tta
 
     def _cleanup_old_temp_dirs(self):
-        """Delete temp directories older than 24 hours"""
+        """Delete stale temp directories/checkpoints older than 24 hours.
+
+        Notes:
+        - Directories marked as active by a live process are skipped.
+        - Permission errors are expected on Windows for locked paths and are logged as debug.
+        - A single startup summary is emitted to avoid warning spam.
+        """
         try:
             temp_base = Path(tempfile.gettempdir())
+            now_ts = time.time()
+            summary = {
+                "dirs_examined": 0,
+                "dirs_deleted": 0,
+                "dirs_skipped_recent": 0,
+                "dirs_skipped_active": 0,
+                "dirs_locked": 0,
+                "dirs_failed": 0,
+                "checkpoints_deleted": 0,
+                "checkpoints_locked": 0,
+                "checkpoints_failed": 0,
+            }
+            failed_examples: List[str] = []
+
             # Look for stemsep_* folders
             for p in temp_base.glob("stemsep_*"):
                 if p.is_dir():
+                    summary["dirs_examined"] += 1
                     try:
                         # Check modification time
                         mtime = p.stat().st_mtime
-                        if time.time() - mtime > 86400:  # 24 hours
-                            self.logger.info(f"Cleaning up old temp dir: {p}")
-                            shutil.rmtree(p)
+                        if now_ts - mtime <= 86400:  # 24 hours
+                            summary["dirs_skipped_recent"] += 1
+                            continue
+
+                        if self._is_active_temp_dir(p):
+                            summary["dirs_skipped_active"] += 1
+                            continue
+
+                        self.logger.info(f"Cleaning up old temp dir: {p}")
+                        shutil.rmtree(p)
+                        summary["dirs_deleted"] += 1
+                    except PermissionError as e:
+                        summary["dirs_locked"] += 1
+                        self.logger.debug(f"Skipped locked temp dir {p}: {e}")
                     except Exception as e:
-                        self.logger.warning(f"Failed to cleanup {p}: {e}")
+                        summary["dirs_failed"] += 1
+                        if len(failed_examples) < 3:
+                            failed_examples.append(f"{p}: {e}")
 
             # Also cleanup old checkpoint files (older than 24 hours)
             for p in temp_base.glob("stemsep_checkpoint_*.json"):
                 try:
                     mtime = p.stat().st_mtime
-                    if time.time() - mtime > 86400:
+                    if now_ts - mtime > 86400:
                         self.logger.info(f"Cleaning up old checkpoint: {p}")
                         p.unlink()
+                        summary["checkpoints_deleted"] += 1
+                except PermissionError as e:
+                    summary["checkpoints_locked"] += 1
+                    self.logger.debug(f"Skipped locked checkpoint {p}: {e}")
                 except Exception as e:
-                    self.logger.warning(f"Failed to cleanup checkpoint {p}: {e}")
+                    summary["checkpoints_failed"] += 1
+                    if len(failed_examples) < 3:
+                        failed_examples.append(f"{p}: {e}")
+
+            self.logger.info(
+                "Startup temp cleanup summary: "
+                f"dirs examined={summary['dirs_examined']}, deleted={summary['dirs_deleted']}, "
+                f"recent={summary['dirs_skipped_recent']}, active={summary['dirs_skipped_active']}, "
+                f"locked={summary['dirs_locked']}, failed={summary['dirs_failed']}; "
+                f"checkpoints deleted={summary['checkpoints_deleted']}, "
+                f"locked={summary['checkpoints_locked']}, failed={summary['checkpoints_failed']}"
+            )
+            if failed_examples:
+                self.logger.warning(
+                    "Startup temp cleanup encountered errors (showing up to 3): "
+                    + " | ".join(failed_examples)
+                )
 
         except Exception as e:
             self.logger.warning(f"Error during temp cleanup: {e}")
+
+    @staticmethod
+    def _is_process_alive(pid: int) -> bool:
+        try:
+            os.kill(int(pid), 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            # On Windows this can happen for processes owned by another user; treat as alive.
+            return True
+        except Exception:
+            return False
+        return True
+
+    def _is_active_temp_dir(self, path: Path) -> bool:
+        lock_file = path / SeparationJob.ACTIVE_LOCK_FILENAME
+        if not lock_file.exists():
+            return False
+        try:
+            with open(lock_file, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+            pid = payload.get("pid") if isinstance(payload, dict) else None
+            if isinstance(pid, int) and pid > 0:
+                return self._is_process_alive(pid)
+        except Exception:
+            # Corrupt lock files are treated as stale.
+            return False
+        return False
 
     def _save_job_checkpoint(self, job_id: str, stage: str, data: dict = None):
         """Save job progress checkpoint for crash recovery"""
@@ -2604,6 +2687,8 @@ class SeparationManager:
 
             # Cleanup temp dir
             try:
+                if hasattr(job, "release_temp_lock"):
+                    job.release_temp_lock()
                 shutil.rmtree(job.temp_dir)
             except Exception as e:
                 self.logger.warning(f"Failed to remove temp dir {job.temp_dir}: {e}")
@@ -2624,6 +2709,8 @@ class SeparationManager:
 
         try:
             if os.path.exists(job.temp_dir):
+                if hasattr(job, "release_temp_lock"):
+                    job.release_temp_lock()
                 shutil.rmtree(job.temp_dir)
 
             # Remove from jobs list

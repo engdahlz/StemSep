@@ -12,6 +12,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from typing import Dict, List, Union, Optional
+from stemsep.audio.torch_compat import cuda_autocast
 
 try:
     import torch.distributed as dist
@@ -90,7 +91,7 @@ def demix(
     batch_size = _get_config_value(config, 'inference.batch_size', 1)
     use_amp = _get_config_value(config, 'training.use_amp', True)
 
-    with torch.cuda.amp.autocast(enabled=use_amp):
+    with cuda_autocast(enabled=use_amp):
         with torch.inference_mode():
             # Initialize result and counter tensors
             req_shape = (num_instruments,) + mix.shape

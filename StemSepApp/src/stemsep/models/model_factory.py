@@ -20,6 +20,15 @@ from typing import Any, Dict, Optional
 
 class ModelFactory:
     @staticmethod
+    def supports_constructor_model_path(architecture: str) -> bool:
+        """Whether architecture constructors in this factory accept `model_path`.
+
+        Current in-tree constructors take model config only; weights are loaded by callers.
+        """
+        _ = architecture
+        return False
+
+    @staticmethod
     def get_model_config(
         model_id: str, architecture: Optional[str] = None
     ) -> Dict[str, Any]:

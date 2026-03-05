@@ -9,6 +9,7 @@ import logging
 import os
 import tempfile
 import time
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
@@ -49,6 +50,7 @@ except ImportError:
 
 from stemsep.models.architectures.demucs_wrapper import DemucsModel
 from stemsep.models.architectures.mdxnet import MDXNetModel
+from stemsep.audio.torch_compat import cuda_autocast
 
 # Pitch preprocessing for improved high-frequency separation
 try:
@@ -312,6 +314,13 @@ class SeparationEngine:
         self.simple_separator = None
 
         self.logger.info(f"SeparationEngine initialized on {self.device}")
+
+    @staticmethod
+    def _requires_constructor_model_path(architecture: str) -> bool:
+        """Return True if the architecture expects `model_path` in the constructor."""
+        from stemsep.models.model_factory import ModelFactory
+
+        return ModelFactory.supports_constructor_model_path(architecture)
 
     def add_progress_callback(self, callback: Callable):
         """Add a progress callback"""
@@ -1166,35 +1175,27 @@ class SeparationEngine:
                 # vendorized Roformer implementation.
                 config["__stemsep_variant"] = variant.strip()
 
-            # Some model families (e.g., ONNX-based loaders) accept `model_path` and load
-            # weights during construction. Our PyTorch/ZFTurbo models (BandIt/Apollo/SCNet/
-            # Roformer) do not, and passing it breaks instantiation.
-            config_with_model_path = dict(config)
-            config_with_model_path["model_path"] = str(checkpoint_path)
+            if isinstance(variant, str) and variant.strip().lower() == "fno":
+                try:
+                    from neuralop.models import FNO1d  # type: ignore
 
-            # Instantiate model (retry without model_path if the constructor rejects it)
-            try:
-                model = ModelFactory.create_model(
-                    model_info["architecture"], config_with_model_path
-                )
-            except TypeError as e:
-                msg = str(e)
-                if (
-                    "model_path" in config_with_model_path
-                    and ("model_path" in msg)
-                    and (
-                        "unexpected keyword argument" in msg
-                        or "got an unexpected" in msg
-                    )
-                ):
-                    self.logger.info(
-                        f"Model '{model_info['architecture']}' rejected model_path kwarg; retrying without it"
-                    )
-                    model = ModelFactory.create_model(
-                        model_info["architecture"], dict(config)
-                    )
-                else:
-                    raise
+                    if FNO1d is None:
+                        raise ImportError("FNO1d symbol resolved to None")
+                except Exception as e:
+                    raise RuntimeError(
+                        "Model variant 'fno' requires a neuraloperator/neuralop build "
+                        "that exposes 'neuralop.models.FNO1d'. "
+                        "Install the supported dependency set in StemSepApp/.venv "
+                        "(for example, neuraloperator==1.0.2) and restart StemSep."
+                    ) from e
+
+            architecture = str(model_info.get("architecture", ""))
+            config_for_constructor = dict(config)
+            if self._requires_constructor_model_path(architecture):
+                config_for_constructor["model_path"] = str(checkpoint_path)
+
+            # Instantiate model.
+            model = ModelFactory.create_model(architecture, config_for_constructor)
 
             # For PyTorch models, load state dict and move to device
             # MDX-Net (ONNX) and Demucs models load weights in constructor and handle device internally
@@ -1376,9 +1377,9 @@ class SeparationEngine:
                     # Prepare Autocast context if enabled
                     # Note: We keep torch.no_grad() from outer context
                     amp_context = (
-                        torch.cuda.amp.autocast()
+                        cuda_autocast(enabled=True)
                         if use_amp and self.gpu_enabled
-                        else torch.no_grad()
+                        else nullcontext()
                     )
 
                     while i < padded_length:
@@ -1860,6 +1861,8 @@ class SeparationEngine:
 class SeparationJob:
     """Represents a separation job"""
 
+    ACTIVE_LOCK_FILENAME = ".stemsep_active.json"
+
     def __init__(
         self,
         job_id: str,
@@ -1896,6 +1899,10 @@ class SeparationJob:
             self.temp_dir = tempfile.mkdtemp(prefix=f"stemsep_{self.id}_")
         # Override output_dir to use temp for processing
         self.output_dir = self.temp_dir
+        self.active_lock_path = os.path.join(
+            self.temp_dir, self.ACTIVE_LOCK_FILENAME
+        )
+        self._write_active_lock()
 
         self.stems = stems
         self.progress_callback = progress_callback
@@ -1916,6 +1923,28 @@ class SeparationJob:
         self.actual_device = None
         self.shifts = 1
         self.bitrate = None
+
+    def _write_active_lock(self):
+        """Mark temp dir as active for crash-safe startup cleanup."""
+        try:
+            payload = {
+                "job_id": self.id,
+                "pid": os.getpid(),
+                "created_at": time.time(),
+            }
+            with open(self.active_lock_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f)
+        except Exception:
+            # Best effort only; absence of lock should never break a run.
+            pass
+
+    def release_temp_lock(self):
+        """Clear active marker before deleting or finalizing temp dir."""
+        try:
+            if os.path.exists(self.active_lock_path):
+                os.remove(self.active_lock_path)
+        except Exception:
+            pass
 
     def to_dict(self) -> Dict:
         """Convert to dictionary"""

@@ -181,6 +181,85 @@ function shortHash(input: string): string {
   return createHash("sha1").update(input).digest("hex").slice(0, 12);
 }
 
+function resolveMissingPreviewAudioPath(missingPath: string): string | null {
+  try {
+    const parent = path.dirname(missingPath);
+    if (!fs.existsSync(parent)) return null;
+
+    const requestedName = path.basename(missingPath).toLowerCase();
+    const requestedStem = requestedName.replace(path.extname(requestedName), "");
+
+    const wavs: string[] = [];
+    const maxFiles = 200;
+    const walk = (dir: string) => {
+      if (wavs.length >= maxFiles) return;
+      let entries: fs.Dirent[] = [];
+      try {
+        entries = fs.readdirSync(dir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const e of entries) {
+        if (wavs.length >= maxFiles) return;
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) {
+          walk(full);
+        } else if (e.isFile() && e.name.toLowerCase().endsWith(".wav")) {
+          wavs.push(full);
+        }
+      }
+    };
+
+    walk(parent);
+    if (wavs.length === 0) return null;
+
+    const score = (p: string): number => {
+      const b = path.basename(p).toLowerCase();
+      let s = 0;
+      if (b === `${requestedStem}.wav`) s += 100;
+      if (requestedStem === "instrumental") {
+        if (
+          b.includes("(instrumental)") ||
+          b.includes("_instrumental_") ||
+          b.includes(" instrumental ")
+        ) {
+          s += 50;
+        }
+        if (b.includes("(vocals)")) s -= 50;
+      } else if (requestedStem === "vocals") {
+        if (
+          b.includes("(vocals)") ||
+          b.includes("_vocals_") ||
+          b.includes(" vocals ")
+        ) {
+          s += 50;
+        }
+        if (b.includes("(instrumental)")) s -= 50;
+      } else if (b.includes(requestedStem)) {
+        s += 20;
+      }
+
+      const rel = path.relative(parent, p);
+      const depth = rel.split(path.sep).length;
+      s += Math.max(0, 10 - depth);
+      return s;
+    };
+
+    let best: string | null = null;
+    let bestScore = -Infinity;
+    for (const p of wavs) {
+      const sc = score(p);
+      if (sc > bestScore) {
+        bestScore = sc;
+        best = p;
+      }
+    }
+    return best;
+  } catch {
+    return null;
+  }
+}
+
 async function ensureWavInput(inputFile: string, previewDir: string): Promise<string> {
   const ext = path.extname(inputFile || "").toLowerCase();
   if (ext === ".wav") return inputFile;
@@ -236,8 +315,23 @@ async function exportFilesLocal({
   for (const [stemRaw, inputFile] of entries) {
     const stem = sanitizeForPathSegment(stemRaw || "stem") || "stem";
     if (!inputFile || typeof inputFile !== "string") continue;
-    if (!fs.existsSync(inputFile)) {
-      throw new Error(`Source file missing for '${stemRaw}': ${inputFile}`);
+    let resolvedInputFile = inputFile;
+    if (!fs.existsSync(resolvedInputFile)) {
+      const fallback = resolveMissingPreviewAudioPath(resolvedInputFile);
+      if (fallback && fs.existsSync(fallback)) {
+        log("[export-files] resolved missing source path", {
+          stem: stemRaw,
+          from: inputFile,
+          to: fallback,
+        });
+        resolvedInputFile = fallback;
+      }
+    }
+    if (!fs.existsSync(resolvedInputFile)) {
+      throw new Error(
+        `Source file missing for '${stemRaw}': ${inputFile}. ` +
+        "Run separation again before exporting historical files.",
+      );
     }
 
     const outBase = stem;
@@ -246,9 +340,9 @@ async function exportFilesLocal({
       outFile = path.join(exportPath, `${outBase}_${i}.${fmt}`);
     }
 
-    const inExt = path.extname(inputFile || "").toLowerCase();
+    const inExt = path.extname(resolvedInputFile || "").toLowerCase();
     if (fmt === "wav" && inExt === ".wav") {
-      fs.copyFileSync(inputFile, outFile);
+      fs.copyFileSync(resolvedInputFile, outFile);
       exported[stemRaw] = outFile;
       continue;
     }
@@ -260,7 +354,7 @@ async function exportFilesLocal({
         "-loglevel",
         "error",
         "-i",
-        inputFile,
+        resolvedInputFile,
         "-vn",
         "-c:a",
         "flac",
@@ -278,7 +372,7 @@ async function exportFilesLocal({
         "-loglevel",
         "error",
         "-i",
-        inputFile,
+        resolvedInputFile,
         "-vn",
         "-c:a",
         "libmp3lame",
@@ -1966,6 +2060,20 @@ async function sendPythonCommandWithRetry(
   throw lastError!;
 }
 
+let getGpuDevicesInflight: Promise<any> | null = null;
+
+function getGpuDevicesDeduped(): Promise<any> {
+  if (getGpuDevicesInflight) return getGpuDevicesInflight;
+  getGpuDevicesInflight = sendPythonCommandWithRetry(
+    "get-gpu-devices",
+    {},
+    30000,
+  ).finally(() => {
+    getGpuDevicesInflight = null;
+  });
+  return getGpuDevicesInflight;
+}
+
 // IPC handler for audio separation
 ipcMain.handle(
   "separate-audio",
@@ -2018,12 +2126,17 @@ ipcMain.handle(
       volumeCompensation?: { enabled: boolean; stage?: "export" | "blend" | "both"; dbPerExtraModel?: number };
     },
   ) => {
-    console.log("Received separate-audio request:", {
+    const requestId = randomUUID().slice(0, 8);
+    log("[separate-audio] request", {
+      requestId,
       inputFile,
       modelId,
-      ensembleConfig,
       splitFreq,
-      phaseParams,
+      hasEnsemble: Boolean(
+        ensembleConfig &&
+          Array.isArray(ensembleConfig.models) &&
+          ensembleConfig.models.length > 0,
+      ),
     });
     const process = ensureBackend();
     if (!process)
@@ -2038,6 +2151,12 @@ ipcMain.handle(
 
     // Ensure backend receives WAV input even if user dropped MP3/FLAC/M4A.
     const effectiveInputFile = await ensureWavInput(inputFile, previewDir);
+    log("[separate-audio] staging-ready", {
+      requestId,
+      effectiveModelId,
+      previewDir,
+      effectiveInputFile,
+    });
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -2070,6 +2189,7 @@ ipcMain.handle(
 
       const onDone = (msg: any) => {
         if (!myJobId || msg?.job_id !== myJobId) return;
+        log("[separate-audio] complete", { requestId, jobId: myJobId });
         cleanup();
         resolve({
           success: true,
@@ -2081,12 +2201,18 @@ ipcMain.handle(
 
       const onError = (msg: any) => {
         if (!myJobId || msg?.job_id !== myJobId) return;
+        log("[separate-audio] backend-error", {
+          requestId,
+          jobId: myJobId,
+          error: msg?.error || "Separation failed",
+        });
         cleanup();
         reject(new Error(msg.error || "Separation failed"));
       };
 
       const onCancelled = (msg: any) => {
         if (!myJobId || msg?.job_id !== myJobId) return;
+        log("[separate-audio] cancelled", { requestId, jobId: myJobId });
         cleanup();
         reject(new Error("Separation cancelled"));
       };
@@ -2113,6 +2239,11 @@ ipcMain.handle(
             return;
           }
           myJobId = String(response.job_id);
+          log("[separate-audio] job-started", {
+            requestId,
+            jobId: myJobId,
+            effectiveModelId,
+          });
           modelInfoByJobId.set(myJobId, {
             requestedModelId: String(modelId || ""),
             effectiveModelId: String(effectiveModelId || ""),
@@ -2131,6 +2262,10 @@ ipcMain.handle(
           }
         })
         .catch((err) => {
+          log("[separate-audio] dispatch-failed", {
+            requestId,
+            error: err?.message || String(err),
+          });
           cleanup();
           reject(err);
         });
@@ -2194,9 +2329,11 @@ ipcMain.handle(
       bitrate: string;
     },
   ) => {
+    const requestId = randomUUID().slice(0, 8);
     // Export is a pure file operation (copy/transcode) and should not require a backend.
     // This also avoids failures when the legacy python-bridge proxy is not present.
     log("[export-files] local export requested", {
+      requestId,
       stems: Object.keys(sourceFiles || {}),
       exportPath,
       format,
@@ -2205,11 +2342,15 @@ ipcMain.handle(
     try {
       const res = await exportFilesLocal({ sourceFiles, exportPath, format, bitrate });
       log("[export-files] local export complete", {
+        requestId,
         exported: Object.keys(res?.exported || {}),
       });
       return res;
     } catch (e: any) {
-      log("[export-files] local export FAILED", e?.message || String(e));
+      log("[export-files] local export FAILED", {
+        requestId,
+        error: e?.message || String(e),
+      });
       throw e;
     }
   },
@@ -2342,75 +2483,6 @@ ipcMain.handle("read-audio-file", async (_event, filePath: string) => {
       );
     }
 
-    const resolveMissingPreviewAudioPath = (missingPath: string): string | null => {
-      try {
-        const parent = path.dirname(missingPath);
-        if (!fs.existsSync(parent)) return null;
-
-        const requestedName = path.basename(missingPath).toLowerCase();
-        const requestedStem = requestedName.replace(path.extname(requestedName), "");
-
-        const wavs: string[] = [];
-        const maxFiles = 200;
-        const walk = (dir: string) => {
-          if (wavs.length >= maxFiles) return;
-          let entries: fs.Dirent[] = [];
-          try {
-            entries = fs.readdirSync(dir, { withFileTypes: true });
-          } catch {
-            return;
-          }
-          for (const e of entries) {
-            if (wavs.length >= maxFiles) return;
-            const full = path.join(dir, e.name);
-            if (e.isDirectory()) {
-              walk(full);
-            } else if (e.isFile() && e.name.toLowerCase().endsWith(".wav")) {
-              wavs.push(full);
-            }
-          }
-        };
-
-        walk(parent);
-        if (wavs.length === 0) return null;
-
-        const score = (p: string): number => {
-          const b = path.basename(p).toLowerCase();
-          let s = 0;
-          // Prefer canonical/clean filenames.
-          if (b === `${requestedStem}.wav`) s += 100;
-          // Prefer explicit stem markers used by audio-separator.
-          if (requestedStem === "instrumental") {
-            if (b.includes("(instrumental)") || b.includes("_instrumental_") || b.includes(" instrumental ")) s += 50;
-            if (b.includes("(vocals)")) s -= 50;
-          } else if (requestedStem === "vocals") {
-            if (b.includes("(vocals)") || b.includes("_vocals_") || b.includes(" vocals ")) s += 50;
-            if (b.includes("(instrumental)")) s -= 50;
-          } else {
-            if (b.includes(requestedStem)) s += 20;
-          }
-          // Prefer files closer to the parent directory (shallower depth).
-          const rel = path.relative(parent, p);
-          const depth = rel.split(path.sep).length;
-          s += Math.max(0, 10 - depth);
-          return s;
-        };
-
-        let best: string | null = null;
-        let bestScore = -Infinity;
-        for (const p of wavs) {
-          const sc = score(p);
-          if (sc > bestScore) {
-            bestScore = sc;
-            best = p;
-          }
-        }
-        return best;
-      } catch {
-        return null;
-      }
-    };
-
     let resolvedPath = filePath;
     if (!fs.existsSync(resolvedPath)) {
       const fallback = resolveMissingPreviewAudioPath(resolvedPath);
@@ -2457,7 +2529,7 @@ ipcMain.handle(
 
 // Get GPU devices
 ipcMain.handle("get-gpu-devices", async () => {
-  return sendPythonCommandWithRetry("get-gpu-devices", {}, 30000);
+  return getGpuDevicesDeduped();
 });
 
 // Get workflow types (Live vs Studio)

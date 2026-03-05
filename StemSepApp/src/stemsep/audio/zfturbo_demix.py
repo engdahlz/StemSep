@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from typing import Dict, List, Union
+from stemsep.audio.torch_compat import cuda_autocast
 
 
 def _getWindowingArray(window_size: int, fade_size: int) -> torch.Tensor:
@@ -80,7 +81,7 @@ def demix(
 
     use_amp = True  # Mixed precision
 
-    with torch.cuda.amp.autocast(enabled=use_amp):
+    with cuda_autocast(enabled=use_amp):
         with torch.inference_mode():
             # Initialize result and counter tensors
             req_shape = (num_instruments,) + tuple(mix.shape)

@@ -23,6 +23,7 @@ import torch
 import torch.nn as nn
 
 from stemsep.audio.roformer import BSRoformer, MelBandRoformer
+from stemsep.audio.torch_compat import cuda_autocast
 
 
 class RoformerSeparator:
@@ -364,7 +365,7 @@ class RoformerSeparator:
         if length_init > 2 * border and border > 0:
             mix_tensor = nn.functional.pad(mix_tensor, (border, border), mode="reflect")
 
-        with torch.cuda.amp.autocast(enabled=True):
+        with cuda_autocast(enabled=True):
             with torch.inference_mode():
                 # Initialize result
                 num_stems = 1  # Most models output 1 stem
