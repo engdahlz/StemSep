@@ -70,6 +70,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkPresetModels: (presetMappings: Record<string, string>) =>
     ipcRenderer.invoke('check-preset-models', presetMappings),
   getGpuDevices: () => ipcRenderer.invoke('get-gpu-devices'),
+  getSystemRuntimeInfo: () => ipcRenderer.invoke('get-system-runtime-info'),
   getWorkflows: () => ipcRenderer.invoke('get-workflows'),
 
   // Model download progress

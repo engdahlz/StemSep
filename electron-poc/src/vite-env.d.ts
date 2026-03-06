@@ -3,6 +3,50 @@
 type VolumeCompensation = import('./types/separation').VolumeCompensation
 type Recipe = import('./types/recipes').Recipe
 
+type MissingAudioCode = 'MISSING_CACHE_FILE' | 'STALE_SESSION' | 'MISSING_SOURCE_FILE'
+
+type ReadAudioFileResult =
+    | { success: true; data: string; mimeType: string; resolvedPath?: string }
+    | { success: false; error: string; code?: MissingAudioCode; hint?: string }
+
+type ExportFilesResult =
+    | { success: true; exported: Record<string, string> }
+    | { success: false; error: string; code?: MissingAudioCode; hint?: string }
+
+interface SystemRuntimeInfo {
+    fetchedAt: string
+    cache?: {
+        ttlMs?: number
+        gpuSource?: 'cache' | 'fresh' | string
+        runtimeFingerprintSource?: 'cache' | 'fresh' | 'error' | string
+    }
+    gpu?: any
+    runtimeFingerprint?: {
+        version?: string
+        platform?: string
+        torch?: {
+            version?: string
+            cuda_available?: boolean
+            cuda_device_count?: number
+            cuda_device_name_0?: string
+        }
+        neuralop?: {
+            version?: string
+            fno1d_import_ok?: boolean
+            fno1d_import_error?: string
+            fno_import_ok?: boolean
+            fno_import_error?: string
+        }
+    } | null
+    runtimeFingerprintError?: string | null
+    previewCachePolicy?: {
+        baseDir?: string
+        keepLast?: number
+        maxAgeDays?: number
+        ephemeral?: boolean
+    }
+}
+
 interface ElectronAPI {
     selectOutputDirectory: () => Promise<string | null>
     openAudioFileDialog: () => Promise<string[] | null>
@@ -55,7 +99,7 @@ interface ElectronAPI {
     resumeQueue: () => Promise<void>
     reorderQueue: (jobIds: string[]) => Promise<void>
     exportOutput: (jobId: string, exportPath: string, format: string, bitrate: string) => Promise<{ success: boolean; error?: string }>
-    exportFiles: (sourceFiles: Record<string, string>, exportPath: string, format: string, bitrate: string) => Promise<{ status: string; path: string }>
+    exportFiles: (sourceFiles: Record<string, string>, exportPath: string, format: string, bitrate: string) => Promise<ExportFilesResult>
     onSeparationProgress: (callback: (data: { progress: number; message: string; jobId?: string }) => void) => () => void
     onSeparationStarted: (callback: (data: { jobId: string }) => void) => () => void
     onSeparationComplete: (callback: (data: { outputFiles: Record<string, string> }) => void) => () => void
@@ -73,12 +117,16 @@ interface ElectronAPI {
     removeModel: (modelId: string) => Promise<any>
     importCustomModel: (filePath: string, modelName: string, architecture?: string) => Promise<any>
     openFolder: (folderPath: string) => Promise<void>
-    readAudioFile: (filePath: string) => Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }>
+    readAudioFile: (filePath: string) => Promise<ReadAudioFileResult>
 
     // YouTube URL -> local temp audio file
-    resolveYouTubeUrl: (url: string) => Promise<{ file_path: string; title: string; source_url?: string }>
+    resolveYouTubeUrl: (url: string) => Promise<
+        | { success: true; file_path: string; title: string; source_url?: string }
+        | { success: false; code?: string; error: string; hint?: string }
+    >
     onYouTubeProgress: (callback: (data: { status: string; percent?: string; speed?: string; eta?: string; error?: string }) => void) => () => void
     getGpuDevices: () => Promise<any>
+    getSystemRuntimeInfo: () => Promise<SystemRuntimeInfo>
     getWorkflows: () => Promise<{ workflows: Record<string, any> }>
     checkPresetModels: (presetMappings: Record<string, string>) => Promise<Record<string, boolean>>
     onDownloadProgress: (callback: (data: { modelId: string; progress: number }) => void) => () => void

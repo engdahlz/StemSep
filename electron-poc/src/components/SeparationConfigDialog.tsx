@@ -10,6 +10,7 @@ import { PresetSelector } from './PresetSelector'
 import { VRAMUsageMeter, estimateVRAMUsage } from './ui/vram-meter'
 import { TTAWarning, CPUOnlyWarning, LowVRAMWarning, EnsembleTip } from './ui/warning-tip'
 import { bestVolumeCompensation } from '../utils/volumeCompensation'
+import { useSystemRuntimeInfo } from '../hooks/useSystemRuntimeInfo'
 
 export type { SeparationConfig } from '../types/separation'
 
@@ -73,22 +74,8 @@ export default function SeparationConfigDialog({
     const [isEnsembleMode, setIsEnsembleMode] = useState(false)
     const [ensembleConfig, setEnsembleConfig] = useState<{ model_id: string; weight: number }[]>([])
     const [ensembleAlgorithm, setEnsembleAlgorithm] = useState<'average' | 'max_spec' | 'min_spec' | 'phase_fix' | 'frequency_split'>('average')
-
-    // GPU Info for VRAM estimation
-    const [gpuInfo, setGpuInfo] = useState<any>(null)
-    useEffect(() => {
-        const loadGpuInfo = async () => {
-            if (window.electronAPI?.getGpuDevices) {
-                try {
-                    const info = await window.electronAPI.getGpuDevices()
-                    setGpuInfo(info)
-                } catch (e) {
-                    console.error('Failed to load GPU info:', e)
-                }
-            }
-        }
-        loadGpuInfo()
-    }, [])
+    const { info: runtimeInfo } = useSystemRuntimeInfo()
+    const gpuInfo = runtimeInfo?.gpu ?? null
 
     // Update selected preset when initialPresetId changes
     useEffect(() => {

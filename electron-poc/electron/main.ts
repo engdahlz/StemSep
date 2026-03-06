@@ -83,6 +83,10 @@ function safeMkdir(dirPath: string) {
   }
 }
 
+const PREVIEW_CACHE_KEEP_LAST = 20;
+const PREVIEW_CACHE_MAX_AGE_DAYS = 7;
+const SYSTEM_RUNTIME_TTL_MS = 30_000;
+
 function sanitizeForPathSegment(name: string) {
   return (name || "")
     .replace(/[<>:"/\\|?*]+/g, "_")
@@ -179,6 +183,59 @@ function resolveEffectiveModelId(modelId: any, ensembleConfig: any): string {
 
 function shortHash(input: string): string {
   return createHash("sha1").update(input).digest("hex").slice(0, 12);
+}
+
+type MissingAudioCode =
+  | "MISSING_CACHE_FILE"
+  | "STALE_SESSION"
+  | "MISSING_SOURCE_FILE";
+
+function isPathInsideDir(targetPath: string, parentDir: string): boolean {
+  const target = path.resolve(targetPath).toLowerCase();
+  const parent = path.resolve(parentDir).toLowerCase();
+  return target === parent || target.startsWith(`${parent}${path.sep}`);
+}
+
+function classifyMissingAudioPath(missingPath: string): {
+  code: MissingAudioCode;
+  hint: string;
+} {
+  const previewBaseDir = getPreviewCacheBaseDir();
+  const insidePreviewCache = isPathInsideDir(missingPath, previewBaseDir);
+  if (insidePreviewCache) {
+    const parentDir = path.dirname(missingPath);
+    if (!fs.existsSync(parentDir)) {
+      return {
+        code: "STALE_SESSION",
+        hint: "Historical session cache is no longer available. Run a new separation to regenerate stems.",
+      };
+    }
+    return {
+      code: "MISSING_CACHE_FILE",
+      hint: "Cached preview file is missing. Run a new separation to regenerate this stem.",
+    };
+  }
+  return {
+    code: "MISSING_SOURCE_FILE",
+    hint: "Source file is missing or moved. Verify the path and try again.",
+  };
+}
+
+function createCodedError(
+  code: MissingAudioCode,
+  message: string,
+  hint: string,
+  extra: Record<string, any> = {},
+): Error & { code: MissingAudioCode; hint: string; [k: string]: any } {
+  const error = new Error(message) as Error & {
+    code: MissingAudioCode;
+    hint: string;
+    [k: string]: any;
+  };
+  error.code = code;
+  error.hint = hint;
+  Object.assign(error, extra);
+  return error;
 }
 
 function resolveMissingPreviewAudioPath(missingPath: string): string | null {
@@ -328,9 +385,15 @@ async function exportFilesLocal({
       }
     }
     if (!fs.existsSync(resolvedInputFile)) {
-      throw new Error(
-        `Source file missing for '${stemRaw}': ${inputFile}. ` +
-        "Run separation again before exporting historical files.",
+      const missing = classifyMissingAudioPath(inputFile);
+      throw createCodedError(
+        missing.code,
+        `Source file missing for '${stemRaw}': ${inputFile}. ${missing.hint}`,
+        missing.hint,
+        {
+          filePath: inputFile,
+          stem: stemRaw,
+        },
       );
     }
 
@@ -412,13 +475,11 @@ function cleanupPreviewCache() {
       })
       .sort((a, b) => b.mtime - a.mtime);
 
-    const keepLast = 20;
-    const maxAgeDays = 7;
-    const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
+    const cutoff = Date.now() - PREVIEW_CACHE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
 
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
-      if (i < keepLast) continue;
+      if (i < PREVIEW_CACHE_KEEP_LAST) continue;
       if (entry.mtime && entry.mtime > cutoff) continue;
       try {
         fs.rmSync(entry.full, { recursive: true, force: true });
@@ -2061,6 +2122,11 @@ async function sendPythonCommandWithRetry(
 }
 
 let getGpuDevicesInflight: Promise<any> | null = null;
+let getRuntimeFingerprintInflight: Promise<any> | null = null;
+let getSystemRuntimeInfoInflight: Promise<any> | null = null;
+
+let gpuDevicesCache: { value: any; expiresAt: number } | null = null;
+let runtimeFingerprintCache: { value: any; expiresAt: number } | null = null;
 
 function getGpuDevicesDeduped(): Promise<any> {
   if (getGpuDevicesInflight) return getGpuDevicesInflight;
@@ -2072,6 +2138,91 @@ function getGpuDevicesDeduped(): Promise<any> {
     getGpuDevicesInflight = null;
   });
   return getGpuDevicesInflight;
+}
+
+function getRuntimeFingerprintDeduped(): Promise<any> {
+  if (getRuntimeFingerprintInflight) return getRuntimeFingerprintInflight;
+  getRuntimeFingerprintInflight = sendPythonCommandWithRetry(
+    "get_runtime_fingerprint",
+    {},
+    20000,
+    1,
+  ).finally(() => {
+    getRuntimeFingerprintInflight = null;
+  });
+  return getRuntimeFingerprintInflight;
+}
+
+async function getGpuDevicesCached(): Promise<{ data: any; fromCache: boolean }> {
+  if (gpuDevicesCache && gpuDevicesCache.expiresAt > Date.now()) {
+    return { data: gpuDevicesCache.value, fromCache: true };
+  }
+  const data = await getGpuDevicesDeduped();
+  gpuDevicesCache = {
+    value: data,
+    expiresAt: Date.now() + SYSTEM_RUNTIME_TTL_MS,
+  };
+  return { data, fromCache: false };
+}
+
+async function getRuntimeFingerprintCached(): Promise<{
+  data: any | null;
+  fromCache: boolean;
+  error: string | null;
+}> {
+  if (runtimeFingerprintCache && runtimeFingerprintCache.expiresAt > Date.now()) {
+    return { data: runtimeFingerprintCache.value, fromCache: true, error: null };
+  }
+
+  try {
+    const data = await getRuntimeFingerprintDeduped();
+    runtimeFingerprintCache = {
+      value: data,
+      expiresAt: Date.now() + SYSTEM_RUNTIME_TTL_MS,
+    };
+    return { data, fromCache: false, error: null };
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : String(error || "unknown error");
+    return { data: null, fromCache: false, error: message };
+  }
+}
+
+async function getSystemRuntimeInfoCached(): Promise<any> {
+  if (getSystemRuntimeInfoInflight) return getSystemRuntimeInfoInflight;
+
+  getSystemRuntimeInfoInflight = (async () => {
+    const [gpu, runtimeFingerprint] = await Promise.all([
+      getGpuDevicesCached(),
+      getRuntimeFingerprintCached(),
+    ]);
+
+    return {
+      fetchedAt: new Date().toISOString(),
+      cache: {
+        ttlMs: SYSTEM_RUNTIME_TTL_MS,
+        gpuSource: gpu.fromCache ? "cache" : "fresh",
+        runtimeFingerprintSource: runtimeFingerprint.fromCache
+          ? "cache"
+          : runtimeFingerprint.error
+            ? "error"
+            : "fresh",
+      },
+      gpu: gpu.data,
+      runtimeFingerprint: runtimeFingerprint.data,
+      runtimeFingerprintError: runtimeFingerprint.error,
+      previewCachePolicy: {
+        baseDir: getPreviewCacheBaseDir(),
+        keepLast: PREVIEW_CACHE_KEEP_LAST,
+        maxAgeDays: PREVIEW_CACHE_MAX_AGE_DAYS,
+        ephemeral: true,
+      },
+    };
+  })().finally(() => {
+    getSystemRuntimeInfoInflight = null;
+  });
+
+  return getSystemRuntimeInfoInflight;
 }
 
 // IPC handler for audio separation
@@ -2275,7 +2426,37 @@ ipcMain.handle(
 
 // Resolve YouTube URL to a local temp audio file (WAV)
 ipcMain.handle("resolve-youtube-url", async (event, { url }: { url: string }) => {
-  return sendPythonCommand("resolve_youtube", { url }, 10 * 60 * 1000);
+  try {
+    const result = await sendPythonCommand("resolve_youtube", { url }, 10 * 60 * 1000);
+    return {
+      success: true,
+      file_path: (result as any)?.file_path,
+      title: (result as any)?.title,
+      source_url: (result as any)?.source_url,
+    };
+  } catch (e: any) {
+    const raw = e?.message || String(e);
+    const lower = String(raw).toLowerCase();
+    if (
+      lower.includes("backend_unavailable") &&
+      (lower.includes("python proxy unavailable") ||
+        lower.includes("python-bridge.py"))
+    ) {
+      return {
+        success: false,
+        code: "YOUTUBE_UNAVAILABLE_IN_RUST_MODE",
+        error:
+          "YouTube import is unavailable in this build configuration (rust backend without python-bridge proxy).",
+        hint:
+          "Use local audio files for now, or enable the python bridge backend for YouTube resolution.",
+      };
+    }
+    return {
+      success: false,
+      code: "YOUTUBE_RESOLVE_FAILED",
+      error: raw,
+    };
+  }
 });
 
 // Cancel separation
@@ -2345,13 +2526,23 @@ ipcMain.handle(
         requestId,
         exported: Object.keys(res?.exported || {}),
       });
-      return res;
+      return {
+        success: true,
+        exported: res.exported,
+      };
     } catch (e: any) {
       log("[export-files] local export FAILED", {
         requestId,
         error: e?.message || String(e),
       });
-      throw e;
+      return {
+        success: false,
+        error: e?.message || String(e),
+        code: e?.code || "MISSING_SOURCE_FILE",
+        hint:
+          e?.hint ||
+          "Export source is unavailable. Run a new separation to refresh cache files.",
+      };
     }
   },
 );
@@ -2493,7 +2684,13 @@ ipcMain.handle("read-audio-file", async (_event, filePath: string) => {
     }
 
     if (!fs.existsSync(resolvedPath)) {
-      return { success: false, error: "Audio file not found" };
+      const missing = classifyMissingAudioPath(filePath);
+      return {
+        success: false,
+        error: "Audio file not found",
+        code: missing.code,
+        hint: missing.hint,
+      };
     }
 
     const data = fs.readFileSync(resolvedPath);
@@ -2513,7 +2710,21 @@ ipcMain.handle("read-audio-file", async (_event, filePath: string) => {
     return { success: true, data: base64, mimeType, resolvedPath };
   } catch (error: any) {
     log(`Failed to read audio file: ${filePath}`, error);
-    return { success: false, error: error.message };
+    if (error?.code === "ENOENT") {
+      const missing = classifyMissingAudioPath(filePath);
+      return {
+        success: false,
+        error: "Audio file not found",
+        code: missing.code,
+        hint: missing.hint,
+      };
+    }
+    return {
+      success: false,
+      error: error?.message || String(error),
+      code: "MISSING_SOURCE_FILE",
+      hint: "Unable to read the audio file. Verify the file exists and retry.",
+    };
   }
 });
 
@@ -2529,7 +2740,12 @@ ipcMain.handle(
 
 // Get GPU devices
 ipcMain.handle("get-gpu-devices", async () => {
-  return getGpuDevicesDeduped();
+  const gpu = await getGpuDevicesCached();
+  return gpu.data;
+});
+
+ipcMain.handle("get-system-runtime-info", async () => {
+  return getSystemRuntimeInfoCached();
 });
 
 // Get workflow types (Live vs Studio)

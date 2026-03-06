@@ -1,28 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { Cpu, Zap, Activity, FolderInput, HardDrive } from 'lucide-react'
 import { useStore } from '../stores/useStore'
+import { useSystemRuntimeInfo } from '../hooks/useSystemRuntimeInfo'
 
 export function SystemStatus() {
-    const [gpuInfo, setGpuInfo] = useState<any>(null)
+    const { info: runtimeInfo } = useSystemRuntimeInfo()
     const isProcessing = useStore(state => state.separation.isProcessing)
     const isWatchMode = useStore(state => state.watchModeEnabled)
-
-    useEffect(() => {
-        const loadInfo = async () => {
-            if (window.electronAPI?.getGpuDevices) {
-                try {
-                    const info = await window.electronAPI.getGpuDevices()
-                    setGpuInfo(info)
-                } catch (e) {
-                    console.error("Failed to load GPU info:", e)
-                    setGpuInfo({ gpus: [{ name: "Standard Driver (CPU)", type: "cpu", memory_gb: null }] })
-                }
-            }
-        }
-        loadInfo()
-        const interval = setInterval(loadInfo, 30000)
-        return () => clearInterval(interval)
-    }, [])
+    const gpuInfo = useMemo(() => runtimeInfo?.gpu ?? null, [runtimeInfo])
 
     const activeGpu = gpuInfo?.gpus?.find((g: any) => g.recommended) || gpuInfo?.gpus?.[0]
     const system = gpuInfo?.system_info

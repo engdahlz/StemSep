@@ -24,6 +24,9 @@ import { bestVolumeCompensation } from "../utils/volumeCompensation";
 import { SimplePresetPicker } from "./simple/SimplePresetPicker";
 import { CollapsibleSection } from "./ui/collapsible-section";
 import { PageShell } from "./PageShell";
+import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
+import { RuntimeDoctorCard } from "./RuntimeDoctorCard";
+import { modelRequiresFnoRuntime } from "../lib/systemRuntime/modelRuntime";
 
 type AdvancedParams = {
   overlap: number;
@@ -319,21 +322,8 @@ export function ConfigurePage({
     highFreqWeight: number;
   }>({ lowHz: 500, highHz: 5000, highFreqWeight: 2.0 });
 
-  // GPU Info for VRAM estimation
-  const [gpuInfo, setGpuInfo] = useState<any>(null);
-  useEffect(() => {
-    const loadGpuInfo = async () => {
-      if (window.electronAPI?.getGpuDevices) {
-        try {
-          const info = await window.electronAPI.getGpuDevices();
-          setGpuInfo(info);
-        } catch (e) {
-          console.error("Failed to load GPU info:", e);
-        }
-      }
-    };
-    loadGpuInfo();
-  }, []);
+  const { info: runtimeInfo } = useSystemRuntimeInfo();
+  const gpuInfo = runtimeInfo?.gpu ?? null;
 
   // Update selected preset when initialPresetId changes
   useEffect(() => {
@@ -501,8 +491,81 @@ export function ConfigurePage({
 
   // Check if separation can proceed (no missing dependencies)
   const canStartSeparation = separationPlan.canProceed;
+  const plannedModelIds = useMemo(() => {
+    const ids = new Set<string>();
+
+    const planEnsemble = separationPlan.effectiveEnsembleConfig;
+    if (planEnsemble?.models && Array.isArray(planEnsemble.models)) {
+      for (const entry of planEnsemble.models) {
+        if (typeof entry?.model_id === "string" && entry.model_id.trim()) {
+          ids.add(entry.model_id.trim());
+        }
+      }
+    }
+
+    if (
+      typeof separationPlan.effectiveModelId === "string" &&
+      separationPlan.effectiveModelId.trim() &&
+      separationPlan.effectiveModelId !== "ensemble"
+    ) {
+      ids.add(separationPlan.effectiveModelId.trim());
+    }
+
+    if (mode === "simple") {
+      const preset = presets.find((p) => p.id === selectedPresetId);
+      if (preset?.ensembleConfig?.models?.length) {
+        for (const m of preset.ensembleConfig.models) {
+          if (typeof m?.model_id === "string" && m.model_id.trim()) {
+            ids.add(m.model_id.trim());
+          }
+        }
+      } else if (typeof preset?.modelId === "string" && preset.modelId.trim()) {
+        ids.add(preset.modelId.trim());
+      }
+    } else if (isEnsembleMode) {
+      for (const m of validEnsembleModels) {
+        if (typeof m?.model_id === "string" && m.model_id.trim()) {
+          ids.add(m.model_id.trim());
+        }
+      }
+    } else if (selectedModelId) {
+      ids.add(selectedModelId);
+    }
+
+    return Array.from(ids);
+  }, [
+    isEnsembleMode,
+    mode,
+    presets,
+    selectedModelId,
+    selectedPresetId,
+    separationPlan.effectiveEnsembleConfig,
+    separationPlan.effectiveModelId,
+    validEnsembleModels,
+  ]);
+
+  const blockedFnoModels = useMemo(() => {
+    const fnoSupported =
+      runtimeInfo?.runtimeFingerprint?.neuralop?.fno1d_import_ok !== false;
+    if (fnoSupported) return [] as string[];
+    return plannedModelIds.filter((modelId) => {
+      const model = models.find((candidate) => candidate.id === modelId);
+      return modelRequiresFnoRuntime(model);
+    });
+  }, [models, plannedModelIds, runtimeInfo?.runtimeFingerprint?.neuralop?.fno1d_import_ok]);
+
+  const hasFnoRuntimeBlock = blockedFnoModels.length > 0;
 
   const handleConfirm = () => {
+    if (hasFnoRuntimeBlock) {
+      toast.error("Selected model is blocked by environment", {
+        description:
+          "FNO-based model requires neuraloperator/neuralop with FNO1d support. " +
+          `Blocked: ${blockedFnoModels.join(", ")}.`,
+      });
+      return;
+    }
+
     if (mode === "advanced" && isEnsembleMode) {
       if (validEnsembleModels.length < 2) {
         toast.error("Ensemble requires at least 2 models.", {
@@ -741,6 +804,28 @@ export function ConfigurePage({
               Advanced Mode
             </button>
           </div>
+
+          <RuntimeDoctorCard compact />
+
+          {hasFnoRuntimeBlock && (
+            <Card className="p-4 border-destructive/50 bg-destructive/10">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                <div className="space-y-1">
+                  <div className="font-medium text-destructive">
+                    FNO model blocked by current environment
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Install a neuraloperator/neuralop build that exposes{" "}
+                    <code>neuralop.models.FNO1d</code> and restart StemSep.
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Blocked model(s): {blockedFnoModels.join(", ")}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
 
           {mode === "simple" ? (
             <div className="space-y-6">

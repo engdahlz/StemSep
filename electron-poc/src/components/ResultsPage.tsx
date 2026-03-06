@@ -4,13 +4,14 @@ import { MultiTrackPlayer } from './MultiTrackPlayer'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
-import { Clock, ArrowLeft, Music2, Download, Trash2 } from 'lucide-react'
+import { Clock, ArrowLeft, Music2, Download, Trash2, AlertTriangle } from 'lucide-react'
 import { Badge } from './ui/badge'
 import { formatDistanceToNow } from 'date-fns'
 import ExportDialog from './ExportDialog'
 import { SeparationHistory } from '../utils/separationHistory'
 import { ALL_PRESETS } from '../presets'
 import { PageShell } from './PageShell'
+import { useSystemRuntimeInfo } from '../hooks/useSystemRuntimeInfo'
 
 interface ResultsPageProps {
     onBack?: () => void
@@ -26,6 +27,7 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
     const defaultExportDir = useStore(state => state.settings.defaultExportDir)
     const setDefaultExportDir = useStore(state => state.setDefaultExportDir)
     const models = useStore(state => state.models)
+    const { info: runtimeInfo } = useSystemRuntimeInfo()
 
     const [showExportDialog, setShowExportDialog] = useState(false)
 
@@ -55,6 +57,12 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
     }, [history])
 
     const activeSession = sessionToLoad || (completedItems.length > 0 ? completedItems[0] : null)
+    const previewCacheFragment = '/cache/previews/'
+    const isEphemeralSession = !!activeSession?.outputFiles &&
+        Object.values(activeSession.outputFiles).some((filePath) => {
+            const normalized = String(filePath || '').split('\\').join('/').toLowerCase()
+            return normalized.includes(previewCacheFragment)
+        })
 
     return (
         <PageShell scroll={false}>
@@ -178,6 +186,13 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
                                         <span className="flex items-center gap-1 text-sm">
                                             <Badge variant="outline">{getDisplayName(activeSession)}</Badge>
                                         </span>
+                                        {isEphemeralSession && (
+                                            <span className="flex items-center gap-1 text-sm">
+                                                <Badge variant="secondary" className="border-yellow-500/40 bg-yellow-500/10 text-yellow-500">
+                                                    Ephemeral cache
+                                                </Badge>
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                                 <Button onClick={() => setShowExportDialog(true)}>
@@ -185,6 +200,23 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
                                     Export
                                 </Button>
                             </div>
+
+                            {isEphemeralSession && (
+                                <Card className="border-yellow-500/40 bg-yellow-500/10">
+                                    <CardContent className="pt-6 text-sm text-muted-foreground">
+                                        <div className="flex items-start gap-2">
+                                            <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />
+                                            <div>
+                                                This result is stored in preview cache and may be cleaned automatically
+                                                {typeof runtimeInfo?.previewCachePolicy?.maxAgeDays === 'number'
+                                                    ? ` (retention: ${runtimeInfo.previewCachePolicy.maxAgeDays} days)`
+                                                    : ''}.
+                                                If playback/export fails later, run a new separation for a durable result.
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
 
                             <MultiTrackPlayer
                                 stems={activeSession.outputFiles}

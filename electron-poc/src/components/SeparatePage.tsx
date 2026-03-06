@@ -19,6 +19,8 @@ import { recipesToPresets } from "@/lib/recipePresets";
 import { resolveSeparationPlan } from "@/lib/separation/resolveSeparationPlan";
 import { recommendModelChain } from "@/lib/policy/recommendationPolicy";
 import MissingModelsDialog from "./dialogs/MissingModelsDialog";
+import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
+import { modelRequiresFnoRuntime } from "../lib/systemRuntime/modelRuntime";
 
 // --- Constants & Types ---
 
@@ -99,26 +101,13 @@ export default function SeparatePage({
   const startDownload = useStore((state) => state.startDownload);
   const setDownloadError = useStore((state) => state.setDownloadError);
   const setModelInstalled = useStore((state) => state.setModelInstalled);
+  const { info: runtimeInfo } = useSystemRuntimeInfo();
 
   // GPU info for VRAM filtering
-  const [gpuVRAM, setGpuVRAM] = useState<number>(0);
-  useEffect(() => {
-    const loadGpuInfo = async () => {
-      if (window.electronAPI?.getGpuDevices) {
-        try {
-          const info = await window.electronAPI.getGpuDevices();
-          const vram =
-            info?.recommended_profile?.vram_gb ||
-            info?.gpus?.[0]?.memory_gb ||
-            0;
-          setGpuVRAM(vram);
-        } catch (e) {
-          console.error("Failed to load GPU info:", e);
-        }
-      }
-    };
-    loadGpuInfo();
-  }, []);
+  const gpuVRAM = useMemo(() => {
+    const gpu = runtimeInfo?.gpu;
+    return gpu?.recommended_profile?.vram_gb || gpu?.gpus?.[0]?.memory_gb || 0;
+  }, [runtimeInfo]);
 
   // Wait for bridge to be ready before fetching recipes
   // This eliminates the race condition that caused timeout on first attempt
@@ -557,6 +546,34 @@ export default function SeparatePage({
       return;
     }
 
+    const fnoSupported =
+      runtimeInfo?.runtimeFingerprint?.neuralop?.fno1d_import_ok !== false;
+    if (!fnoSupported) {
+      const candidateModelIds =
+        plan.effectiveModelId === "ensemble"
+          ? (plan.effectiveEnsembleConfig?.models || []).map((m) => m.model_id)
+          : [plan.effectiveModelId];
+      const blockedFnoModels = candidateModelIds.filter((id) => {
+        const model = models.find((candidate) => candidate.id === id);
+        return modelRequiresFnoRuntime(model);
+      });
+      if (blockedFnoModels.length > 0) {
+        toast.error("Separation blocked: model requires FNO1d support", {
+          description:
+            "Install a neuraloperator/neuralop build with neuralop.models.FNO1d and restart StemSep.",
+        });
+
+        const queueItem = queue.find((q) => q.file === filePath);
+        if (queueItem) {
+          updateQueueItem(queueItem.id, {
+            status: "failed",
+            error: `Blocked by runtime doctor: ${blockedFnoModels.join(", ")}`,
+          });
+        }
+        return;
+      }
+    }
+
     const modelId = plan.effectiveModelId;
     const stems = plan.effectiveStems;
 
@@ -835,6 +852,10 @@ export default function SeparatePage({
       setYoutubePercent("");
 
       const result = await window.electronAPI.resolveYouTubeUrl(url);
+      if (!result.success) {
+        const hint = result.hint ? ` ${result.hint}` : "";
+        throw new Error(`${result.error}${hint}`.trim());
+      }
       const resolvedPath = (result as any)?.file_path;
       const title = (result as any)?.title;
 

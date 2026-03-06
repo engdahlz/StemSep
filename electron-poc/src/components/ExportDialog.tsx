@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Download, FolderOpen, Check } from 'lucide-react'
 import { Button } from './ui/button'
 import { toast } from 'sonner'
+import { exportFailureMessage } from '../lib/previewErrors'
 
 interface ExportDialogProps {
     isOpen: boolean
@@ -128,7 +129,11 @@ export default function ExportDialog({
                 }
             }
 
-            await window.electronAPI.exportFiles(filesToExport, exportDir, format, bitrate)
+            const result = await window.electronAPI.exportFiles(filesToExport, exportDir, format, bitrate)
+            if (!result.success) {
+                toast.error(exportFailureMessage(result.code, result.error, result.hint))
+                return
+            }
 
             // Save path if requested
             if (rememberPath && onDefaultDirChange) {

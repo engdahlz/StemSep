@@ -1628,6 +1628,152 @@ fn send_err(
     write_json_line_locked(stdout, &resp)
 }
 
+fn resolve_youtube_native(
+    url: &str,
+    stdout: &Arc<Mutex<io::Stdout>>,
+) -> Result<Value> {
+    if url.trim().is_empty() {
+        return Err(anyhow!("url is required"));
+    }
+
+    let python = locate_python_exe();
+    let out_dir = std::env::temp_dir().join("stemsep_youtube");
+    std::fs::create_dir_all(&out_dir)
+        .with_context(|| format!("create youtube temp dir: {}", out_dir.display()))?;
+
+    send_event(
+        stdout,
+        serde_json::json!({
+            "type": "youtube_progress",
+            "status": "starting"
+        }),
+    );
+
+    let script = r#"import glob
+import json
+import os
+import sys
+import uuid
+
+url = sys.argv[1]
+out_dir = sys.argv[2]
+
+try:
+    import yt_dlp
+except Exception as e:
+    sys.stderr.write("yt-dlp import failed: " + repr(e) + "\n")
+    sys.exit(2)
+
+os.makedirs(out_dir, exist_ok=True)
+uid = uuid.uuid4().hex
+template = os.path.join(out_dir, f"stemsep_youtube_{uid}.%(ext)s")
+
+opts = {
+    "format": "bestaudio/best",
+    "noplaylist": True,
+    "quiet": True,
+    "no_warnings": True,
+    "outtmpl": template,
+    "postprocessors": [{
+        "key": "FFmpegExtractAudio",
+        "preferredcodec": "wav",
+        "preferredquality": "0",
+    }],
+}
+
+title = "YouTube Audio"
+prepared = ""
+with yt_dlp.YoutubeDL(opts) as ydl:
+    info = ydl.extract_info(url, download=True)
+    title = info.get("title") or title
+    prepared = ydl.prepare_filename(info)
+
+root, _ = os.path.splitext(prepared)
+candidate = root + ".wav"
+if not os.path.exists(candidate):
+    matches = sorted(glob.glob(os.path.join(out_dir, f"stemsep_youtube_{uid}*.wav")))
+    if matches:
+        candidate = matches[-1]
+
+if not os.path.exists(candidate):
+    sys.stderr.write("Could not locate converted WAV output\n")
+    sys.exit(3)
+
+print(json.dumps({"file_path": candidate, "title": title, "source_url": url}))
+"#;
+
+    let output = Command::new(&python)
+        .arg("-c")
+        .arg(script)
+        .arg(url)
+        .arg(out_dir.to_string_lossy().to_string())
+        .env("PYTHONIOENCODING", "utf-8")
+        .env("PYTHONUTF8", "1")
+        .output()
+        .with_context(|| format!("spawn python for resolve_youtube (python={python})"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let stdout_txt = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let msg = if !stderr.is_empty() {
+            let from_error_line = stderr
+                .lines()
+                .map(|l| l.trim())
+                .find(|l| l.starts_with("ERROR:"))
+                .map(|l| l.to_string());
+            if let Some(clean) = from_error_line {
+                clean
+            } else {
+                stderr
+                    .lines()
+                    .map(|l| l.trim())
+                    .find(|l| !l.is_empty())
+                    .unwrap_or("resolve_youtube failed")
+                    .to_string()
+            }
+        } else if !stdout_txt.is_empty() {
+            stdout_txt
+        } else {
+            format!(
+                "resolve_youtube failed with exit code {}",
+                output.status.code().unwrap_or(-1)
+            )
+        };
+        return Err(anyhow!(msg));
+    }
+
+    let stdout_txt = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let json_line = stdout_txt
+        .lines()
+        .last()
+        .map(|s| s.trim())
+        .unwrap_or_default();
+    if json_line.is_empty() {
+        return Err(anyhow!("resolve_youtube returned empty output"));
+    }
+
+    let payload: Value =
+        serde_json::from_str(json_line).context("parse resolve_youtube output JSON")?;
+    let file_path = payload
+        .get("file_path")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| anyhow!("resolve_youtube output missing file_path"))?;
+    if !PathBuf::from(file_path).exists() {
+        return Err(anyhow!("Downloaded file not found: {file_path}"));
+    }
+
+    send_event(
+        stdout,
+        serde_json::json!({
+            "type": "youtube_progress",
+            "status": "complete",
+            "percent": "100%"
+        }),
+    );
+
+    Ok(payload)
+}
+
 #[derive(Debug)]
 struct PythonProxy {
     _child: Child,
@@ -2584,7 +2730,6 @@ fn main() -> Result<()> {
                     | "resume_download"
                     | "remove_model"
                     | "import_custom_model"
-                    | "resolve_youtube"
                     | "model_preflight"
                     | "separation_preflight"
                     // "separate_audio"  <-- Handled natively now
@@ -2761,6 +2906,20 @@ fn main() -> Result<()> {
             }
             "get-gpu-devices" | "get_gpu_devices" => {
                 send_ok(&stdout, req.id, gpu_info.clone())?;
+            }
+            "resolve_youtube" => {
+                let url = match req.extra.get("url").and_then(|v| v.as_str()) {
+                    Some(v) if !v.trim().is_empty() => v.trim(),
+                    _ => {
+                        send_err(&stdout, req.id, "INVALID", "url is required")?;
+                        continue;
+                    }
+                };
+
+                match resolve_youtube_native(url, &stdout) {
+                    Ok(result) => send_ok(&stdout, req.id, result)?,
+                    Err(e) => send_err(&stdout, req.id, "YOUTUBE_FAILED", &format!("{e:#}"))?,
+                }
             }
             "download_model" => {
                 // Rust-native model download (background), emits {type:progress|complete|error} events.

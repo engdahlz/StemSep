@@ -11,6 +11,7 @@ import {
 import { useStore } from "../stores/useStore";
 import { toast } from "sonner";
 import { Button } from "./ui/button"; // Need Button component
+import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
 
 interface GpuDevice {
   id: string;
@@ -52,6 +53,7 @@ export default function SettingsDialog({
       vram_gb: number;
     };
   } | null>(null);
+  const { info: runtimeInfo, loading: runtimeLoading } = useSystemRuntimeInfo();
 
   // Automation state
   const watchEnabled = useStore((state) => state.watchModeEnabled);
@@ -140,36 +142,12 @@ export default function SettingsDialog({
   };
 
   useEffect(() => {
-    const loadInfo = async () => {
-      if (!window.electronAPI) return;
+    if (!isOpen) return;
 
-      try {
-        const info = await window.electronAPI.getGpuDevices();
-        // The API returns the info object directly ({ gpus: [...] })
-        if (info && info.gpus) {
-          const devicesList = info.gpus || [];
-
-          setDevices(devicesList);
-
-          // Auto-select recommended
-          const recommended = devicesList.find((d: any) => d.recommended);
-          if (recommended) {
-            setSelectedDevice(recommended.id);
-          }
-
-          setSystemInfo({
-            has_cuda: info.has_cuda,
-            cuda_version: info.cuda_version,
-            gpu_count: devicesList.length,
-            memory_total_gb: info.system_info?.memory_total_gb,
-            recommended_profile: info.recommended_profile || undefined,
-          });
-        } else {
-          // toast.error('No GPU info returned') // Silent fail on init often better
-        }
-      } catch (error) {
-        console.error("Failed to load GPU info:", error);
-        // Fallback to CPU
+    const info = runtimeInfo?.gpu;
+    if (!info || !Array.isArray(info.gpus)) {
+      setLoading(runtimeLoading);
+      if (!runtimeLoading) {
         setDevices([
           {
             id: "cpu",
@@ -179,15 +157,27 @@ export default function SettingsDialog({
             recommended: true,
           },
         ]);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    if (isOpen) {
-      loadInfo();
+      return;
     }
-  }, [isOpen]);
+
+    const devicesList = info.gpus || [];
+    setDevices(devicesList);
+
+    const recommended = devicesList.find((d: any) => d.recommended);
+    if (recommended?.id) {
+      setSelectedDevice(recommended.id);
+    }
+
+    setSystemInfo({
+      has_cuda: info.has_cuda,
+      cuda_version: info.cuda_version,
+      gpu_count: devicesList.length,
+      memory_total_gb: info.system_info?.memory_total_gb,
+      recommended_profile: info.recommended_profile || undefined,
+    });
+    setLoading(false);
+  }, [isOpen, runtimeInfo?.gpu, runtimeLoading]);
 
   const handleSave = async () => {
     localStorage.setItem("stemSepGpuDevice", selectedDevice);

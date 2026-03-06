@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import WaveSurfer from 'wavesurfer.js'
 import Spectrogram from 'wavesurfer.js/dist/plugins/spectrogram.esm.js'
-import { Volume2, VolumeX, Headphones, Activity } from 'lucide-react'
+import { Volume2, VolumeX, Headphones, Activity, AlertTriangle } from 'lucide-react'
 import { Button } from './ui/button'
 import { cn } from '../lib/utils'
+import { previewLoadMessage } from '../lib/previewErrors'
 
 interface WaveformTrackProps {
     url: string
@@ -40,6 +41,7 @@ export function WaveformTrack({
     const wavesurferRef = useRef<WaveSurfer | null>(null)
     const [isReady, setIsReady] = useState(false)
     const [showSpectrogram, setShowSpectrogram] = useState(false)
+    const [loadError, setLoadError] = useState<string | null>(null)
 
     // Initialize WaveSurfer - only runs once per URL
     useEffect(() => {
@@ -64,9 +66,11 @@ export function WaveformTrack({
 
         const loadAudio = async () => {
             console.log('[WaveformTrack] Loading audio via IPC:', url)
+            setLoadError(null)
 
             if (!window.electronAPI?.readAudioFile) {
                 console.error('[WaveformTrack] electronAPI.readAudioFile not available')
+                setLoadError('Audio preview API is not available in this build.')
                 return
             }
 
@@ -78,8 +82,14 @@ export function WaveformTrack({
                     return
                 }
 
-                if (!result.success || !result.data) {
+                if (!result.success) {
                     console.error('[WaveformTrack] Failed to read audio file:', result.error)
+                    setLoadError(previewLoadMessage(result.code, result.error))
+                    return
+                }
+
+                if (!result.data) {
+                    setLoadError('Audio preview payload was empty.')
                     return
                 }
 
@@ -133,6 +143,7 @@ export function WaveformTrack({
             } catch (error) {
                 if (error instanceof Error && error.name === 'AbortError') return
                 console.error('[WaveformTrack] Error loading audio via IPC:', error)
+                setLoadError(previewLoadMessage(undefined, error instanceof Error ? error.message : String(error)))
             }
         }
 
@@ -151,6 +162,7 @@ export function WaveformTrack({
                 URL.revokeObjectURL(blobUrl)
             }
             setIsReady(false)
+            setLoadError(null)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [url, showSpectrogram])
@@ -240,7 +252,14 @@ export function WaveformTrack({
             >
                 {!isReady && (
                     <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-                        Loading...
+                        {loadError ? (
+                            <div className="flex items-center gap-2 px-3 text-center text-[11px] text-destructive">
+                                <AlertTriangle className="h-4 w-4 shrink-0" />
+                                <span>{loadError}</span>
+                            </div>
+                        ) : (
+                            'Loading...'
+                        )}
                     </div>
                 )}
             </div>

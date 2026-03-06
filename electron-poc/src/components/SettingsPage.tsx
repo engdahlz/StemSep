@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore } from "../stores/useStore";
 import { useTheme } from "../contexts/ThemeContext";
 import {
@@ -21,19 +21,17 @@ import {
   Settings2,
   HardDrive,
 } from "lucide-react";
+import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
+import { RuntimeDoctorCard } from "./RuntimeDoctorCard";
 
 type Tab = "general" | "audio" | "advanced";
+type CudaDevice = { id: string; name?: string; index?: number };
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("general");
   const [hfTokenInput, setHfTokenInput] = useState("");
   const [hasHfToken, setHasHfToken] = useState(false);
-
-  // GPU detection + list for selecting a specific CUDA index
-  const [hasCuda, setHasCuda] = useState(false);
-  const [cudaDevices, setCudaDevices] = useState<
-    { id: string; name?: string; index?: number }[]
-  >([]);
+  const { info: runtimeInfo } = useSystemRuntimeInfo();
 
   const { theme, setTheme } = useTheme();
   const {
@@ -46,6 +44,20 @@ export function SettingsPage() {
     models,
   } = useStore();
 
+  const gpuInfo = runtimeInfo?.gpu;
+  const cudaDevices = useMemo<CudaDevice[]>(() => {
+    const gpus = Array.isArray(gpuInfo?.gpus) ? gpuInfo.gpus : [];
+    return gpus
+      .filter(
+        (g: any) => typeof g?.id === "string" && g.id.startsWith("cuda:"),
+      )
+      .map((g: any) => ({ id: g.id, name: g.name, index: g.index }));
+  }, [gpuInfo?.gpus]);
+
+  const hasCuda = useMemo(() => {
+    return !!gpuInfo?.has_cuda || cudaDevices.length > 0;
+  }, [cudaDevices.length, gpuInfo?.has_cuda]);
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -54,21 +66,6 @@ export function SettingsPage() {
         setHasHfToken(typeof token === "string" && token.trim().length > 0);
       } catch {
         setHasHfToken(false);
-      }
-
-      try {
-        const gpu = await window.electronAPI.getGpuDevices?.();
-        const gpus = Array.isArray(gpu?.gpus) ? gpu.gpus : [];
-        const cuda = gpus.filter(
-          (g: any) => typeof g?.id === "string" && g.id.startsWith("cuda:"),
-        );
-        setCudaDevices(
-          cuda.map((g: any) => ({ id: g.id, name: g.name, index: g.index })),
-        );
-        setHasCuda(!!gpu?.has_cuda || cuda.length > 0);
-      } catch {
-        setHasCuda(false);
-        setCudaDevices([]);
       }
     };
 
@@ -379,6 +376,8 @@ export function SettingsPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              <RuntimeDoctorCard />
 
               <Card>
                 <CardHeader>
