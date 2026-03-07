@@ -4,11 +4,15 @@ import { Button } from './ui/button'
 import { cn } from '../lib/utils'
 import { QueueItem } from '../types/store'
 import { CircularProgress } from './ui/circular-progress'
+import { calculateQueueEta, getQueueStepLabel } from '../lib/separation/progressEvent'
 
-// Phase detection from progress message
 type ProcessingPhase = 'loading' | 'processing' | 'finalizing' | 'unknown'
 
-const getPhase = (message: string | undefined): ProcessingPhase => {
+const getPhase = (message: string | undefined, activePhase?: string): ProcessingPhase => {
+    const phaseHint = (activePhase || '').toLowerCase()
+    if (phaseHint.includes('post') || phaseHint.includes('final')) return 'finalizing'
+    if (phaseHint.includes('ensemble') || phaseHint.includes('pipeline')) return 'processing'
+
     if (!message) return 'unknown'
     const lower = message.toLowerCase()
     if (lower.includes('loading') || lower.includes('model')) return 'loading'
@@ -24,21 +28,6 @@ const getPhaseLabel = (phase: ProcessingPhase): string => {
         case 'finalizing': return 'Saving Stems...'
         default: return 'Processing...'
     }
-}
-
-// Calculate ETR (Estimated Time Remaining)
-const calculateETR = (progress: number, startTime: number | undefined): string | null => {
-    if (!startTime || progress < 10) return null // Don't show ETR until 10%
-    const elapsed = Date.now() - startTime
-    const totalEstimate = (elapsed / progress) * 100
-    const remainingMs = totalEstimate - elapsed
-
-    if (remainingMs < 0 || !isFinite(remainingMs)) return null
-
-    const seconds = Math.round(remainingMs / 1000)
-    if (seconds < 60) return `~${seconds}s`
-    const minutes = Math.round(seconds / 60)
-    return `~${minutes}m`
 }
 
 // Helper to safely get filename
@@ -57,8 +46,13 @@ export const BatchQueueItem = memo(({ item, onRemove, onPreview }: BatchQueueIte
     const isCompleted = item.status === 'completed';
     const isFailed = item.status === 'failed';
     const progress = item.progress || 0;
-    const phase = getPhase(item.message);
-    const etr = calculateETR(progress, item.startTime);
+    const phase = getPhase(item.message, item.activePhase);
+    const etr = calculateQueueEta(item);
+    const stepLabel = getQueueStepLabel(item);
+    const chunkLabel =
+        typeof item.chunksDone === 'number' && typeof item.chunksTotal === 'number'
+            ? `Chunks ${item.chunksDone}/${item.chunksTotal}`
+            : null
 
     return (
         <div
@@ -122,9 +116,16 @@ export const BatchQueueItem = memo(({ item, onRemove, onPreview }: BatchQueueIte
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     {/* Phase-based status message */}
                     {isProcessingItem ? (
-                        <span className="truncate max-w-[200px] font-medium text-primary/80">
-                            {getPhaseLabel(phase)}
-                        </span>
+                        <>
+                            <span className="truncate max-w-[240px] font-medium text-primary/80">
+                                {stepLabel || getPhaseLabel(phase)}
+                            </span>
+                            {chunkLabel && (
+                                <span className="rounded bg-secondary px-1.5 py-0.5">
+                                    {chunkLabel}
+                                </span>
+                            )}
+                        </>
                     ) : (
                         <span className="truncate max-w-[200px] font-medium">{item.modelId || 'Unknown Model'}</span>
                     )}

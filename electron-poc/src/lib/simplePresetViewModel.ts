@@ -59,8 +59,10 @@ export function presetIsWorkflow(preset: Preset): boolean {
 }
 
 export function presetGoal(preset: Preset): Exclude<SimpleGoal, 'all'> {
+  if (preset.simpleGoal) return preset.simpleGoal
+
   // Workflows
-  if (presetIsWorkflow(preset)) return 'workflows'
+  if (presetIsWorkflow(preset) && preset.recipe?.target == null) return 'workflows'
 
   // Karaoke is a goal by itself
   const tags = lowercased(preset.tags)
@@ -104,6 +106,7 @@ export function presetMatchesMode(preset: Preset, mode: SimpleMode): boolean {
 export function presetSimpleBadges(preset: Preset): string[] {
   const badges: string[] = []
   if (preset.recommended) badges.push('Recommended')
+  if (preset.simpleVisible) badges.push('Guide')
 
   if (presetIsWorkflow(preset)) badges.push('Multi-step')
 
@@ -115,6 +118,7 @@ export function presetSimpleBadges(preset: Preset): string[] {
 }
 
 export function presetIsRecommendedForSimple(preset: Preset): boolean {
+  if (preset.simpleVisible) return true
   if (preset.recommended) return true
   const id = preset.id.toLowerCase()
   if (id.startsWith('golden_')) return true
@@ -126,8 +130,10 @@ export function presetIsRecommendedForSimple(preset: Preset): boolean {
 
 export function presetSortScore(preset: Preset): number {
   // Primary sorting: recommended first, then quality, then lower VRAM.
+  const simple = preset.simpleVisible ? 1500 : 0
   const rec = presetIsRecommendedForSimple(preset) ? 1000 : 0
+  const guide = typeof preset.guideRank === 'number' ? Math.max(0, 200 - preset.guideRank * 20) : 0
   const q = presetQualityScore(preset) * 100
   const vram = typeof preset.estimatedVram === 'number' ? Math.max(0, 20 - preset.estimatedVram) : 0
-  return rec + q + vram
+  return simple + rec + guide + q + vram
 }

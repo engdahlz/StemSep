@@ -1,0 +1,8 @@
+[
+  {
+    "id": "last-bs-roformer",
+    "name": "Gabox Last BS-Roformer",
+    "reason": "Guide mentions the model, but config/evidence are not ready for safe runtime integration.",
+    "source": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt"
+  }
+]

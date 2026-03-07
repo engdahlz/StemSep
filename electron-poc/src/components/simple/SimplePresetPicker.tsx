@@ -53,10 +53,12 @@ export function SimplePresetPicker({
   const [mode, setMode] = useState<SimpleMode>('all')
   const [search, setSearch] = useState('')
   const [showWorkflows, setShowWorkflows] = useLocalStorageState<boolean>('stemsep.simple.showMultiStep', true)
+  const simpleSurfaceExists = useMemo(() => presets.some(p => p.simpleVisible), [presets])
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase()
     return presets
+      .filter(p => (simpleSurfaceExists ? p.simpleVisible === true : true))
       .filter(p => (showWorkflows ? true : !(p as any)?.isRecipe))
       .filter(p => presetMatchesGoal(p, goal))
       .filter(p => presetMatchesMode(p, mode))
@@ -66,7 +68,7 @@ export function SimplePresetPicker({
         return hay.includes(s)
       })
       .sort((a, b) => presetSortScore(b) - presetSortScore(a))
-  }, [presets, goal, mode, search, showWorkflows])
+  }, [presets, goal, mode, search, showWorkflows, simpleSurfaceExists])
 
   const recommended = useMemo(() => filtered.filter(presetIsRecommendedForSimple).slice(0, 6), [filtered])
   const others = useMemo(() => filtered.filter(p => !presetIsRecommendedForSimple(p)), [filtered])
@@ -87,6 +89,12 @@ export function SimplePresetPicker({
             </Button>
           </div>
         </div>
+
+        {simpleSurfaceExists && (
+          <div className="text-xs text-muted-foreground">
+            Simple mode is locked to a curated guide-driven set of premium workflows for this surface.
+          </div>
+        )}
 
         <div className="space-y-2">
           <div className="text-xs text-muted-foreground">Goal</div>

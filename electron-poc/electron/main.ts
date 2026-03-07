@@ -95,6 +95,62 @@ function sanitizeForPathSegment(name: string) {
     .slice(0, 80);
 }
 
+type AudioSourceProfile = {
+  path: string;
+  container: string | null;
+  codec: string | null;
+  codecLongName: string | null;
+  sampleRate: number | null;
+  channels: number | null;
+  sampleFormat: string | null;
+  bitDepth: number | null;
+  durationSeconds: number | null;
+  isLossless: boolean;
+};
+
+type SourceStagingDecision = {
+  sourcePath: string;
+  workingPath: string;
+  sourceExt: string;
+  copiedDirectly: boolean;
+  workingCodec: "original" | "pcm_s16le" | "pcm_s24le" | "pcm_f32le";
+  reason: string;
+};
+
+type StagedInputInfo = {
+  effectiveInputFile: string;
+  sourceAudioProfile: AudioSourceProfile;
+  stagingDecision: SourceStagingDecision;
+};
+
+type ExportMode = "copy" | "transcode";
+
+type ExportTask = {
+  stemRaw: string;
+  stem: string;
+  sourceFile: string;
+  sourceProfile: AudioSourceProfile;
+  outFile: string;
+  format: "wav" | "flac" | "mp3";
+  bitrate: string;
+  mode: ExportMode;
+  estimatedOutputBytes: number;
+};
+
+type ExportProgressPayload = {
+  requestId: string;
+  status: "preflight" | "copying" | "transcoding" | "completed" | "failed";
+  stem?: string;
+  fileIndex?: number;
+  fileCount?: number;
+  fileProgress?: number;
+  totalProgress?: number;
+  detail?: string;
+  format?: string;
+  outputPath?: string;
+  error?: string;
+};
+
 function getFfmpegExe(): string {
   // Prefer a bundled ffmpeg binary when available.
   // 1) build-electron.mjs copies ffmpeg next to dist-electron/main.js
@@ -123,6 +179,70 @@ function getFfmpegExe(): string {
   return "ffmpeg";
 }
 
+function getFfprobeExe(): string {
+  try {
+    const local = path.join(
+      __dirname,
+      process.platform === "win32" ? "ffprobe.exe" : "ffprobe",
+    );
+    if (fs.existsSync(local)) return local;
+  } catch {
+    // ignore
+  }
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const ffmpegStaticPath = require("ffmpeg-static");
+    if (typeof ffmpegStaticPath === "string" && ffmpegStaticPath) {
+      const probePath = ffmpegStaticPath.replace(/ffmpeg(?:\.exe)?$/i, process.platform === "win32" ? "ffprobe.exe" : "ffprobe");
+      if (fs.existsSync(probePath)) return probePath;
+    }
+  } catch {
+    // ignore
+  }
+
+  return "ffprobe";
+}
+
+async function runProcessCapture(
+  exe: string,
+  args: string[],
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(exe, args, { windowsHide: true });
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout?.on("data", (chunk) => {
+      stdout += String(chunk);
+    });
+    child.stderr?.on("data", (chunk) => {
+      stderr += String(chunk);
+    });
+    child.on("error", (err) => {
+      reject(
+        new Error(
+          `Failed to start ${exe}: ${err?.message || String(err)}`,
+        ),
+      );
+    });
+    child.on("close", (code) => {
+      if (code === 0) resolve({ stdout, stderr });
+      else reject(new Error(`${exe} failed (exit=${code}). ${stderr}`.trim()));
+    });
+  });
+}
+
+async function ensureBinaryAvailable(exe: string, label: string): Promise<void> {
+  try {
+    await runProcessCapture(exe, ["-version"]);
+  } catch (error: any) {
+    throw new Error(
+      `${label} is required but unavailable: ${error?.message || String(error)}`,
+    );
+  }
+}
+
 async function runFfmpeg(args: string[]): Promise<void> {
   const exe = getFfmpegExe();
 
@@ -144,6 +264,562 @@ async function runFfmpeg(args: string[]): Promise<void> {
       else reject(new Error(`ffmpeg failed (exit=${code}). ${stderr}`.trim()));
     });
   });
+}
+
+async function runFfmpegWithProgress(
+  args: string[],
+  durationSeconds: number | null,
+  onProgress?: (progress: number) => void,
+): Promise<void> {
+  const exe = getFfmpegExe();
+
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(
+      exe,
+      [
+        ...args,
+        "-progress",
+        "pipe:1",
+        "-nostats",
+      ],
+      { windowsHide: true },
+    );
+    let stderr = "";
+    let progressBuffer = "";
+
+    const reportProgress = (raw: number) => {
+      if (!onProgress) return;
+      const clamped = Math.max(0, Math.min(1, raw));
+      onProgress(clamped);
+    };
+
+    child.stdout?.on("data", (chunk) => {
+      progressBuffer += String(chunk);
+      const lines = progressBuffer.split(/\r?\n/);
+      progressBuffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const [key, value] = line.split("=");
+        if (!key || value == null) continue;
+        if (key === "out_time_ms" && durationSeconds && durationSeconds > 0) {
+          const outTimeMs = Number(value);
+          if (Number.isFinite(outTimeMs)) {
+            reportProgress(outTimeMs / (durationSeconds * 1_000_000));
+          }
+        } else if (key === "progress" && value === "end") {
+          reportProgress(1);
+        }
+      }
+    });
+    child.stderr?.on("data", (d) => {
+      stderr += String(d);
+    });
+    child.on("error", (err) => {
+      reject(
+        new Error(
+          `Failed to start ffmpeg (${exe}): ${err?.message || String(err)}`,
+        ),
+      );
+    });
+    child.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`ffmpeg failed (exit=${code}). ${stderr}`.trim()));
+    });
+  });
+}
+
+function extractAudioBitDepth(stream: Record<string, any>): number | null {
+  const direct = Number(
+    stream.bits_per_raw_sample ?? stream.bits_per_sample ?? NaN,
+  );
+  if (Number.isFinite(direct) && direct > 0) return direct;
+
+  const sampleFmt = String(stream.sample_fmt || "");
+  const match = sampleFmt.match(/(\d+)/);
+  if (match) {
+    const parsed = Number(match[1]);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+
+  return null;
+}
+
+function inferLossless(codec: string | null, container: string | null): boolean {
+  const normalizedCodec = String(codec || "").toLowerCase();
+  const normalizedContainer = String(container || "").toLowerCase();
+  if (!normalizedCodec && !normalizedContainer) return false;
+  if (normalizedCodec.startsWith("pcm_")) return true;
+
+  const knownLossless = new Set([
+    "flac",
+    "alac",
+    "wavpack",
+    "ape",
+    "tta",
+    "mlp",
+    "truehd",
+  ]);
+  if (knownLossless.has(normalizedCodec)) return true;
+
+  if (normalizedContainer.includes("wav") && normalizedCodec.startsWith("pcm")) {
+    return true;
+  }
+
+  return false;
+}
+
+async function probeAudioFile(filePath: string): Promise<AudioSourceProfile> {
+  const exe = getFfprobeExe();
+  const { stdout } = await runProcessCapture(exe, [
+    "-v",
+    "error",
+    "-show_streams",
+    "-show_format",
+    "-of",
+    "json",
+    filePath,
+  ]);
+
+  const parsed = JSON.parse(stdout || "{}") as {
+    streams?: Array<Record<string, any>>;
+    format?: Record<string, any>;
+  };
+  const audioStream =
+    parsed.streams?.find((stream) => String(stream.codec_type) === "audio") || {};
+  const format = parsed.format || {};
+
+  const sampleRate = Number(audioStream.sample_rate ?? NaN);
+  const channels = Number(audioStream.channels ?? NaN);
+  const durationSeconds = Number(audioStream.duration ?? format.duration ?? NaN);
+  const bitDepth = extractAudioBitDepth(audioStream);
+  const container = typeof format.format_name === "string" ? format.format_name : null;
+  const codec = typeof audioStream.codec_name === "string" ? audioStream.codec_name : null;
+  const codecLongName =
+    typeof audioStream.codec_long_name === "string"
+      ? audioStream.codec_long_name
+      : null;
+  const sampleFormat =
+    typeof audioStream.sample_fmt === "string" ? audioStream.sample_fmt : null;
+
+  return {
+    path: filePath,
+    container,
+    codec,
+    codecLongName,
+    sampleRate: Number.isFinite(sampleRate) ? sampleRate : null,
+    channels: Number.isFinite(channels) ? channels : null,
+    sampleFormat,
+    bitDepth,
+    durationSeconds: Number.isFinite(durationSeconds) ? durationSeconds : null,
+    isLossless: inferLossless(codec, container),
+  };
+}
+
+function chooseLosslessWorkingCodec(
+  profile: AudioSourceProfile,
+): "pcm_s16le" | "pcm_s24le" | "pcm_f32le" {
+  const sampleFormat = String(profile.sampleFormat || "").toLowerCase();
+  const bitDepth = profile.bitDepth ?? 16;
+
+  if (sampleFormat.includes("flt") || sampleFormat.includes("dbl")) {
+    return "pcm_f32le";
+  }
+  if (bitDepth > 24) {
+    return "pcm_f32le";
+  }
+  if (bitDepth > 16) {
+    return "pcm_s24le";
+  }
+  return "pcm_s16le";
+}
+
+async function ensureWavInput(
+  inputFile: string,
+  previewDir: string,
+): Promise<StagedInputInfo> {
+  const ext = path.extname(inputFile || "").toLowerCase();
+  const sourceAudioProfile = await probeAudioFile(inputFile);
+
+  if (ext === ".wav") {
+    return {
+      effectiveInputFile: inputFile,
+      sourceAudioProfile,
+      stagingDecision: {
+        sourcePath: inputFile,
+        workingPath: inputFile,
+        sourceExt: ext,
+        copiedDirectly: true,
+        workingCodec: "original",
+        reason: "Source is already WAV; no staging conversion was required.",
+      },
+    };
+  }
+
+  const workingCodec = chooseLosslessWorkingCodec(sourceAudioProfile);
+  const staged = path.join(previewDir, `input_${shortHash(inputFile)}.wav`);
+  if (!fs.existsSync(staged)) {
+    await runFfmpeg([
+      "-y",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-i",
+      inputFile,
+      "-vn",
+      "-map_metadata",
+      "0",
+      "-c:a",
+      workingCodec,
+      staged,
+    ]);
+  }
+
+  if (!fs.existsSync(staged)) {
+    throw new Error("Decoded WAV was not created.");
+  }
+
+  return {
+    effectiveInputFile: staged,
+    sourceAudioProfile,
+    stagingDecision: {
+      sourcePath: inputFile,
+      workingPath: staged,
+      sourceExt: ext,
+      copiedDirectly: false,
+      workingCodec,
+      reason:
+        sourceAudioProfile.isLossless && workingCodec !== "pcm_s16le"
+          ? `Lossless source preserved with ${workingCodec} staging instead of 16-bit truncation.`
+          : `Decoded to WAV with ${workingCodec} for backend compatibility.`,
+    },
+  };
+}
+
+function emitExportProgress(payload: ExportProgressPayload) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send("export-progress", payload);
+}
+
+function ensureWritableDirectory(dirPath: string) {
+  safeMkdir(dirPath);
+  const probeFile = path.join(dirPath, `.stemsep_write_test_${randomUUID()}.tmp`);
+  try {
+    fs.writeFileSync(probeFile, "ok");
+    fs.unlinkSync(probeFile);
+  } catch (error: any) {
+    throw new Error(
+      `Export destination is not writable: ${error?.message || String(error)}`,
+    );
+  }
+}
+
+function getAvailableDiskBytes(dirPath: string): number | null {
+  try {
+    const statfs = (fs as any).statfsSync?.(dirPath);
+    if (!statfs) return null;
+    const available = Number(statfs.bavail ?? statfs.blocks ?? NaN);
+    const blockSize = Number(statfs.bsize ?? statfs.frsize ?? NaN);
+    if (!Number.isFinite(available) || !Number.isFinite(blockSize)) return null;
+    return available * blockSize;
+  } catch {
+    return null;
+  }
+}
+
+function estimateMp3Bytes(durationSeconds: number | null, bitrate: string): number {
+  const match = String(bitrate || "320k").toLowerCase().match(/(\d+)/);
+  const kbps = match ? Number(match[1]) : 320;
+  if (!durationSeconds || !Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+    return kbps * 1000;
+  }
+  return Math.ceil(durationSeconds * (kbps * 1000) / 8);
+}
+
+async function resolveExistingAudioSource(filePath: string): Promise<string> {
+  let resolvedInputFile = filePath;
+  if (!fs.existsSync(resolvedInputFile)) {
+    const fallback = resolveMissingPreviewAudioPath(resolvedInputFile);
+    if (fallback && fs.existsSync(fallback)) {
+      log("[audio-source] resolved missing source path", {
+        from: filePath,
+        to: fallback,
+      });
+      resolvedInputFile = fallback;
+    }
+  }
+
+  if (!fs.existsSync(resolvedInputFile)) {
+    const missing = classifyMissingAudioPath(filePath);
+    throw createCodedError(
+      missing.code,
+      `Source file missing: ${filePath}. ${missing.hint}`,
+      missing.hint,
+      {
+        filePath,
+      },
+    );
+  }
+
+  return resolvedInputFile;
+}
+
+function uniqueOutputFile(exportPath: string, baseName: string, fmt: string): string {
+  let outFile = path.join(exportPath, `${baseName}.${fmt}`);
+  for (let i = 2; fs.existsSync(outFile); i++) {
+    outFile = path.join(exportPath, `${baseName}_${i}.${fmt}`);
+  }
+  return outFile;
+}
+
+async function buildExportTasks({
+  sourceFiles,
+  exportPath,
+  format,
+  bitrate,
+}: {
+  sourceFiles: Record<string, string>;
+  exportPath: string;
+  format: string;
+  bitrate: string;
+}): Promise<ExportTask[]> {
+  const fmt = String(format || "wav").toLowerCase();
+  if (!new Set(["wav", "flac", "mp3"]).has(fmt)) {
+    throw new Error(`Unsupported export format: ${format}`);
+  }
+
+  const tasks: ExportTask[] = [];
+  for (const [stemRaw, inputFile] of Object.entries(sourceFiles || {})) {
+    const stem = sanitizeForPathSegment(stemRaw || "stem") || "stem";
+    if (!inputFile || typeof inputFile !== "string") continue;
+    const sourceFile = await resolveExistingAudioSource(inputFile);
+    const sourceProfile = await probeAudioFile(sourceFile);
+    const sourceExt = path.extname(sourceFile || "").toLowerCase();
+    const outFile = uniqueOutputFile(exportPath, stem, fmt);
+    const mode: ExportMode =
+      (fmt === "wav" && sourceExt === ".wav") ||
+      (fmt === "flac" && sourceExt === ".flac")
+        ? "copy"
+        : "transcode";
+
+    let estimatedOutputBytes = 0;
+    try {
+      estimatedOutputBytes =
+        mode === "copy"
+          ? fs.statSync(sourceFile).size
+          : fmt === "mp3"
+            ? estimateMp3Bytes(sourceProfile.durationSeconds, bitrate)
+            : Math.ceil(fs.statSync(sourceFile).size * 0.8);
+    } catch {
+      estimatedOutputBytes = 50 * 1024 * 1024;
+    }
+
+    tasks.push({
+      stemRaw,
+      stem,
+      sourceFile,
+      sourceProfile,
+      outFile,
+      format: fmt as ExportTask["format"],
+      bitrate,
+      mode,
+      estimatedOutputBytes,
+    });
+  }
+
+  if (tasks.length === 0) {
+    throw new Error("No files were exported (no valid source files)");
+  }
+
+  return tasks;
+}
+
+async function exportFilesLocal({
+  sourceFiles,
+  exportPath,
+  format,
+  bitrate,
+  requestId,
+}: {
+  sourceFiles: Record<string, string>;
+  exportPath: string;
+  format: string;
+  bitrate: string;
+  requestId: string;
+}): Promise<{ exported: Record<string, string> }> {
+  if (!exportPath || typeof exportPath !== "string") {
+    throw new Error("Missing exportPath");
+  }
+
+  ensureWritableDirectory(exportPath);
+  await ensureBinaryAvailable(getFfmpegExe(), "ffmpeg");
+  await ensureBinaryAvailable(getFfprobeExe(), "ffprobe");
+
+  emitExportProgress({
+    requestId,
+    status: "preflight",
+    totalProgress: 0,
+    detail: "Validating sources and export destination...",
+    format: String(format || "wav").toLowerCase(),
+  });
+
+  const tasks = await buildExportTasks({ sourceFiles, exportPath, format, bitrate });
+  const estimatedTotalBytes = tasks.reduce(
+    (sum, task) => sum + task.estimatedOutputBytes,
+    0,
+  );
+  const availableDiskBytes = getAvailableDiskBytes(exportPath);
+  if (
+    availableDiskBytes !== null &&
+    estimatedTotalBytes > 0 &&
+    availableDiskBytes < estimatedTotalBytes
+  ) {
+    throw new Error(
+      `Not enough free disk space for export. Required ~${Math.ceil(
+        estimatedTotalBytes / (1024 * 1024),
+      )} MB, available ~${Math.ceil(availableDiskBytes / (1024 * 1024))} MB.`,
+    );
+  }
+
+  const exported: Record<string, string> = {};
+  let completedWeight = 0;
+  const totalWeight = tasks.reduce(
+    (sum, task) => sum + Math.max(task.estimatedOutputBytes, 1),
+    0,
+  );
+
+  for (let index = 0; index < tasks.length; index++) {
+    const task = tasks[index];
+    const taskWeight = Math.max(task.estimatedOutputBytes, 1);
+
+    emitExportProgress({
+      requestId,
+      status: task.mode === "copy" ? "copying" : "transcoding",
+      stem: task.stemRaw,
+      fileIndex: index + 1,
+      fileCount: tasks.length,
+      fileProgress: 0,
+      totalProgress:
+        totalWeight > 0 ? (completedWeight / totalWeight) * 100 : 0,
+      detail:
+        task.mode === "copy"
+          ? `Copying ${task.stemRaw}...`
+          : `Transcoding ${task.stemRaw} to ${task.format.toUpperCase()}...`,
+      format: task.format,
+      outputPath: task.outFile,
+    });
+
+    if (task.mode === "copy") {
+      fs.copyFileSync(task.sourceFile, task.outFile);
+      emitExportProgress({
+        requestId,
+        status: "copying",
+        stem: task.stemRaw,
+        fileIndex: index + 1,
+        fileCount: tasks.length,
+        fileProgress: 100,
+        totalProgress:
+          totalWeight > 0
+            ? ((completedWeight + taskWeight) / totalWeight) * 100
+            : 100,
+        detail: `Copied ${task.stemRaw}`,
+        format: task.format,
+        outputPath: task.outFile,
+      });
+    } else if (task.format === "flac") {
+      await runFfmpegWithProgress(
+        [
+          "-y",
+          "-hide_banner",
+          "-loglevel",
+          "error",
+          "-i",
+          task.sourceFile,
+          "-vn",
+          "-map_metadata",
+          "0",
+          "-c:a",
+          "flac",
+          "-compression_level",
+          "5",
+          task.outFile,
+        ],
+        task.sourceProfile.durationSeconds,
+        (fileProgress) => {
+          emitExportProgress({
+            requestId,
+            status: "transcoding",
+            stem: task.stemRaw,
+            fileIndex: index + 1,
+            fileCount: tasks.length,
+            fileProgress: fileProgress * 100,
+            totalProgress:
+              totalWeight > 0
+                ? ((completedWeight + taskWeight * fileProgress) / totalWeight) *
+                  100
+                : fileProgress * 100,
+            detail: `Transcoding ${task.stemRaw} to FLAC...`,
+            format: task.format,
+            outputPath: task.outFile,
+          });
+        },
+      );
+    } else if (task.format === "mp3") {
+      const br = String(task.bitrate || "320k");
+      await runFfmpegWithProgress(
+        [
+          "-y",
+          "-hide_banner",
+          "-loglevel",
+          "error",
+          "-i",
+          task.sourceFile,
+          "-vn",
+          "-map_metadata",
+          "0",
+          "-c:a",
+          "libmp3lame",
+          "-b:a",
+          br,
+          task.outFile,
+        ],
+        task.sourceProfile.durationSeconds,
+        (fileProgress) => {
+          emitExportProgress({
+            requestId,
+            status: "transcoding",
+            stem: task.stemRaw,
+            fileIndex: index + 1,
+            fileCount: tasks.length,
+            fileProgress: fileProgress * 100,
+            totalProgress:
+              totalWeight > 0
+                ? ((completedWeight + taskWeight * fileProgress) / totalWeight) *
+                  100
+                : fileProgress * 100,
+            detail: `Transcoding ${task.stemRaw} to MP3...`,
+            format: task.format,
+            outputPath: task.outFile,
+          });
+        },
+      );
+    } else {
+      throw new Error(`Unsupported export path for format ${task.format}`);
+    }
+
+    completedWeight += taskWeight;
+    exported[task.stemRaw] = task.outFile;
+  }
+
+  emitExportProgress({
+    requestId,
+    status: "completed",
+    fileCount: tasks.length,
+    totalProgress: 100,
+    detail: "Export complete",
+    format: String(format || "wav").toLowerCase(),
+  });
+
+  return { exported };
 }
 
 function getPreviewCacheBaseDir() {
@@ -315,144 +991,6 @@ function resolveMissingPreviewAudioPath(missingPath: string): string | null {
   } catch {
     return null;
   }
-}
-
-async function ensureWavInput(inputFile: string, previewDir: string): Promise<string> {
-  const ext = path.extname(inputFile || "").toLowerCase();
-  if (ext === ".wav") return inputFile;
-
-  // Stage a decoded WAV into the preview dir so the backend only ever sees WAV.
-  const staged = path.join(previewDir, `input_${shortHash(inputFile)}.wav`);
-  if (fs.existsSync(staged)) return staged;
-
-  await runFfmpeg([
-    "-y",
-    "-hide_banner",
-    "-loglevel",
-    "error",
-    "-i",
-    inputFile,
-    "-vn",
-    "-c:a",
-    "pcm_s16le",
-    staged,
-  ]);
-
-  if (!fs.existsSync(staged)) {
-    throw new Error("Decoded WAV was not created.");
-  }
-
-  return staged;
-}
-
-async function exportFilesLocal({
-  sourceFiles,
-  exportPath,
-  format,
-  bitrate,
-}: {
-  sourceFiles: Record<string, string>;
-  exportPath: string;
-  format: string;
-  bitrate: string;
-}): Promise<{ exported: Record<string, string> }>{
-  if (!exportPath || typeof exportPath !== "string") {
-    throw new Error("Missing exportPath");
-  }
-  safeMkdir(exportPath);
-
-  const fmt = String(format || "wav").toLowerCase();
-  if (!new Set(["wav", "flac", "mp3"]).has(fmt)) {
-    throw new Error(`Unsupported export format: ${format}`);
-  }
-
-  const exported: Record<string, string> = {};
-
-  const entries = Object.entries(sourceFiles || {});
-  for (const [stemRaw, inputFile] of entries) {
-    const stem = sanitizeForPathSegment(stemRaw || "stem") || "stem";
-    if (!inputFile || typeof inputFile !== "string") continue;
-    let resolvedInputFile = inputFile;
-    if (!fs.existsSync(resolvedInputFile)) {
-      const fallback = resolveMissingPreviewAudioPath(resolvedInputFile);
-      if (fallback && fs.existsSync(fallback)) {
-        log("[export-files] resolved missing source path", {
-          stem: stemRaw,
-          from: inputFile,
-          to: fallback,
-        });
-        resolvedInputFile = fallback;
-      }
-    }
-    if (!fs.existsSync(resolvedInputFile)) {
-      const missing = classifyMissingAudioPath(inputFile);
-      throw createCodedError(
-        missing.code,
-        `Source file missing for '${stemRaw}': ${inputFile}. ${missing.hint}`,
-        missing.hint,
-        {
-          filePath: inputFile,
-          stem: stemRaw,
-        },
-      );
-    }
-
-    const outBase = stem;
-    let outFile = path.join(exportPath, `${outBase}.${fmt}`);
-    for (let i = 2; fs.existsSync(outFile); i++) {
-      outFile = path.join(exportPath, `${outBase}_${i}.${fmt}`);
-    }
-
-    const inExt = path.extname(resolvedInputFile || "").toLowerCase();
-    if (fmt === "wav" && inExt === ".wav") {
-      fs.copyFileSync(resolvedInputFile, outFile);
-      exported[stemRaw] = outFile;
-      continue;
-    }
-
-    if (fmt === "flac") {
-      await runFfmpeg([
-        "-y",
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-i",
-        resolvedInputFile,
-        "-vn",
-        "-c:a",
-        "flac",
-        outFile,
-      ]);
-      exported[stemRaw] = outFile;
-      continue;
-    }
-
-    if (fmt === "mp3") {
-      const br = String(bitrate || "320k");
-      await runFfmpeg([
-        "-y",
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-i",
-        resolvedInputFile,
-        "-vn",
-        "-c:a",
-        "libmp3lame",
-        "-b:a",
-        br,
-        outFile,
-      ]);
-      exported[stemRaw] = outFile;
-      continue;
-    }
-  }
-
-  if (Object.keys(exported).length === 0) {
-    throw new Error("No files were exported (no valid source files)");
-  }
-
-  return { exported };
 }
 
 function cleanupPreviewCache() {
@@ -1317,6 +1855,11 @@ const modelInfoByJobId = new Map<
     requestedModelId: string;
     effectiveModelId: string;
     inputFile: string;
+    finalOutputDir: string;
+    previewDir: string;
+    sourceAudioProfile?: AudioSourceProfile;
+    stagingDecision?: SourceStagingDecision;
+    outputFiles?: Record<string, string>;
   }
 >();
 
@@ -1862,6 +2405,117 @@ function emitBackendEvent(msg: any) {
   }
 }
 
+function extractChunkCounters(message: string | undefined): {
+  chunksDone?: number;
+  chunksTotal?: number;
+} {
+  const text = String(message || "");
+  const match = text.match(
+    /\b(?:chunk|chunks|segment|segments)\D+(\d+)\D+(\d+)\b/i,
+  );
+  if (!match) return {};
+
+  const chunksDone = Number(match[1]);
+  const chunksTotal = Number(match[2]);
+  if (!Number.isFinite(chunksDone) || !Number.isFinite(chunksTotal)) {
+    return {};
+  }
+  return { chunksDone, chunksTotal };
+}
+
+function getStepLabelFromMeta(
+  meta: Record<string, any> | undefined,
+): string | undefined {
+  if (!meta || typeof meta !== "object") return undefined;
+  const step =
+    meta.step && typeof meta.step === "object"
+      ? (meta.step as Record<string, any>)
+      : undefined;
+  const phase = typeof meta.phase === "string" ? meta.phase : undefined;
+  const stepName =
+    step && typeof step.name === "string" && step.name.trim()
+      ? step.name.trim()
+      : undefined;
+  const modelId =
+    step && typeof step.model_id === "string" && step.model_id.trim()
+      ? step.model_id.trim()
+      : undefined;
+
+  if (stepName && modelId) return `${stepName} (${modelId})`;
+  if (stepName) return stepName;
+  if (modelId) return modelId;
+  if (!phase) return undefined;
+  return phase
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function emitNormalizedSeparationEvent(msg: any) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const type = String(msg?.type || "");
+  const jobId = typeof msg?.job_id === "string" ? msg.job_id : undefined;
+  if (!jobId) return;
+
+  const meta =
+    msg?.meta && typeof msg.meta === "object"
+      ? (msg.meta as Record<string, any>)
+      : undefined;
+  const step =
+    meta?.step && typeof meta.step === "object"
+      ? (meta.step as Record<string, any>)
+      : undefined;
+  const progress = Number(msg?.progress);
+  const durationSeconds = Number(msg?.duration_seconds);
+  const { chunksDone, chunksTotal } = extractChunkCounters(
+    typeof msg?.message === "string" ? msg.message : undefined,
+  );
+
+  mainWindow.webContents.send("separation-progress-event", {
+    jobId,
+    kind:
+      type === "separation_step_started"
+        ? "step_started"
+        : type === "separation_step_completed"
+          ? "step_completed"
+          : type === "separation_complete"
+            ? "completed"
+            : type === "separation_cancelled"
+              ? "cancelled"
+            : type === "separation_error"
+              ? "error"
+              : type === "separation_started"
+                ? "job_started"
+                : "progress",
+    progress: Number.isFinite(progress) ? progress : undefined,
+    message: typeof msg?.message === "string" ? msg.message : undefined,
+    phase: typeof meta?.phase === "string" ? meta.phase : undefined,
+    stepId:
+      step && (typeof step.index === "number" || typeof step.index === "string")
+        ? `${meta?.phase || "step"}:${String(step.index)}:${String(step.model_id || step.name || "")}`
+        : undefined,
+    stepLabel: getStepLabelFromMeta(meta),
+    stepIndex:
+      step && Number.isFinite(Number(step.index)) ? Number(step.index) : undefined,
+    stepCount:
+      step && Number.isFinite(Number(step.total)) ? Number(step.total) : undefined,
+    modelId:
+      step && typeof step.model_id === "string" ? step.model_id : undefined,
+    chunksDone,
+    chunksTotal,
+    elapsedMs:
+      Number.isFinite(durationSeconds) && durationSeconds >= 0
+        ? Math.round(durationSeconds * 1000)
+        : undefined,
+    ts:
+      Number.isFinite(Number(msg?.ts)) && Number(msg.ts) > 0
+        ? Number(msg.ts)
+        : undefined,
+    meta,
+    error: typeof msg?.error === "string" ? msg.error : undefined,
+  });
+}
+
 function rejectAllPendingBackendCommands(error: Error) {
   for (const [key, pending] of Array.from(pendingBackendCommands.entries())) {
     clearTimeout(pending.timeout);
@@ -1954,12 +2608,27 @@ function routeBackendMessage(msg: any) {
       progress: clamped,
       message: msg.message,
       device: msg.device,
+      meta: msg.meta,
     });
+    emitNormalizedSeparationEvent({
+      ...msg,
+      progress: clamped,
+    });
+  } else if (
+    (msg?.type === "separation_step_started" ||
+      msg?.type === "separation_step_completed" ||
+      msg?.type === "separation_started") &&
+    msg?.job_id &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    emitNormalizedSeparationEvent(msg);
   } else if (
     msg?.type === "separation_error" &&
     mainWindow &&
     !mainWindow.isDestroyed()
   ) {
+    emitNormalizedSeparationEvent(msg);
     if (msg?.job_id) {
       lastProgressByJobId.delete(msg.job_id);
       modelInfoByJobId.delete(msg.job_id);
@@ -1969,13 +2638,32 @@ function routeBackendMessage(msg: any) {
       error: msg.error || "Separation failed",
     });
   } else if (
+    msg?.type === "separation_cancelled" &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    emitNormalizedSeparationEvent({
+      ...msg,
+      type: "separation_cancelled",
+    });
+    if (msg?.job_id) {
+      lastProgressByJobId.delete(msg.job_id);
+      modelInfoByJobId.delete(msg.job_id);
+    }
+  } else if (
     msg?.type === "separation_complete" &&
     mainWindow &&
     !mainWindow.isDestroyed()
   ) {
     if (msg?.job_id) {
+      const state = modelInfoByJobId.get(msg.job_id);
+      if (state) {
+        state.outputFiles = msg.output_files || {};
+      }
+    }
+    emitNormalizedSeparationEvent(msg);
+    if (msg?.job_id) {
       lastProgressByJobId.delete(msg.job_id);
-      modelInfoByJobId.delete(msg.job_id);
     }
     mainWindow.webContents.send("separation-complete", {
       outputFiles: msg.output_files,
@@ -2300,13 +2988,17 @@ ipcMain.handle(
     // Ensure model id is always valid (never null/undefined), and normalize ensembles.
     const effectiveModelId = resolveEffectiveModelId(modelId, ensembleConfig);
 
-    // Ensure backend receives WAV input even if user dropped MP3/FLAC/M4A.
-    const effectiveInputFile = await ensureWavInput(inputFile, previewDir);
+    // Ensure backend receives WAV input even if user dropped MP3/FLAC/M4A,
+    // while preserving lossless precision when possible.
+    const stagedInput = await ensureWavInput(inputFile, previewDir);
+    const effectiveInputFile = stagedInput.effectiveInputFile;
     log("[separate-audio] staging-ready", {
       requestId,
       effectiveModelId,
       previewDir,
       effectiveInputFile,
+      sourceAudioProfile: stagedInput.sourceAudioProfile,
+      stagingDecision: stagedInput.stagingDecision,
     });
 
     return new Promise((resolve, reject) => {
@@ -2347,6 +3039,9 @@ ipcMain.handle(
           outputFiles: msg.output_files,
           jobId: msg.job_id,
           outputDir: previewDir,
+          sourceAudioProfile: stagedInput.sourceAudioProfile,
+          stagingDecision: stagedInput.stagingDecision,
+          playbackSourceKind: "preview_cache",
         });
       };
 
@@ -2399,6 +3094,10 @@ ipcMain.handle(
             requestedModelId: String(modelId || ""),
             effectiveModelId: String(effectiveModelId || ""),
             inputFile: String(inputFile || ""),
+            finalOutputDir: String(outputDir || ""),
+            previewDir,
+            sourceAudioProfile: stagedInput.sourceAudioProfile,
+            stagingDecision: stagedInput.stagingDecision,
           });
           lastProgressByJobId.set(myJobId, 0);
           if (mainWindow && !mainWindow.isDestroyed()) {
@@ -2466,7 +3165,45 @@ ipcMain.handle("cancel-separation", async (event, jobId: string) => {
 
 // Save/Discard output
 ipcMain.handle("save-job-output", async (event, jobId: string) => {
-  return sendPythonCommand("save_output", { job_id: jobId });
+  const jobState = modelInfoByJobId.get(jobId);
+  if (!jobState?.outputFiles || Object.keys(jobState.outputFiles).length === 0) {
+    return sendPythonCommand("save_output", { job_id: jobId });
+  }
+  if (!jobState.finalOutputDir) {
+    return {
+      success: false,
+      error: "No final output directory is configured for this separation.",
+    };
+  }
+
+  const requestId = `save-${jobId}`;
+  try {
+    const res = await exportFilesLocal({
+      sourceFiles: jobState.outputFiles,
+      exportPath: jobState.finalOutputDir,
+      format: "wav",
+      bitrate: "320k",
+      requestId,
+    });
+    jobState.outputFiles = res.exported;
+    return {
+      success: true,
+      outputFiles: res.exported,
+      sourceAudioProfile: jobState.sourceAudioProfile,
+      stagingDecision: jobState.stagingDecision,
+    };
+  } catch (error: any) {
+    emitExportProgress({
+      requestId,
+      status: "failed",
+      error: error?.message || String(error),
+      totalProgress: 0,
+    });
+    return {
+      success: false,
+      error: error?.message || String(error),
+    };
+  }
 });
 
 ipcMain.handle(
@@ -2478,19 +3215,70 @@ ipcMain.handle(
       exportPath,
       format,
       bitrate,
-    }: { jobId: string; exportPath: string; format: string; bitrate: string },
+      requestId,
+    }: {
+      jobId: string;
+      exportPath: string;
+      format: string;
+      bitrate: string;
+      requestId?: string;
+    },
   ) => {
-    return sendPythonCommand("export_output", {
-      job_id: jobId,
-      export_path: exportPath,
-      format,
-      bitrate,
-    });
+    const jobState = modelInfoByJobId.get(jobId);
+    const sourceFiles = jobState?.outputFiles;
+    if (!sourceFiles || Object.keys(sourceFiles).length === 0) {
+      return sendPythonCommand("export_output", {
+        job_id: jobId,
+        export_path: exportPath,
+        format,
+        bitrate,
+      });
+    }
+
+    const resolvedRequestId = requestId || randomUUID().slice(0, 8);
+    try {
+      const res = await exportFilesLocal({
+        sourceFiles,
+        exportPath,
+        format,
+        bitrate,
+        requestId: resolvedRequestId,
+      });
+      return {
+        success: true,
+        exported: res.exported,
+        requestId: resolvedRequestId,
+        sourceAudioProfile: jobState.sourceAudioProfile,
+        stagingDecision: jobState.stagingDecision,
+      };
+    } catch (error: any) {
+      emitExportProgress({
+        requestId: resolvedRequestId,
+        status: "failed",
+        error: error?.message || String(error),
+      });
+      return {
+        success: false,
+        error: error?.message || String(error),
+        requestId: resolvedRequestId,
+      };
+    }
   },
 );
 
 ipcMain.handle("discard-job-output", async (event, jobId: string) => {
-  return sendPythonCommand("discard_output", { job_id: jobId });
+  try {
+    const result = await sendPythonCommand("discard_output", { job_id: jobId });
+    if (result?.success !== false) {
+      modelInfoByJobId.delete(jobId);
+      lastProgressByJobId.delete(jobId);
+    }
+    return result;
+  } catch (error) {
+    modelInfoByJobId.delete(jobId);
+    lastProgressByJobId.delete(jobId);
+    throw error;
+  }
 });
 
 // Export files directly from paths (bypasses job registry - for historical exports)
@@ -2503,36 +3291,50 @@ ipcMain.handle(
       exportPath,
       format,
       bitrate,
+      requestId,
     }: {
       sourceFiles: Record<string, string>;
       exportPath: string;
       format: string;
       bitrate: string;
+      requestId?: string;
     },
   ) => {
-    const requestId = randomUUID().slice(0, 8);
+    const resolvedRequestId = requestId || randomUUID().slice(0, 8);
     // Export is a pure file operation (copy/transcode) and should not require a backend.
     // This also avoids failures when the legacy python-bridge proxy is not present.
     log("[export-files] local export requested", {
-      requestId,
+      requestId: resolvedRequestId,
       stems: Object.keys(sourceFiles || {}),
       exportPath,
       format,
       bitrate,
     });
     try {
-      const res = await exportFilesLocal({ sourceFiles, exportPath, format, bitrate });
+      const res = await exportFilesLocal({
+        sourceFiles,
+        exportPath,
+        format,
+        bitrate,
+        requestId: resolvedRequestId,
+      });
       log("[export-files] local export complete", {
-        requestId,
+        requestId: resolvedRequestId,
         exported: Object.keys(res?.exported || {}),
       });
       return {
         success: true,
         exported: res.exported,
+        requestId: resolvedRequestId,
       };
     } catch (e: any) {
+      emitExportProgress({
+        requestId: resolvedRequestId,
+        status: "failed",
+        error: e?.message || String(e),
+      });
       log("[export-files] local export FAILED", {
-        requestId,
+        requestId: resolvedRequestId,
         error: e?.message || String(e),
       });
       return {
@@ -2542,6 +3344,7 @@ ipcMain.handle(
         hint:
           e?.hint ||
           "Export source is unavailable. Run a new separation to refresh cache files.",
+        requestId: resolvedRequestId,
       };
     }
   },
@@ -2816,9 +3619,10 @@ ipcMain.handle(
     // Preflight should mirror the real run: normalize model id and stage non-WAV inputs to WAV.
     const previewDir = createPreviewDirForInput(inputFile);
     const effectiveModelId = resolveEffectiveModelId(modelId, ensembleConfig);
-    const effectiveInputFile = await ensureWavInput(inputFile, previewDir);
+    const stagedInput = await ensureWavInput(inputFile, previewDir);
+    const effectiveInputFile = stagedInput.effectiveInputFile;
 
-    return sendPythonCommandWithRetry(
+    const result = await sendPythonCommandWithRetry(
       "separation_preflight",
       {
         file_path: effectiveInputFile,
@@ -2843,6 +3647,12 @@ ipcMain.handle(
       },
       30000,
     );
+
+    return {
+      ...result,
+      sourceAudioProfile: stagedInput.sourceAudioProfile,
+      stagingDecision: stagedInput.stagingDecision,
+    };
   },
 );
 

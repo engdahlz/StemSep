@@ -55,6 +55,7 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
   const [downloadedFilter, setDownloadedFilter] = useState<string>("all");
   const [archFilter, setArchFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [catalogFilter, setCatalogFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
   // Tag filtering
@@ -80,6 +81,7 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
       setDownloadedFilter("all");
       setArchFilter("all");
       setSourceFilter("all");
+      setCatalogFilter("all");
       setTagFilter("all");
 
       setSelectedModels(new Set([preSelectedModel]));
@@ -115,6 +117,7 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
       setDownloadedFilter("all");
       setArchFilter("all");
       setSourceFilter("all");
+      setCatalogFilter("all");
       setTagFilter("all");
 
       setSelectedModels(new Set(ids));
@@ -295,6 +298,14 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
         downloadedFilter === "all" ||
         (downloadedFilter === "downloaded" && model.installed) ||
         (downloadedFilter === "not-downloaded" && !model.installed);
+      const matchesCatalog =
+        catalogFilter === "all" ||
+        (catalogFilter === "verified" && model.catalog_status === "verified") ||
+        (catalogFilter === "candidate" &&
+          (model.catalog_status === "candidate" ||
+            model.catalog_status === "manual_only" ||
+            model.catalog_status === "online_only")) ||
+        (catalogFilter === "blocked" && model.catalog_status === "blocked");
 
       const normalizedTagFilter = normalizeTag(tagFilter) ?? "all";
       const modelTags = getModelTags(model as any);
@@ -307,6 +318,7 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
         matchesCategory &&
         matchesSpeed &&
         matchesDownloaded &&
+        matchesCatalog &&
         matchesArch &&
         matchesSource &&
         matchesTag
@@ -318,6 +330,7 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
     categoryFilter,
     speedFilter,
     downloadedFilter,
+    catalogFilter,
     archFilter,
     sourceFilter,
     tagFilter,
@@ -694,6 +707,33 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
                 Available
               </button>
             </div>
+
+            <div className="flex bg-background border border-border/50 p-1">
+              <button
+                onClick={() => setCatalogFilter("all")}
+                className={`px-3 py-1 text-xs rounded-sm transition-colors ${catalogFilter === "all" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setCatalogFilter("verified")}
+                className={`px-3 py-1 text-xs rounded-sm transition-colors ${catalogFilter === "verified" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+              >
+                Verified
+              </button>
+              <button
+                onClick={() => setCatalogFilter("candidate")}
+                className={`px-3 py-1 text-xs rounded-sm transition-colors ${catalogFilter === "candidate" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+              >
+                Candidates
+              </button>
+              <button
+                onClick={() => setCatalogFilter("blocked")}
+                className={`px-3 py-1 text-xs rounded-sm transition-colors ${catalogFilter === "blocked" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+              >
+                Blocked
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -715,6 +755,7 @@ export function ModelsPage({ preSelectedModel, onBack }: ModelsPageProps) {
                 setCategoryFilter("all");
                 setArchFilter("all");
                 setSourceFilter("all");
+                setCatalogFilter("all");
                 setTagFilter("all");
               }}
             >

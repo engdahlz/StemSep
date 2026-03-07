@@ -2,6 +2,10 @@
 
 type VolumeCompensation = import('./types/separation').VolumeCompensation
 type Recipe = import('./types/recipes').Recipe
+type SourceAudioProfile = import('./types/media').SourceAudioProfile
+type StagingDecision = import('./types/media').StagingDecision
+type SeparationProgressEvent = import('./types/media').SeparationProgressEvent
+type ExportProgressEvent = import('./types/media').ExportProgressEvent
 
 type MissingAudioCode = 'MISSING_CACHE_FILE' | 'STALE_SESSION' | 'MISSING_SOURCE_FILE'
 
@@ -10,8 +14,15 @@ type ReadAudioFileResult =
     | { success: false; error: string; code?: MissingAudioCode; hint?: string }
 
 type ExportFilesResult =
-    | { success: true; exported: Record<string, string> }
-    | { success: false; error: string; code?: MissingAudioCode; hint?: string }
+    | {
+        success: true
+        exported: Record<string, string>
+        requestId?: string
+        outputFiles?: Record<string, string>
+        sourceAudioProfile?: SourceAudioProfile
+        stagingDecision?: StagingDecision
+      }
+    | { success: false; error: string; code?: MissingAudioCode; hint?: string; requestId?: string }
 
 interface SystemRuntimeInfo {
     fetchedAt: string
@@ -71,7 +82,7 @@ interface ElectronAPI {
         phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number },
         postProcessingSteps?: any[],
         volumeCompensation?: VolumeCompensation
-    ) => Promise<any>
+    ) => Promise<any & { sourceAudioProfile?: SourceAudioProfile; stagingDecision?: StagingDecision }>
     separateAudio: (
         inputFile: string,
         modelId: string,
@@ -91,19 +102,36 @@ interface ElectronAPI {
         phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number },
         postProcessingSteps?: any[],
         volumeCompensation?: VolumeCompensation
-    ) => Promise<{ success: boolean; outputFiles: Record<string, string>; jobId?: string; error?: string }>
+    ) => Promise<{
+        success: boolean
+        outputFiles: Record<string, string>
+        jobId?: string
+        error?: string
+        outputDir?: string
+        playbackSourceKind?: string
+        sourceAudioProfile?: SourceAudioProfile
+        stagingDecision?: StagingDecision
+      }>
     cancelSeparation: (jobId: string) => Promise<any>
-    saveJobOutput: (jobId: string) => Promise<{ success: boolean; outputFiles?: Record<string, string>; error?: string }>
+    saveJobOutput: (jobId: string) => Promise<{
+        success: boolean
+        outputFiles?: Record<string, string>
+        error?: string
+        sourceAudioProfile?: SourceAudioProfile
+        stagingDecision?: StagingDecision
+      }>
     discardJobOutput: (jobId: string) => Promise<{ success: boolean; error?: string }>
     pauseQueue: () => Promise<void>
     resumeQueue: () => Promise<void>
     reorderQueue: (jobIds: string[]) => Promise<void>
-    exportOutput: (jobId: string, exportPath: string, format: string, bitrate: string) => Promise<{ success: boolean; error?: string }>
-    exportFiles: (sourceFiles: Record<string, string>, exportPath: string, format: string, bitrate: string) => Promise<ExportFilesResult>
-    onSeparationProgress: (callback: (data: { progress: number; message: string; jobId?: string }) => void) => () => void
+    exportOutput: (jobId: string, exportPath: string, format: string, bitrate: string, requestId?: string) => Promise<ExportFilesResult>
+    exportFiles: (sourceFiles: Record<string, string>, exportPath: string, format: string, bitrate: string, requestId?: string) => Promise<ExportFilesResult>
+    onSeparationProgress: (callback: (data: { progress: number; message: string; jobId?: string; meta?: Record<string, any> }) => void) => () => void
+    onSeparationEvent: (callback: (data: SeparationProgressEvent) => void) => () => void
     onSeparationStarted: (callback: (data: { jobId: string }) => void) => () => void
     onSeparationComplete: (callback: (data: { outputFiles: Record<string, string> }) => void) => () => void
     onSeparationError: (callback: (data: { error: string }) => void) => () => void
+    onExportProgress: (callback: (data: ExportProgressEvent) => void) => () => void
 
     // Model operations
     getModels: () => Promise<any[]>
@@ -155,6 +183,7 @@ interface ElectronAPI {
 
     // External links
     openExternalUrl: (url: string) => Promise<boolean>
+    resolveMediaUrl?: (filePath: string) => string
 }
 
 interface Window {

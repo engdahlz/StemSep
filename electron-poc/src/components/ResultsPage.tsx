@@ -58,11 +58,20 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
 
     const activeSession = sessionToLoad || (completedItems.length > 0 ? completedItems[0] : null)
     const previewCacheFragment = '/cache/previews/'
-    const isEphemeralSession = !!activeSession?.outputFiles &&
+    const isEphemeralSession = activeSession?.playback?.sourceKind === 'preview_cache' || (!!activeSession?.outputFiles &&
         Object.values(activeSession.outputFiles).some((filePath) => {
             const normalized = String(filePath || '').split('\\').join('/').toLowerCase()
             return normalized.includes(previewCacheFragment)
-        })
+        }))
+    const profile = activeSession?.sourceAudioProfile
+    const sourceProfileLabel = profile
+        ? [
+            profile.codec?.toUpperCase(),
+            profile.sampleRate ? `${Math.round(profile.sampleRate / 100) / 10} kHz` : null,
+            profile.bitDepth ? `${profile.bitDepth}-bit` : null,
+            profile.isLossless ? 'Lossless' : null,
+        ].filter(Boolean).join(' • ')
+        : null
 
     return (
         <PageShell scroll={false}>
@@ -240,6 +249,15 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
                                     <CardContent className="text-sm space-y-1 text-muted-foreground">
                                         <div className="truncate" title={activeSession.inputFile}>Input: {activeSession.inputFile}</div>
                                         <div className="truncate" title={activeSession.outputDir}>Output: {activeSession.outputDir}</div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="bg-card/30 backdrop-blur-sm">
+                                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Source</CardTitle></CardHeader>
+                                    <CardContent className="text-sm space-y-1 text-muted-foreground">
+                                        <div>{sourceProfileLabel || 'Profile unavailable'}</div>
+                                        {activeSession.stagingDecision?.reason && (
+                                            <div className="text-xs">{activeSession.stagingDecision.reason}</div>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </div>

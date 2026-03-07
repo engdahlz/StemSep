@@ -156,6 +156,57 @@ fn read_json_file(path: &Path) -> Result<Value> {
     serde_json::from_slice(&bytes).with_context(|| format!("parse {}", path.display()))
 }
 
+fn merge_json_value(base: &mut Value, overlay: &Value) {
+    match (base, overlay) {
+        (Value::Object(base_obj), Value::Object(overlay_obj)) => {
+            for (key, value) in overlay_obj {
+                if let Some(existing) = base_obj.get_mut(key) {
+                    merge_json_value(existing, value);
+                } else {
+                    base_obj.insert(key.clone(), value.clone());
+                }
+            }
+        }
+        (base_slot, overlay_value) => {
+            *base_slot = overlay_value.clone();
+        }
+    }
+}
+
+fn load_models_with_guide_overrides(cfg: &BackendConfig) -> Result<Value> {
+    let mut models_json = read_json_file(&cfg.assets_dir.join("models.json.bak"))?;
+    let overrides_path = cfg
+        .assets_dir
+        .join("registry")
+        .join("guide_model_overrides.json");
+
+    let overrides_json = match read_json_file(&overrides_path) {
+        Ok(v) => v,
+        Err(_) => return Ok(models_json),
+    };
+
+    let Some(models) = models_json.get_mut("models").and_then(|v| v.as_array_mut()) else {
+        return Ok(models_json);
+    };
+
+    let overrides_map = overrides_json
+        .get("models")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+
+    for model in models.iter_mut() {
+        let Some(id) = model.get("id").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        if let Some(overlay) = overrides_map.get(id) {
+            merge_json_value(model, overlay);
+        }
+    }
+
+    Ok(models_json)
+}
+
 fn load_model_id_aliases(cfg: &BackendConfig) -> Value {
     // Best-effort: aliases are optional and should never crash backend if missing/malformed
     let p = cfg
@@ -2800,7 +2851,7 @@ fn main() -> Result<()> {
                 send_ok(&stdout, req.id, runtime_fingerprint.clone())?;
             }
             "get_models" => {
-                let models_json = read_json_file(&cfg.assets_dir.join("models.json.bak"))?;
+                let models_json = load_models_with_guide_overrides(&cfg)?;
                 let models = models_json
                     .get("models")
                     .and_then(|v| v.as_array())
@@ -3227,6 +3278,8 @@ fn main() -> Result<()> {
                 let mut errors: Vec<String> = Vec::new();
                 let mut warnings: Vec<String> = Vec::new();
                 let mut missing_models: Vec<Value> = Vec::new();
+                let mut runtime_blocks: Vec<String> = Vec::new();
+                let mut recommended_adjustments: Vec<String> = Vec::new();
 
                 // Validate audio path (minimal: existence + WAV support note)
                 let audio_info = match file_path {
@@ -3260,8 +3313,7 @@ fn main() -> Result<()> {
                 // requested model(s) appear installed in models_dir (checkpoint/config with common extensions).
                 //
                 // The UI may send `model_id: "ensemble"` as a virtual ID when `ensemble_config` is present.
-                let models_json =
-                    read_json_file(&cfg.assets_dir.join("models.json.bak")).unwrap_or(Value::Null);
+                let models_json = load_models_with_guide_overrides(&cfg).unwrap_or(Value::Null);
                 let recipes_json =
                     read_json_file(&cfg.assets_dir.join("recipes.json")).unwrap_or(Value::Null);
 
@@ -3273,6 +3325,7 @@ fn main() -> Result<()> {
                 let mut recipe_step_model_ids: Vec<String> = Vec::new();
                 let mut recipe_type: Option<String> = None;
                 let mut recipe_plan: Option<Value> = None;
+                let mut recipe_meta: Option<Value> = None;
                 if let Some(id) = model_id {
                     if let Some(recipe) = recipes_json
                         .get("recipes")
@@ -3372,6 +3425,22 @@ fn main() -> Result<()> {
                         if let Some(defaults) = recipe.get("defaults") {
                             plan.insert("defaults".to_string(), defaults.clone());
                         }
+                        for key in [
+                            "quality_goal",
+                            "difficulty",
+                            "expected_vram_tier",
+                            "expected_runtime_tier",
+                            "guide_rank",
+                            "simple_surface",
+                            "simple_goal",
+                            "recommended_for",
+                            "contraindications",
+                            "workflow_summary",
+                        ] {
+                            if let Some(value) = recipe.get(key) {
+                                plan.insert(key.to_string(), value.clone());
+                            }
+                        }
                         if let Some(pp) = recipe.get("post_processing") {
                             plan.insert("post_processing".to_string(), pp.clone());
                         }
@@ -3379,6 +3448,7 @@ fn main() -> Result<()> {
                             plan.insert("steps".to_string(), Value::Array(steps_out));
                         }
                         recipe_plan = Some(Value::Object(plan));
+                        recipe_meta = Some(recipe.clone());
                     }
                 }
 
@@ -3402,7 +3472,7 @@ fn main() -> Result<()> {
                     if !recipe_step_model_ids.is_empty() {
                         // Treat as recipe id; validate referenced model_ids from steps.
                         requested_model_ids.extend(recipe_step_model_ids);
-                        if let Some(t) = recipe_type {
+                        if let Some(ref t) = recipe_type {
                             warnings.push(format!("Resolved model_id '{id}' as recipe (type={t})"));
                         } else {
                             warnings.push(format!("Resolved model_id '{id}' as recipe"));
@@ -3449,6 +3519,7 @@ fn main() -> Result<()> {
                 // For each referenced model_id, check if any expected local file exists.
                 // This mirrors Python's ability to load checkpoints/configs (ckpt/pth/yaml/onnx/etc).
                 let mut needs_fno_dependency = false;
+                let mut required_models_out: Vec<Value> = Vec::new();
                 for mid in &requested_model_ids {
                     let model_obj = models_json
                         .get("models")
@@ -3476,6 +3547,66 @@ fn main() -> Result<()> {
                     if !exists {
                         missing_models.push(Value::String(mid.clone()));
                     }
+
+                    let readiness = model_obj
+                        .get("status")
+                        .and_then(|v| v.get("readiness"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    let simple_allowed = model_obj
+                        .get("status")
+                        .and_then(|v| v.get("simple_allowed"))
+                        .and_then(|v| v.as_bool());
+                    let blocking_reason = model_obj
+                        .get("status")
+                        .and_then(|v| v.get("blocking_reason"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .or_else(|| {
+                            model_obj
+                                .get("runtime")
+                                .and_then(|v| v.get("blocking_reason"))
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string())
+                        });
+
+                    if matches!(readiness.as_deref(), Some("blocked") | Some("manual")) {
+                        runtime_blocks.push(format!(
+                            "{mid} is marked as {}",
+                            readiness.clone().unwrap_or_else(|| "blocked".to_string())
+                        ));
+                    }
+                    if simple_allowed == Some(false) {
+                        if let Some(reason) = &blocking_reason {
+                            recommended_adjustments.push(format!("{mid}: {reason}"));
+                        }
+                    }
+
+                    required_models_out.push(serde_json::json!({
+                        "id": mid,
+                        "name": model_obj.get("name").cloned().unwrap_or(Value::Null),
+                        "installed": exists,
+                        "guide_rank": model_obj.get("guide_rank").cloned().unwrap_or(Value::Null),
+                        "readiness": readiness,
+                        "simple_allowed": simple_allowed,
+                        "blocking_reason": blocking_reason,
+                        "runtime_variant": model_obj
+                            .get("runtime")
+                            .and_then(|v| v.get("variant"))
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                        "quality_tier": model_obj
+                            .get("quality_profile")
+                            .and_then(|v| v.get("quality_tier"))
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                        "target_roles": model_obj
+                            .get("quality_profile")
+                            .and_then(|v| v.get("target_roles"))
+                            .cloned()
+                            .unwrap_or(Value::Array(vec![])),
+                        "vram_required": model_obj.get("vram_required").cloned().unwrap_or(Value::Null)
+                    }));
                 }
 
                 if !missing_models.is_empty() {
@@ -3494,6 +3625,7 @@ fn main() -> Result<()> {
                 if needs_fno_dependency {
                     if let Err(e) = check_neuralop_available() {
                         errors.push(e.to_string());
+                        runtime_blocks.push("Missing neuralop.models.FNO1d support".to_string());
                     }
                 }
 
@@ -3521,6 +3653,7 @@ fn main() -> Result<()> {
 
                 if resolved_device.starts_with("cuda") && gpus.is_empty() {
                     errors.push("CUDA device requested but no GPUs were detected".to_string());
+                    runtime_blocks.push("CUDA requested with no detected GPU".to_string());
                 }
 
                 // Apply defaults similar to Python bridge.
@@ -3571,6 +3704,9 @@ fn main() -> Result<()> {
                             if resolved_segment_size > max_safe {
                                 warnings.push(format!("Reducing segment_size from {resolved_segment_size} to {max_safe} due to VRAM constraints ({vram_gb:.1} GB)"));
                                 resolved_segment_size = max_safe;
+                                recommended_adjustments.push(format!(
+                                    "Use segment_size={max_safe} for the selected GPU ({vram_gb:.1} GB VRAM)."
+                                ));
                             }
                         }
                     }
@@ -3581,6 +3717,87 @@ fn main() -> Result<()> {
 
                 let torch_available = check_torch_available();
                 let can_proceed = errors.is_empty();
+                let estimated_vram_gb = required_models_out
+                    .iter()
+                    .filter_map(|v| v.get("vram_required").and_then(|v| v.as_f64()))
+                    .fold(0.0_f64, f64::max);
+                let simple_surface = recipe_meta
+                    .as_ref()
+                    .and_then(|v| v.get("simple_surface"))
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                let difficulty = recipe_meta
+                    .as_ref()
+                    .and_then(|v| v.get("difficulty"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(if simple_surface { "simple" } else { "advanced" });
+                let should_use_simple = simple_surface && runtime_blocks.is_empty();
+                let should_use_advanced = !should_use_simple;
+                let workflow_name = recipe_meta
+                    .as_ref()
+                    .and_then(|v| v.get("name"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .or_else(|| {
+                        required_models_out
+                            .first()
+                            .and_then(|v| v.get("name"))
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string())
+                    });
+                let fallback_reason = if !runtime_blocks.is_empty() {
+                    Some("Runtime blockers prevent the preferred workflow from running as-is.")
+                } else if !missing_models.is_empty() {
+                    Some("Install the required models before running this workflow.")
+                } else {
+                    None
+                };
+
+                let plan = serde_json::json!({
+                    "workflow_name": workflow_name,
+                    "workflow_type": recipe_type.clone().unwrap_or_else(|| {
+                        if ensemble_cfg_val.is_some() { "ensemble".to_string() } else { "single".to_string() }
+                    }),
+                    "quality_goal": recipe_meta
+                        .as_ref()
+                        .and_then(|v| v.get("quality_goal"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                    "difficulty": difficulty,
+                    "simple_surface": simple_surface,
+                    "simple_goal": recipe_meta
+                        .as_ref()
+                        .and_then(|v| v.get("simple_goal"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                    "guide_rank": recipe_meta
+                        .as_ref()
+                        .and_then(|v| v.get("guide_rank"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                    "expected_vram_tier": recipe_meta
+                        .as_ref()
+                        .and_then(|v| v.get("expected_vram_tier"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                    "expected_runtime_tier": recipe_meta
+                        .as_ref()
+                        .and_then(|v| v.get("expected_runtime_tier"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                    "effective_model_id": if model_id_resolved.is_empty() { Value::Null } else { Value::String(model_id_resolved.clone()) },
+                    "effective_model_ids": requested_model_ids,
+                    "required_models": required_models_out,
+                    "runtime_blocks": runtime_blocks,
+                    "recommended_adjustments": recommended_adjustments,
+                    "estimated_vram_gb": estimated_vram_gb,
+                    "resolved_device": resolved_device.clone(),
+                    "resolved_overlap": resolved_overlap,
+                    "resolved_segment_size": resolved_segment_size,
+                    "fallback_reason": fallback_reason,
+                    "should_use_simple": should_use_simple,
+                    "should_use_advanced": should_use_advanced
+                });
                 let report = serde_json::json!({
                     "can_proceed": can_proceed,
                     "errors": errors,
@@ -3588,6 +3805,7 @@ fn main() -> Result<()> {
                     "audio": audio_info,
                     "missing_models": missing_models,
                     "torch_available": torch_available,
+                    "plan": plan,
                     "resolved": {
                         "model_id": if model_id_resolved.is_empty() { Value::Null } else { Value::String(model_id_resolved) },
                         "recipe": recipe_plan.unwrap_or(Value::Null),
@@ -3601,6 +3819,7 @@ fn main() -> Result<()> {
                         "bitrate": bitrate_req.map(Value::from).unwrap_or(Value::Null),
                         "output_format": output_format_req,
                         "ensemble_algorithm": ensemble_algorithm,
+                        "ensemble_config": ensemble_cfg_val.cloned().unwrap_or(Value::Null),
                         "phase_fix_enabled": phase_fix_enabled,
                         "phase_fix_params": phase_fix_params
                     },
@@ -3826,6 +4045,10 @@ fn main() -> Result<()> {
                             "sdr": m.get("sdr").cloned().unwrap_or(Value::Null),
                             "fullness": m.get("fullness").cloned().unwrap_or(Value::Null),
                             "bleedless": m.get("bleedless").cloned().unwrap_or(Value::Null),
+                            "card_metrics": m.get("card_metrics").cloned().unwrap_or(Value::Null),
+                            "catalog_status": m.get("catalog_status").cloned().unwrap_or(Value::Null),
+                            "metrics_status": m.get("metrics_status").cloned().unwrap_or(Value::Null),
+                            "metrics_evidence": m.get("metrics_evidence").cloned().unwrap_or(Value::Null),
                             "links": m.get("links").cloned().unwrap_or(Value::Null)
                         }),
                     )?;

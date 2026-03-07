@@ -17,10 +17,20 @@ import { ModelDetails } from "./ModelDetails";
 import { ALL_PRESETS, Preset } from "../presets";
 import { recipesToPresets } from "@/lib/recipePresets";
 import { resolveSeparationPlan } from "@/lib/separation/resolveSeparationPlan";
-import { recommendModelChain } from "@/lib/policy/recommendationPolicy";
+import {
+  recommendModelChain,
+  recommendWorkflowPreset,
+} from "@/lib/policy/recommendationPolicy";
 import MissingModelsDialog from "./dialogs/MissingModelsDialog";
 import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
 import { modelRequiresFnoRuntime } from "../lib/systemRuntime/modelRuntime";
+import {
+  buildSeparationBackendPayload,
+  executeSeparation,
+  executeSeparationPreflight,
+} from "@/lib/separation/backendPayload";
+import type { SeparationProgressEvent } from "@/types/media";
+import { queueUpdatesFromProgressEvent } from "@/lib/separation/progressEvent";
 
 // --- Constants & Types ---
 
@@ -65,7 +75,7 @@ export default function SeparatePage({
   const [isResolvingYoutube, setIsResolvingYoutube] = useState(false);
 
   const [selectedPreset, setSelectedPreset] =
-    useState<string>("best_instrumental");
+    useState<string>("workflow_phase_fix_instrumental");
   const [presetUserLocked, setPresetUserLocked] = useState(false);
   const [showPresetBrowser, setShowPresetBrowser] = useState(false);
   const [favoritePresetIds, setFavoritePresetIds] = useState<string[]>(() => {
@@ -156,6 +166,27 @@ export default function SeparatePage({
     if (!Array.isArray(models) || models.length === 0) return;
     if (!Array.isArray(combinedPresets) || combinedPresets.length === 0) return;
 
+    const workflowRec = recommendWorkflowPreset(
+      "instrumental",
+      combinedPresets,
+      models as any,
+      {
+        device: gpuVRAM > 0 ? "cuda:0" : "cpu",
+        vramGb: gpuVRAM,
+      },
+      {
+        fnoSupported:
+          runtimeInfo?.runtimeFingerprint?.neuralop?.fno1d_import_ok !== false,
+      },
+    );
+
+    if (!workflowRec.blocked && workflowRec.recommendedPresetId) {
+      if (workflowRec.recommendedPresetId !== selectedPreset) {
+        setSelectedPreset(workflowRec.recommendedPresetId);
+      }
+      return;
+    }
+
     const rec = recommendModelChain("instrumental", models as any, {
       device: gpuVRAM > 0 ? "cuda:0" : "cpu",
       vramGb: gpuVRAM,
@@ -183,7 +214,7 @@ export default function SeparatePage({
     if (pick && pick.id !== selectedPreset) {
       setSelectedPreset(pick.id);
     }
-  }, [combinedPresets, gpuVRAM, models, presetUserLocked, selectedPreset]);
+  }, [combinedPresets, gpuVRAM, models, presetUserLocked, runtimeInfo?.runtimeFingerprint?.neuralop?.fno1d_import_ok, selectedPreset]);
 
   const activeDetailsModel = useMemo(() => {
     return models.find((m) => m.id === detailsModelId) || null;
@@ -341,35 +372,32 @@ export default function SeparatePage({
   // --- Effects ---
 
   useEffect(() => {
-    const removeStartedListener = window.electronAPI?.onSeparationStarted?.(
-      (data) => {
-        const processingItem = queue.find((q) => q.status === "processing");
-        if (processingItem && data?.jobId && !processingItem.backendJobId) {
-          updateQueueItem(processingItem.id, { backendJobId: data.jobId });
+    const removeStructuredListener = window.electronAPI?.onSeparationEvent?.(
+      (data: SeparationProgressEvent) => {
+        if (typeof data.progress === "number" || data.message) {
+          setSeparationProgress(
+            typeof data.progress === "number"
+              ? data.progress
+              : useStore.getState().separation.progress,
+            data.message || useStore.getState().separation.message || "",
+          );
         }
-      },
-    );
 
-    const removeProgressListener = window.electronAPI?.onSeparationProgress(
-      (data) => {
-        setSeparationProgress(data.progress, data.message);
-        // Prefer matching by backend job id (more robust with multiple jobs).
         const byBackendId = data.jobId
           ? queue.find((q) => q.backendJobId === data.jobId)
           : undefined;
         const processingItem =
           byBackendId || queue.find((q) => q.status === "processing");
-        if (processingItem) {
-          // If we didn't know the backend job id yet, capture it from the first progress event.
-          if (data.jobId && !processingItem.backendJobId) {
-            updateQueueItem(processingItem.id, { backendJobId: data.jobId });
-          }
-          updateQueueItem(processingItem.id, {
-            progress: data.progress,
-            message: data.message,
-            lastProgressTime: Date.now(),
-          });
+        if (!processingItem) return;
+
+        const updates = queueUpdatesFromProgressEvent(processingItem, data);
+        if (data.jobId && !processingItem.backendJobId) {
+          updates.backendJobId = data.jobId;
         }
+        if (data.kind === "error" && data.message) {
+          updates.error = data.message;
+        }
+        updateQueueItem(processingItem.id, updates);
       },
     );
 
@@ -389,8 +417,7 @@ export default function SeparatePage({
     );
 
     return () => {
-      removeStartedListener?.();
-      removeProgressListener?.();
+      removeStructuredListener?.();
       removeCompleteListener?.();
       removeErrorListener?.();
     };
@@ -574,18 +601,6 @@ export default function SeparatePage({
       }
     }
 
-    const modelId = plan.effectiveModelId;
-    const stems = plan.effectiveStems;
-
-    const effectiveEnsembleConfig =
-      plan.effectiveModelId === "ensemble"
-        ? plan.effectiveEnsembleConfig
-        : undefined;
-
-    const effectiveGlobalPhaseParams = plan.effectiveGlobalPhaseParams;
-
-    const effectivePostProcessingSteps = plan.effectivePostProcessingSteps;
-
     // Update queue item to processing
     const queueItem = queue.find((q) => q.file === filePath);
     if (queueItem) {
@@ -602,68 +617,17 @@ export default function SeparatePage({
     addLog(`Starting separation of ${filePath.split(/[\\/]/).pop()}...`);
 
     try {
-      const resolveBackendOverlap = (value: unknown) => {
-        const n = typeof value === "number" ? value : Number(value);
-        if (!Number.isFinite(n)) return undefined;
-        if (n <= 0) return undefined;
-
-        // UI uses overlap as an integer divisor (2..50).
-        // Backend expects a 0..1 overlap ratio.
-        // divisor -> ratio: (n - 1) / n (e.g. 4 -> 0.75)
-        if (n < 1) return Math.min(0.99, Math.max(0, n));
-        const ratio = (n - 1) / n;
-        return Math.min(0.99, Math.max(0, ratio));
-      };
-
-      const resolveBackendSegmentSize = (value: unknown) => {
-        const n = typeof value === "number" ? value : Number(value);
-        if (!Number.isFinite(n)) return undefined;
-        if (n <= 0) return undefined;
-        return Math.trunc(n);
-      };
-
-      const policyTarget =
-        stems?.includes("no_vocals") || modelId.toLowerCase().includes("karaoke")
-          ? "karaoke"
-          : stems?.length === 1 && stems[0] === "vocals"
-            ? "vocals"
-            : "instrumental";
-      const policyRec = recommendModelChain(policyTarget as any, models as any, {
-        device: config.device || (gpuVRAM > 0 ? "cuda:0" : "cpu"),
-        vramGb: gpuVRAM,
+      const backendPayload = buildSeparationBackendPayload({
+        inputFile: filePath,
+        outputDir: targetOutputDir,
+        config,
+        plan,
       });
 
-      const backendOverlap = resolveBackendOverlap(
-        config.advancedParams?.overlap ?? policyRec.guardrails.overlap,
+      const preflight = await executeSeparationPreflight(
+        window.electronAPI,
+        backendPayload,
       );
-      const backendSegmentSize = resolveBackendSegmentSize(
-        config.advancedParams?.segmentSize ?? policyRec.guardrails.segmentSize,
-      );
-
-      const preflight = window.electronAPI.separationPreflight
-        ? await window.electronAPI.separationPreflight(
-            filePath,
-            modelId,
-            targetOutputDir,
-            stems,
-            config.device && config.device !== "auto"
-              ? config.device
-              : undefined,
-            backendOverlap,
-            backendSegmentSize,
-            config.advancedParams?.shifts,
-            "wav",
-            config.advancedParams?.bitrate,
-            config.advancedParams?.tta,
-            effectiveEnsembleConfig,
-            effectiveEnsembleConfig?.algorithm,
-            config.invert,
-            config.splitFreq,
-            effectiveGlobalPhaseParams,
-            effectivePostProcessingSteps,
-            config.volumeCompensation,
-          )
-        : null;
 
       const warnings = (preflight as any)?.warnings as string[] | undefined;
       if (warnings && warnings.length > 0) {
@@ -678,26 +642,7 @@ export default function SeparatePage({
       }
 
       // Call backend - if targetOutputDir is empty, backend uses temp directory
-      const result = await window.electronAPI.separateAudio(
-        filePath,
-        modelId,
-        targetOutputDir,
-        stems,
-        config.device && config.device !== "auto" ? config.device : undefined,
-        backendOverlap,
-        backendSegmentSize,
-        config.advancedParams?.shifts,
-        "wav",
-        config.advancedParams?.bitrate,
-        config.advancedParams?.tta,
-        effectiveEnsembleConfig,
-        effectiveEnsembleConfig?.algorithm,
-        config.invert,
-        config.splitFreq,
-        effectiveGlobalPhaseParams,
-        effectivePostProcessingSteps,
-        config.volumeCompensation,
-      );
+      const result = await executeSeparation(window.electronAPI, backendPayload);
 
       if (queueItem) {
         updateQueueItem(queueItem.id, {
@@ -715,7 +660,9 @@ export default function SeparatePage({
       // Important: a stale presetId can hang around when switching to Advanced mode,
       // so only treat this as a preset run when mode === 'simple'.
       const usedPreset =
-        config.mode === "simple" && !!config.presetId && modelId !== "ensemble";
+        config.mode === "simple" &&
+        !!config.presetId &&
+        backendPayload.modelId !== "ensemble";
       const presetInfo = usedPreset
         ? combinedPresets.find((p) => p.id === config.presetId)
         : undefined;
@@ -723,19 +670,25 @@ export default function SeparatePage({
       addToHistory({
         inputFile: filePath,
         outputDir: targetOutputDir || "temp",
-        modelId: modelId,
+        modelId: backendPayload.modelId,
         modelName:
           presetInfo?.name ||
-          models.find((m) => m.id === modelId)?.name ||
-          modelId,
+          models.find((m) => m.id === backendPayload.modelId)?.name ||
+          backendPayload.modelId,
         preset: presetInfo
           ? { id: presetInfo.id, name: presetInfo.name }
           : undefined,
         status: "completed",
         outputFiles: result?.outputFiles || {},
         backendJobId: result?.jobId,
+        sourceAudioProfile: result?.sourceAudioProfile,
+        stagingDecision: result?.stagingDecision,
+        playback: {
+          sourceKind: "preview_cache",
+          previewDir: result?.outputDir,
+        },
         settings: {
-          stems: stems || [],
+          stems: backendPayload.stems || [],
           overlap: config.advancedParams?.overlap,
           segmentSize: config.advancedParams?.segmentSize,
         },

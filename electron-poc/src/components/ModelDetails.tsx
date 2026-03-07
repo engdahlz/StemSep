@@ -11,6 +11,12 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Model } from "../stores/useStore";
+import {
+  formatCardMetricValue,
+  formatCatalogStatus,
+  formatMetricsSource,
+  getCardMetricSlots,
+} from "../lib/models/cardMetrics";
 
 interface ModelDetailsProps {
   model: Model;
@@ -52,6 +58,9 @@ export function ModelDetails({
   const phaseFixValid = !!resolvedModel.phase_fix?.is_valid_reference;
   const phaseFixRef = resolvedModel.phase_fix?.reference_model_id;
   const phaseFixParams = resolvedModel.phase_fix?.recommended_params;
+  const metricSlots = getCardMetricSlots(resolvedModel);
+  const metricsSource = formatMetricsSource(resolvedModel);
+  const catalogStatus = formatCatalogStatus(resolvedModel.catalog_status);
 
   const chunkSizeDisplay =
     resolvedModel.chunk_size ||
@@ -111,6 +120,16 @@ export function ModelDetails({
               <Layers className="mr-1 h-3 w-3" />{" "}
               {resolvedModel.stems.join(", ")}
             </Badge>
+            {resolvedModel.catalog_status && (
+              <Badge variant="outline" className="bg-secondary/50">
+                {catalogStatus}
+              </Badge>
+            )}
+            {metricsSource && (
+              <Badge variant="outline" className="bg-secondary/50">
+                {metricsSource}
+              </Badge>
+            )}
             {phaseFixValid && (
               <Badge
                 variant="outline"
@@ -195,36 +214,19 @@ export function ModelDetails({
 
           {/* Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {resolvedModel.sdr > 0 && (
-              <div className="p-4 rounded-lg bg-secondary/30 border border-border/50 text-center">
+            {metricSlots.map((slot) => (
+              <div
+                key={slot.label}
+                className="p-4 rounded-lg bg-secondary/30 border border-border/50 text-center"
+              >
                 <div className="text-xs text-muted-foreground uppercase mb-1">
-                  SDR
+                  {slot.label}
                 </div>
                 <div className="text-xl font-semibold tabular-nums">
-                  {resolvedModel.sdr.toFixed(2)}
+                  {formatCardMetricValue(slot.value)}
                 </div>
               </div>
-            )}
-            {(resolvedModel.fullness || 0) > 0 && (
-              <div className="p-4 rounded-lg bg-secondary/30 border border-border/50 text-center">
-                <div className="text-xs text-muted-foreground uppercase mb-1">
-                  Fullness
-                </div>
-                <div className="text-xl font-semibold tabular-nums">
-                  {resolvedModel.fullness?.toFixed(2)}
-                </div>
-              </div>
-            )}
-            {(resolvedModel.bleedless || 0) > 0 && (
-              <div className="p-4 rounded-lg bg-secondary/30 border border-border/50 text-center">
-                <div className="text-xs text-muted-foreground uppercase mb-1">
-                  Bleedless
-                </div>
-                <div className="text-xl font-semibold tabular-nums">
-                  {resolvedModel.bleedless?.toFixed(2)}
-                </div>
-              </div>
-            )}
+            ))}
             <div className="p-4 rounded-lg bg-secondary/30 border border-border/50 text-center">
               <div className="text-xs text-muted-foreground uppercase mb-1">
                 Speed

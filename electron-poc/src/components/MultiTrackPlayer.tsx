@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Play, Pause, Loader2, Repeat, FastForward, Save, Trash2 } from 'lucide-react'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { WaveformTrack } from './WaveformTrack'
+import { WaveformTrack, type WaveformTrackHandle } from './WaveformTrack'
 import { toast } from 'sonner'
 
 interface MultiTrackPlayerProps {
@@ -12,135 +12,115 @@ interface MultiTrackPlayerProps {
     onDiscard?: () => void
 }
 
-// ... (colors remain same)
-
 const STEM_COLORS: Record<string, string> = {
-    vocals: '#3b82f6', // Blue
-    instrumental: '#ef4444', // Red
-    drums: '#eab308', // Yellow
-    bass: '#22c55e', // Green
-    other: '#a855f7', // Purple
-    piano: '#ec4899', // Pink
-    guitar: '#f97316', // Orange
+    vocals: '#3b82f6',
+    instrumental: '#ef4444',
+    drums: '#eab308',
+    bass: '#22c55e',
+    other: '#a855f7',
+    piano: '#ec4899',
+    guitar: '#f97316',
 }
 
-const DEFAULT_COLOR = '#64748b' // Slate
+const DEFAULT_COLOR = '#64748b'
 
 export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrackPlayerProps) {
-    // ... (state remains same)
+    const stemEntries = useMemo(() => Object.entries(stems), [stems])
+    const stemNames = useMemo(() => stemEntries.map(([stem]) => stem), [stemEntries])
+    const preferredMasterStem = useMemo(() => {
+        if (stems.instrumental) return 'instrumental'
+        if (stems.vocals) return 'vocals'
+        return stemNames[0] || null
+    }, [stemNames, stems.instrumental, stems.vocals])
+
     const [isPlaying, setIsPlaying] = useState(false)
     const [currentTime, setCurrentTime] = useState(0)
     const [duration, setDuration] = useState(0)
-    const [readyCount, setReadyCount] = useState(0)
-
-    // Track states
+    const [readyStems, setReadyStems] = useState<string[]>([])
     const [trackStates, setTrackStates] = useState<Record<string, {
         volume: number
         muted: boolean
         soloed: boolean
     }>>({})
-
     const [playbackRate, setPlaybackRate] = useState(1.0)
     const [isLooping, setIsLooping] = useState(false)
     const [loopStart, setLoopStart] = useState<number | null>(null)
     const [loopEnd, setLoopEnd] = useState<number | null>(null)
-
     const [isSaving, setIsSaving] = useState(false)
+    const [syncVersion, setSyncVersion] = useState(0)
 
-    const animationFrameRef = useRef<number | null>(null)
-    const startTimeRef = useRef<number>(0)
-    const lastPlayTimeRef = useRef<number>(0)
+    const trackRefs = useRef<Record<string, WaveformTrackHandle | null>>({})
 
-    // ... (effects and logic remain same until handlers) ...
-    // Initialize track states
     useEffect(() => {
-        const initialStates: Record<string, any> = {}
-        Object.keys(stems).forEach(key => {
-            initialStates[key] = {
+        const initialStates: Record<string, { volume: number; muted: boolean; soloed: boolean }> = {}
+        stemNames.forEach((stem) => {
+            initialStates[stem] = {
                 volume: 1,
                 muted: false,
-                soloed: false
+                soloed: false,
             }
         })
+        trackRefs.current = {}
         setTrackStates(initialStates)
-        setReadyCount(0)
+        setReadyStems([])
         setIsPlaying(false)
         setCurrentTime(0)
-    }, [stems])
+        setDuration(0)
+        setSyncVersion(0)
+        setLoopStart(null)
+        setLoopEnd(null)
+    }, [stemNames])
 
-    const totalTracks = Object.keys(stems).length
-    const isAllReady = readyCount >= totalTracks
+    const isAllReady = readyStems.length >= stemEntries.length
 
-    // Playback Timer Logic
-    const startTimer = useCallback(() => {
-        startTimeRef.current = performance.now() - (lastPlayTimeRef.current * 1000 / playbackRate)
+    const requestSync = useCallback(() => {
+        setSyncVersion((prev) => prev + 1)
+    }, [])
 
-        const loop = () => {
-            const now = performance.now()
-            const newTime = (now - startTimeRef.current) * playbackRate / 1000
+    const handleTrackReady = useCallback((stem: string, trackDuration: number) => {
+        setReadyStems((prev) => (prev.includes(stem) ? prev : [...prev, stem]))
+        setDuration((prev) => Math.max(prev, trackDuration))
+    }, [])
 
-            if (isLooping && loopStart !== null && loopEnd !== null) {
-                if (newTime >= loopEnd) {
-                    setCurrentTime(loopStart)
-                    lastPlayTimeRef.current = loopStart
-                    startTimeRef.current = performance.now() - (loopStart * 1000 / playbackRate)
-                    animationFrameRef.current = requestAnimationFrame(loop)
-                    return
-                }
-            }
-
-            if (newTime >= duration && duration > 0) {
-                if (isLooping) {
-                    setCurrentTime(0)
-                    lastPlayTimeRef.current = 0
-                    startTimeRef.current = performance.now()
-                    animationFrameRef.current = requestAnimationFrame(loop)
-                    return
-                }
-                setIsPlaying(false)
-                setCurrentTime(0)
-                lastPlayTimeRef.current = 0
-                return
-            }
-
-            setCurrentTime(newTime)
-            animationFrameRef.current = requestAnimationFrame(loop)
-        }
-
-        animationFrameRef.current = requestAnimationFrame(loop)
-    }, [duration, isLooping, loopStart, loopEnd, playbackRate])
-
-    const stopTimer = useCallback(() => {
-        if (animationFrameRef.current) {
-            cancelAnimationFrame(animationFrameRef.current)
-        }
-        lastPlayTimeRef.current = currentTime
-    }, [currentTime])
-
-    useEffect(() => {
-        if (isPlaying) {
-            startTimer()
-        } else {
-            stopTimer()
-        }
-        return () => stopTimer()
-    }, [isPlaying, startTimer, stopTimer])
-
-    // Handlers
     const handlePlayPause = () => {
-        setIsPlaying(!isPlaying)
+        if (!isAllReady) return
+        setIsPlaying((prev) => !prev)
+        requestSync()
     }
 
     const handleSeek = useCallback((time: number) => {
-        lastPlayTimeRef.current = time
-        setCurrentTime(time)
-        // Note: startTimeRef update happens in startTimer based on isPlaying state
-    }, [])
+        const boundedTime = Math.max(0, Math.min(duration || time, time))
+        setCurrentTime(boundedTime)
+        requestSync()
+    }, [duration, requestSync])
 
-    const handleTrackReady = useCallback((trackDuration: number) => {
-        setReadyCount(prev => prev + 1)
-        setDuration(prev => Math.max(prev, trackDuration))
-    }, [])
+    const handleMasterTimeUpdate = useCallback((time: number) => {
+        if (isLooping && loopStart !== null && loopEnd !== null && time >= loopEnd) {
+            setCurrentTime(loopStart)
+            requestSync()
+            return
+        }
+
+        if (!isLooping && duration > 0 && time >= duration) {
+            setIsPlaying(false)
+            setCurrentTime(0)
+            requestSync()
+            return
+        }
+
+        setCurrentTime(time)
+    }, [duration, isLooping, loopEnd, loopStart, requestSync])
+
+    const handleMasterEnded = useCallback(() => {
+        if (isLooping) {
+            setCurrentTime(loopStart ?? 0)
+            requestSync()
+            return
+        }
+        setIsPlaying(false)
+        setCurrentTime(0)
+        requestSync()
+    }, [isLooping, loopStart, requestSync])
 
     const toggleMute = (stem: string) => {
         setTrackStates(prev => ({
@@ -152,9 +132,10 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
     const toggleSolo = (stem: string) => {
         setTrackStates(prev => {
             const newSoloed = !prev[stem].soloed
-            const newState = { ...prev }
-            newState[stem] = { ...newState[stem], soloed: newSoloed }
-            return newState
+            return {
+                ...prev,
+                [stem]: { ...prev[stem], soloed: newSoloed }
+            }
         })
     }
 
@@ -215,8 +196,6 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
     const handleDiscard = () => {
         if (!confirm("Discard this separation? This will remove it from history and delete the cached stems.")) return
 
-        // Best-effort cleanup of staged preview outputs.
-        // Uses backend job id (passed via jobId) when available.
         if (jobId && window.electronAPI?.discardJobOutput) {
             window.electronAPI.discardJobOutput(jobId)
                 .then((result) => {
@@ -224,10 +203,8 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
                         toast.error("Failed to discard output: " + (result?.error || "Unknown error"))
                         return
                     }
-                    if (onDiscard) {
-                        onDiscard()
-                        toast.success("Separation removed from history")
-                    }
+                    onDiscard?.()
+                    toast.success("Separation removed from history")
                 })
                 .catch((e) => {
                     toast.error("Error discarding output")
@@ -236,10 +213,8 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
             return
         }
 
-        if (onDiscard) {
-            onDiscard()
-            toast.success("Separation removed from history")
-        }
+        onDiscard?.()
+        toast.success("Separation removed from history")
     }
 
     return (
@@ -251,7 +226,7 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
                         {!isAllReady && (
                             <span className="text-sm font-normal text-muted-foreground flex items-center gap-2">
                                 <Loader2 className="h-3 w-3 animate-spin" />
-                                Loading stems ({readyCount}/{totalTracks})...
+                                Loading stems ({readyStems.length}/{stemEntries.length})...
                             </span>
                         )}
                     </div>
@@ -262,7 +237,6 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
             </CardHeader>
 
             <CardContent className="space-y-6">
-                {/* Global Controls */}
                 <div className="flex items-center gap-4 p-4 bg-secondary/50 rounded-xl">
                     <Button
                         size="icon"
@@ -273,7 +247,6 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
                         {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
                     </Button>
 
-                    {/* ... Speed and Loop controls remain similar ... */}
                     <div className="flex items-center gap-2">
                         <FastForward className="h-4 w-4 text-muted-foreground" />
                         <select
@@ -291,7 +264,6 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
 
                     <div className="h-8 w-px bg-border mx-2" />
 
-                    {/* Loop Controls */}
                     <div className="flex items-center gap-2">
                         <Button
                             variant={isLooping ? "default" : "ghost"}
@@ -310,7 +282,7 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
                                     className="h-5 text-[10px] px-2"
                                     onClick={() => setLoopPoint('start')}
                                 >
-                                    A {loopStart ? formatTime(loopStart) : ''}
+                                    A {loopStart !== null ? formatTime(loopStart) : ''}
                                 </Button>
                                 <Button
                                     variant={loopEnd !== null ? "secondary" : "outline"}
@@ -318,7 +290,7 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
                                     className="h-5 text-[10px] px-2"
                                     onClick={() => setLoopPoint('end')}
                                 >
-                                    B {loopEnd ? formatTime(loopEnd) : ''}
+                                    B {loopEnd !== null ? formatTime(loopEnd) : ''}
                                 </Button>
                             </div>
                         </div>
@@ -336,33 +308,39 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
 
                     <div className="flex-1 flex flex-col justify-center gap-1">
                         <div className="text-xs text-muted-foreground font-mono text-right">
-                            {formatTime(currentTime)}
+                            {formatTime(currentTime)} / {formatTime(duration)}
                         </div>
                     </div>
                 </div>
 
-                {/* Tracks */}
                 <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                    {Object.entries(stems).map(([stem, url]) => (
+                    {stemEntries.map(([stem, url]) => (
                         <WaveformTrack
                             key={stem}
+                            ref={(handle) => {
+                                trackRefs.current[stem] = handle
+                            }}
                             name={stem}
                             url={url}
                             color={STEM_COLORS[stem.toLowerCase()] || DEFAULT_COLOR}
                             isPlaying={isPlaying}
+                            currentTime={currentTime}
+                            syncVersion={syncVersion}
+                            isMaster={stem === preferredMasterStem}
                             volume={trackStates[stem]?.volume ?? 1}
                             muted={getEffectiveMute(stem)}
                             soloed={trackStates[stem]?.soloed ?? false}
                             playbackRate={playbackRate}
-                            onReady={handleTrackReady}
+                            onReady={(trackDuration) => handleTrackReady(stem, trackDuration)}
                             onSeek={handleSeek}
+                            onTimeUpdate={handleMasterTimeUpdate}
+                            onEnded={handleMasterEnded}
                             onToggleMute={() => toggleMute(stem)}
                             onToggleSolo={() => toggleSolo(stem)}
                         />
                     ))}
                 </div>
 
-                {/* Save / Discard Footer */}
                 {jobId && (
                     <div className="flex justify-end gap-3 pt-4 border-t">
                         <Button variant="outline" onClick={handleDiscard} className="text-destructive hover:text-destructive">
@@ -381,6 +359,7 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
 }
 
 function formatTime(seconds: number) {
+    if (!Number.isFinite(seconds) || seconds < 0) return '0:00.0'
     const mins = Math.floor(seconds / 60)
     const secs = Math.floor(seconds % 60)
     const ms = Math.floor((seconds % 1) * 10)

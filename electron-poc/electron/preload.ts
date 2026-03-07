@@ -25,17 +25,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cancelSeparation: (jobId: string) => ipcRenderer.invoke('cancel-separation', jobId),
   saveJobOutput: (jobId: string) => ipcRenderer.invoke('save-job-output', jobId),
   discardJobOutput: (jobId: string) => ipcRenderer.invoke('discard-job-output', jobId),
-  exportOutput: (jobId: string, exportPath: string, format: string, bitrate: string) =>
-    ipcRenderer.invoke('export-output', { jobId, exportPath, format, bitrate }),
+  exportOutput: (jobId: string, exportPath: string, format: string, bitrate: string, requestId?: string) =>
+    ipcRenderer.invoke('export-output', { jobId, exportPath, format, bitrate, requestId }),
   pauseQueue: () => ipcRenderer.invoke('pause-queue'),
   resumeQueue: () => ipcRenderer.invoke('resume-queue'),
   reorderQueue: (jobIds: string[]) => ipcRenderer.invoke('reorder-queue', jobIds),
-  exportFiles: (sourceFiles: Record<string, string>, exportPath: string, format: string, bitrate: string) =>
-    ipcRenderer.invoke('export-files', { sourceFiles, exportPath, format, bitrate }),
+  exportFiles: (sourceFiles: Record<string, string>, exportPath: string, format: string, bitrate: string, requestId?: string) =>
+    ipcRenderer.invoke('export-files', { sourceFiles, exportPath, format, bitrate, requestId }),
   onSeparationProgress: (callback: (data: { progress: number, message: string, jobId?: string }) => void) => {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('separation-progress', handler)
     return () => ipcRenderer.removeListener('separation-progress', handler)
+  },
+  onSeparationEvent: (callback: (data: any) => void) => {
+    const handler = (_event: any, data: any) => callback(data)
+    ipcRenderer.on('separation-progress-event', handler)
+    return () => ipcRenderer.removeListener('separation-progress-event', handler)
   },
   onSeparationComplete: (callback: (data: { outputFiles: Record<string, string> }) => void) => {
     const handler = (_event: any, data: any) => callback(data)
@@ -117,6 +122,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('quality-complete', handler)
     return () => ipcRenderer.removeListener('quality-complete', handler)
+  },
+  onExportProgress: (callback: (data: any) => void) => {
+    const handler = (_event: any, data: any) => callback(data)
+    ipcRenderer.on('export-progress', handler)
+    return () => ipcRenderer.removeListener('export-progress', handler)
   },
 
   // Queue Persistence

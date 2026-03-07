@@ -179,11 +179,15 @@ export const createSeparationSlice: StateCreator<AppState, [["zustand/immer", ne
         // This handles cases where the app was closed/crashed during separation
         const sanitizedQueue = savedQueue.map(item => {
             if (item.status === 'processing') {
+                const stepLabel =
+                  item.activeStepLabel ||
+                  item.activePhase ||
+                  item.message ||
+                  'Interrupted'
                 return { 
                     ...item, 
                     status: 'pending', 
-                    progress: 0, 
-                    message: 'Interrupted - Ready to retry' 
+                    message: `Interrupted during ${stepLabel} - Ready to retry`
                 } 
             }
             return item

@@ -127,6 +127,19 @@
         "links": { "$ref": "#/$defs/links" },
         "artifacts": { "$ref": "#/$defs/artifacts" },
         "metrics": { "$ref": "#/$defs/metrics" },
+        "card_metrics": { "$ref": "#/$defs/cardMetrics" },
+        "catalog_status": {
+          "type": "string",
+          "enum": ["verified", "candidate", "blocked", "manual_only", "online_only"]
+        },
+        "metrics_status": {
+          "type": "string",
+          "enum": ["verified", "guide_curated", "vendor_matched", "missing_evidence"]
+        },
+        "metrics_evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/metricsEvidence" }
+        },
         "vram_required": {
           "description": "Approximate VRAM required in GB (rough guidance).",
           "$ref": "#/$defs/numberOrNull"
@@ -261,6 +274,79 @@
         "aura_stft": { "$ref": "#/$defs/numberOrNull" },
         "aura_mrstft": { "$ref": "#/$defs/numberOrNull" },
         "log_wmse": { "$ref": "#/$defs/numberOrNull" }
+      }
+    },
+    "cardMetricValue": {
+      "anyOf": [{ "type": "number" }, { "type": "string" }, { "type": "null" }]
+    },
+    "cardMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "primary_target",
+        "labels",
+        "values",
+        "source",
+        "last_verified"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["standard", "special", "status"]
+        },
+        "primary_target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "labels": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "values": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/cardMetricValue" }
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_url": {
+          "anyOf": [{ "$ref": "#/$defs/url" }, { "type": "null" }]
+        },
+        "evidence_note": {
+          "type": ["string", "null"]
+        },
+        "last_verified": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "metricsEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "note", "verified_at"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "anyOf": [{ "$ref": "#/$defs/url" }, { "type": "null" }]
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date"
+        }
       }
     },
     "recommendedSettings": {

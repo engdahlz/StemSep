@@ -3,6 +3,7 @@ import { X, Download, FolderOpen, Check } from 'lucide-react'
 import { Button } from './ui/button'
 import { toast } from 'sonner'
 import { exportFailureMessage } from '../lib/previewErrors'
+import type { ExportProgressEvent } from '../types/media'
 
 interface ExportDialogProps {
     isOpen: boolean
@@ -52,6 +53,8 @@ export default function ExportDialog({
     const [exportDir, setExportDir] = useState(defaultExportDir || '')
     const [rememberPath, setRememberPath] = useState(!!defaultExportDir)
     const [isExporting, setIsExporting] = useState(false)
+    const [activeRequestId, setActiveRequestId] = useState<string | null>(null)
+    const [exportProgress, setExportProgress] = useState<ExportProgressEvent | null>(null)
     // Track which stems are selected for export (all selected by default)
     const [selectedStems, setSelectedStems] = useState<Set<string>>(new Set(Object.keys(outputFiles)))
 
@@ -75,6 +78,15 @@ export default function ExportDialog({
     useEffect(() => {
         setSelectedStems(new Set(Object.keys(outputFiles)))
     }, [outputFiles])
+
+    useEffect(() => {
+        if (!window.electronAPI?.onExportProgress) return
+        const cleanup = window.electronAPI.onExportProgress((event) => {
+            if (!activeRequestId || event.requestId !== activeRequestId) return
+            setExportProgress(event)
+        })
+        return () => cleanup?.()
+    }, [activeRequestId])
 
     const handleBrowse = async () => {
         if (!window.electronAPI?.selectOutputDirectory) return
@@ -119,6 +131,14 @@ export default function ExportDialog({
         }
 
         setIsExporting(true)
+        const requestId = crypto.randomUUID()
+        setActiveRequestId(requestId)
+        setExportProgress({
+            requestId,
+            status: 'preflight',
+            totalProgress: 0,
+            detail: 'Preparing export...',
+        })
 
         try {
             // Filter outputFiles to only include selected stems
@@ -129,7 +149,7 @@ export default function ExportDialog({
                 }
             }
 
-            const result = await window.electronAPI.exportFiles(filesToExport, exportDir, format, bitrate)
+            const result = await window.electronAPI.exportFiles(filesToExport, exportDir, format, bitrate, requestId)
             if (!result.success) {
                 toast.error(exportFailureMessage(result.code, result.error, result.hint))
                 return
@@ -152,6 +172,8 @@ export default function ExportDialog({
             toast.error(message || 'Export failed')
         } finally {
             setIsExporting(false)
+            setActiveRequestId(null)
+            setExportProgress(null)
         }
     }
 
@@ -291,6 +313,32 @@ export default function ExportDialog({
                             </div>
                             <span className="text-sm text-neutral-700 dark:text-neutral-300 select-none">Remember this path as default</span>
                         </label>
+
+                        {isExporting && exportProgress && (
+                            <div className="mt-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 p-3">
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                    <span>{exportProgress.detail || 'Exporting...'}</span>
+                                    <span>{Math.round(exportProgress.totalProgress || 0)}%</span>
+                                </div>
+                                <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+                                    <div
+                                        className="h-full rounded-full bg-primary transition-all duration-200"
+                                        style={{ width: `${Math.max(0, Math.min(100, exportProgress.totalProgress || 0))}%` }}
+                                    />
+                                </div>
+                                {exportProgress.stem && (
+                                    <div className="mt-2 text-[11px] text-muted-foreground">
+                                        {exportProgress.stem}
+                                        {typeof exportProgress.fileIndex === 'number' && typeof exportProgress.fileCount === 'number'
+                                            ? ` • ${exportProgress.fileIndex}/${exportProgress.fileCount}`
+                                            : ''}
+                                        {typeof exportProgress.fileProgress === 'number'
+                                            ? ` • ${Math.round(exportProgress.fileProgress)}% file`
+                                            : ''}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 

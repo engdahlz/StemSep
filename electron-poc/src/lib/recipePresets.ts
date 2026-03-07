@@ -53,6 +53,12 @@ function recipeDisplayStems(recipe: Recipe): string[] {
 }
 
 function recipeQuality(recipe: Recipe): Preset['qualityLevel'] {
+  if (recipe.expected_runtime_tier === 'fast') return 'fast'
+  if (recipe.difficulty === 'expert') return 'ultra'
+  if (recipe.difficulty === 'advanced') return 'quality'
+  if (recipe.difficulty === 'simple' && recipe.guide_rank && recipe.guide_rank <= 1) {
+    return 'quality'
+  }
   const id = recipe.id.toLowerCase()
   if (id.startsWith('mode_quick')) return 'fast'
   if (id.startsWith('mode_quality')) return 'quality'
@@ -62,12 +68,46 @@ function recipeQuality(recipe: Recipe): Preset['qualityLevel'] {
 }
 
 function recipeEstimatedVram(recipe: Recipe): number {
+  if (recipe.expected_vram_tier === 'cpu_only') return 0
+  if (recipe.expected_vram_tier === 'low_vram') return 4
+  if (recipe.expected_vram_tier === 'mid_vram') return 8
+  if (recipe.expected_vram_tier === 'high_vram') return 12
   // UI hint only; real VRAM detection is per-model.
   if (recipe.vram_category === 'low') return 4
   if (recipe.vram_category === 'medium') return 8
   if (recipe.vram_category === 'high') return 12
   // Conservative default.
   return recipe.type === 'ensemble' ? 10 : 8
+}
+
+function recipeCategory(recipe: Recipe): Preset['category'] {
+  const target = (recipe.target || '').toLowerCase()
+  if (target === 'vocals') return 'vocals'
+  if (target === 'instrumental') return 'instrumental'
+  if (target === 'karaoke') return 'utility'
+  if (target === 'restoration') return 'utility'
+  if (target === 'drums' || target === 'bass') return 'instruments'
+  return 'smart'
+}
+
+function recipeSimpleGoal(recipe: Recipe): Preset['simpleGoal'] | undefined {
+  const explicit = recipe.simple_goal
+  if (
+    explicit === 'instrumental' ||
+    explicit === 'vocals' ||
+    explicit === 'karaoke' ||
+    explicit === 'cleanup' ||
+    explicit === 'instruments'
+  ) {
+    return explicit
+  }
+  const target = (recipe.target || '').toLowerCase()
+  if (target === 'vocals') return 'vocals'
+  if (target === 'instrumental') return 'instrumental'
+  if (target === 'karaoke') return 'karaoke'
+  if (target === 'restoration') return 'cleanup'
+  if (target === 'drums' || target === 'bass') return 'instruments'
+  return undefined
 }
 
 export function recipeToPreset(recipe: Recipe): Preset {
@@ -84,16 +124,32 @@ export function recipeToPreset(recipe: Recipe): Preset {
       }
     : undefined
 
+  const simpleGoal = recipeSimpleGoal(recipe)
+  const baseTags = ['recipe', recipe.type]
+  if (recipe.target) baseTags.push(recipe.target)
+  if (recipe.quality_goal) baseTags.push(recipe.quality_goal)
+  if (recipe.difficulty) baseTags.push(recipe.difficulty)
+  if (recipe.simple_surface) baseTags.push('simple-surface')
+
   return {
     id: recipe.id,
     name: recipe.name,
     description: recipe.description || '',
     stems,
-    recommended: false,
-    category: 'smart',
+    recommended: recipe.simple_surface === true || (typeof recipe.guide_rank === 'number' && recipe.guide_rank <= 2),
+    category: recipeCategory(recipe),
     qualityLevel: recipeQuality(recipe),
     estimatedVram: recipeEstimatedVram(recipe),
-    tags: ['recipe', recipe.type],
+    tags: Array.from(new Set(baseTags)),
+    simpleVisible: recipe.simple_surface === true,
+    simpleGoal,
+    guideRank: recipe.guide_rank,
+    difficulty: recipe.difficulty,
+    expectedVramTier: recipe.expected_vram_tier,
+    expectedRuntimeTier: recipe.expected_runtime_tier,
+    recommendedFor: recipe.recommended_for,
+    contraindications: recipe.contraindications,
+    workflowSummary: recipe.workflow_summary,
     // Important: execute as a recipe by passing the recipe id as modelId.
     modelId: recipe.id,
     isRecipe: true,
@@ -103,6 +159,13 @@ export function recipeToPreset(recipe: Recipe): Preset {
       warning: recipe.warning,
       source: recipe.source,
       defaults: recipe.defaults,
+      difficulty: recipe.difficulty,
+      expectedVramTier: recipe.expected_vram_tier,
+      expectedRuntimeTier: recipe.expected_runtime_tier,
+      guideRank: recipe.guide_rank,
+      recommendedFor: recipe.recommended_for,
+      contraindications: recipe.contraindications,
+      workflowSummary: recipe.workflow_summary,
       requiredModels,
       steps: recipe.steps || [],
     },

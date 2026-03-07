@@ -1,0 +1,485 @@
+[
+  {
+    "id": "amane-4-stems-large",
+    "name": "Amane 4-Stems Large",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt"
+  },
+  {
+    "id": "amane-4-stems-xl",
+    "name": "Amane 4-Stems XL",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew_sdr_19.1729.ckpt"
+  },
+  {
+    "id": "amane-full-scratch",
+    "name": "Amane Full Scratch",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/amane-full-scratch.ckpt"
+  },
+  {
+    "id": "amane-inst-fullness",
+    "name": "Amane Inst Fullness",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/amane-inst-fullness.ckpt"
+  },
+  {
+    "id": "anvuew-dereverb-mono",
+    "name": "Anvuew DeReverb Mono",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt"
+  },
+  {
+    "id": "anvuew-dereverb-v2",
+    "name": "Anvuew DeReverb V2",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew_sdr_19.1729.ckpt"
+  },
+  {
+    "id": "anvuew-karaoke",
+    "name": "BS-Roformer Karaoke (Anvuew)",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.ckpt"
+  },
+  {
+    "id": "anvuew-vocals",
+    "name": "Anvuew Vocals",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt"
+  },
+  {
+    "id": "aufr33-denoise-aggressive",
+    "name": "Aufr33 Denoise Aggressive",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/resolve/main/denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt"
+  },
+  {
+    "id": "aufr33-denoise-std",
+    "name": "Aufr33 Denoise Std",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/resolve/main/denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt"
+  },
+  {
+    "id": "bandit-plus",
+    "name": "BandIt Plus",
+    "catalog_status": "candidate",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bandit-plus.ckpt"
+  },
+  {
+    "id": "becruily-guitar",
+    "name": "Becruily Guitar",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/becruily/mel-band-roformer-guitar/resolve/main/becruily_guitar.ckpt"
+  },
+  {
+    "id": "becruily-inst",
+    "name": "Becruily Inst",
+    "catalog_status": "manual_only",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://huggingface.co/becruily/mel-band-roformer-instrumental/resolve/main/mel_band_roformer_instrumental_becruily.ckpt"
+  },
+  {
+    "id": "becruily-vocal",
+    "name": "Becruily Vocal",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/becruily/mel-band-roformer-vocals/resolve/main/mel_band_roformer_vocals_becruily.ckpt"
+  },
+  {
+    "id": "bs-roformer-1053",
+    "name": "BS-Roformer 1053",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-1053.ckpt"
+  },
+  {
+    "id": "bs-roformer-4-stems",
+    "name": "BS-Roformer 4-Stems",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-4-stems.ckpt"
+  },
+  {
+    "id": "bs-roformer-karaoke-becruily",
+    "name": "BS-Roformer Karaoke (Becruily)",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/becruily/bs-roformer-karaoke/resolve/main/bs_roformer_karaoke_frazer_becruily.ckpt"
+  },
+  {
+    "id": "bs-roformer-large-inst",
+    "name": "BS-Roformer Large Inst",
+    "catalog_status": "manual_only",
+    "metrics_status": "guide_curated",
+    "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-Large-Inst/resolve/main/bs_large_v2_inst.ckpt"
+  },
+  {
+    "id": "bs-roformer-viperx-1296",
+    "name": "BS-Roformer-Viperx-1296",
+    "catalog_status": "manual_only",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_368_sdr_12.9628.ckpt"
+  },
+  {
+    "id": "bs-roformer-viperx-1297",
+    "name": "BS-Roformer-Viperx-1297",
+    "catalog_status": "manual_only",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-viperx-1297.ckpt"
+  },
+  {
+    "id": "drypd-side-extraction",
+    "name": "DryPD Side Extraction",
+    "catalog_status": "candidate",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/drypd-side-extraction.pth"
+  },
+  {
+    "id": "duality-v1-unwa",
+    "name": "Duality V1 (Unwa)",
+    "catalog_status": "manual_only",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/melband_roformer_instvoc_duality_v1.ckpt"
+  },
+  {
+    "id": "duality-v2-unwa",
+    "name": "Duality V2 (Unwa)",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/duality-v2-unwa.ckpt"
+  },
+  {
+    "id": "gabox-denoise-debleed",
+    "name": "Gabox Denoise/Debleed",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/denoisedebleed.ckpt"
+  },
+  {
+    "id": "gabox-inst-fv4-noise",
+    "name": "Gabox Inst Fv4 Noise",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/INSTV5N.ckpt"
+  },
+  {
+    "id": "gabox-inst-fv7b",
+    "name": "Gabox Inst FV7b",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/inst_fv7b.ckpt"
+  },
+  {
+    "id": "gabox-inst-fv7z",
+    "name": "Gabox Inst Fv7z",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/INSTV7N.ckpt"
+  },
+  {
+    "id": "gabox-inst-fv8b",
+    "name": "Gabox Inst Fv8b",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/Inst_FV8b.ckpt"
+  },
+  {
+    "id": "gabox-inst-v6n",
+    "name": "Gabox Inst V6N",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/INSTV6N.ckpt"
+  },
+  {
+    "id": "gabox-resurrection",
+    "name": "Gabox Resurrection",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/BS_ResurrectioN.ckpt"
+  },
+  {
+    "id": "gabox-voc-fv4",
+    "name": "Gabox Voc FV4",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv4.ckpt"
+  },
+  {
+    "id": "gabox-voc-fv5",
+    "name": "Gabox Voc FV5",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv5.ckpt"
+  },
+  {
+    "id": "gabox-voc-fv6",
+    "name": "Gabox Voc FV6",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_fv6.ckpt"
+  },
+  {
+    "id": "gabox-voc-fv7beta2",
+    "name": "Gabox Voc FV7 Beta 2",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/vocfv7beta2.ckpt"
+  },
+  {
+    "id": "gabox-voc-gabox2",
+    "name": "Gabox Voc Gabox2",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.ckpt"
+  },
+  {
+    "id": "lew-apollo-universal",
+    "name": "Lew Apollo Universal",
+    "catalog_status": "candidate",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/apollo_model.ckpt"
+  },
+  {
+    "id": "lew-apollo-vocal",
+    "name": "Lew Apollo Vocal",
+    "catalog_status": "candidate",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/lew-apollo-vocal.ckpt"
+  },
+  {
+    "id": "mdx-net-hq4",
+    "name": "MDX-Net HQ4",
+    "catalog_status": "candidate",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx-net-hq4.onnx"
+  },
+  {
+    "id": "mdx-net-hq5",
+    "name": "MDX-Net HQ5",
+    "catalog_status": "candidate",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx-net-hq5.onnx"
+  },
+  {
+    "id": "mdx23c-d1581",
+    "name": "MDX23C D1581",
+    "catalog_status": "candidate",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/491e44cfaf909b73ce14f6185298de9c82867de3/MDX23C_models/MDX23C_D1581.ckpt"
+  },
+  {
+    "id": "mdx23c-drumsep-6stem",
+    "name": "MDX23C-DrumSep-6stem",
+    "catalog_status": "candidate",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx23c-drumsep-6stem.ckpt"
+  },
+  {
+    "id": "mdx23c-instvoc-hq",
+    "name": "MDX23C-InstVoc-HQ",
+    "catalog_status": "candidate",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx23c-instvoc-hq.ckpt"
+  },
+  {
+    "id": "mel-band-crowd",
+    "name": "Mel-Band Crowd",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.4/mel_band_roformer_crowd_aufr33_viperx_sdr_8.7144.ckpt"
+  },
+  {
+    "id": "mel-band-karaoke-aufr33",
+    "name": "Mel-Band-Karaoke (Aufr33)",
+    "catalog_status": "manual_only",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://huggingface.co/jarredou/aufr33-viperx-karaoke-melroformer-model/resolve/main/mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt"
+  },
+  {
+    "id": "mel-band-karaoke-becruily",
+    "name": "Mel-Band-Karaoke (Becruily)",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/becruily/mel-band-roformer-karaoke/resolve/main/mel_band_roformer_karaoke_becruily.ckpt"
+  },
+  {
+    "id": "mel-band-roformer-kim",
+    "name": "Mel-Band-Roformer Kim",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt"
+  },
+  {
+    "id": "mesk-rifforge",
+    "name": "Mesk Rifforge",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/meskvlla33/rifforge/resolve/main/rifforge_full_sdr_14.2436.ckpt"
+  },
+  {
+    "id": "neo-instvfx",
+    "name": "Neo InstVFX",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/neo-instvfx.ckpt"
+  },
+  {
+    "id": "scnet-large",
+    "name": "SCNet Large",
+    "catalog_status": "candidate",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/scnet-large.ckpt"
+  },
+  {
+    "id": "scnet-musdb18",
+    "name": "SCNet-MUSDB18",
+    "catalog_status": "candidate",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/scnet-musdb18.ckpt"
+  },
+  {
+    "id": "small-karaoke-gaboxauf",
+    "name": "Small Karaoke GaboxAuf",
+    "catalog_status": "candidate",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/karaoke/small_karaoke_gaboxaufr.ckpt"
+  },
+  {
+    "id": "sucial-dereverb-fused",
+    "name": "Sucial DeReverb Fused",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/sucial-dereverb-fused.ckpt"
+  },
+  {
+    "id": "sucial-male-female",
+    "name": "Sucial Male/Female",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/Sucial/Chorus_Male_Female_BS_Roformer/resolve/main/model_chorus_bs_roformer_ep_267_sdr_24.1275.ckpt"
+  },
+  {
+    "id": "unwa-big-beta-5e",
+    "name": "Unwa Big Beta 5e",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta5e.ckpt"
+  },
+  {
+    "id": "unwa-big-beta-6x",
+    "name": "Unwa Big Beta 6X",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta6x.ckpt"
+  },
+  {
+    "id": "unwa-debleed",
+    "name": "Unwa Debleed",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/roformers/mel_band_roformer_bleed_suppressor_v1.ckpt"
+  },
+  {
+    "id": "unwa-ft3-preview",
+    "name": "Unwa FT3 Preview",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft3_prev.ckpt"
+  },
+  {
+    "id": "unwa-hyperace",
+    "name": "Unwa HyperACE",
+    "catalog_status": "manual_only",
+    "metrics_status": "guide_curated",
+    "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/bs_hyperace.ckpt"
+  },
+  {
+    "id": "unwa-hyperace-v2-inst",
+    "name": "Unwa HyperACE v2 Inst",
+    "catalog_status": "manual_only",
+    "metrics_status": "guide_curated",
+    "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_inst/bs_roformer_inst_hyperacev2.ckpt"
+  },
+  {
+    "id": "unwa-hyperace-v2-voc",
+    "name": "Unwa HyperACE v2 Voc",
+    "catalog_status": "manual_only",
+    "metrics_status": "guide_curated",
+    "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_voc/bs_roformer_voc_hyperacev2.ckpt"
+  },
+  {
+    "id": "unwa-inst-fno",
+    "name": "Unwa Inst FNO",
+    "catalog_status": "manual_only",
+    "metrics_status": "guide_curated",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-fno.ckpt"
+  },
+  {
+    "id": "unwa-inst-v1e",
+    "name": "Unwa Inst V1e",
+    "catalog_status": "manual_only",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/melband_roformer_inst_v1.ckpt"
+  },
+  {
+    "id": "unwa-inst-v1e-plus",
+    "name": "Unwa Inst V1e+",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-v1e-plus.ckpt"
+  },
+  {
+    "id": "unwa-inst-v2",
+    "name": "Unwa Inst V2",
+    "catalog_status": "manual_only",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/melband_roformer_inst_v2.ckpt"
+  },
+  {
+    "id": "unwa-kim-ft2",
+    "name": "Unwa Kim FT2",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft2_bleedless.ckpt"
+  },
+  {
+    "id": "unwa-kim-ft2-bleedless",
+    "name": "Unwa Kim FT2 Bleedless",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft2_bleedless.ckpt"
+  },
+  {
+    "id": "unwa-resurrection-inst",
+    "name": "Unwa Resurrection Inst",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/resolve/main/BS-Roformer-Resurrection-Inst.ckpt"
+  },
+  {
+    "id": "unwa-resurrection-voc",
+    "name": "Unwa Resurrection Voc",
+    "catalog_status": "manual_only",
+    "metrics_status": "missing_evidence",
+    "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/resolve/main/BS-Roformer-Resurrection.ckpt"
+  },
+  {
+    "id": "viperx-karaoke-1297",
+    "name": "Mel-Band-Roformer Karaoke (Viperx 1297)",
+    "catalog_status": "manual_only",
+    "metrics_status": "vendor_matched",
+    "checkpoint": "https://huggingface.co/jarredou/aufr33-viperx-karaoke-melroformer-model/resolve/main/mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt"
+  }
+]

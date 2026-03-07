@@ -1,10 +1,22 @@
-import { useEffect, useRef, useState } from 'react'
+import {
+    forwardRef,
+    useEffect,
+    useImperativeHandle,
+    useRef,
+    useState
+} from 'react'
 import WaveSurfer from 'wavesurfer.js'
 import Spectrogram from 'wavesurfer.js/dist/plugins/spectrogram.esm.js'
 import { Volume2, VolumeX, Headphones, Activity, AlertTriangle } from 'lucide-react'
 import { Button } from './ui/button'
 import { cn } from '../lib/utils'
 import { previewLoadMessage } from '../lib/previewErrors'
+import { toMediaUrl } from '../lib/media/toMediaUrl'
+
+export interface WaveformTrackHandle {
+    getCurrentTime: () => number
+    seekTo: (time: number) => void
+}
 
 interface WaveformTrackProps {
     url: string
@@ -12,47 +24,73 @@ interface WaveformTrackProps {
     color: string
     height?: number
     isPlaying: boolean
+    currentTime: number
+    syncVersion: number
+    isMaster?: boolean
     volume: number
     muted: boolean
     soloed: boolean
     playbackRate: number
     onReady: (duration: number) => void
     onSeek: (time: number) => void
+    onTimeUpdate?: (time: number) => void
+    onEnded?: () => void
     onToggleMute: () => void
     onToggleSolo: () => void
 }
 
-export function WaveformTrack({
+export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>(function WaveformTrack({
     url,
     name,
     color,
     height = 64,
     isPlaying,
+    currentTime,
+    syncVersion,
+    isMaster = false,
     volume,
     muted,
     soloed,
     playbackRate,
     onReady,
     onSeek,
+    onTimeUpdate,
+    onEnded,
     onToggleMute,
     onToggleSolo
-}: WaveformTrackProps) {
+}, ref) {
     const containerRef = useRef<HTMLDivElement>(null)
     const wavesurferRef = useRef<WaveSurfer | null>(null)
     const [isReady, setIsReady] = useState(false)
     const [showSpectrogram, setShowSpectrogram] = useState(false)
     const [loadError, setLoadError] = useState<string | null>(null)
+    const isMasterRef = useRef(isMaster)
+    const onTimeUpdateRef = useRef(onTimeUpdate)
+    const onEndedRef = useRef(onEnded)
 
-    // Initialize WaveSurfer - only runs once per URL
+    useEffect(() => {
+        isMasterRef.current = isMaster
+        onTimeUpdateRef.current = onTimeUpdate
+        onEndedRef.current = onEnded
+    }, [isMaster, onEnded, onTimeUpdate])
+
+    useImperativeHandle(ref, () => ({
+        getCurrentTime: () => wavesurferRef.current?.getCurrentTime() ?? 0,
+        seekTo: (time: number) => {
+            const ws = wavesurferRef.current
+            if (!ws || !isReady) return
+            ws.setTime(Math.max(0, time))
+        }
+    }), [isReady])
+
     useEffect(() => {
         if (!containerRef.current) return
 
         let mounted = true
-        let blobUrl: string | null = null
+        setLoadError(null)
+        setIsReady(false)
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const plugins: any[] = []
-
         if (showSpectrogram) {
             plugins.push(Spectrogram.create({
                 labels: true,
@@ -64,140 +102,91 @@ export function WaveformTrack({
             }))
         }
 
-        const loadAudio = async () => {
-            console.log('[WaveformTrack] Loading audio via IPC:', url)
-            setLoadError(null)
+        try {
+            const ws = WaveSurfer.create({
+                container: containerRef.current,
+                waveColor: color,
+                progressColor: adjustColorBrightness(color, -20),
+                cursorColor: '#ef4444',
+                height: showSpectrogram ? 64 : height,
+                normalize: false,
+                minPxPerSec: 50,
+                interact: true,
+                hideScrollbar: true,
+                url: toMediaUrl(url),
+                plugins,
+            })
 
-            if (!window.electronAPI?.readAudioFile) {
-                console.error('[WaveformTrack] electronAPI.readAudioFile not available')
-                setLoadError('Audio preview API is not available in this build.')
-                return
-            }
+            ws.on('ready', () => {
+                if (!mounted) return
+                setIsReady(true)
+                onReady(ws.getDuration())
+            })
 
-            try {
-                const result = await window.electronAPI.readAudioFile(url)
-
-                if (!mounted) {
-                    console.log('[WaveformTrack] Component unmounted, aborting load')
-                    return
-                }
-
-                if (!result.success) {
-                    console.error('[WaveformTrack] Failed to read audio file:', result.error)
-                    setLoadError(previewLoadMessage(result.code, result.error))
-                    return
-                }
-
-                if (!result.data) {
-                    setLoadError('Audio preview payload was empty.')
-                    return
-                }
-
-                const binaryData = atob(result.data)
-                const bytes = new Uint8Array(binaryData.length)
-                for (let i = 0; i < binaryData.length; i++) {
-                    bytes[i] = binaryData.charCodeAt(i)
-                }
-                const blob = new Blob([bytes], { type: result.mimeType })
-                blobUrl = URL.createObjectURL(blob)
-
-                if (!mounted) {
-                    URL.revokeObjectURL(blobUrl)
-                    return
-                }
-
-                console.log('[WaveformTrack] Created blob URL for:', name)
-
-                const ws = WaveSurfer.create({
-                    container: containerRef.current!,
-                    waveColor: color,
-                    progressColor: adjustColorBrightness(color, -20),
-                    cursorColor: '#ef4444',
-                    height: showSpectrogram ? 64 : height,
-                    normalize: false,
-                    minPxPerSec: 50,
-                    interact: true,
-                    hideScrollbar: true,
-                    url: blobUrl,
-                    plugins: plugins,
-                })
-
-                ws.on('ready', () => {
-                    if (!mounted) return
-                    console.log('[WaveformTrack] Audio ready:', name)
-                    setIsReady(true)
-                    onReady(ws.getDuration())
-                })
-
-                ws.on('error', (error) => {
-                    if (error instanceof Error && error.name === 'AbortError') return
-                    console.error('[WaveformTrack] Error loading audio:', name, error)
-                })
-
-                ws.on('interaction', (newTime) => {
-                    onSeek(newTime)
-                })
-
-                wavesurferRef.current = ws
-                    ; (ws as any)._blobUrl = blobUrl
-            } catch (error) {
+            ws.on('error', (error) => {
                 if (error instanceof Error && error.name === 'AbortError') return
-                console.error('[WaveformTrack] Error loading audio via IPC:', error)
+                console.error('[WaveformTrack] Error loading audio:', name, error)
                 setLoadError(previewLoadMessage(undefined, error instanceof Error ? error.message : String(error)))
-            }
-        }
+            })
 
-        loadAudio()
+            ws.on('interaction', (newTime) => {
+                onSeek(newTime)
+            })
+
+            ws.on('timeupdate', (time) => {
+                if (!isMasterRef.current) return
+                onTimeUpdateRef.current?.(time)
+            })
+
+            ws.on('finish', () => {
+                if (!isMasterRef.current) return
+                onEndedRef.current?.()
+            })
+
+            wavesurferRef.current = ws
+        } catch (error) {
+            console.error('[WaveformTrack] Failed to create WaveSurfer:', error)
+            setLoadError(previewLoadMessage(undefined, error instanceof Error ? error.message : String(error)))
+        }
 
         return () => {
             mounted = false
-            if (wavesurferRef.current) {
-                const storedBlobUrl = (wavesurferRef.current as any)._blobUrl
-                if (storedBlobUrl) {
-                    URL.revokeObjectURL(storedBlobUrl)
-                }
-                wavesurferRef.current.destroy()
-                wavesurferRef.current = null
-            } else if (blobUrl) {
-                URL.revokeObjectURL(blobUrl)
-            }
+            wavesurferRef.current?.destroy()
+            wavesurferRef.current = null
             setIsReady(false)
             setLoadError(null)
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [url, showSpectrogram])
+    }, [color, height, name, onReady, onSeek, showSpectrogram, url])
 
-    // Sync Playback State - simply play/pause
     useEffect(() => {
         const ws = wavesurferRef.current
         if (!ws || !isReady) return
 
+        ws.setTime(Math.max(0, currentTime))
         if (isPlaying) {
-            ws.play()
+            void ws.play().catch((error) => {
+                if (error instanceof Error && error.name === 'AbortError') return
+                console.error('[WaveformTrack] Play failed:', name, error)
+            })
         } else {
             ws.pause()
         }
-    }, [isPlaying, isReady])
+    }, [currentTime, isPlaying, isReady, name, syncVersion])
 
-    // Sync Playback Rate
     useEffect(() => {
         const ws = wavesurferRef.current
         if (!ws || !isReady) return
-
         ws.setPlaybackRate(playbackRate)
-    }, [playbackRate, isReady])
+    }, [isReady, playbackRate])
 
-    // Sync Volume/Mute
     useEffect(() => {
         const ws = wavesurferRef.current
         if (!ws || !isReady) return
-
         ws.setVolume(muted ? 0 : volume)
-    }, [volume, muted, isReady])
+    }, [isReady, muted, volume])
 
     return (
         <div className="flex items-center gap-4 p-2 bg-secondary/30 rounded-lg border border-border/50 transition-all duration-300">
-            {/* Track Controls */}
             <div className="w-32 flex flex-col gap-2 shrink-0">
                 <div className="flex items-center gap-2">
                     <span
@@ -232,7 +221,7 @@ export function WaveformTrack({
                     <Button
                         variant={showSpectrogram ? "default" : "ghost"}
                         size="sm"
-                        className={cn("h-6 w-6 p-0")}
+                        className="h-6 w-6 p-0"
                         onClick={() => setShowSpectrogram(!showSpectrogram)}
                         title="Toggle Spectrogram"
                     >
@@ -241,7 +230,6 @@ export function WaveformTrack({
                 </div>
             </div>
 
-            {/* Waveform */}
             <div
                 className={cn(
                     "flex-1 rounded overflow-hidden relative min-h-[64px] transition-all ease-in-out",
@@ -265,9 +253,8 @@ export function WaveformTrack({
             </div>
         </div>
     )
-}
+})
 
-// Helper to darken/lighten hex color
 function adjustColorBrightness(hex: string, percent: number) {
     const num = parseInt(hex.replace('#', ''), 16)
     const amt = Math.round(2.55 * percent)

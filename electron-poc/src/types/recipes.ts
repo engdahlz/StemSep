@@ -1,4 +1,7 @@
 export type RecipeType = 'ensemble' | 'pipeline' | 'chained' | 'single'
+export type RecipeDifficulty = 'simple' | 'advanced' | 'expert'
+export type RecipeVramTier = 'cpu_only' | 'low_vram' | 'mid_vram' | 'high_vram'
+export type RecipeRuntimeTier = 'fast' | 'standard' | 'advanced'
 
 export interface RecipeDefaults {
   overlap?: number
@@ -48,6 +51,16 @@ export interface Recipe {
   description?: string
   type: RecipeType
   target?: string
+  quality_goal?: string
+  difficulty?: RecipeDifficulty
+  expected_vram_tier?: RecipeVramTier
+  expected_runtime_tier?: RecipeRuntimeTier
+  guide_rank?: number
+  simple_surface?: boolean
+  simple_goal?: string
+  recommended_for?: string[]
+  contraindications?: string[]
+  workflow_summary?: string
   warning?: string
   source?: string
   vram_category?: 'low' | 'medium' | 'high'

@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "generated_at": "1970-01-01T00:00:00Z",
+  "generated_at": "2026-03-06T17:24:56.280484Z",
   "source": {
     "tool": "scripts/registry/migrate_legacy_models_to_v2.py",
     "repo": "StemSep",
@@ -130,6 +130,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -250,6 +275,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -375,6 +425,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -501,7 +576,104 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/Eddycrack864/audio-separator-models",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
+    },
+    {
+      "id": "anvuew-dereverb-bs-225050",
+      "name": "Anvuew DeReverb BS 22.5050",
+      "type": "Restoration / Denoise / Dereverb",
+      "architecture": "BS-Roformer",
+      "description": "De-Reverb (Mono)",
+      "tags": [
+        "dereverb",
+        "restoration"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/anvuew/dereverb_bs_roformer/resolve/main/dereverb_bs_roformer_anvuew_sdr_22.5050.ckpt",
+        "config": "https://huggingface.co/anvuew/dereverb_bs_roformer/resolve/main/config.yaml",
+        "homepage": "https://huggingface.co/anvuew/dereverb_bs_roformer"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "dereverb_bs_roformer_anvuew_sdr_22.5050.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "config.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 0.0,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": null
+      },
+      "vram_required": 8.0,
+      "stems": [],
+      "recommended_settings": {},
+      "guide_revision": "2026-03-04",
+      "catalog_status": "verified",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "restoration",
+        "labels": [
+          "MODEL SDR",
+          "BASE SDR",
+          "CHANNELS"
+        ],
+        "values": [
+          22.505,
+          20.4029,
+          "Mono"
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://huggingface.co/anvuew/dereverb_bs_roformer",
+        "evidence_note": "New BS-Roformer dereverb variant highlighted in the live guide.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "anvuew-dereverb-mono",
@@ -630,6 +802,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -645,14 +842,14 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/anvuew-dereverb-room.ckpt",
+        "checkpoint": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew_sdr_13.7432.ckpt",
         "config": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew.yaml",
-        "homepage": null
+        "homepage": "https://huggingface.co/anvuew/dereverb_room"
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "dereverb_room_anvuew.ckpt",
+          "filename": "dereverb_room_anvuew_sdr_13.7432.ckpt",
           "sha256": null
         },
         "config": {
@@ -759,7 +956,32 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "verified",
+      "metrics_status": "verified",
+      "metrics_evidence": [],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "restoration",
+        "labels": [
+          "MODEL SDR",
+          "FOCUS",
+          "CHANNELS"
+        ],
+        "values": [
+          13.7432,
+          "Room",
+          "Mono"
+        ],
+        "source": "HF README",
+        "evidence_url": "https://huggingface.co/anvuew/dereverb_room",
+        "evidence_note": "HF repo exposes dereverb_room_anvuew_sdr_13.7432.ckpt for mono room-reverb removal.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "anvuew-dereverb-v2",
@@ -888,6 +1110,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -1014,6 +1261,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -1140,6 +1412,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -1269,6 +1566,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -1398,6 +1720,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -1522,6 +1869,31 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "STEMSEP-LEGACY"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -1646,6 +2018,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -1772,7 +2169,39 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: mel_band_roformer_instrumental_becruily.ckpt",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          10.7513,
+          15.3618,
+          13.06
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: mel_band_roformer_instrumental_becruily.ckpt",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "becruily-vocal",
@@ -1902,6 +2331,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -2026,6 +2480,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -2158,6 +2637,31 @@
           "routing_default": "msst_only_for_roformer",
           "blocked_reason": "public_weights_mismatch_expected_format"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/zijianhuang/bs-roformer-4stems",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -2284,7 +2788,174 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/becruily/bs-roformer-karaoke",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
+    },
+    {
+      "id": "bs-roformer-large-inst",
+      "name": "BS-Roformer Large Inst",
+      "type": "Roformer - Instrumental",
+      "architecture": "BS-Roformer",
+      "description": "Instrumental (Large v2)",
+      "tags": [
+        "instrumental"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-Large-Inst/resolve/main/bs_large_v2_inst.ckpt",
+        "config": "https://huggingface.co/pcunwa/BS-Roformer-Large-Inst/resolve/main/config.yaml",
+        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-Large-Inst"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "bs_large_v2_inst.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "config.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 17.61,
+        "fullness": 32.06,
+        "bleedless": 43.95,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {
+        "segment_size": 352800,
+        "batch_size": null,
+        "tta": false,
+        "overlap": 4,
+        "shifts": null,
+        "bit_depth": null
+      },
+      "settings_semantics": {
+        "overlap": {
+          "meaning_by_runtime": {
+            "audio-separator": "auto",
+            "stemsep-legacy": "auto",
+            "msst": "divisor"
+          },
+          "notes": "Custom bs_roformer runtime variant."
+        }
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": "Current runtime needs the attached custom bs_roformer.py for this model family."
+      },
+      "compatibility": {
+        "uvr_compatible": false,
+        "audio_separator_compatible": false,
+        "msst_compatible": true,
+        "known_issues": [
+          "Requires the repo's custom bs_roformer.py."
+        ]
+      },
+      "requirements": {
+        "python": {
+          "min": "3.10",
+          "max": null
+        },
+        "torch": {
+          "min": null,
+          "max": null,
+          "cuda": [],
+          "rocm": []
+        },
+        "pip": {
+          "packages": []
+        },
+        "files": {
+          "expects": [],
+          "provides": []
+        },
+        "manual_steps": [
+          "Use the repo-provided bs_roformer.py with MSST for this model."
+        ]
+      },
+      "phase_fix": {
+        "is_valid_reference": null,
+        "recommended_params": {
+          "lowHz": null,
+          "highHz": null,
+          "highFreqWeight": null
+        },
+        "recommended_usage": []
+      },
+      "capabilities": {
+        "stems": [],
+        "roles": [
+          "separation"
+        ],
+        "supports_mono": null,
+        "supports_stereo": null
+      },
+      "vram_required": 8.0,
+      "stems": [],
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [
+        {
+          "source": "Guide 2026-03-04",
+          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "note": "Guide lists Fullness 32.06, Bleedless 43.95, SDR 17.61.",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "standard",
+        "primary_target": "instrumental",
+        "labels": [
+          "SDR",
+          "FULLNESS",
+          "BLEED"
+        ],
+        "values": [
+          17.61,
+          32.06,
+          43.95
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "BS-Roformer-Large-Inst / bs_large_v2_inst guide entry.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 17.61,
+      "fullness": 32.06,
+      "bleedless": 43.95
     },
     {
       "id": "bs-roformer-viperx-1296",
@@ -2410,7 +3081,39 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: model_bs_roformer_ep_368_sdr_12.9628.ckpt",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          12.1019,
+          16.3069,
+          14.2
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: model_bs_roformer_ep_368_sdr_12.9628.ckpt",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 12.96,
+      "fullness": 9.5,
+      "bleedless": 9.0
     },
     {
       "id": "bs-roformer-viperx-1297",
@@ -2540,7 +3243,39 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          11.7742,
+          16.4511,
+          14.11
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 12.97,
+      "fullness": 9.5,
+      "bleedless": 9.0
     },
     {
       "id": "drypd-side-extraction",
@@ -2663,6 +3398,31 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "STEMSEP-LEGACY"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/drypd/scnet-side-extraction",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -2789,7 +3549,39 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: melband_roformer_instvoc_duality_v1.ckpt",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          10.9604,
+          16.1121,
+          13.54
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: melband_roformer_instvoc_duality_v1.ckpt",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "duality-v2-unwa",
@@ -2915,6 +3707,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -3045,362 +3862,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
-    },
-    {
-      "id": "gabox-voc-fv7beta2",
-      "name": "Gabox Voc FV7 Beta 2",
-      "type": "Roformer - Vocals",
-      "architecture": "Mel-Roformer",
-      "description": "Vocals (Beta)",
-      "tags": [
-        "vocals"
-      ],
-      "stems": [],
-      "links": {
-        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/vocfv7beta2.ckpt",
-        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
-        "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental"
       },
-      "artifacts": {
-        "primary": {
-          "kind": "checkpoint",
-          "filename": "vocfv7beta2.ckpt",
-          "sha256": null
-        },
-        "config": {
-          "kind": "config",
-          "filename": "voc_gabox.yaml",
-          "sha256": null
-        },
-        "additional": []
-      },
-      "metrics": {
-        "sdr": 0.0,
-        "fullness": null,
-        "bleedless": null,
-        "aura_stft": null,
-        "aura_mrstft": null,
-        "log_wmse": null
-      },
-      "vram_required": 6.0,
-      "recommended_settings": {
-        "segment_size": null,
-        "batch_size": null,
-        "tta": null,
-        "overlap": null,
-        "shifts": null,
-        "bit_depth": null
-      },
-      "settings_semantics": {
-        "overlap": {
-          "meaning_by_runtime": {
-            "audio-separator": "auto",
-            "stemsep-legacy": "auto",
-            "msst": "divisor"
-          },
-          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
-        }
-      },
-      "runtime": {
-        "allowed": [
-          "msst"
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
         ],
-        "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
-      },
-      "compatibility": {
-        "uvr_compatible": null,
-        "audio_separator_compatible": false,
-        "msst_compatible": true,
-        "known_issues": []
-      },
-      "requirements": {
-        "python": {
-          "min": "3.10",
-          "max": null
-        },
-        "torch": {
-          "min": null,
-          "max": null,
-          "cuda": [],
-          "rocm": []
-        },
-        "pip": {
-          "packages": []
-        },
-        "files": {
-          "expects": [],
-          "provides": []
-        },
-        "manual_steps": []
-      },
-      "phase_fix": {
-        "is_valid_reference": null,
-        "recommended_params": {
-          "lowHz": null,
-          "highHz": null,
-          "highFreqWeight": null
-        },
-        "recommended_usage": []
-      },
-      "capabilities": {
-        "stems": [],
-        "roles": [
-          "separation"
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
         ],
-        "supports_mono": null,
-        "supports_stereo": null
-      },
-      "notes": {
-        "migration": {
-          "from": "legacy",
-          "legacy_fields_present": [
-            "architecture",
-            "bleedless",
-            "description",
-            "fullness",
-            "id",
-            "links",
-            "name",
-            "sdr",
-            "type",
-            "vram_required"
-          ]
-        },
-        "strict_spec": {
-          "routing_default": "msst_only_for_roformer"
-        }
-      }
-    },
-    {
-      "id": "gabox-voc-fv7beta3",
-      "name": "Gabox Voc FV7 Beta 3",
-      "type": "Roformer - Vocals",
-      "architecture": "Mel-Roformer",
-      "description": "Vocals (Beta)",
-      "tags": [
-        "vocals"
-      ],
-      "stems": [],
-      "links": {
-        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/vocfv7beta3.ckpt",
-        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
-        "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental"
-      },
-      "artifacts": {
-        "primary": {
-          "kind": "checkpoint",
-          "filename": "vocfv7beta3.ckpt",
-          "sha256": null
-        },
-        "config": {
-          "kind": "config",
-          "filename": "voc_gabox.yaml",
-          "sha256": null
-        },
-        "additional": []
-      },
-      "metrics": {
-        "sdr": 0.0,
-        "fullness": null,
-        "bleedless": null,
-        "aura_stft": null,
-        "aura_mrstft": null,
-        "log_wmse": null
-      },
-      "vram_required": 6.0,
-      "recommended_settings": {
-        "segment_size": null,
-        "batch_size": null,
-        "tta": null,
-        "overlap": null,
-        "shifts": null,
-        "bit_depth": null
-      },
-      "settings_semantics": {
-        "overlap": {
-          "meaning_by_runtime": {
-            "audio-separator": "auto",
-            "stemsep-legacy": "auto",
-            "msst": "divisor"
-          },
-          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
-        }
-      },
-      "runtime": {
-        "allowed": [
-          "msst"
-        ],
-        "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
-      },
-      "compatibility": {
-        "uvr_compatible": null,
-        "audio_separator_compatible": false,
-        "msst_compatible": true,
-        "known_issues": []
-      },
-      "requirements": {
-        "python": {
-          "min": "3.10",
-          "max": null
-        },
-        "torch": {
-          "min": null,
-          "max": null,
-          "cuda": [],
-          "rocm": []
-        },
-        "pip": {
-          "packages": []
-        },
-        "files": {
-          "expects": [],
-          "provides": []
-        },
-        "manual_steps": []
-      },
-      "phase_fix": {
-        "is_valid_reference": null,
-        "recommended_params": {
-          "lowHz": null,
-          "highHz": null,
-          "highFreqWeight": null
-        },
-        "recommended_usage": []
-      },
-      "capabilities": {
-        "stems": [],
-        "roles": [
-          "separation"
-        ],
-        "supports_mono": null,
-        "supports_stereo": null
-      },
-      "notes": {
-        "migration": {
-          "from": "guide",
-          "legacy_fields_present": []
-        },
-        "strict_spec": {
-          "routing_default": "msst_only_for_roformer"
-        }
-      }
-    },
-    {
-      "id": "gabox-inst-fv7b",
-      "name": "Gabox Inst FV7b",
-      "type": "Roformer - Instrumental",
-      "architecture": "Mel-Roformer",
-      "description": "Inst (Beta)",
-      "tags": [
-        "instrumental"
-      ],
-      "stems": [],
-      "links": {
-        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/inst_fv7b.ckpt",
-        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
-        "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental"
-      },
-      "artifacts": {
-        "primary": {
-          "kind": "checkpoint",
-          "filename": "inst_fv7b.ckpt",
-          "sha256": null
-        },
-        "config": {
-          "kind": "config",
-          "filename": "inst_gabox.yaml",
-          "sha256": null
-        },
-        "additional": []
-      },
-      "metrics": {
-        "sdr": 0.0,
-        "fullness": null,
-        "bleedless": null,
-        "aura_stft": null,
-        "aura_mrstft": null,
-        "log_wmse": null
-      },
-      "vram_required": 6.0,
-      "recommended_settings": {
-        "segment_size": null,
-        "batch_size": null,
-        "tta": null,
-        "overlap": null,
-        "shifts": null,
-        "bit_depth": null
-      },
-      "settings_semantics": {
-        "overlap": {
-          "meaning_by_runtime": {
-            "audio-separator": "auto",
-            "stemsep-legacy": "auto",
-            "msst": "divisor"
-          },
-          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
-        }
-      },
-      "runtime": {
-        "allowed": [
-          "msst"
-        ],
-        "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
-      },
-      "compatibility": {
-        "uvr_compatible": null,
-        "audio_separator_compatible": false,
-        "msst_compatible": true,
-        "known_issues": []
-      },
-      "requirements": {
-        "python": {
-          "min": "3.10",
-          "max": null
-        },
-        "torch": {
-          "min": null,
-          "max": null,
-          "cuda": [],
-          "rocm": []
-        },
-        "pip": {
-          "packages": []
-        },
-        "files": {
-          "expects": [],
-          "provides": []
-        },
-        "manual_steps": []
-      },
-      "phase_fix": {
-        "is_valid_reference": null,
-        "recommended_params": {
-          "lowHz": null,
-          "highHz": null,
-          "highFreqWeight": null
-        },
-        "recommended_usage": []
-      },
-      "capabilities": {
-        "stems": [],
-        "roles": [
-          "separation"
-        ],
-        "supports_mono": null,
-        "supports_stereo": null
-      },
-      "notes": {
-        "migration": {
-          "from": "guide",
-          "legacy_fields_present": []
-        },
-        "strict_spec": {
-          "routing_default": "msst_only_for_roformer"
-        }
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -3523,6 +4009,171 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
+      }
+    },
+    {
+      "id": "gabox-inst-fv7b",
+      "name": "Gabox Inst FV7b",
+      "type": "Roformer - Instrumental",
+      "architecture": "Mel-Roformer",
+      "description": "Inst (Beta)",
+      "tags": [
+        "instrumental"
+      ],
+      "stems": [],
+      "links": {
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/inst_fv7b.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
+        "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "inst_fv7b.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "inst_gabox.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 0.0,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 6.0,
+      "recommended_settings": {
+        "segment_size": null,
+        "batch_size": null,
+        "tta": null,
+        "overlap": null,
+        "shifts": null,
+        "bit_depth": null
+      },
+      "settings_semantics": {
+        "overlap": {
+          "meaning_by_runtime": {
+            "audio-separator": "auto",
+            "stemsep-legacy": "auto",
+            "msst": "divisor"
+          },
+          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
+        }
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+      },
+      "compatibility": {
+        "uvr_compatible": null,
+        "audio_separator_compatible": false,
+        "msst_compatible": true,
+        "known_issues": []
+      },
+      "requirements": {
+        "python": {
+          "min": "3.10",
+          "max": null
+        },
+        "torch": {
+          "min": null,
+          "max": null,
+          "cuda": [],
+          "rocm": []
+        },
+        "pip": {
+          "packages": []
+        },
+        "files": {
+          "expects": [],
+          "provides": []
+        },
+        "manual_steps": []
+      },
+      "phase_fix": {
+        "is_valid_reference": null,
+        "recommended_params": {
+          "lowHz": null,
+          "highHz": null,
+          "highFreqWeight": null
+        },
+        "recommended_usage": []
+      },
+      "capabilities": {
+        "stems": [],
+        "roles": [
+          "separation"
+        ],
+        "supports_mono": null,
+        "supports_stereo": null
+      },
+      "notes": {
+        "migration": {
+          "from": "guide",
+          "legacy_fields_present": []
+        },
+        "strict_spec": {
+          "routing_default": "msst_only_for_roformer"
+        }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -3645,6 +4296,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -3767,6 +4443,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -3889,6 +4590,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -4011,6 +4737,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -4137,6 +4888,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -4263,6 +5039,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -4389,7 +5190,408 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
+    },
+    {
+      "id": "gabox-voc-fv7",
+      "name": "Gabox Voc FV7",
+      "type": "Roformer - Vocals",
+      "architecture": "Mel-Roformer",
+      "description": "Vocals",
+      "tags": [
+        "vocals"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_fv7.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/v7.yaml",
+        "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "voc_fv7.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "v7.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 11.16,
+        "fullness": 17.99,
+        "bleedless": 33.85,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": null
+      },
+      "vram_required": 6.0,
+      "stems": [],
+      "recommended_settings": {},
+      "guide_revision": "2026-03-04",
+      "catalog_status": "verified",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [
+        {
+          "source": "Guide 2026-03-04",
+          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "note": "Guide excerpt matched for gabox-voc-fv7.",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "standard",
+        "primary_target": "vocals",
+        "labels": [
+          "SDR",
+          "FULLNESS",
+          "BLEED"
+        ],
+        "values": [
+          11.16,
+          17.99,
+          33.85
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "voc_fv7 guide entry.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 11.16,
+      "fullness": 17.99,
+      "bleedless": 33.85
+    },
+    {
+      "id": "gabox-voc-fv7beta2",
+      "name": "Gabox Voc FV7 Beta 2",
+      "type": "Roformer - Vocals",
+      "architecture": "Mel-Roformer",
+      "description": "Vocals (Beta)",
+      "tags": [
+        "vocals"
+      ],
+      "stems": [],
+      "links": {
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/vocfv7beta2.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
+        "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "vocfv7beta2.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "voc_gabox.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 0.0,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 6.0,
+      "recommended_settings": {
+        "segment_size": null,
+        "batch_size": null,
+        "tta": null,
+        "overlap": null,
+        "shifts": null,
+        "bit_depth": null
+      },
+      "settings_semantics": {
+        "overlap": {
+          "meaning_by_runtime": {
+            "audio-separator": "auto",
+            "stemsep-legacy": "auto",
+            "msst": "divisor"
+          },
+          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
+        }
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+      },
+      "compatibility": {
+        "uvr_compatible": null,
+        "audio_separator_compatible": false,
+        "msst_compatible": true,
+        "known_issues": []
+      },
+      "requirements": {
+        "python": {
+          "min": "3.10",
+          "max": null
+        },
+        "torch": {
+          "min": null,
+          "max": null,
+          "cuda": [],
+          "rocm": []
+        },
+        "pip": {
+          "packages": []
+        },
+        "files": {
+          "expects": [],
+          "provides": []
+        },
+        "manual_steps": []
+      },
+      "phase_fix": {
+        "is_valid_reference": null,
+        "recommended_params": {
+          "lowHz": null,
+          "highHz": null,
+          "highFreqWeight": null
+        },
+        "recommended_usage": []
+      },
+      "capabilities": {
+        "stems": [],
+        "roles": [
+          "separation"
+        ],
+        "supports_mono": null,
+        "supports_stereo": null
+      },
+      "notes": {
+        "migration": {
+          "from": "legacy",
+          "legacy_fields_present": [
+            "architecture",
+            "bleedless",
+            "description",
+            "fullness",
+            "id",
+            "links",
+            "name",
+            "sdr",
+            "type",
+            "vram_required"
+          ]
+        },
+        "strict_spec": {
+          "routing_default": "msst_only_for_roformer"
+        }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
+      }
+    },
+    {
+      "id": "gabox-voc-fv7beta3",
+      "name": "Gabox Voc FV7 Beta 3",
+      "type": "Roformer - Vocals",
+      "architecture": "Mel-Roformer",
+      "description": "Vocals (Beta)",
+      "tags": [
+        "vocals"
+      ],
+      "stems": [],
+      "links": {
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/vocfv7beta3.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
+        "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "vocfv7beta3.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "voc_gabox.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 10.8,
+        "fullness": 21.82,
+        "bleedless": 30.83,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 6.0,
+      "recommended_settings": {
+        "segment_size": null,
+        "batch_size": null,
+        "tta": null,
+        "overlap": null,
+        "shifts": null,
+        "bit_depth": null
+      },
+      "settings_semantics": {
+        "overlap": {
+          "meaning_by_runtime": {
+            "audio-separator": "auto",
+            "stemsep-legacy": "auto",
+            "msst": "divisor"
+          },
+          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
+        }
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+      },
+      "compatibility": {
+        "uvr_compatible": null,
+        "audio_separator_compatible": false,
+        "msst_compatible": true,
+        "known_issues": []
+      },
+      "requirements": {
+        "python": {
+          "min": "3.10",
+          "max": null
+        },
+        "torch": {
+          "min": null,
+          "max": null,
+          "cuda": [],
+          "rocm": []
+        },
+        "pip": {
+          "packages": []
+        },
+        "files": {
+          "expects": [],
+          "provides": []
+        },
+        "manual_steps": []
+      },
+      "phase_fix": {
+        "is_valid_reference": null,
+        "recommended_params": {
+          "lowHz": null,
+          "highHz": null,
+          "highFreqWeight": null
+        },
+        "recommended_usage": []
+      },
+      "capabilities": {
+        "stems": [],
+        "roles": [
+          "separation"
+        ],
+        "supports_mono": null,
+        "supports_stereo": null
+      },
+      "notes": {
+        "migration": {
+          "from": "guide",
+          "legacy_fields_present": []
+        },
+        "strict_spec": {
+          "routing_default": "msst_only_for_roformer"
+        }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "verified",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [
+        {
+          "source": "Guide 2026-03-04",
+          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "note": "Guide excerpt matched for gabox-voc-fv7beta3.",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "standard",
+        "primary_target": "vocals",
+        "labels": [
+          "SDR",
+          "FULLNESS",
+          "BLEED"
+        ],
+        "values": [
+          10.8,
+          21.82,
+          30.83
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "vocfv7beta3 guide entry.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 10.8,
+      "fullness": 21.82,
+      "bleedless": 30.83
     },
     {
       "id": "gabox-voc-gabox2",
@@ -4515,6 +5717,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -4644,6 +5871,31 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "STEMSEP-LEGACY"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -4773,6 +6025,31 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "STEMSEP-LEGACY"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -4897,7 +6174,39 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: UVR-MDX-NET-Inst_HQ_4.onnx",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          8.832,
+          15.5122,
+          12.17
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: UVR-MDX-NET-Inst_HQ_4.onnx",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "mdx-net-hq5",
@@ -5021,7 +6330,39 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: UVR-MDX-NET-Inst_HQ_5.onnx",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          8.695,
+          15.2961,
+          12.0
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: UVR-MDX-NET-Inst_HQ_5.onnx",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "mdx23c-d1581",
@@ -5145,7 +6486,39 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: MDX23C_D1581.ckpt",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          10.0375,
+          15.4657,
+          12.75
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: MDX23C_D1581.ckpt",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "mdx23c-drumsep-5stem",
@@ -5273,7 +6646,32 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "verified",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "drums",
+        "labels": [
+          "KICK SDR",
+          "SNARE FULL",
+          "HH BLEED"
+        ],
+        "values": [
+          16.66,
+          25.0361,
+          12.347
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "Guide lists per-stem drumsep metrics for the public 5-stem release.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "mdx23c-drumsep-6stem",
@@ -5399,6 +6797,31 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "STEMSEP-LEGACY"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -5523,7 +6946,39 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: MDX23C-8KFFT-InstVoc_HQ.ckpt",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          10.5562,
+          15.8348,
+          13.2
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: MDX23C-8KFFT-InstVoc_HQ.ckpt",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "mel-band-crowd",
@@ -5657,6 +7112,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v.1.0.4",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -5783,7 +7263,39 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          8.4477,
+          14.6545,
+          11.55
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "mel-band-karaoke-becruily",
@@ -5909,6 +7421,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -6039,6 +7576,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 12.5,
+      "fullness": 9.0,
+      "bleedless": 9.8,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -6165,6 +7727,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -6294,6 +7881,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/neo/instvfx-roformer",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -6420,6 +8032,31 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "STEMSEP-LEGACY"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -6544,7 +8181,103 @@
         "strict_spec": {
           "routing_default": "legacy_runtime_placeholder"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "STEMSEP-LEGACY"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
+    },
+    {
+      "id": "small-karaoke-gaboxauf",
+      "name": "Small Karaoke GaboxAuf",
+      "type": "Karaoke / Backing Vocals / Other Separations",
+      "architecture": "Mel-Roformer",
+      "description": "Small karaoke split",
+      "tags": [
+        "karaoke"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/karaoke/small_karaoke_gaboxaufr.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/karaoke/config_karaoke_small.yaml",
+        "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "small_karaoke_gaboxaufr.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "config_karaoke_small.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 0.0,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": null
+      },
+      "vram_required": 6.0,
+      "stems": [],
+      "recommended_settings": {},
+      "guide_revision": "2026-03-04",
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "karaoke",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MSST"
+        ],
+        "source": "Guide mention",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "Guide says metrics exist, but the snippet does not include numeric values near the release note.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "sucial-dereverb-fused",
@@ -6673,6 +8406,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -6801,6 +8559,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/Sucial/Chorus_Male_Female_BS_Roformer",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -6927,6 +8710,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -7053,7 +8861,110 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
+    },
+    {
+      "id": "unwa-big-beta-7",
+      "name": "Unwa Big Beta 7",
+      "type": "Roformer - Vocals",
+      "architecture": "Mel-Roformer",
+      "description": "Vocals",
+      "tags": [
+        "vocals"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta7.ckpt",
+        "config": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta7.yaml",
+        "homepage": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "big_beta7.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "big_beta7.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 11.2,
+        "fullness": 16.2,
+        "bleedless": 38.77,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": null
+      },
+      "vram_required": 6.0,
+      "stems": [],
+      "recommended_settings": {},
+      "guide_revision": "2026-03-04",
+      "catalog_status": "verified",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [
+        {
+          "source": "Guide 2026-03-04",
+          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "note": "Guide lists Bleedless 38.77, Fullness 16.20, SDR 11.20.",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "standard",
+        "primary_target": "vocals",
+        "labels": [
+          "SDR",
+          "FULLNESS",
+          "BLEED"
+        ],
+        "values": [
+          11.2,
+          16.2,
+          38.77
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "Big Beta 7 vocal guide entry.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 11.2,
+      "fullness": 16.2,
+      "bleedless": 38.77
     },
     {
       "id": "unwa-debleed",
@@ -7186,6 +9097,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/Eddycrack864/audio-separator-models",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -7312,7 +9248,472 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
+    },
+    {
+      "id": "unwa-hyperace",
+      "name": "Unwa HyperACE",
+      "type": "Roformer - Instrumental",
+      "architecture": "BS-Roformer",
+      "description": "Inst (HyperACE)",
+      "tags": [
+        "instrumental"
+      ],
+      "stems": [],
+      "links": {
+        "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/bs_hyperace.ckpt",
+        "config": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/config.yaml",
+        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "bs_hyperace.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "config.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 17.27,
+        "fullness": 36.91,
+        "bleedless": 38.77,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 8.0,
+      "recommended_settings": {
+        "segment_size": null,
+        "batch_size": null,
+        "tta": null,
+        "overlap": null,
+        "shifts": null,
+        "bit_depth": null
+      },
+      "settings_semantics": {
+        "overlap": {
+          "meaning_by_runtime": {
+            "audio-separator": "auto",
+            "stemsep-legacy": "auto",
+            "msst": "divisor"
+          },
+          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
+        }
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "variant": "hyperace_v1"
+      },
+      "compatibility": {
+        "uvr_compatible": null,
+        "audio_separator_compatible": false,
+        "msst_compatible": true,
+        "known_issues": []
+      },
+      "requirements": {
+        "python": {
+          "min": "3.10",
+          "max": null
+        },
+        "torch": {
+          "min": null,
+          "max": null,
+          "cuda": [],
+          "rocm": []
+        },
+        "pip": {
+          "packages": []
+        },
+        "files": {
+          "expects": [],
+          "provides": []
+        },
+        "manual_steps": []
+      },
+      "phase_fix": {
+        "is_valid_reference": null,
+        "recommended_params": {
+          "lowHz": null,
+          "highHz": null,
+          "highFreqWeight": null
+        },
+        "recommended_usage": []
+      },
+      "capabilities": {
+        "stems": [],
+        "roles": [
+          "separation"
+        ],
+        "supports_mono": null,
+        "supports_stereo": null
+      },
+      "notes": {
+        "migration": {
+          "from": "legacy",
+          "legacy_fields_present": [
+            "architecture",
+            "bleedless",
+            "description",
+            "fullness",
+            "id",
+            "links",
+            "name",
+            "sdr",
+            "type",
+            "vram_required"
+          ]
+        },
+        "strict_spec": {
+          "routing_default": "msst_only_for_roformer"
+        }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [
+        {
+          "source": "Guide 2026-03-04",
+          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "note": "Guide excerpt matched for unwa-hyperace.",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "standard",
+        "primary_target": "instrumental",
+        "labels": [
+          "SDR",
+          "FULLNESS",
+          "BLEED"
+        ],
+        "values": [
+          17.27,
+          36.91,
+          38.77
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "Unwa HyperACE instrumental guide entry.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 17.27,
+      "fullness": 36.91,
+      "bleedless": 38.77
+    },
+    {
+      "id": "unwa-hyperace-v2-inst",
+      "name": "Unwa HyperACE v2 Inst",
+      "type": "Roformer - Instrumental",
+      "architecture": "BS-Roformer",
+      "description": "Inst (HyperACE v2)",
+      "tags": [
+        "instrumental"
+      ],
+      "stems": [],
+      "links": {
+        "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_inst/bs_roformer_inst_hyperacev2.ckpt",
+        "config": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_inst/config.yaml",
+        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "bs_roformer_inst_hyperacev2.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "config.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 17.4,
+        "fullness": 38.03,
+        "bleedless": 37.87,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 8.0,
+      "recommended_settings": {
+        "segment_size": null,
+        "batch_size": null,
+        "tta": null,
+        "overlap": null,
+        "shifts": null,
+        "bit_depth": null
+      },
+      "settings_semantics": {
+        "overlap": {
+          "meaning_by_runtime": {
+            "audio-separator": "auto",
+            "stemsep-legacy": "auto",
+            "msst": "divisor"
+          },
+          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
+        }
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "variant": "hyperace_v2"
+      },
+      "compatibility": {
+        "uvr_compatible": null,
+        "audio_separator_compatible": false,
+        "msst_compatible": true,
+        "known_issues": []
+      },
+      "requirements": {
+        "python": {
+          "min": "3.10",
+          "max": null
+        },
+        "torch": {
+          "min": null,
+          "max": null,
+          "cuda": [],
+          "rocm": []
+        },
+        "pip": {
+          "packages": []
+        },
+        "files": {
+          "expects": [],
+          "provides": []
+        },
+        "manual_steps": []
+      },
+      "phase_fix": {
+        "is_valid_reference": null,
+        "recommended_params": {
+          "lowHz": null,
+          "highHz": null,
+          "highFreqWeight": null
+        },
+        "recommended_usage": []
+      },
+      "capabilities": {
+        "stems": [],
+        "roles": [
+          "separation"
+        ],
+        "supports_mono": null,
+        "supports_stereo": null
+      },
+      "notes": {
+        "strict_spec": {
+          "routing_default": "msst_only_for_roformer"
+        }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [
+        {
+          "source": "Guide 2026-03-04",
+          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "note": "Guide excerpt matched for unwa-hyperace-v2-inst.",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "standard",
+        "primary_target": "instrumental",
+        "labels": [
+          "SDR",
+          "FULLNESS",
+          "BLEED"
+        ],
+        "values": [
+          17.4,
+          38.03,
+          37.87
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "HyperACE v2 instrumental guide entry.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 17.4,
+      "fullness": 38.03,
+      "bleedless": 37.87
+    },
+    {
+      "id": "unwa-hyperace-v2-voc",
+      "name": "Unwa HyperACE v2 Voc",
+      "type": "Roformer - Vocals",
+      "architecture": "BS-Roformer",
+      "description": "Vocals (HyperACE v2)",
+      "tags": [
+        "vocals"
+      ],
+      "stems": [],
+      "links": {
+        "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_voc/bs_roformer_voc_hyperacev2.ckpt",
+        "config": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_voc/config.yaml",
+        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "bs_roformer_voc_hyperacev2.ckpt",
+          "sha256": null
+        },
+        "config": {
+          "kind": "config",
+          "filename": "config.yaml",
+          "sha256": null
+        },
+        "additional": []
+      },
+      "metrics": {
+        "sdr": 0.0,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 8.0,
+      "recommended_settings": {
+        "segment_size": null,
+        "batch_size": null,
+        "tta": null,
+        "overlap": null,
+        "shifts": null,
+        "bit_depth": null
+      },
+      "settings_semantics": {
+        "overlap": {
+          "meaning_by_runtime": {
+            "audio-separator": "auto",
+            "stemsep-legacy": "auto",
+            "msst": "divisor"
+          },
+          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
+        }
+      },
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "variant": "hyperace_v2"
+      },
+      "compatibility": {
+        "uvr_compatible": null,
+        "audio_separator_compatible": false,
+        "msst_compatible": true,
+        "known_issues": []
+      },
+      "requirements": {
+        "python": {
+          "min": "3.10",
+          "max": null
+        },
+        "torch": {
+          "min": null,
+          "max": null,
+          "cuda": [],
+          "rocm": []
+        },
+        "pip": {
+          "packages": []
+        },
+        "files": {
+          "expects": [],
+          "provides": []
+        },
+        "manual_steps": []
+      },
+      "phase_fix": {
+        "is_valid_reference": null,
+        "recommended_params": {
+          "lowHz": null,
+          "highHz": null,
+          "highFreqWeight": null
+        },
+        "recommended_usage": []
+      },
+      "capabilities": {
+        "stems": [],
+        "roles": [
+          "separation"
+        ],
+        "supports_mono": null,
+        "supports_stereo": null
+      },
+      "notes": {
+        "strict_spec": {
+          "routing_default": "msst_only_for_roformer"
+        }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "vocals",
+        "labels": [
+          "VOC SDR",
+          "FOCUS",
+          "STATUS"
+        ],
+        "values": [
+          11.39,
+          "Lead Vox",
+          "Guide"
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "Guide lists HyperACE v2 vocal SDR 11.39 but not the full triad nearby.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "unwa-inst-fno",
@@ -7323,7 +9724,9 @@
       "tags": [
         "instrumental"
       ],
-      "stems": ["instrumental"],
+      "stems": [
+        "instrumental"
+      ],
       "links": {
         "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-fno.ckpt",
         "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-fno.yaml",
@@ -7343,9 +9746,9 @@
         "additional": []
       },
       "metrics": {
-        "sdr": 0.0,
-        "fullness": null,
-        "bleedless": null,
+        "sdr": 17.6,
+        "fullness": 32.03,
+        "bleedless": 42.87,
         "aura_stft": null,
         "aura_mrstft": null,
         "log_wmse": null
@@ -7439,7 +9842,39 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [
+        {
+          "source": "Guide 2026-03-04",
+          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "note": "Guide lists Inst FNO with Fullness 32.03, Bleedless 42.87, SDR 17.60.",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "standard",
+        "primary_target": "instrumental",
+        "labels": [
+          "SDR",
+          "FULLNESS",
+          "BLEED"
+        ],
+        "values": [
+          17.6,
+          32.03,
+          42.87
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "Unwa Inst FNO guide entry.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 17.6,
+      "fullness": 32.03,
+      "bleedless": 42.87
     },
     {
       "id": "unwa-inst-v1e",
@@ -7567,7 +10002,39 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: melband_roformer_inst_v1.ckpt",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          9.8054,
+          15.8573,
+          12.83
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: melband_roformer_inst_v1.ckpt",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "unwa-inst-v1e-plus",
@@ -7693,6 +10160,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -7819,7 +10311,39 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: melband_roformer_inst_v2.ckpt",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          10.2547,
+          16.0572,
+          13.16
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: melband_roformer_inst_v2.ckpt",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null
     },
     {
       "id": "unwa-kim-ft2",
@@ -7945,6 +10469,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 12.5,
+      "fullness": 9.0,
+      "bleedless": 9.8,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -8071,6 +10620,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 12.5,
+      "fullness": 9.0,
+      "bleedless": 9.8,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -8197,357 +10771,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
-    },
-    {
-      "id": "unwa-hyperace",
-      "name": "Unwa HyperACE",
-      "type": "Roformer - Instrumental",
-      "architecture": "BS-Roformer",
-      "description": "Inst (HyperACE)",
-      "tags": [
-        "instrumental"
-      ],
-      "stems": [],
-      "links": {
-        "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/bs_hyperace.ckpt",
-        "config": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/config.yaml",
-        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE"
       },
-      "artifacts": {
-        "primary": {
-          "kind": "checkpoint",
-          "filename": "bs_hyperace.ckpt",
-          "sha256": null
-        },
-        "config": {
-          "kind": "config",
-          "filename": "config.yaml",
-          "sha256": null
-        },
-        "additional": []
-      },
-      "metrics": {
-        "sdr": 0.0,
-        "fullness": null,
-        "bleedless": null,
-        "aura_stft": null,
-        "aura_mrstft": null,
-        "log_wmse": null
-      },
-      "vram_required": 8.0,
-      "recommended_settings": {
-        "segment_size": null,
-        "batch_size": null,
-        "tta": null,
-        "overlap": null,
-        "shifts": null,
-        "bit_depth": null
-      },
-      "settings_semantics": {
-        "overlap": {
-          "meaning_by_runtime": {
-            "audio-separator": "auto",
-            "stemsep-legacy": "auto",
-            "msst": "divisor"
-          },
-          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
-        }
-      },
-      "runtime": {
-        "allowed": [
-          "msst"
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
         ],
-        "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
-        "variant": "hyperace_v1"
-      },
-      "compatibility": {
-        "uvr_compatible": null,
-        "audio_separator_compatible": false,
-        "msst_compatible": true,
-        "known_issues": []
-      },
-      "requirements": {
-        "python": {
-          "min": "3.10",
-          "max": null
-        },
-        "torch": {
-          "min": null,
-          "max": null,
-          "cuda": [],
-          "rocm": []
-        },
-        "pip": {
-          "packages": []
-        },
-        "files": {
-          "expects": [],
-          "provides": []
-        },
-        "manual_steps": []
-      },
-      "phase_fix": {
-        "is_valid_reference": null,
-        "recommended_params": {
-          "lowHz": null,
-          "highHz": null,
-          "highFreqWeight": null
-        },
-        "recommended_usage": []
-      },
-      "capabilities": {
-        "stems": [],
-        "roles": [
-          "separation"
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
         ],
-        "supports_mono": null,
-        "supports_stereo": null
-      },
-      "notes": {
-        "migration": {
-          "from": "legacy",
-          "legacy_fields_present": [
-            "architecture",
-            "bleedless",
-            "description",
-            "fullness",
-            "id",
-            "links",
-            "name",
-            "sdr",
-            "type",
-            "vram_required"
-          ]
-        },
-        "strict_spec": {
-          "routing_default": "msst_only_for_roformer"
-        }
-      }
-    },
-    {
-      "id": "unwa-hyperace-v2-inst",
-      "name": "Unwa HyperACE v2 Inst",
-      "type": "Roformer - Instrumental",
-      "architecture": "BS-Roformer",
-      "description": "Inst (HyperACE v2)",
-      "tags": [
-        "instrumental"
-      ],
-      "stems": [],
-      "links": {
-        "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_inst/bs_roformer_inst_hyperacev2.ckpt",
-        "config": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_inst/config.yaml",
-        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE"
-      },
-      "artifacts": {
-        "primary": {
-          "kind": "checkpoint",
-          "filename": "bs_roformer_inst_hyperacev2.ckpt",
-          "sha256": null
-        },
-        "config": {
-          "kind": "config",
-          "filename": "config.yaml",
-          "sha256": null
-        },
-        "additional": []
-      },
-      "metrics": {
-        "sdr": 0.0,
-        "fullness": null,
-        "bleedless": null,
-        "aura_stft": null,
-        "aura_mrstft": null,
-        "log_wmse": null
-      },
-      "vram_required": 8.0,
-      "recommended_settings": {
-        "segment_size": null,
-        "batch_size": null,
-        "tta": null,
-        "overlap": null,
-        "shifts": null,
-        "bit_depth": null
-      },
-      "settings_semantics": {
-        "overlap": {
-          "meaning_by_runtime": {
-            "audio-separator": "auto",
-            "stemsep-legacy": "auto",
-            "msst": "divisor"
-          },
-          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
-        }
-      },
-      "runtime": {
-        "allowed": [
-          "msst"
-        ],
-        "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
-        "variant": "hyperace_v2"
-      },
-      "compatibility": {
-        "uvr_compatible": null,
-        "audio_separator_compatible": false,
-        "msst_compatible": true,
-        "known_issues": []
-      },
-      "requirements": {
-        "python": {
-          "min": "3.10",
-          "max": null
-        },
-        "torch": {
-          "min": null,
-          "max": null,
-          "cuda": [],
-          "rocm": []
-        },
-        "pip": {
-          "packages": []
-        },
-        "files": {
-          "expects": [],
-          "provides": []
-        },
-        "manual_steps": []
-      },
-      "phase_fix": {
-        "is_valid_reference": null,
-        "recommended_params": {
-          "lowHz": null,
-          "highHz": null,
-          "highFreqWeight": null
-        },
-        "recommended_usage": []
-      },
-      "capabilities": {
-        "stems": [],
-        "roles": [
-          "separation"
-        ],
-        "supports_mono": null,
-        "supports_stereo": null
-      },
-      "notes": {
-        "strict_spec": {
-          "routing_default": "msst_only_for_roformer"
-        }
-      }
-    },
-    {
-      "id": "unwa-hyperace-v2-voc",
-      "name": "Unwa HyperACE v2 Voc",
-      "type": "Roformer - Vocals",
-      "architecture": "BS-Roformer",
-      "description": "Vocals (HyperACE v2)",
-      "tags": [
-        "vocals"
-      ],
-      "stems": [],
-      "links": {
-        "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_voc/bs_roformer_voc_hyperacev2.ckpt",
-        "config": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_voc/config.yaml",
-        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE"
-      },
-      "artifacts": {
-        "primary": {
-          "kind": "checkpoint",
-          "filename": "bs_roformer_voc_hyperacev2.ckpt",
-          "sha256": null
-        },
-        "config": {
-          "kind": "config",
-          "filename": "config.yaml",
-          "sha256": null
-        },
-        "additional": []
-      },
-      "metrics": {
-        "sdr": 0.0,
-        "fullness": null,
-        "bleedless": null,
-        "aura_stft": null,
-        "aura_mrstft": null,
-        "log_wmse": null
-      },
-      "vram_required": 8.0,
-      "recommended_settings": {
-        "segment_size": null,
-        "batch_size": null,
-        "tta": null,
-        "overlap": null,
-        "shifts": null,
-        "bit_depth": null
-      },
-      "settings_semantics": {
-        "overlap": {
-          "meaning_by_runtime": {
-            "audio-separator": "auto",
-            "stemsep-legacy": "auto",
-            "msst": "divisor"
-          },
-          "notes": "Strict default: treat overlap for Roformer under MSST as an overlap divisor. Tune per-guide/model as needed."
-        }
-      },
-      "runtime": {
-        "allowed": [
-          "msst"
-        ],
-        "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
-        "variant": "hyperace_v2"
-      },
-      "compatibility": {
-        "uvr_compatible": null,
-        "audio_separator_compatible": false,
-        "msst_compatible": true,
-        "known_issues": []
-      },
-      "requirements": {
-        "python": {
-          "min": "3.10",
-          "max": null
-        },
-        "torch": {
-          "min": null,
-          "max": null,
-          "cuda": [],
-          "rocm": []
-        },
-        "pip": {
-          "packages": []
-        },
-        "files": {
-          "expects": [],
-          "provides": []
-        },
-        "manual_steps": []
-      },
-      "phase_fix": {
-        "is_valid_reference": null,
-        "recommended_params": {
-          "lowHz": null,
-          "highHz": null,
-          "highFreqWeight": null
-        },
-        "recommended_usage": []
-      },
-      "capabilities": {
-        "stems": [],
-        "roles": [
-          "separation"
-        ],
-        "supports_mono": null,
-        "supports_stereo": null
-      },
-      "notes": {
-        "strict_spec": {
-          "routing_default": "msst_only_for_roformer"
-        }
+        "source": "Catalog status",
+        "evidence_url": null,
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -8674,6 +10922,31 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "missing_evidence",
+      "metrics_evidence": [],
+      "sdr": 0.0,
+      "fullness": null,
+      "bleedless": null,
+      "card_metrics": {
+        "kind": "status",
+        "primary_target": "catalog",
+        "labels": [
+          "METRICS",
+          "DOWNLOAD",
+          "RUNTIME"
+        ],
+        "values": [
+          "Pending",
+          "Direct",
+          "MANUAL"
+        ],
+        "source": "Catalog status",
+        "evidence_url": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection",
+        "evidence_note": "No verified metric trio is currently attached to this model.",
+        "last_verified": "2026-03-04"
       }
     },
     {
@@ -8705,9 +10978,9 @@
         "additional": []
       },
       "metrics": {
-        "sdr": 0.0,
-        "fullness": null,
-        "bleedless": null,
+        "sdr": 10.97,
+        "fullness": 15.13,
+        "bleedless": 40.07,
         "aura_stft": null,
         "aura_mrstft": null,
         "log_wmse": null
@@ -8800,7 +11073,39 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "verified",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [
+        {
+          "source": "Guide 2026-03-04",
+          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "note": "Guide excerpt matched for unwa-revive-2.",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "standard",
+        "primary_target": "vocals",
+        "labels": [
+          "SDR",
+          "FULLNESS",
+          "BLEED"
+        ],
+        "values": [
+          10.97,
+          15.13,
+          40.07
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "Revive 2 guide entry.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 10.97,
+      "fullness": 15.13,
+      "bleedless": 40.07
     },
     {
       "id": "unwa-revive-3e",
@@ -8831,9 +11136,9 @@
         "additional": []
       },
       "metrics": {
-        "sdr": 0.0,
-        "fullness": null,
-        "bleedless": null,
+        "sdr": 10.98,
+        "fullness": 21.43,
+        "bleedless": 30.51,
         "aura_stft": null,
         "aura_mrstft": null,
         "log_wmse": null
@@ -8928,7 +11233,32 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "verified",
+      "metrics_status": "guide_curated",
+      "metrics_evidence": [],
+      "card_metrics": {
+        "kind": "standard",
+        "primary_target": "vocals",
+        "labels": [
+          "SDR",
+          "FULLNESS",
+          "BLEED"
+        ],
+        "values": [
+          10.98,
+          21.43,
+          30.51
+        ],
+        "source": "Guide 2026-03-04",
+        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_note": "Revive 3e guide entry.",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 10.98,
+      "fullness": 21.43,
+      "bleedless": 30.51
     },
     {
       "id": "viperx-karaoke-1297",
@@ -9054,7 +11384,39 @@
         "strict_spec": {
           "routing_default": "msst_only_for_roformer"
         }
-      }
+      },
+      "guide_revision": "2026-03-04",
+      "catalog_status": "manual_only",
+      "metrics_status": "vendor_matched",
+      "metrics_evidence": [
+        {
+          "source": "Vendor scores",
+          "url": null,
+          "note": "Matched by artifact filename: mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
+          "verified_at": "2026-03-04"
+        }
+      ],
+      "card_metrics": {
+        "kind": "special",
+        "primary_target": "separation",
+        "labels": [
+          "VOC SDR",
+          "INST SDR",
+          "AVG SDR"
+        ],
+        "values": [
+          8.4477,
+          14.6545,
+          11.55
+        ],
+        "source": "Vendor scores",
+        "evidence_url": null,
+        "evidence_note": "Matched by artifact filename: mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
+        "last_verified": "2026-03-04"
+      },
+      "sdr": 12.97,
+      "fullness": 9.5,
+      "bleedless": 9.0
     }
   ]
 }

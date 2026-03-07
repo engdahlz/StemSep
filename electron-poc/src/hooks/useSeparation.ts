@@ -5,6 +5,11 @@ import { toast } from "sonner";
 import { ALL_PRESETS, Preset } from "../presets";
 import { recipesToPresets } from "@/lib/recipePresets";
 import { resolveSeparationPlan } from "@/lib/separation/resolveSeparationPlan";
+import {
+  buildSeparationBackendPayload,
+  executeSeparation,
+  executeSeparationPreflight,
+} from "@/lib/separation/backendPayload";
 
 const MISSING_MODELS_EVENT = "stemsep:missing-models";
 
@@ -35,27 +40,6 @@ export const useSeparation = () => {
 
     return [...ALL_PRESETS, ...recipesToPresets(recipes)];
   }, [recipes]);
-
-  const toBackendOverlap = useCallback((value: unknown) => {
-    const n = typeof value === "number" ? value : Number(value);
-    if (!Number.isFinite(n)) return undefined;
-    if (n <= 0) return undefined;
-
-    // UI uses an integer overlap divisor (2..50).
-    // Backend expects a 0..1 overlap ratio.
-    // divisor -> ratio: (n - 1) / n  (e.g. 4 -> 0.75)
-    // Keep legacy ratio values (0..1) as-is.
-    if (n < 1) return Math.min(0.99, Math.max(0, n));
-    const ratio = (n - 1) / n;
-    return Math.min(0.99, Math.max(0, ratio));
-  }, []);
-
-  const toBackendSegmentSize = useCallback((value: unknown) => {
-    const n = typeof value === "number" ? value : Number(value);
-    if (!Number.isFinite(n)) return undefined;
-    if (n <= 0) return undefined;
-    return Math.trunc(n);
-  }, []);
 
   const handleSelectOutputDirectory = useCallback(async () => {
     if (!window.electronAPI) return;
@@ -127,14 +111,12 @@ export const useSeparation = () => {
             globalPhaseParams: phaseParams,
           });
 
-          // Determine model and stems (canonical plan)
-          const modelId = plan.effectiveModelId;
-          const stems = plan.effectiveStems;
-
-          const backendOverlap = toBackendOverlap(config.advancedParams?.overlap);
-          const backendSegmentSize = toBackendSegmentSize(
-            config.advancedParams?.segmentSize,
-          );
+          const backendPayload = buildSeparationBackendPayload({
+            inputFile: item.file,
+            outputDir: outputDirectory,
+            config,
+            plan,
+          });
 
           // Block early if we already know models are missing
           if (!plan.canProceed) {
@@ -195,30 +177,10 @@ export const useSeparation = () => {
           if (!window.electronAPI)
             throw new Error("Electron API not available");
 
-          const preflight = window.electronAPI.separationPreflight
-            ? await window.electronAPI.separationPreflight(
-                item.file,
-                modelId,
-                outputDirectory,
-                stems,
-                config.device && config.device !== "auto"
-                  ? config.device
-                  : undefined,
-                backendOverlap,
-                backendSegmentSize,
-                config.advancedParams?.shifts,
-                "wav",
-                config.advancedParams?.bitrate,
-                config.advancedParams?.tta,
-                plan.effectiveEnsembleConfig,
-                plan.effectiveEnsembleConfig?.algorithm,
-                config.invert,
-                config.splitFreq,
-                plan.effectiveGlobalPhaseParams,
-                plan.effectivePostProcessingSteps,
-                config.volumeCompensation,
-              )
-            : null;
+          const preflight = await executeSeparationPreflight(
+            window.electronAPI,
+            backendPayload,
+          );
 
           const warnings = (preflight as any)?.warnings as string[] | undefined;
           if (warnings && warnings.length > 0 && processedCount === 0) {
@@ -233,28 +195,7 @@ export const useSeparation = () => {
           }
 
           // Call backend
-          const result = await window.electronAPI.separateAudio(
-            item.file,
-            modelId,
-            outputDirectory,
-            stems,
-            config.device && config.device !== "auto"
-              ? config.device
-              : undefined,
-            backendOverlap,
-            backendSegmentSize,
-            config.advancedParams?.shifts,
-            "wav",
-            config.advancedParams?.bitrate,
-            config.advancedParams?.tta,
-            plan.effectiveEnsembleConfig,
-            plan.effectiveEnsembleConfig?.algorithm,
-            config.invert,
-            config.splitFreq,
-            plan.effectiveGlobalPhaseParams,
-            plan.effectivePostProcessingSteps,
-            config.volumeCompensation,
-          );
+          const result = await executeSeparation(window.electronAPI, backendPayload);
 
           console.log("Separation Result (Frontend):", result);
 
@@ -289,12 +230,12 @@ export const useSeparation = () => {
             : undefined;
           const displayName = isCustomEnsemble
             ? `Custom Ensemble (${config.ensembleConfig!.models.length} models)`
-            : presetInfo?.name || modelId;
+            : presetInfo?.name || backendPayload.modelId;
 
           addToHistory({
             inputFile: item.file,
             outputDir: outputDirectory,
-            modelId,
+            modelId: backendPayload.modelId,
             modelName: displayName || "Unknown Model",
             preset: presetInfo
               ? { id: presetInfo.id, name: presetInfo.name }
@@ -302,8 +243,14 @@ export const useSeparation = () => {
             status: "completed",
             outputFiles: outputs,
             backendJobId: result.jobId,
+            sourceAudioProfile: result.sourceAudioProfile,
+            stagingDecision: result.stagingDecision,
+            playback: {
+              sourceKind: "preview_cache",
+              previewDir: result.outputDir,
+            },
             settings: {
-              stems: stems || [],
+              stems: backendPayload.stems || [],
               overlap: config.advancedParams?.overlap,
               segmentSize: config.advancedParams?.segmentSize,
             },

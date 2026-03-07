@@ -38,8 +38,12 @@ export function SimplePresetCard({
   const tooltipLines = useMemo(() => {
     const lines: string[] = []
     if (preset.description) lines.push(preset.description)
+    if (preset.workflowSummary) lines.push(`Workflow: ${preset.workflowSummary}`)
+    if (typeof preset.guideRank === 'number') lines.push(`Guide rank: #${preset.guideRank}`)
     if (typeof preset.estimatedVram === 'number') lines.push(`VRAM hint: ${preset.estimatedVram}GB`)
     if (preset.stems?.length) lines.push(`Stems: ${preset.stems.join(', ')}`)
+    if (preset.recommendedFor?.length) lines.push(`Best for: ${preset.recommendedFor.join('; ')}`)
+    if (preset.contraindications?.length) lines.push(`Avoid when: ${preset.contraindications.join('; ')}`)
     if (isRecipe) {
       if (recipeType) lines.push(`Type: ${recipeType}`)
       if (stepCount > 0) lines.push(`Steps: ${stepCount}`)
@@ -141,6 +145,11 @@ export function SimplePresetCard({
         {isRecipe && (
           <Badge variant="outline" className="text-[10px]" title="Runs multiple steps automatically">
             Multi-step
+          </Badge>
+        )}
+        {typeof preset.guideRank === 'number' && (
+          <Badge variant="outline" className="text-[10px]" title="Guide priority">
+            #{preset.guideRank}
           </Badge>
         )}
         {missingIds.length > 0 && (

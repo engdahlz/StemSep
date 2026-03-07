@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { resolveSeparationPlan } from "@/lib/separation/resolveSeparationPlan";
 import {
   ArrowLeft,
@@ -27,6 +27,13 @@ import { PageShell } from "./PageShell";
 import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
 import { RuntimeDoctorCard } from "./RuntimeDoctorCard";
 import { modelRequiresFnoRuntime } from "../lib/systemRuntime/modelRuntime";
+import { recommendWorkflowPreset } from "@/lib/policy/recommendationPolicy";
+import { SeparationPlanCard } from "./SeparationPlanCard";
+import type { SeparationPreflightReport } from "@/types/preflight";
+import {
+  buildSeparationBackendPayload,
+  executeSeparationPreflight,
+} from "@/lib/separation/backendPayload";
 
 type AdvancedParams = {
   overlap: number;
@@ -211,7 +218,7 @@ export interface ConfigurePageProps {
 
 export function ConfigurePage({
   fileName,
-  filePath: _filePath,
+  filePath,
   onBack,
   onConfirm,
   initialPresetId,
@@ -274,6 +281,10 @@ export function ConfigurePage({
   const [advancedParamsDirty, setAdvancedParamsDirty] = useState(false);
 
   const [missingDialogOpen, setMissingDialogOpen] = useState(false);
+  const [backendPreflight, setBackendPreflight] =
+    useState<SeparationPreflightReport | null>(null);
+  const [isPreflightLoading, setIsPreflightLoading] = useState(false);
+  const preflightRequestRef = useRef(0);
 
   const handleQuickDownload = async (modelId: string) => {
     const model = models.find((m) => m.id === modelId);
@@ -556,121 +567,6 @@ export function ConfigurePage({
 
   const hasFnoRuntimeBlock = blockedFnoModels.length > 0;
 
-  const handleConfirm = () => {
-    if (hasFnoRuntimeBlock) {
-      toast.error("Selected model is blocked by environment", {
-        description:
-          "FNO-based model requires neuraloperator/neuralop with FNO1d support. " +
-          `Blocked: ${blockedFnoModels.join(", ")}.`,
-      });
-      return;
-    }
-
-    if (mode === "advanced" && isEnsembleMode) {
-      if (validEnsembleModels.length < 2) {
-        toast.error("Ensemble requires at least 2 models.", {
-          description:
-            "Add another model in Ensemble mode (or install more models) and try again.",
-        });
-        return;
-      }
-    }
-
-    const preset = mode === "simple" ? presets.find((p) => p.id === selectedPresetId) : undefined;
-    const usePresetId = mode === "simple" ? selectedPresetId : undefined;
-    const presetOverlap = (() => {
-      const explicit =
-        preset?.advancedDefaults?.overlap ?? preset?.recipe?.defaults?.overlap;
-      if (typeof explicit === "number" && Number.isFinite(explicit)) return explicit;
-
-      const byQuality = (() => {
-        const q = preset?.qualityLevel;
-        if (q === "fast") return 2;
-        if (q === "balanced") return 4;
-        if (q === "quality") return 4;
-        if (q === "ultra") return 8;
-        return 4;
-      })();
-
-      const withEnsembleFloor = preset?.ensembleConfig ? Math.max(byQuality, 4) : byQuality;
-      return withEnsembleFloor;
-    })();
-
-    const config: SeparationConfig = {
-      mode,
-      presetId: usePresetId,
-      modelId: isEnsembleMode ? undefined : selectedModelId,
-      device,
-      // Preview/playback is always WAV. Export format is chosen later in Results.
-      outputFormat: "wav",
-      volumeCompensation: volumeCompEnabled
-        ? bestVolumeCompensation()
-        : undefined,
-      // For ensemble mode, default to vocals+instrumental (2 stems)
-      stems: isEnsembleMode ? ["vocals", "instrumental"] : undefined,
-      invert,
-      normalize,
-      bitDepth,
-      splitFreq:
-        mode === "advanced" &&
-        isEnsembleMode &&
-        ensembleAlgorithm === "frequency_split"
-          ? _splitFreq
-          : undefined,
-      advancedParams:
-        mode === "advanced"
-          ? advancedParams
-          : {
-              segmentSize: (() => {
-                const maxSafe = computeBestSegmentSizeFromVRAM(availableVRAM);
-                if (maxSafe > 0) return maxSafe;
-                const fallback =
-                  (globalAdvancedSettings?.segmentSize ?? advancedParams.segmentSize) ||
-                  0;
-                return typeof fallback === "number" && Number.isFinite(fallback)
-                  ? fallback
-                  : 0;
-              })(),
-              shifts: (() => {
-                const speed = clamp(simpleSpeed, 0, 100);
-                return speed >= 85 ? 1 : speed >= 65 ? 2 : speed >= 35 ? 3 : 4;
-              })(),
-              overlap: presetOverlap,
-            },
-      ensembleConfig:
-        mode === "advanced" && isEnsembleMode
-          ? {
-              models: validEnsembleModels,
-              algorithm: ensembleAlgorithm as any,
-              stemAlgorithms: stemAlgorithms,
-              phaseFixEnabled: phaseFixEnabled,
-              phaseFixParams: phaseFixEnabled ? phaseFixParams : undefined,
-            }
-          : undefined,
-    };
-
-    // Simple mode is locked to preset definitions.
-    if (mode === "simple") {
-      const preset = presets.find((p) => p.id === selectedPresetId);
-
-      if (preset?.ensembleConfig) {
-        config.ensembleConfig = preset.ensembleConfig as any;
-        config.modelId = undefined;
-      }
-
-      // Add post-processing steps if enabled and preset has them
-      if (
-        enableAutoPipeline &&
-        preset?.postProcessingSteps &&
-        preset.postProcessingSteps.length > 0
-      ) {
-        config.postProcessingSteps = preset.postProcessingSteps;
-      }
-    }
-
-    onConfirm(config);
-  };
-
   const selectedPreset = presets.find((p) => p.id === selectedPresetId);
 
   const cudaGpus = useMemo(() => {
@@ -727,6 +623,27 @@ export function ConfigurePage({
         ) || primaryCudaGpu
       : primaryCudaGpu;
   const availableVRAM = selectedGpuForMeter?.memory_gb || 0;
+  const fnoFallbackRecommendation = useMemo(() => {
+    if (!hasFnoRuntimeBlock) return null;
+    const target = (() => {
+      const explicit = selectedPreset?.simpleGoal;
+      if (explicit === "cleanup") return "restoration" as const;
+      if (explicit === "karaoke") return "karaoke" as const;
+      if (explicit === "vocals") return "vocals" as const;
+      if (explicit === "instruments") return "instrumental" as const;
+      return "instrumental" as const;
+    })();
+    return recommendWorkflowPreset(
+      target,
+      presets,
+      models as any,
+      {
+        device,
+        vramGb: availableVRAM,
+      },
+      { fnoSupported: false },
+    );
+  }, [availableVRAM, device, hasFnoRuntimeBlock, models, presets, selectedPreset?.simpleGoal]);
   const modelType = selectedPreset?.name || selectedModelId || "unknown";
   const estimatedVRAM = estimateVRAMUsage(
     modelType,
@@ -736,6 +653,208 @@ export function ConfigurePage({
   );
   const isCPUOnly = !hasCuda;
   const maxSafeSegmentSize = computeBestSegmentSizeFromVRAM(availableVRAM);
+
+  const effectiveConfig = useMemo<SeparationConfig>(() => {
+    const preset =
+      mode === "simple" ? presets.find((p) => p.id === selectedPresetId) : undefined;
+    const usePresetId = mode === "simple" ? selectedPresetId : undefined;
+    const presetOverlap = (() => {
+      const explicit =
+        preset?.advancedDefaults?.overlap ?? preset?.recipe?.defaults?.overlap;
+      if (typeof explicit === "number" && Number.isFinite(explicit)) return explicit;
+
+      const byQuality = (() => {
+        const q = preset?.qualityLevel;
+        if (q === "fast") return 2;
+        if (q === "balanced") return 4;
+        if (q === "quality") return 4;
+        if (q === "ultra") return 8;
+        return 4;
+      })();
+
+      const withEnsembleFloor = preset?.ensembleConfig ? Math.max(byQuality, 4) : byQuality;
+      return withEnsembleFloor;
+    })();
+
+    const config: SeparationConfig = {
+      mode,
+      presetId: usePresetId,
+      modelId: isEnsembleMode ? undefined : selectedModelId,
+      device,
+      outputFormat: "wav",
+      volumeCompensation: volumeCompEnabled
+        ? bestVolumeCompensation()
+        : undefined,
+      stems: isEnsembleMode ? ["vocals", "instrumental"] : undefined,
+      invert,
+      normalize,
+      bitDepth,
+      splitFreq:
+        mode === "advanced" &&
+        isEnsembleMode &&
+        ensembleAlgorithm === "frequency_split"
+          ? _splitFreq
+          : undefined,
+      advancedParams:
+        mode === "advanced"
+          ? advancedParams
+          : {
+              segmentSize: (() => {
+                if (maxSafeSegmentSize > 0) return maxSafeSegmentSize;
+                const fallback =
+                  (globalAdvancedSettings?.segmentSize ?? advancedParams.segmentSize) ||
+                  0;
+                return typeof fallback === "number" && Number.isFinite(fallback)
+                  ? fallback
+                  : 0;
+              })(),
+              shifts: (() => {
+                const speed = clamp(simpleSpeed, 0, 100);
+                return speed >= 85 ? 1 : speed >= 65 ? 2 : speed >= 35 ? 3 : 4;
+              })(),
+              overlap: presetOverlap,
+            },
+      ensembleConfig:
+        mode === "advanced" && isEnsembleMode
+          ? {
+              models: validEnsembleModels,
+              algorithm: ensembleAlgorithm as any,
+              stemAlgorithms: stemAlgorithms,
+              phaseFixEnabled: phaseFixEnabled,
+              phaseFixParams: phaseFixEnabled ? phaseFixParams : undefined,
+            }
+          : undefined,
+    };
+
+    if (mode === "simple") {
+      if (preset?.ensembleConfig) {
+        config.ensembleConfig = preset.ensembleConfig as any;
+        config.modelId = undefined;
+      }
+
+      if (
+        enableAutoPipeline &&
+        preset?.postProcessingSteps &&
+        preset.postProcessingSteps.length > 0
+      ) {
+        config.postProcessingSteps = preset.postProcessingSteps;
+      }
+    }
+
+    return config;
+  }, [
+    _splitFreq,
+    advancedParams,
+    bitDepth,
+    device,
+    enableAutoPipeline,
+    ensembleAlgorithm,
+    globalAdvancedSettings?.segmentSize,
+    invert,
+    isEnsembleMode,
+    maxSafeSegmentSize,
+    mode,
+    normalize,
+    phaseFixEnabled,
+    phaseFixParams,
+    presets,
+    selectedModelId,
+    selectedPresetId,
+    simpleSpeed,
+    stemAlgorithms,
+    validEnsembleModels,
+    volumeCompEnabled,
+  ]);
+
+  useEffect(() => {
+    if (!window.electronAPI?.separationPreflight || !filePath) {
+      setBackendPreflight(null);
+      setIsPreflightLoading(false);
+      return;
+    }
+
+    const hasMinimumSelection =
+      (mode === "simple" && !!selectedPresetId) ||
+      (mode === "advanced" && !isEnsembleMode && !!selectedModelId) ||
+      (mode === "advanced" && isEnsembleMode && validEnsembleModels.length >= 2);
+
+    if (!hasMinimumSelection || !separationPlan.effectiveModelId) {
+      setBackendPreflight(null);
+      setIsPreflightLoading(false);
+      return;
+    }
+
+    const requestId = ++preflightRequestRef.current;
+    setIsPreflightLoading(true);
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const payload = buildSeparationBackendPayload({
+          inputFile: filePath,
+          outputDir: "",
+          config: effectiveConfig,
+          plan: separationPlan,
+        });
+        const result = await executeSeparationPreflight(
+          window.electronAPI,
+          payload,
+        );
+
+        if (preflightRequestRef.current !== requestId) return;
+        setBackendPreflight(result as SeparationPreflightReport);
+      } catch (error) {
+        if (preflightRequestRef.current !== requestId) return;
+        const message =
+          error instanceof Error ? error.message : String(error ?? "Preflight failed");
+        setBackendPreflight({
+          can_proceed: false,
+          errors: [message],
+          warnings: [],
+          missing_models: separationPlan.missingModels.map((item) => item.modelId),
+        });
+      } finally {
+        if (preflightRequestRef.current === requestId) {
+          setIsPreflightLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    effectiveConfig,
+    filePath,
+    isEnsembleMode,
+    mode,
+    selectedModelId,
+    selectedPresetId,
+    separationPlan,
+    validEnsembleModels.length,
+  ]);
+
+  const handleConfirm = () => {
+    if (hasFnoRuntimeBlock) {
+      toast.error("Selected model is blocked by environment", {
+        description:
+          "FNO-based model requires neuraloperator/neuralop with FNO1d support. " +
+          `Blocked: ${blockedFnoModels.join(", ")}.`,
+      });
+      return;
+    }
+
+    if (mode === "advanced" && isEnsembleMode) {
+      if (validEnsembleModels.length < 2) {
+        toast.error("Ensemble requires at least 2 models.", {
+          description:
+            "Add another model in Ensemble mode (or install more models) and try again.",
+        });
+        return;
+      }
+    }
+
+    onConfirm(effectiveConfig);
+  };
 
   useEffect(() => {
     if (advancedParamsDirty) return;
@@ -822,10 +941,28 @@ export function ConfigurePage({
                   <div className="text-xs text-muted-foreground">
                     Blocked model(s): {blockedFnoModels.join(", ")}
                   </div>
+                  {fnoFallbackRecommendation?.recommendedPresetId && (
+                    <div className="text-xs text-muted-foreground">
+                      Recommended fallback workflow:{" "}
+                      {
+                        presets.find(
+                          (preset) =>
+                            preset.id ===
+                            fnoFallbackRecommendation.recommendedPresetId,
+                        )?.name
+                      }
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
           )}
+
+          <SeparationPlanCard
+            report={backendPreflight}
+            loading={isPreflightLoading}
+            mode={mode}
+          />
 
           {mode === "simple" ? (
             <div className="space-y-6">

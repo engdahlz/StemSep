@@ -1,18 +1,25 @@
 import {
   Download,
-  Check,
   Info,
   Trash2,
   AlertCircle,
   RotateCw,
   Pause,
   Play,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
 import { cn } from "../lib/utils";
 import { Model } from "../stores/useStore";
+import {
+  formatCardMetricValue,
+  formatCatalogStatus,
+  formatMetricsSource,
+  getCatalogSupportCopy,
+  getCardMetricSlots,
+} from "../lib/models/cardMetrics";
 
 interface ModelCardProps {
   model: Model;
@@ -33,13 +40,17 @@ const formatBytes = (bytes: number): string => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 };
 
-const formatMetric = (
-  value: number | null | undefined,
-  decimals = 1,
-): string => {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0)
-    return "—";
-  return value.toFixed(decimals);
+const normalizeLabel = (value: string | undefined | null): string => {
+  return String(value || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+    .trim();
+};
+
+const isNumericMetricValue = (value: number | string | null | undefined): boolean => {
+  if (typeof value === "number" && Number.isFinite(value)) return true;
+  if (typeof value !== "string") return false;
+  return /^-?\d+(\.\d+)?$/.test(value.trim());
 };
 
 export function ModelCard({
@@ -74,163 +85,248 @@ export function ModelCard({
         (t) => typeof t === "string",
       ) as string[])
     : [];
+  const visibleTags = tags.slice(0, 4);
+  const metricSlots = getCardMetricSlots(model);
+  const metricsSource = formatMetricsSource(model);
+  const catalogStatus = formatCatalogStatus(model.catalog_status);
+  const supportCopy = getCatalogSupportCopy(model);
 
-  const getStatusColor = () => {
-    if (model.downloadError) return "border-destructive/50 bg-destructive/5";
-    if (model.installed) return "border-green-500/30 bg-green-500/5";
-    if (model.downloading) return "border-primary/50 bg-primary/5";
-    return "border-border/40 bg-card/40";
-  };
+  const statusTone = (() => {
+    if (model.downloadError) {
+      return {
+        shell: "border-destructive/40 bg-destructive/[0.03]",
+        pill: "bg-destructive/12 text-destructive border-destructive/25",
+        label: "Needs Attention",
+      };
+    }
+    if (model.downloading || model.downloadPaused) {
+      return {
+        shell: "border-primary/35 bg-primary/[0.03]",
+        pill: "bg-primary/12 text-primary border-primary/25",
+        label: model.downloadPaused ? "Paused" : "Downloading",
+      };
+    }
+    if (model.installed) {
+      return {
+        shell: "border-emerald-500/30 bg-emerald-500/[0.04]",
+        pill: "bg-emerald-500/12 text-emerald-600 border-emerald-500/25",
+        label: "Installed",
+      };
+    }
+    return {
+      shell: "border-border/60 bg-card",
+      pill: "bg-muted text-muted-foreground border-border/70",
+      label: "Available",
+    };
+  })();
+
+  const readiness = model.status?.readiness
+    ? normalizeLabel(model.status.readiness)
+    : null;
+  const categoryLabel = normalizeLabel(model.category || model.architecture);
+  const speedLabel =
+    typeof model.speed === "string" && model.speed.trim()
+      ? `${normalizeLabel(model.speed)} Speed`
+      : null;
+  const sizeLabel =
+    typeof model.file_size === "number" && model.file_size > 0
+      ? formatBytes(model.file_size)
+      : null;
+  const runtimeAllowedLabel = Array.isArray(model.runtime?.allowed)
+    ? model.runtime.allowed[0]
+    : null;
+  const focusItems =
+    stems.length > 0
+      ? stems.slice(0, 4).map((stem) => normalizeLabel(stem))
+      : visibleTags.length > 0
+        ? visibleTags.slice(0, 4).map((tag) => normalizeLabel(tag))
+        : [];
+  const profileItems = [
+    { label: "Runtime", value: normalizeLabel(model.runtime?.preferred || runtimeAllowedLabel || "Unknown") },
+    { label: "VRAM", value: `${model.vram_required || 0} GB` },
+    { label: "Source", value: metricsSource || "Registry" },
+  ];
+  const metaChips = [catalogStatus, categoryLabel, speedLabel, readiness].filter(
+    (value): value is string => Boolean(value && value.trim()),
+  );
 
   return (
     <div
       className={cn(
-        "group relative flex flex-col rounded-xl border backdrop-blur-sm transition-all duration-300 overflow-hidden",
-        getStatusColor(),
+        "group relative flex h-full flex-col overflow-hidden rounded-[2rem] border bg-card shadow-[0_20px_55px_-34px_rgba(15,23,42,0.24)] transition-all duration-300",
+        statusTone.shell,
         isSelected
-          ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-          : "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5",
+          ? "ring-2 ring-primary/60 ring-offset-2 ring-offset-background"
+          : "hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_26px_80px_-42px_rgba(15,23,42,0.32)]",
       )}
     >
-      {/* Selection Overlay (visible on hover or selected) */}
-      <div
-        className={cn(
-          "absolute top-3 left-3 z-20 transition-opacity duration-200",
-          isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-        )}
-      >
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => onToggleSelection(model.id)}
-          className="h-5 w-5 rounded border-primary/50 bg-background/50 text-primary focus:ring-primary cursor-pointer"
-        />
-      </div>
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent" />
 
-      {(model.recommended ||
-        model.is_custom ||
-        phaseFixValid ||
-        tags.length > 0) && (
-        <div className="absolute top-3 right-3 z-20 flex flex-col gap-1 items-end">
+      <div className="flex items-start justify-between gap-3 border-b border-border/50 px-5 py-4">
+        <label className="model-card-chip flex items-center gap-3 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelection(model.id)}
+            className="h-4 w-4 rounded border-primary/40 bg-background text-primary focus:ring-primary cursor-pointer"
+          />
+          <span>Select</span>
+        </label>
+
+        <div className="flex items-center gap-2">
           {phaseFixValid && (
             <Badge
-              variant="default"
-              className="bg-amber-500/90 hover:bg-amber-500 text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md"
+              variant="outline"
+              className="border-amber-500/25 bg-amber-500/10 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-600"
               title={phaseFixTitle}
             >
               Phase Fix
             </Badge>
           )}
-          {tags.slice(0, 2).map((t) => (
-            <Badge
-              key={t}
-              variant="default"
-              className="bg-secondary/80 hover:bg-secondary text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md"
-              title={t}
-            >
-              {t}
-            </Badge>
-          ))}
-          {tags.length > 2 && (
-            <Badge
-              variant="default"
-              className="bg-secondary/60 hover:bg-secondary text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md"
-              title={tags.join(", ")}
-            >
-              +{tags.length - 2}
-            </Badge>
-          )}
           {model.recommended && (
             <Badge
-              variant="default"
-              className="bg-primary/90 hover:bg-primary text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md"
+              variant="outline"
+              className="border-primary/25 bg-primary/10 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary"
             >
-              Recommended
+              Guide Pick
             </Badge>
           )}
           {model.is_custom && (
             <Badge
-              variant="default"
-              className="bg-blue-600/90 hover:bg-blue-600 text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md"
+              variant="outline"
+              className="border-sky-500/25 bg-sky-500/10 text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-600"
             >
               Custom
             </Badge>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDetails(model)}
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+            title="Details"
+          >
+            <Info className="h-4 w-4" />
+          </Button>
         </div>
-      )}
+      </div>
 
-      <div className="p-5 flex-1 flex flex-col gap-4">
-        {/* Header */}
-        <div className="space-y-1.5 pt-2">
-          <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-1 flex-col gap-5 px-5 py-5">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="model-card-chip text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {normalizeLabel(model.architecture)}
+            </div>
+            <Badge
+              variant="outline"
+              className={cn(
+                "model-card-chip shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em]",
+                statusTone.pill,
+              )}
+            >
+              {statusTone.label}
+            </Badge>
+          </div>
+
+          <div className="space-y-2">
             <h3
-              className="font-bold text-lg leading-tight tracking-tight text-foreground/90 group-hover:text-primary transition-colors line-clamp-2"
+              className="model-card-heading max-w-[14rem] text-[1.55rem] leading-[1.06] text-foreground transition-colors group-hover:text-primary"
               title={model.name}
             >
               {model.name}
             </h3>
+            <p className="text-[0.95rem] leading-6 text-muted-foreground">
+              {model.description || "No description available for this model yet."}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {metaChips.slice(0, 4).map((chip) => (
+              <Badge
+                key={chip}
+                variant={chip === categoryLabel ? "secondary" : "outline"}
+                className="model-card-chip rounded-full px-2.5 py-1 text-[11px] font-medium"
+              >
+                {chip}
+              </Badge>
+            ))}
+            {sizeLabel && (
+              <Badge variant="outline" className="model-card-chip rounded-full px-2.5 py-1 text-[11px] font-medium">
+                {sizeLabel}
+              </Badge>
+            )}
           </div>
         </div>
 
-        {/* Description */}
-        <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
-          {model.description}
-        </p>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-[1.4rem] border border-border/60 bg-muted/[0.22] p-4">
+            <div className="model-card-section-label text-[0.68rem] uppercase text-muted-foreground">
+              Output Focus
+            </div>
+            <div className="mt-3 flex min-h-[3.5rem] flex-wrap items-start gap-2">
+              {focusItems.length > 0 ? (
+                focusItems.map((item) => (
+                  <span
+                    key={item}
+                    className="model-card-chip rounded-full border border-border/70 bg-background/80 px-2.5 py-1 text-[11px] text-foreground/80"
+                  >
+                    {item}
+                  </span>
+                ))
+              ) : (
+                <span className="text-sm leading-6 text-muted-foreground">Stem info unavailable</span>
+              )}
+            </div>
+          </div>
 
-        {/* Stems */}
-        <div className="flex flex-wrap gap-1.5">
-          {stems.slice(0, 3).map((stem) => (
-            <Badge
-              key={stem}
-              variant="outline"
-              className="text-[10px] capitalize bg-background/30 border-white/10"
+          <div className="rounded-[1.4rem] border border-border/60 bg-background/70 p-4">
+            <div className="model-card-section-label text-[0.68rem] uppercase text-muted-foreground">
+              Model Profile
+            </div>
+            <div className="mt-3 space-y-2.5">
+              {profileItems.map((item) => (
+                <div key={item.label} className="flex items-center justify-between gap-3">
+                  <span className="model-card-chip text-[11px] text-muted-foreground">
+                    {item.label}
+                  </span>
+                  <span className="text-right text-[0.82rem] font-medium text-foreground">
+                    {item.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {metricSlots.map((slot) => (
+            <div
+              key={slot.label}
+              className="flex min-h-[6.25rem] flex-col justify-between rounded-[1.35rem] border border-border/60 bg-background/75 px-3 py-3.5"
+              title={model.card_metrics?.evidence_note || undefined}
             >
-              {stem}
-            </Badge>
+              <div className="model-card-metric-label text-[0.62rem] uppercase text-muted-foreground">
+                {slot.label}
+              </div>
+              {isNumericMetricValue(slot.value) ? (
+                <div className="model-card-metric-value mt-3 text-[1.75rem] tabular-nums text-foreground">
+                  {formatCardMetricValue(slot.value)}
+                </div>
+              ) : (
+                <div className="mt-3 inline-flex max-w-full items-center rounded-full bg-secondary px-2.5 py-1.5">
+                  <span className="model-card-metric-value-text truncate text-[0.84rem] text-foreground">
+                    {formatCardMetricValue(slot.value)}
+                  </span>
+                </div>
+              )}
+            </div>
           ))}
-          {stems.length > 3 && (
-            <Badge
-              variant="outline"
-              className="text-[10px] bg-background/30 border-white/10"
-            >
-              +{stems.length - 3}
-            </Badge>
-          )}
         </div>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-3 gap-2 py-3 border-t border-border/30 mt-auto">
-          <div className="text-center p-2 rounded-lg bg-background/30">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-              SDR
-            </div>
-            <div className="text-sm font-semibold tabular-nums">
-              {formatMetric(model.sdr)}
-            </div>
-          </div>
-          <div className="text-center p-2 rounded-lg bg-background/30">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-              Full
-            </div>
-            <div className="text-sm font-semibold tabular-nums">
-              {formatMetric(model.fullness)}
-            </div>
-          </div>
-          <div className="text-center p-2 rounded-lg bg-background/30">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-              Bleed
-            </div>
-            <div className="text-sm font-semibold tabular-nums">
-              {formatMetric(model.bleedless)}
-            </div>
-          </div>
-        </div>
-
-        {/* Download State */}
         {model.downloading && (
-          <div className="space-y-2 bg-background/40 p-3 rounded-lg border border-border/50">
-            <div className="flex justify-between text-xs font-medium">
-              <span className="text-primary">Downloading...</span>
+          <div className="space-y-2 rounded-2xl border border-primary/20 bg-primary/[0.04] p-4">
+            <div className="flex items-center justify-between text-xs font-medium">
+              <span className="text-primary">Downloading model assets</span>
               <span>{Math.round(model.downloadProgress)}%</span>
             </div>
             <Progress value={model.downloadProgress} className="h-1.5" />
@@ -248,9 +344,8 @@ export function ModelCard({
           </div>
         )}
 
-        {/* Error State */}
         {model.downloadError && (
-          <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-xs">
+          <div className="flex items-start gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-xs">
             <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="font-bold text-destructive">Failed</p>
@@ -263,77 +358,60 @@ export function ModelCard({
             </div>
           </div>
         )}
-      </div>
 
-      {/* Footer Actions */}
-      <div className="p-4 pt-0 flex gap-2 mt-auto">
-        {model.installed ? (
-          <>
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/50 pt-4">
+          <div className="flex max-w-[9rem] items-center gap-2 text-xs leading-5 text-muted-foreground">
+            {model.recommended && <Sparkles className="h-3.5 w-3.5 text-primary" />}
+            <span>{supportCopy}</span>
+          </div>
+
+          {model.installed ? (
             <Button
-              variant="secondary"
-              className="flex-1 bg-green-500/10 text-green-500 hover:bg-green-500/20 border border-green-500/20"
-              disabled
-            >
-              <Check className="mr-2 h-4 w-4" />
-              Installed
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
+              variant="outline"
+              className="border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => onRemove(model.id)}
-              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remove
             </Button>
-          </>
-        ) : model.downloadPaused ? (
-          <Button
-            onClick={() => onResume(model.id)}
-            className="flex-1"
-            variant="outline"
-          >
-            <Play className="mr-2 h-4 w-4" />
-            Resume
-          </Button>
-        ) : (
-          <Button
-            onClick={
-              model.downloading ? () => onPause(model.id) : () => onDownload(model.id)
-            }
-            className={cn(
-              "flex-1 transition-all duration-300",
-              model.downloading
-                ? "bg-secondary text-secondary-foreground"
-                : "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40",
-            )}
-            variant={
-              model.downloadError ? "destructive" : "default"
-            }
-          >
-            {model.downloading ? (
-              <>
-                <Pause className="mr-2 h-4 w-4" /> Pause
-              </>
-            ) : model.downloadError ? (
-              <>
-                <RotateCw className="mr-2 h-4 w-4" /> Retry
-              </>
-            ) : (
-              <>
-                <Download className="mr-2 h-4 w-4" /> Download
-              </>
-            )}
-          </Button>
-        )}
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onDetails(model)}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <Info className="h-4 w-4" />
-        </Button>
+          ) : model.downloadPaused ? (
+            <Button
+              onClick={() => onResume(model.id)}
+              className="min-w-[8.5rem]"
+              variant="outline"
+            >
+              <Play className="mr-2 h-4 w-4" />
+              Resume
+            </Button>
+          ) : (
+            <Button
+              onClick={
+                model.downloading ? () => onPause(model.id) : () => onDownload(model.id)
+              }
+              className={cn(
+                "min-w-[8.5rem] transition-all duration-300",
+                model.downloading
+                  ? "bg-secondary text-secondary-foreground"
+                  : "bg-primary text-primary-foreground shadow-[0_14px_34px_-18px_rgba(0,0,0,0.55)] hover:shadow-[0_20px_40px_-18px_rgba(0,0,0,0.65)]",
+              )}
+              variant={model.downloadError ? "destructive" : "default"}
+            >
+              {model.downloading ? (
+                <>
+                  <Pause className="mr-2 h-4 w-4" /> Pause
+                </>
+              ) : model.downloadError ? (
+                <>
+                  <RotateCw className="mr-2 h-4 w-4" /> Retry
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" /> Download
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

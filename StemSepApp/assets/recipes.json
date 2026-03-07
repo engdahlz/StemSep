@@ -1,263 +1,560 @@
 {
-    "version": "1.2",
-    "recipes": [
+  "version": "2.0",
+  "recipes": [
+    {
+      "id": "workflow_phase_fix_instrumental",
+      "name": "Best Instrumental",
+      "description": "Guide-first instrumental workflow: fullness from Unwa V1e+ with Becruily phase-fix cleanup.",
+      "type": "pipeline",
+      "target": "instrumental",
+      "quality_goal": "premium_quality",
+      "difficulty": "simple",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "instrumental",
+      "recommended_for": [
+        "Highest quality instrumental extraction",
+        "Songs where fullness matters more than raw speed"
+      ],
+      "contraindications": [
+        "Very low VRAM systems",
+        "Fast preview workflows"
+      ],
+      "workflow_summary": "Separate with Unwa V1e+, then phase-fix instrumental using Becruily Vocal at 500-5000 Hz.",
+      "source": "Guide-derived simple workflow",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "steps": [
         {
-            "id": "recipe_inst_ultimate_max",
-            "name": "Ultimate Instrumental (Max Spec)",
-            "description": "Combines Unwa V1e + Gabox Fv7z + Viperx 1297 using Max Spec. Good detail, but can be noisy.",
-            "type": "ensemble",
-            "target": "instrumental",
-            "steps": [
-                {
-                    "model_id": "unwa-inst-v1e",
-                    "weight": 1.0
-                },
-                {
-                    "model_id": "gabox-inst-fv7z",
-                    "weight": 1.0
-                },
-                {
-                    "model_id": "bs-roformer-viperx-1297",
-                    "weight": 1.0
-                }
-            ],
-            "algorithm": "max_spec",
-            "defaults": {
-                "overlap": 4
-            }
+          "action": "separate",
+          "model_id": "unwa-inst-v1e-plus",
+          "weight": 1.0
         },
         {
-            "id": "recipe_inst_fno_becruily",
-            "name": "Ultimate Inst (FNO + Becruily)",
-            "description": "Modern ensemble: Unwa Inst FNO + Becruily Inst + Unwa V1e. High fullness and bleedless.",
-            "type": "ensemble",
-            "target": "instrumental",
-            "steps": [
-                {
-                    "model_id": "unwa-inst-fno",
-                    "weight": 1.0
-                },
-                {
-                    "model_id": "becruily-inst",
-                    "weight": 1.0
-                },
-                {
-                    "model_id": "unwa-inst-v1e",
-                    "weight": 1.0
-                }
-            ],
-            "algorithm": "max_spec",
-            "defaults": {
-                "overlap": 4
-            }
-        },
-        {
-            "id": "recipe_inst_phase_fix",
-            "name": "Instrumental Phase Fixer (Unwa + Kim)",
-            "description": "Takes the full body from Unwa V1e and fixes the phase using Kim Mel-Band.",
-            "type": "ensemble",
-            "target": "instrumental",
-            "steps": [
-                {
-                    "model_id": "unwa-inst-v1e",
-                    "weight": 1.0
-                },
-                {
-                    "model_id": "mel-band-roformer-kim",
-                    "weight": 1.0
-                }
-            ],
-            "algorithm": "phase_fix",
-            "defaults": {
-                "overlap": 4
-            }
-        },
-        {
-            "id": "recipe_gabox_phase_fix",
-            "name": "Gabox Resurrection (Phase Fix)",
-            "description": "The best of both worlds: Gabox Resurrection's fullness with ViperX 1297's clean phase.",
-            "type": "ensemble",
-            "target": "instrumental",
-            "steps": [
-                {
-                    "model_id": "gabox-resurrection",
-                    "weight": 1.0
-                },
-                {
-                    "model_id": "bs-roformer-viperx-1297",
-                    "weight": 1.0
-                }
-            ],
-            "algorithm": "phase_fix",
-            "defaults": {
-                "overlap": 4
-            }
-        },
-        {
-            "id": "recipe_vocal_denoise",
-            "name": "Vocal Clarity (De-Noise)",
-            "description": "Averaging ensemble of Unwa BigBeta 5e and Gabox Voc FV4 to reduce artifacts and noise.",
-            "type": "ensemble",
-            "target": "vocals",
-            "steps": [
-                {
-                    "model_id": "unwa-big-beta-5e",
-                    "weight": 1.0
-                },
-                {
-                    "model_id": "gabox-voc-fv4",
-                    "weight": 1.0
-                }
-            ],
-            "algorithm": "average",
-            "defaults": {
-                "overlap": 4
-            }
-        },
-        {
-            "id": "recipe_vocal_max_spec",
-            "name": "Vocal Max Spec (Unwa + Becruily)",
-            "description": "Combines Unwa Big Beta 5e and Becruily Vocal using Max Spec for maximum vocal fullness.",
-            "type": "ensemble",
-            "target": "vocals",
-            "steps": [
-                {
-                    "model_id": "unwa-big-beta-5e",
-                    "weight": 1.0
-                },
-                {
-                    "model_id": "becruily-vocal",
-                    "weight": 1.0
-                }
-            ],
-            "algorithm": "max_spec",
-            "defaults": {
-                "overlap": 4
-            }
-        },
-        {
-            "id": "recipe_karaoke_fusion",
-            "name": "Karaoke Ultimate (BS Fusion)",
-            "description": "Fuses BS-Roformer Karaoke (Becruily) with Anvuew Karaoke for best lead/backing separation.",
-            "type": "ensemble",
-            "target": "instrumental",
-            "steps": [
-                {
-                    "model_id": "bs-roformer-karaoke-becruily",
-                    "weight": 1.0
-                },
-                {
-                    "model_id": "anvuew-karaoke",
-                    "weight": 1.0
-                }
-            ],
-            "algorithm": "average",
-            "defaults": {
-                "overlap": 2
-            }
-        },
-        {
-            "id": "pipeline_super_clean_vocal",
-            "name": "Super Clean Vocals (Pipeline)",
-            "description": "1. De-Reverb (VR). 2. Separate Vocals (Roformer). Best for live recordings and studio acapellas.",
-            "type": "pipeline",
-            "target": "vocals",
-            "steps": [
-                {
-                    "step_name": "dereverb",
-                    "model_id": "anvuew-dereverb-room"
-                },
-                {
-                    "step_name": "separation",
-                    "model_id": "bs-roformer-viperx-1297",
-                    "input_source": "dereverb.vocals"
-                }
-            ]
-        },
-        {
-            "id": "recipe_demudder_metal",
-            "name": "Demudder (Metal/Rock)",
-            "description": "Phase Rotate demudder for dense tracks. Fills spectral holes in instrumentals. Best for Metal, Rock, EDM.",
-            "type": "ensemble",
-            "target": "instrumental",
-            "post_processing": "demudder_phase_rotate",
-            "steps": [
-                {
-                    "model_id": "bs-roformer-viperx-1297",
-                    "weight": 1.0
-                }
-            ],
-            "algorithm": "average",
-            "warning": "May cause OOM on AMD/Intel 4GB GPUs. Not recommended for acoustic tracks.",
-            "defaults": {
-                "overlap": 4
-            }
-        },
-        {
-            "id": "recipe_debleed_instrumental",
-            "name": "DeBleed Instrumental",
-            "description": "Remove vocal bleed from instrumental: chain vocal model to catch remaining vocals, then subtract.",
-            "type": "chained",
-            "target": "instrumental",
-            "steps": [
-                {
-                    "step_name": "initial_separation",
-                    "model_id": "bs-roformer-viperx-1297"
-                },
-                {
-                    "step_name": "catch_bleed",
-                    "model_id": "mel-band-roformer-kim",
-                    "input_source": "initial_separation.instrumental",
-                    "note": "Catches remaining vocal bleed"
-                }
-            ]
-        },
-        {
-            "id": "recipe_vocal_low_cut",
-            "name": "Vocal Low Cut Cleanup",
-            "description": "Clean vocals with 500 Hz high-pass to remove rumble and low-freq bleed.",
-            "type": "single",
-            "target": "vocals",
-            "steps": [
-                {
-                    "model_id": "bs-roformer-viperx-1297",
-                    "weight": 1.0
-                }
-            ],
-            "post_processing": "high_pass",
-            "post_processing_params": {
-                "cutoff_hz": 500
-            },
-            "defaults": {
-                "overlap": 4
-            }
-        },
-        {
-            "id": "workflow_phase_fix_instrumental",
-            "name": "Phase Fix Instrumental (Workflow)",
-            "description": "Separate with Unwa Inst v1e+, then phase-fix instrumental using Becruily Vocal as a phase reference (500-5000Hz).",
-            "type": "pipeline",
-            "target": "instrumental",
-            "steps": [
-                {
-                    "action": "separate",
-                    "model_id": "unwa-inst-v1e-plus",
-                    "weight": 1.0
-                },
-                {
-                    "action": "phase_fix",
-                    "source_model": "becruily-vocal",
-                    "lowHz": 500,
-                    "highHz": 5000,
-                    "weight": 2.0,
-                    "apply_to": "instrumental"
-                }
-            ],
-            "source": "In-app preset workflow",
-            "vram_category": "high",
-            "defaults": {
-                "overlap": 4
-            }
+          "action": "phase_fix",
+          "source_model": "becruily-vocal",
+          "lowHz": 500,
+          "highHz": 5000,
+          "weight": 2.0,
+          "apply_to": "instrumental"
         }
-    ]
+      ]
+    },
+    {
+      "id": "recipe_vocal_denoise",
+      "name": "Best Vocals",
+      "description": "Balanced vocal workflow for clean, detailed vocals with low artifacting.",
+      "type": "ensemble",
+      "target": "vocals",
+      "quality_goal": "clean_vocals",
+      "difficulty": "simple",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "vocals",
+      "recommended_for": [
+        "General acapella extraction",
+        "Production-ready vocals with minimal bleed"
+      ],
+      "contraindications": [
+        "Raw fullness-first vocal rescue",
+        "Extreme live crowd/noise cleanup"
+      ],
+      "workflow_summary": "Average blend of Unwa Big Beta 5e and Gabox Voc FV4 for a stable clean-vocal default.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "algorithm": "average",
+      "steps": [
+        {
+          "model_id": "unwa-big-beta-5e",
+          "weight": 1.0
+        },
+        {
+          "model_id": "gabox-voc-fv4",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "recipe_karaoke_fusion",
+      "name": "Bleedless Karaoke",
+      "description": "Guide-recommended karaoke fusion for lead/back split and clean backing tracks.",
+      "type": "ensemble",
+      "target": "karaoke",
+      "quality_goal": "bleedless_backing_track",
+      "difficulty": "simple",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "karaoke",
+      "recommended_for": [
+        "Backing tracks and karaoke export",
+        "Lead/backing vocal separation"
+      ],
+      "contraindications": [
+        "Single-click quick previews on low-end systems"
+      ],
+      "workflow_summary": "Average fusion of Becruily and Anvuew karaoke Roformers.",
+      "defaults": {
+        "overlap": 2,
+        "segment_size": 352800
+      },
+      "algorithm": "average",
+      "steps": [
+        {
+          "model_id": "bs-roformer-karaoke-becruily",
+          "weight": 1.0
+        },
+        {
+          "model_id": "anvuew-karaoke",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "workflow_live_restoration",
+      "name": "Live Restoration",
+      "description": "Closest shipped restoration chain to the guide's live rescue flow.",
+      "type": "pipeline",
+      "target": "restoration",
+      "quality_goal": "live_cleanup",
+      "difficulty": "simple",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "cleanup",
+      "recommended_for": [
+        "Live and noisy recordings",
+        "Removing room sound before separation or export"
+      ],
+      "contraindications": [
+        "Pristine studio stems",
+        "Tracks where preserving ambience is important"
+      ],
+      "workflow_summary": "Apply room dereverb first, then aggressive denoise for final polish.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "steps": [
+        {
+          "step_name": "dereverb",
+          "model_id": "anvuew-dereverb-room"
+        },
+        {
+          "step_name": "cleanup",
+          "model_id": "aufr33-denoise-aggressive",
+          "input_source": "dereverb.vocals"
+        }
+      ]
+    },
+    {
+      "id": "recipe_drums_punchy",
+      "name": "Drums",
+      "description": "Guide-backed local drum split workflow.",
+      "type": "single",
+      "target": "drums",
+      "quality_goal": "drum_isolation",
+      "difficulty": "simple",
+      "expected_vram_tier": "low_vram",
+      "expected_runtime_tier": "fast",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "instruments",
+      "recommended_for": [
+        "Kick/snare/toms/hat/cymbals extraction"
+      ],
+      "contraindications": [
+        "Full-band instrumental bounce"
+      ],
+      "workflow_summary": "Runs MDX23C DrumSep 5-stem as the local drum specialist.",
+      "defaults": {
+        "overlap": 2,
+        "segment_size": 112455
+      },
+      "steps": [
+        {
+          "model_id": "mdx23c-drumsep-5stem",
+          "weight": 1.0,
+          "output": ["kick", "snare", "toms", "hihat", "cymbals"]
+        }
+      ]
+    },
+    {
+      "id": "recipe_bass_definition",
+      "name": "Bass",
+      "description": "Low-end definition workflow for sub-bass and natural decay.",
+      "type": "single",
+      "target": "bass",
+      "quality_goal": "bass_definition",
+      "difficulty": "simple",
+      "expected_vram_tier": "high_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "instruments",
+      "recommended_for": [
+        "Bass-focused extraction and low-end cleanup"
+      ],
+      "contraindications": [
+        "Low VRAM GPUs below 12 GB"
+      ],
+      "workflow_summary": "Uses SCNet Large for the guide's preferred bass-focused output.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "steps": [
+        {
+          "model_id": "scnet-large",
+          "weight": 1.0,
+          "output": ["bass", "other"]
+        }
+      ]
+    },
+    {
+      "id": "recipe_fast_preview",
+      "name": "Fast Preview",
+      "description": "Quick low-cost separation for judging a song before running a heavier workflow.",
+      "type": "single",
+      "target": "instrumental",
+      "quality_goal": "fast_preview",
+      "difficulty": "simple",
+      "expected_vram_tier": "cpu_only",
+      "expected_runtime_tier": "fast",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "instrumental",
+      "recommended_for": [
+        "Low VRAM or CPU-only systems",
+        "Fast A/B checks before premium workflows"
+      ],
+      "contraindications": [
+        "Final export where maximum quality matters"
+      ],
+      "workflow_summary": "Uses MDX23C InstVoc HQ as the fastest reliable preview baseline.",
+      "defaults": {
+        "overlap": 2,
+        "segment_size": 112455
+      },
+      "steps": [
+        {
+          "model_id": "mdx23c-instvoc-hq",
+          "weight": 1.0,
+          "output": ["vocals", "instrumental"]
+        }
+      ]
+    },
+    {
+      "id": "recipe_inst_ultimate_max",
+      "name": "Ultimate Instrumental (Max Spec)",
+      "description": "High-detail advanced ensemble with more bleed/noise risk.",
+      "type": "ensemble",
+      "target": "instrumental",
+      "quality_goal": "max_detail",
+      "difficulty": "advanced",
+      "expected_vram_tier": "high_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 3,
+      "recommended_for": [
+        "Advanced users chasing maximum detail"
+      ],
+      "contraindications": [
+        "Low VRAM systems",
+        "Users sensitive to metallic noise"
+      ],
+      "workflow_summary": "Max-spec blend of Unwa, Gabox and ViperX for aggressive detail recovery.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "algorithm": "max_spec",
+      "steps": [
+        { "model_id": "unwa-inst-v1e", "weight": 1.0 },
+        { "model_id": "gabox-inst-fv7z", "weight": 1.0 },
+        { "model_id": "bs-roformer-viperx-1297", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "recipe_inst_fno_becruily",
+      "name": "Ultimate Inst (FNO + Becruily)",
+      "description": "Experimental advanced ensemble that depends on FNO runtime support.",
+      "type": "ensemble",
+      "target": "instrumental",
+      "quality_goal": "precision_cleanup",
+      "difficulty": "expert",
+      "expected_vram_tier": "high_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 4,
+      "recommended_for": [
+        "Advanced users with verified neuralop/FNO1d runtime"
+      ],
+      "contraindications": [
+        "Systems without neuralop",
+        "Simple-mode workflows"
+      ],
+      "workflow_summary": "FNO precision mixed with Becruily and V1e for experimental detail/cleanliness.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "algorithm": "max_spec",
+      "steps": [
+        { "model_id": "unwa-inst-fno", "weight": 1.0 },
+        { "model_id": "becruily-inst", "weight": 1.0 },
+        { "model_id": "unwa-inst-v1e", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "recipe_inst_phase_fix",
+      "name": "Instrumental Phase Fixer (Unwa + Kim)",
+      "description": "Advanced two-model phase-fix ensemble for fuller instrumentals.",
+      "type": "ensemble",
+      "target": "instrumental",
+      "quality_goal": "fullness_cleanup",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 2,
+      "recommended_for": [
+        "Instrumentals where Kim is a better phase companion than Becruily"
+      ],
+      "contraindications": [
+        "CPU-only machines"
+      ],
+      "workflow_summary": "Phase-fix algorithm using Unwa magnitude and Kim phase guidance.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "algorithm": "phase_fix",
+      "steps": [
+        { "model_id": "unwa-inst-v1e", "weight": 1.0 },
+        { "model_id": "mel-band-roformer-kim", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "recipe_gabox_phase_fix",
+      "name": "Gabox Resurrection (Phase Fix)",
+      "description": "Advanced cleanup workflow using Gabox Resurrection body with ViperX phase.",
+      "type": "ensemble",
+      "target": "instrumental",
+      "quality_goal": "fullness_cleanup",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 3,
+      "recommended_for": [
+        "Users preferring Resurrection body over V1e tone"
+      ],
+      "contraindications": [
+        "Minimal-install workflows"
+      ],
+      "workflow_summary": "Phase-fix Gabox Resurrection against ViperX for cleaner full-body instrumentals.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "algorithm": "phase_fix",
+      "steps": [
+        { "model_id": "gabox-resurrection", "weight": 1.0 },
+        { "model_id": "bs-roformer-viperx-1297", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "recipe_vocal_max_spec",
+      "name": "Vocal Max Spec (Unwa + Becruily)",
+      "description": "Fullness-first vocal ensemble for advanced use.",
+      "type": "ensemble",
+      "target": "vocals",
+      "quality_goal": "max_vocal_body",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 2,
+      "recommended_for": [
+        "Vocals that sound too thin with cleaner models"
+      ],
+      "contraindications": [
+        "Use cases prioritizing lowest bleed"
+      ],
+      "workflow_summary": "Max-spec vocal blend for maximum body and breath detail.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "algorithm": "max_spec",
+      "steps": [
+        { "model_id": "unwa-big-beta-5e", "weight": 1.0 },
+        { "model_id": "becruily-vocal", "weight": 1.0 }
+      ]
+    },
+    {
+      "id": "pipeline_super_clean_vocal",
+      "name": "Super Clean Vocals (Pipeline)",
+      "description": "Dereverb before vocal extraction for difficult material.",
+      "type": "pipeline",
+      "target": "vocals",
+      "quality_goal": "vocal_cleanup",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 3,
+      "recommended_for": [
+        "Live vocals with room ambience"
+      ],
+      "contraindications": [
+        "Clean studio inputs"
+      ],
+      "workflow_summary": "Dereverb first, then run ViperX for a cleaner vocal source.",
+      "steps": [
+        {
+          "step_name": "dereverb",
+          "model_id": "anvuew-dereverb-room"
+        },
+        {
+          "step_name": "separation",
+          "model_id": "bs-roformer-viperx-1297",
+          "input_source": "dereverb.vocals"
+        }
+      ]
+    },
+    {
+      "id": "recipe_demudder_metal",
+      "name": "Demudder (Metal/Rock)",
+      "description": "Advanced instrumental cleanup for dense arrangements.",
+      "type": "ensemble",
+      "target": "instrumental",
+      "quality_goal": "demudder",
+      "difficulty": "expert",
+      "expected_vram_tier": "high_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 5,
+      "recommended_for": [
+        "Dense metal and rock mixes"
+      ],
+      "contraindications": [
+        "Acoustic or sparse arrangements"
+      ],
+      "workflow_summary": "Runs demudder phase-rotate cleanup after a ViperX pass.",
+      "post_processing": "demudder_phase_rotate",
+      "warning": "May cause OOM on low-VRAM systems.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "algorithm": "average",
+      "steps": [
+        {
+          "model_id": "bs-roformer-viperx-1297",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "recipe_debleed_instrumental",
+      "name": "DeBleed Instrumental",
+      "description": "Advanced debleed chain for removing remaining vocals from an instrumental.",
+      "type": "chained",
+      "target": "instrumental",
+      "quality_goal": "cleanup",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 4,
+      "recommended_for": [
+        "Instrumentals with residual vocal bleed"
+      ],
+      "contraindications": [
+        "Fast preview workflows"
+      ],
+      "workflow_summary": "Run ViperX first, then catch residual bleed with Kim.",
+      "steps": [
+        {
+          "step_name": "initial_separation",
+          "model_id": "bs-roformer-viperx-1297"
+        },
+        {
+          "step_name": "catch_bleed",
+          "model_id": "mel-band-roformer-kim",
+          "input_source": "initial_separation.instrumental",
+          "note": "Catches remaining vocal bleed"
+        }
+      ]
+    },
+    {
+      "id": "recipe_vocal_low_cut",
+      "name": "Vocal Low Cut Cleanup",
+      "description": "Simple post-processing cleanup for rumble and low-frequency bleed.",
+      "type": "single",
+      "target": "vocals",
+      "quality_goal": "cleanup",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "fast",
+      "guide_rank": 5,
+      "recommended_for": [
+        "Removing rumble from vocals after separation"
+      ],
+      "contraindications": [
+        "Material where low-end vocal energy is important"
+      ],
+      "workflow_summary": "High-pass cleanup after a ViperX vocal pass.",
+      "post_processing": "high_pass",
+      "post_processing_params": {
+        "cutoff_hz": 500
+      },
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "steps": [
+        {
+          "model_id": "bs-roformer-viperx-1297",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "id": "recipe_hybrid_freq_split",
+      "name": "Hybrid Frequency Split",
+      "description": "Advanced hybrid using SCNet lows and Unwa highs.",
+      "type": "ensemble",
+      "target": "instrumental",
+      "quality_goal": "hybrid_split",
+      "difficulty": "expert",
+      "expected_vram_tier": "high_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 2,
+      "recommended_for": [
+        "Advanced hybrid instrumental restoration"
+      ],
+      "contraindications": [
+        "GPUs below 12 GB VRAM",
+        "Simple-mode workflows"
+      ],
+      "workflow_summary": "SCNet supplies lows while Unwa supplies highs via frequency split.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800
+      },
+      "algorithm": "frequency_split",
+      "algorithm_config": {
+        "split_freq": 1000
+      },
+      "steps": [
+        { "model_id": "scnet-large", "weight": 1.0, "role": "low_band" },
+        { "model_id": "unwa-inst-v1e-plus", "weight": 1.0, "role": "high_band" }
+      ]
+    }
+  ]
 }

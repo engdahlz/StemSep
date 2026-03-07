@@ -636,6 +636,10 @@ fn separation_preflight_returns_report_on_errors() {
     assert!(data.get("errors").and_then(|v| v.as_array()).is_some());
     assert!(data.get("warnings").and_then(|v| v.as_array()).is_some());
     assert!(data.get("resolved").and_then(|v| v.as_object()).is_some());
+    let plan = data.get("plan").and_then(|v| v.as_object()).expect("plan object");
+    assert!(plan.get("required_models").and_then(|v| v.as_array()).is_some());
+    assert!(plan.get("runtime_blocks").and_then(|v| v.as_array()).is_some());
+    assert!(plan.get("recommended_adjustments").and_then(|v| v.as_array()).is_some());
 }
 
 #[test]
@@ -751,6 +755,24 @@ fn separation_preflight_resolves_recipe_step_models() {
     assert!(steps
         .iter()
         .any(|s| s.get("model_id").and_then(|v| v.as_str()) == Some("bs-roformer-viperx-1297")));
+
+    let plan = report
+        .get("plan")
+        .and_then(|v| v.as_object())
+        .expect("plan object");
+    assert_eq!(
+        plan.get("workflow_type").and_then(|v| v.as_str()),
+        Some("ensemble")
+    );
+    assert_eq!(
+        plan.get("difficulty").and_then(|v| v.as_str()),
+        Some("expert")
+    );
+    assert!(plan
+        .get("required_models")
+        .and_then(|v| v.as_array())
+        .map(|arr| !arr.is_empty())
+        .unwrap_or(false));
 }
 
 #[test]

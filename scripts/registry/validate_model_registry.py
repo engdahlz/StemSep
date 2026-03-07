@@ -38,6 +38,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 # ---- Configuration ----
 
@@ -269,6 +270,29 @@ def _detect_repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def _check_url_reachable(url: str, timeout_sec: int = 12) -> Tuple[bool, str]:
+    try:
+        req = Request(
+            url,
+            headers={"User-Agent": "StemSep-registry-validator/1.0"},
+            method="HEAD",
+        )
+        with urlopen(req, timeout=timeout_sec) as resp:
+            return True, str(getattr(resp, "status", 200))
+    except Exception as exc:
+        try:
+            req = Request(
+                url,
+                headers={"User-Agent": "StemSep-registry-validator/1.0"},
+                method="GET",
+            )
+            with urlopen(req, timeout=timeout_sec) as resp:
+                return True, str(getattr(resp, "status", 200))
+        except Exception as retry_exc:
+            err = retry_exc if retry_exc is not None else exc
+            return False, str(err)
+
+
 # ---- Validation rules ----
 
 
@@ -277,6 +301,7 @@ def validate_entry(
     entry_file: Path,
     models_dir: Path,
     strict: bool,
+    check_verified_urls: bool,
 ) -> List[Issue]:
     issues: List[Issue] = []
 
@@ -323,6 +348,49 @@ def validate_entry(
 
     links_ckpt = _get_nested(entry, "links", "checkpoint")
     links_cfg = _get_nested(entry, "links", "config")
+    catalog_status = entry.get("catalog_status")
+    card_metrics = entry.get("card_metrics")
+
+    if catalog_status == "verified":
+        if not isinstance(card_metrics, dict):
+            issues.append(
+                Issue(
+                    "ERROR",
+                    model_id,
+                    "Verified model is missing card_metrics",
+                    entry_file,
+                )
+            )
+        else:
+            labels = card_metrics.get("labels")
+            values = card_metrics.get("values")
+            if not isinstance(labels, list) or len(labels) != 3:
+                issues.append(
+                    Issue(
+                        "ERROR",
+                        model_id,
+                        "Verified model card_metrics.labels must contain exactly 3 entries",
+                        entry_file,
+                    )
+                )
+            if not isinstance(values, list) or len(values) != 3:
+                issues.append(
+                    Issue(
+                        "ERROR",
+                        model_id,
+                        "Verified model card_metrics.values must contain exactly 3 entries",
+                        entry_file,
+                    )
+                )
+            elif any(v in (None, "", "—") for v in values):
+                issues.append(
+                    Issue(
+                        "ERROR",
+                        model_id,
+                        "Verified model card_metrics.values contains an empty slot",
+                        entry_file,
+                    )
+                )
 
     # Registry consistency: checkpoint link should generally exist,
     # except for architectures that are resolved without a checkpoint URL (e.g. HTDemucs/Demucs).
@@ -378,6 +446,17 @@ def validate_entry(
                         entry_file,
                     )
                 )
+            elif catalog_status == "verified" and check_verified_urls:
+                ok, detail = _check_url_reachable(links_ckpt)
+                if not ok:
+                    issues.append(
+                        Issue(
+                            "ERROR",
+                            model_id,
+                            f"Verified model checkpoint URL is not reachable: {detail}",
+                            entry_file,
+                        )
+                    )
 
     # For Roformer-ish models, config is often needed (but not always). Validate URL if present.
     if links_cfg is not None:
@@ -442,6 +521,7 @@ def validate_registry(
     repo_root: Path,
     models_dir: Path,
     strict: bool,
+    check_verified_urls: bool,
 ) -> Tuple[List[Issue], List[Path], int]:
     issues: List[Issue] = []
     files = _iter_model_json_files(repo_root)
@@ -492,7 +572,13 @@ def validate_registry(
                     seen_ids[mid] = f
 
             issues.extend(
-                validate_entry(entry, f, models_dir=models_dir, strict=strict)
+                validate_entry(
+                    entry,
+                    f,
+                    models_dir=models_dir,
+                    strict=strict,
+                    check_verified_urls=check_verified_urls,
+                )
             )
 
     return issues, files, entry_count
@@ -521,6 +607,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="Also print INFO lines for models that are not installed locally (best-effort).",
     )
+    parser.add_argument(
+        "--check-verified-urls",
+        action="store_true",
+        help="Resolve verified model checkpoint URLs and fail if they are unreachable.",
+    )
 
     args = parser.parse_args(list(argv) if argv is not None else None)
 
@@ -536,7 +627,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return 1
 
     issues, files, entry_count = validate_registry(
-        repo_root=repo_root, models_dir=models_dir, strict=args.strict
+        repo_root=repo_root,
+        models_dir=models_dir,
+        strict=args.strict,
+        check_verified_urls=args.check_verified_urls,
     )
 
     # Optional: print missing installs (INFO)

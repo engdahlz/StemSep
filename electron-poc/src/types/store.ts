@@ -44,7 +44,9 @@ export interface Model {
     os?: string[];
   };
   runtime?: {
-    allowed?: boolean;
+    allowed?: boolean | string[];
+    preferred?: string;
+    variant?: string;
     blocking_reason?: string;
     requirements?: {
       manual_steps?: string[];
@@ -74,9 +76,22 @@ export interface Model {
     }>;
   };
   guide_revision?: string | null;
+  guide_rank?: number | null;
+  guide_notes?: string[];
+  status?: {
+    readiness?: "verified" | "experimental" | "manual" | "blocked";
+    simple_allowed?: boolean;
+    blocking_reason?: string;
+  };
   quality_profile?: {
     target_roles?: Array<
-      "vocals" | "instrumental" | "karaoke" | "restoration" | "multi_stem"
+      | "vocals"
+      | "instrumental"
+      | "karaoke"
+      | "restoration"
+      | "multi_stem"
+      | "drums"
+      | "bass"
     >;
     quality_tier?: "fast" | "balanced" | "quality" | "ultra" | null;
     deterministic_priority?: number | null;
@@ -90,9 +105,30 @@ export interface Model {
     notes?: string;
   }>;
   stability_notes?: string[];
+  card_metrics?: {
+    kind?: "standard" | "special" | "status";
+    primary_target?: string;
+    labels?: string[];
+    values?: Array<number | string | null>;
+    source?: string;
+    evidence_url?: string | null;
+    evidence_note?: string | null;
+    last_verified?: string;
+  };
+  catalog_status?: "verified" | "candidate" | "blocked" | "manual_only" | "online_only";
+  metrics_status?: "verified" | "guide_curated" | "vendor_matched" | "missing_evidence";
+  metrics_evidence?: Array<{
+    source: string;
+    url?: string | null;
+    note: string;
+    verified_at: string;
+  }>;
 }
 
 export type Recipe = import("./recipes").Recipe;
+export type SourceAudioProfile = import("./media").SourceAudioProfile;
+export type StagingDecision = import("./media").StagingDecision;
+export type PlaybackMetadata = import("./media").PlaybackMetadata;
 
 export interface HistoryItem {
   id: string;
@@ -107,6 +143,9 @@ export interface HistoryItem {
   duration?: number;
   outputFiles?: Record<string, string>;
   isFavorite?: boolean;
+  sourceAudioProfile?: SourceAudioProfile;
+  stagingDecision?: StagingDecision;
+  playback?: PlaybackMetadata;
   settings: {
     overlap?: number;
     segmentSize?: number;
@@ -145,6 +184,15 @@ export interface QueueItem {
   startTime?: number; // For ETR calculation
   lastProgressTime?: number; // Timestamp of the last progress/progress-like update (for UI reassurance)
   modelId?: string;
+  activePhase?: string;
+  activeStepId?: string;
+  activeStepLabel?: string;
+  activeStepIndex?: number;
+  activeStepCount?: number;
+  activeModelId?: string;
+  chunksDone?: number;
+  chunksTotal?: number;
+  lastStepDurationMs?: number;
 }
 
 export interface PhaseParams {

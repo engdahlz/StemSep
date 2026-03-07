@@ -1,4 +1,11 @@
-import type { RecipeDefaults, RecipeStep, RecipeType } from './types/recipes'
+import type {
+  RecipeDefaults,
+  RecipeDifficulty,
+  RecipeRuntimeTier,
+  RecipeStep,
+  RecipeType,
+  RecipeVramTier,
+} from './types/recipes'
 
 export interface PostProcessingStep {
   type: 'phase_fix' | 'de_reverb' | 'de_bleed' | 'de_noise' | 'de_breath'
@@ -17,6 +24,15 @@ export interface Preset {
   qualityLevel: 'fast' | 'balanced' | 'quality' | 'ultra'
   estimatedVram: number // GB
   tags: string[]
+  simpleVisible?: boolean
+  simpleGoal?: 'instrumental' | 'vocals' | 'karaoke' | 'cleanup' | 'instruments'
+  guideRank?: number
+  difficulty?: RecipeDifficulty
+  expectedVramTier?: RecipeVramTier
+  expectedRuntimeTier?: RecipeRuntimeTier
+  recommendedFor?: string[]
+  contraindications?: string[]
+  workflowSummary?: string
   modelId?: string // For single-model presets
   isRecipe?: boolean // For workflow recipes
   recipe?: {
@@ -25,12 +41,19 @@ export interface Preset {
     warning?: string
     source?: string
     defaults?: RecipeDefaults
+    difficulty?: RecipeDifficulty
+    expectedVramTier?: RecipeVramTier
+    expectedRuntimeTier?: RecipeRuntimeTier
+    guideRank?: number
+    recommendedFor?: string[]
+    contraindications?: string[]
+    workflowSummary?: string
     requiredModels: string[]
     steps: RecipeStep[]
   }
   ensembleConfig?: {
     models: { model_id: string; weight?: number }[]
-    algorithm: 'average' | 'avg_wave' | 'max_spec' | 'min_spec' | 'phase_fix'
+    algorithm: 'average' | 'avg_wave' | 'max_spec' | 'min_spec' | 'phase_fix' | 'frequency_split'
     stemAlgorithms?: {
       vocals?: 'average' | 'max_spec' | 'min_spec'
       instrumental?: 'average' | 'max_spec' | 'min_spec'

@@ -122,6 +122,10 @@ Use:
   - Purpose: Fetch Google guide export, diff against local snapshot, and emit machine-readable sync/coverage reports.
   - Typical use: Keep guide-driven model knowledge in sync with registry and enforce CI divergence thresholds.
 
+- `registry/sync_model_catalog_metrics.py`
+  - Purpose: Backfill catalog card-metrics/status from vendor scores + live guide curation and emit candidate/coverage reports.
+  - Typical use: Refresh the Model Library so verified cards never render empty metrics and new guide candidates are tracked.
+
 - `download_configs.py`
   - Purpose: Fetch/download YAML config files referenced by model entries.
   - Typical use: Ensure configs exist locally after updating registry links.
