@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { Info } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { getRequiredModels, type Preset } from '@/presets'
 import { RatingMeter } from './RatingMeter'
@@ -70,23 +69,41 @@ export function SimplePresetCard({
   }, [isRecipe, steps])
 
   return (
-    <Card
+    <div
       className={cn(
-        'p-3 cursor-pointer transition-colors',
-        selected ? 'border-primary/60 bg-primary/5' : 'hover:bg-muted/30'
+        'group relative w-full overflow-visible rounded-[1.25rem] border p-4 text-left transition-all duration-300',
+        selected
+          ? 'border-white bg-white/84 shadow-[0_24px_70px_rgba(141,150,179,0.18)]'
+          : 'border-white/55 bg-[rgba(255,255,255,0.52)] hover:border-white/80 hover:bg-[rgba(255,255,255,0.7)]'
       )}
       onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onSelect()
+        }
+      }}
       role="button"
+      tabIndex={0}
       aria-pressed={selected}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-sm font-medium truncate">{preset.name}</div>
+          <div className="truncate text-[15px] tracking-[-0.025em] text-slate-800">
+            {preset.name}
+          </div>
+          {preset.description && (
+            <p className="mt-1 line-clamp-2 text-[12px] leading-[1.45] text-slate-500">
+              {preset.description}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           {typeof preset.estimatedVram === 'number' && (
-            <div className="text-[11px] text-muted-foreground">{preset.estimatedVram}GB</div>
+            <div className="rounded-full border border-white/60 bg-white/60 px-2 py-0.5 text-[11px] text-slate-500">
+              {preset.estimatedVram}GB
+            </div>
           )}
 
           <div className="relative" onClick={e => e.stopPropagation()}>
@@ -94,9 +111,9 @@ export function SimplePresetCard({
               type="button"
               aria-label={`Preset info: ${preset.name}`}
               className={cn(
-                'h-7 w-7 inline-flex items-center justify-center rounded-md border bg-background/60',
-                'text-muted-foreground hover:text-foreground hover:bg-background',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
+                'inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/60 bg-white/58',
+                'text-slate-500 hover:bg-white/80 hover:text-slate-800',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/60'
               )}
               onMouseEnter={() => setInfoOpen(true)}
               onMouseLeave={() => setInfoOpen(false)}
@@ -111,24 +128,23 @@ export function SimplePresetCard({
             {infoOpen && (
               <div
                 className={cn(
-                  'absolute right-0 mt-2 w-[320px] z-50 rounded-md border bg-popover text-popover-foreground shadow-lg',
-                  'p-3 text-xs'
+                  'absolute right-0 z-50 mt-2 w-[320px] rounded-2xl border border-white/70 bg-[rgba(255,255,255,0.92)] p-3 text-xs text-slate-800 shadow-[0_24px_80px_rgba(141,150,179,0.22)] backdrop-blur-xl'
                 )}
               >
-                <div className="font-medium text-sm mb-1">{preset.name}</div>
+                <div className="mb-1 text-sm font-medium text-slate-800">{preset.name}</div>
                 {tooltipLines.length > 0 ? (
                   <div className="space-y-1">
                     {tooltipLines.map((l, i) => (
-                      <div key={i} className="text-muted-foreground">
+                      <div key={i} className="text-slate-600">
                         {l}
                       </div>
                     ))}
                     {stepPreview && (
-                      <div className="text-muted-foreground">{stepPreview}</div>
+                      <div className="text-slate-600">{stepPreview}</div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground">No details.</div>
+                  <div className="text-slate-600">No details.</div>
                 )}
               </div>
             )}
@@ -137,32 +153,45 @@ export function SimplePresetCard({
       </div>
 
       <div className="mt-2 flex flex-wrap gap-1.5">
-        {badges.map(b => (
-          <Badge key={b} variant={b === 'Best' ? 'default' : 'secondary'} className="text-[10px]">
+        {badges.map((b, index) => (
+          <Badge
+            key={`${b}-${index}`}
+            variant={b === 'Best' ? 'default' : 'secondary'}
+            className={cn(
+              'border-0 text-[10px]',
+              b === 'Best'
+                ? 'bg-white text-[#111111]'
+                : 'bg-slate-900/6 text-slate-600'
+            )}
+          >
             {b}
           </Badge>
         ))}
         {isRecipe && (
-          <Badge variant="outline" className="text-[10px]" title="Runs multiple steps automatically">
+          <Badge
+            variant="outline"
+            className="border-white/60 bg-white/60 text-[10px] text-slate-600"
+            title="Runs multiple steps automatically"
+          >
             Multi-step
           </Badge>
         )}
         {typeof preset.guideRank === 'number' && (
-          <Badge variant="outline" className="text-[10px]" title="Guide priority">
+          <Badge variant="outline" className="border-white/60 bg-white/60 text-[10px] text-slate-600" title="Guide priority">
             #{preset.guideRank}
           </Badge>
         )}
         {missingIds.length > 0 && (
-          <Badge variant="destructive" className="text-[10px]">
+          <Badge variant="destructive" className="border-0 bg-rose-500/14 text-[10px] text-rose-700">
             Missing {missingIds.length} model{missingIds.length === 1 ? '' : 's'}
           </Badge>
         )}
       </div>
 
-      <div className="mt-2 space-y-1">
+      <div className="mt-3 space-y-1">
         <RatingMeter label="Quality" value={quality} />
         <RatingMeter label="Speed" value={speed} />
       </div>
-    </Card>
+    </div>
   )
 }

@@ -18,13 +18,14 @@ export function PageShell({
   return (
     <div
       className={cn(
-        "h-full flex flex-col bg-background text-foreground selection:bg-primary/30",
+        "absolute inset-0 z-20 flex h-full flex-col text-[#fafafa] selection:bg-white/20",
         className,
       )}
     >
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-xl" />
       <div
         className={cn(
-          "flex-1 min-h-0 relative scroll-smooth",
+          "relative z-10 min-h-0 flex-1 scroll-smooth",
           scroll && "overflow-y-auto",
           contentClassName,
         )}

@@ -888,37 +888,66 @@ export function ConfigurePage({
 
   return (
     <PageShell scroll={false}>
-    <div className="h-full min-h-0 flex flex-col bg-background">
+    <div className="flex h-full items-center justify-center px-5 py-6">
+    <div className="relative flex h-[min(920px,calc(100vh-3rem))] w-full max-w-[1180px] flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-[rgba(250,248,252,0.78)] text-slate-800 shadow-[0_40px_120px_rgba(141,150,179,0.22)] backdrop-blur-2xl">
       {/* Header */}
-      <div className="border-b bg-card/50 px-6 py-4">
+      <div className="border-b border-white/60 px-7 py-5">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] border border-white/60 bg-white/68 text-slate-600 transition-all hover:bg-white/84 hover:text-slate-900"
+          >
             <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">Configure Separation</h1>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Music className="h-4 w-4" />
-              <span className="text-sm truncate max-w-md">{fileName}</span>
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <span className="stemsep-config-chip">
+                Separation Config
+              </span>
+              <span className="stemsep-config-chip stemsep-config-chip-subtle normal-case tracking-[-0.1px]">
+                {mode === "simple" ? "Simple" : "Advanced"}
+              </span>
             </div>
+            <h1 className="text-[30px] font-normal tracking-[-1.2px] text-slate-800">
+              Configure Separation
+            </h1>
+            <div className="mt-1 flex min-w-0 items-center gap-2 text-slate-500">
+              <Music className="h-4 w-4 shrink-0" />
+              <span className="truncate text-sm">{fileName}</span>
+            </div>
+          </div>
+          <div className="hidden rounded-[1.15rem] border border-white/70 bg-white/76 px-4 py-3 text-right shadow-[0_18px_36px_rgba(141,150,179,0.12)] md:block">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+              Preview
+            </div>
+            <div className="mt-1 text-[13px] text-slate-700">Lossless WAV</div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-6">
+      <div className="stemsep-config-scroll flex-1 min-h-0 overflow-y-auto px-7 py-6 pr-4">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Mode Tabs */}
-          <div className="grid w-full grid-cols-2 bg-muted p-1 rounded-lg">
+          <div className="stemsep-config-segmented grid w-full grid-cols-2 rounded-[1.3rem] border border-white/70 bg-white/54 p-1.5">
             <button
               onClick={() => setMode("simple")}
-              className={`py-2 px-4 rounded-md text-sm font-medium transition-all ${mode === "simple" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              className={`rounded-[1.05rem] px-4 py-2.5 text-sm font-medium tracking-[-0.2px] transition-all ${
+                mode === "simple"
+                  ? "stemsep-config-segmented-active text-[#111111]"
+                  : "text-slate-500 hover:bg-white/48 hover:text-slate-800"
+              }`}
             >
               Simple Mode
             </button>
             <button
               onClick={() => setMode("advanced")}
-              className={`py-2 px-4 rounded-md text-sm font-medium transition-all ${mode === "advanced" ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              className={`rounded-[1.05rem] px-4 py-2.5 text-sm font-medium tracking-[-0.2px] transition-all ${
+                mode === "advanced"
+                  ? "stemsep-config-segmented-active text-[#111111]"
+                  : "text-slate-500 hover:bg-white/48 hover:text-slate-800"
+              }`}
             >
               Advanced Mode
             </button>
@@ -927,22 +956,22 @@ export function ConfigurePage({
           <RuntimeDoctorCard compact />
 
           {hasFnoRuntimeBlock && (
-            <Card className="p-4 border-destructive/50 bg-destructive/10">
+            <Card className="rounded-[1.5rem] border-rose-300/55 bg-rose-50/82 p-4 text-slate-800 backdrop-blur-xl">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
                 <div className="space-y-1">
                   <div className="font-medium text-destructive">
                     FNO model blocked by current environment
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-rose-900/75">
                     Install a neuraloperator/neuralop build that exposes{" "}
                     <code>neuralop.models.FNO1d</code> and restart StemSep.
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-rose-700/75">
                     Blocked model(s): {blockedFnoModels.join(", ")}
                   </div>
                   {fnoFallbackRecommendation?.recommendedPresetId && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-rose-700/75">
                       Recommended fallback workflow:{" "}
                       {
                         presets.find(
@@ -973,11 +1002,11 @@ export function ConfigurePage({
                 availability={availability}
               />
 
-              <Card className="p-4 space-y-3">
+              <Card className="space-y-3 rounded-[1.5rem] border-white/55 bg-[rgba(255,255,255,0.5)] p-4 text-slate-800 shadow-[0_20px_60px_rgba(141,150,179,0.14)] backdrop-blur-xl">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">Speed</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-slate-500">
                       {maxSafeSegmentSize > 0
                         ? `Machine limit: ${maxSafeSegmentSize}`
                         : "Machine limit: Auto"}
@@ -986,6 +1015,7 @@ export function ConfigurePage({
                   <Button
                     variant="outline"
                     size="sm"
+                    className="stemsep-config-secondary rounded-[999px] border border-white/70 bg-white/72 px-4 text-[13px] font-normal tracking-[-0.2px] text-slate-700 hover:bg-white/88 hover:text-slate-900"
                     onClick={() => setSimpleSpeed(70)}
                   >
                     Best for my machine
@@ -998,9 +1028,9 @@ export function ConfigurePage({
                   step="1"
                   value={simpleSpeed}
                   onChange={(e) => setSimpleSpeed(parseInt(e.target.value, 10))}
-                  className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-900/10 accent-slate-800"
                 />
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>Quality</span>
                   <span>Speed</span>
                 </div>
@@ -1008,11 +1038,11 @@ export function ConfigurePage({
 
               {/* Selected preset info */}
               {selectedPreset && (
-                <Card className="p-4 space-y-3">
+                <Card className="space-y-3 rounded-[1.5rem] border-white/55 bg-[rgba(255,255,255,0.5)] p-4 text-slate-800 shadow-[0_20px_60px_rgba(141,150,179,0.14)] backdrop-blur-xl">
                   {/* Header with quality badge */}
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-slate-600">
                         {selectedPreset.description}
                       </p>
                     </div>
@@ -1020,12 +1050,12 @@ export function ConfigurePage({
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ml-3 shrink-0 ${
                           selectedPreset.qualityLevel === "ultra"
-                            ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                            ? "border-fuchsia-300/55 bg-fuchsia-50/82 text-fuchsia-700"
                             : selectedPreset.qualityLevel === "quality"
-                              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                              ? "border-emerald-300/55 bg-emerald-50/82 text-emerald-700"
                               : selectedPreset.qualityLevel === "balanced"
-                                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                                : "bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                                ? "border-sky-300/55 bg-sky-50/82 text-sky-700"
+                                : "border-amber-300/55 bg-amber-50/82 text-amber-700"
                         }`}
                       >
                         {selectedPreset.qualityLevel === "ultra"
@@ -1044,7 +1074,7 @@ export function ConfigurePage({
                     <div className="flex items-center gap-4">
                       {"estimatedVram" in selectedPreset && (
                         <div className="flex items-center gap-1.5 text-sm">
-                          <span className="text-muted-foreground">VRAM:</span>
+                          <span className="text-slate-500">VRAM:</span>
                           <span
                             className={`font-medium ${
                               selectedPreset.estimatedVram >= 12
@@ -1058,7 +1088,7 @@ export function ConfigurePage({
                           </span>
                         </div>
                       )}
-                      <span className="text-sm font-medium text-muted-foreground">
+                      <span className="text-sm font-medium text-slate-500">
                         Stems:
                       </span>
                     </div>
@@ -1066,7 +1096,7 @@ export function ConfigurePage({
                       {selectedPreset.stems.map((stem) => (
                         <span
                           key={stem}
-                          className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold border-transparent bg-secondary text-secondary-foreground"
+                          className="inline-flex items-center rounded-full border border-white/60 bg-white/70 px-2.5 py-0.5 text-xs font-semibold text-slate-700"
                         >
                           {stem}
                         </span>
@@ -1082,7 +1112,7 @@ export function ConfigurePage({
                         {selectedPreset.tags.map((tag: string) => (
                           <span
                             key={tag}
-                            className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                            className="inline-flex items-center rounded-md bg-white/62 px-2 py-0.5 text-xs text-slate-500"
                           >
                             #{tag}
                           </span>
@@ -1092,14 +1122,14 @@ export function ConfigurePage({
 
                   {/* Ensemble Info */}
                   {selectedPreset.ensembleConfig && (
-                    <div className="pt-2 border-t">
+                    <div className="border-t border-white/55 pt-2">
                       <div className="flex items-center gap-2">
                         <Layers className="w-4 h-4 text-primary" />
                         <span className="text-sm font-medium">
                           Ensemble:{" "}
                           {selectedPreset.ensembleConfig.models.length} models
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-slate-500">
                           (
                           {selectedPreset.ensembleConfig.algorithm ===
                           "max_spec"
@@ -1117,21 +1147,21 @@ export function ConfigurePage({
                   {/* Workflow (Recipe) Details */}
                   {(selectedPreset as any).isRecipe &&
                     (selectedPreset as any).recipe && (
-                      <div className="pt-2 border-t space-y-2">
+                      <div className="space-y-2 border-t border-white/55 pt-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Zap className="w-4 h-4 text-primary" />
                             <span className="text-sm font-medium">
                               Multi-step preset
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-slate-500">
                               ({(selectedPreset as any).recipe.type})
                             </span>
                           </div>
                         </div>
 
                         {(selectedPreset as any).recipe.warning && (
-                          <div className="flex items-start gap-2 text-xs text-orange-400 bg-orange-500/10 rounded p-2 border border-orange-500/20">
+                          <div className="flex items-start gap-2 rounded border border-amber-300/55 bg-amber-50/82 p-2 text-xs text-amber-700">
                             <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                             <span>
                               {(selectedPreset as any).recipe.warning}
@@ -1139,10 +1169,10 @@ export function ConfigurePage({
                           </div>
                         )}
 
-                        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
                           {(selectedPreset as any).recipe.source && (
-                            <div className="bg-muted/50 rounded p-2">
-                              <span className="font-medium text-foreground/80">
+                            <div className="rounded bg-white/62 p-2">
+                              <span className="font-medium text-slate-700">
                                 Source:
                               </span>{" "}
                               {(selectedPreset as any).recipe.source}
@@ -1150,8 +1180,8 @@ export function ConfigurePage({
                           )}
                           {(selectedPreset as any).recipe.defaults?.overlap !=
                             null && (
-                            <div className="bg-muted/50 rounded p-2">
-                              <span className="font-medium text-foreground/80">
+                            <div className="rounded bg-white/62 p-2">
+                              <span className="font-medium text-slate-700">
                                 Default overlap:
                               </span>{" "}
                               {(selectedPreset as any).recipe.defaults.overlap}
@@ -1162,7 +1192,7 @@ export function ConfigurePage({
                         {(selectedPreset as any).recipe.requiredModels?.length >
                           0 && (
                           <div className="space-y-1">
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-xs text-slate-500">
                               Required models:
                             </div>
                             <div className="flex flex-wrap gap-1">
@@ -1173,8 +1203,8 @@ export function ConfigurePage({
                                   key={id}
                                   className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ${
                                     missingModels.includes(id)
-                                      ? "border-destructive/40 bg-destructive/10 text-destructive"
-                                      : "border-transparent bg-secondary text-secondary-foreground"
+                                      ? "border-rose-300/55 bg-rose-50/82 text-rose-700"
+                                      : "border-white/60 bg-white/70 text-slate-700"
                                   }`}
                                 >
                                   {id}
@@ -1190,7 +1220,7 @@ export function ConfigurePage({
                             defaultOpen={false}
                           >
                             <div className="space-y-2">
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-xs text-slate-500">
                                 Runs these steps automatically in one job.
                               </div>
                               <div className="space-y-1">
@@ -1205,15 +1235,15 @@ export function ConfigurePage({
                                     return (
                                       <div
                                         key={idx}
-                                        className="flex items-start justify-between gap-3 bg-muted/30 rounded px-2 py-1"
+                                        className="flex items-start justify-between gap-3 rounded bg-white/60 px-2 py-1"
                                       >
                                         <div className="min-w-0">
-                                          <div className="text-xs font-medium text-foreground/90 truncate">
+                                          <div className="truncate text-xs font-medium text-slate-800">
                                             {idx + 1}. {name}
                                             {optional ? " (optional)" : ""}
                                           </div>
                                           {step.note && (
-                                            <div className="text-[11px] text-muted-foreground">
+                                            <div className="text-[11px] text-slate-500">
                                               {step.note}
                                             </div>
                                           )}
@@ -1233,22 +1263,22 @@ export function ConfigurePage({
                   {"postProcessingSteps" in selectedPreset &&
                   selectedPreset.postProcessingSteps &&
                   selectedPreset.postProcessingSteps.length > 0 ? (
-                    <div className="pt-2 border-t">
+                    <div className="border-t border-white/55 pt-2">
                       <button
                         onClick={() =>
                           setEnableAutoPipeline(!enableAutoPipeline)
                         }
                         className={`w-full flex items-start gap-3 text-left p-3 rounded-lg transition-all ${
                           enableAutoPipeline
-                            ? "bg-emerald-500/10 border border-emerald-500/30"
-                            : "bg-muted/50 border border-transparent hover:border-muted-foreground/20"
+                            ? "border border-emerald-300/55 bg-emerald-50/80"
+                            : "border border-white/55 bg-white/55 hover:border-white/80"
                         }`}
                       >
                         <div
                           className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
                             enableAutoPipeline
                               ? "border-emerald-500 bg-emerald-500"
-                              : "border-muted-foreground/40"
+                              : "border-slate-400/45"
                           }`}
                         >
                           {enableAutoPipeline && (
@@ -1270,17 +1300,17 @@ export function ConfigurePage({
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span
-                              className={`text-sm font-medium ${enableAutoPipeline ? "text-emerald-400" : "text-muted-foreground"}`}
+                              className={`text-sm font-medium ${enableAutoPipeline ? "text-emerald-700" : "text-slate-600"}`}
                             >
                               Auto Post-Processing
                             </span>
                             {enableAutoPipeline && (
-                              <span className="text-xs bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">
+                              <span className="rounded bg-emerald-500/14 px-1.5 py-0.5 text-xs text-emerald-700">
                                 ON
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-muted-foreground mt-1">
+                          <div className="mt-1 text-xs text-slate-500">
                             {selectedPreset.postProcessingSteps.map(
                               (step: any, i: number) => (
                                 <span key={i}>
@@ -1297,8 +1327,8 @@ export function ConfigurePage({
                     // Show regular pipeline note if no postProcessingSteps
                     "pipelineNote" in selectedPreset &&
                     selectedPreset.pipelineNote && (
-                      <div className="pt-2 border-t">
-                        <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 rounded p-2">
+                      <div className="border-t border-white/55 pt-2">
+                        <div className="flex items-start gap-2 rounded bg-white/60 p-2 text-xs text-slate-500">
                           <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                           <span>{selectedPreset.pipelineNote}</span>
                         </div>
@@ -1324,6 +1354,7 @@ export function ConfigurePage({
                     <Button
                       variant={device === "auto" ? "default" : "outline"}
                       size="sm"
+                      className={device === "auto" ? "stemsep-config-option stemsep-config-option-active" : "stemsep-config-option"}
                       onClick={() => setDevice("auto")}
                     >
                       Auto
@@ -1334,6 +1365,7 @@ export function ConfigurePage({
                           device.startsWith("cuda") ? "default" : "outline"
                         }
                         size="sm"
+                        className={device.startsWith("cuda") ? "stemsep-config-option stemsep-config-option-active" : "stemsep-config-option"}
                         onClick={() => setDevice("cuda")}
                       >
                         GPU (CUDA)
@@ -1342,19 +1374,20 @@ export function ConfigurePage({
                     <Button
                       variant={device === "cpu" ? "default" : "outline"}
                       size="sm"
+                      className={device === "cpu" ? "stemsep-config-option stemsep-config-option-active" : "stemsep-config-option"}
                       onClick={() => setDevice("cpu")}
                     >
                       CPU {!gpuInfo?.has_cuda && "(No GPU detected)"}
                     </Button>
                   </div>
                   {device === "cpu" && gpuInfo?.has_cuda && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500">
                       CPU processing is slower but uses less memory
                     </p>
                   )}
                 </div>
 
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-slate-500">
                   Preview stems are saved as WAV for lossless playback. Use
                   Export in Results to create MP3/FLAC.
                 </div>
@@ -1375,15 +1408,15 @@ export function ConfigurePage({
                       onClick={() => setUsePhaseCorrection(!usePhaseCorrection)}
                       className={`w-full flex items-start gap-3 text-left p-3 rounded-lg transition-all ${
                         usePhaseCorrection
-                          ? "bg-blue-500/10 border border-blue-500/30"
-                          : "bg-muted/50 border border-transparent hover:border-muted-foreground/20"
+                          ? "border border-sky-300/55 bg-sky-50/82"
+                          : "border border-white/55 bg-white/55 hover:border-white/80"
                       }`}
                     >
                       <div
                         className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
                           usePhaseCorrection
-                            ? "border-blue-500 bg-blue-500"
-                            : "border-muted-foreground/40"
+                            ? "border-sky-500 bg-sky-500"
+                            : "border-slate-400/45"
                         }`}
                       >
                         {usePhaseCorrection && (
@@ -1402,11 +1435,11 @@ export function ConfigurePage({
                       </div>
                       <div className="flex-1">
                         <div
-                          className={`font-medium ${usePhaseCorrection ? "text-blue-500" : "text-foreground"}`}
+                          className={`font-medium ${usePhaseCorrection ? "text-sky-700" : "text-slate-700"}`}
                         >
                           Phase Swap Enhancement
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="mt-1 text-xs text-slate-500">
                           Uses a reference model to improve phase accuracy.
                           Reduces artifacts in high frequencies.
                         </p>
@@ -1424,15 +1457,15 @@ export function ConfigurePage({
                     onClick={() => setVolumeCompEnabled(!volumeCompEnabled)}
                     className={`w-full flex items-start gap-3 text-left p-3 rounded-lg transition-all ${
                       volumeCompEnabled
-                        ? "bg-blue-500/10 border border-blue-500/30"
-                        : "bg-muted/50 border border-transparent hover:border-muted-foreground/20"
+                        ? "border border-sky-300/55 bg-sky-50/82"
+                        : "border border-white/55 bg-white/55 hover:border-white/80"
                     }`}
                   >
                     <div
                       className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
                         volumeCompEnabled
-                          ? "border-blue-500 bg-blue-500"
-                          : "border-muted-foreground/40"
+                          ? "border-sky-500 bg-sky-500"
+                          : "border-slate-400/45"
                       }`}
                     >
                       {volumeCompEnabled && (
@@ -1451,11 +1484,11 @@ export function ConfigurePage({
                     </div>
                     <div className="flex-1">
                       <div
-                        className={`font-medium ${volumeCompEnabled ? "text-blue-500" : "text-foreground"}`}
+                        className={`font-medium ${volumeCompEnabled ? "text-sky-700" : "text-slate-700"}`}
                       >
                         Enable VC
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="mt-1 text-xs text-slate-500">
                         Adds headroom when combining multiple models (reduces
                         clipping risk). When enabled, uses best defaults.
                       </p>
@@ -1478,156 +1511,201 @@ export function ConfigurePage({
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-sm text-yellow-600 dark:text-yellow-400">
-                <div className="flex items-center gap-2 font-semibold mb-1">
-                  <Settings2 className="w-4 h-4" />
+              <div className="rounded-[1.4rem] border border-amber-300/60 bg-amber-50/82 p-5 text-amber-900/80">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-amber-300/55 bg-amber-50/88 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-amber-700">
+                    Advanced Mode
+                  </span>
+                  <span className="rounded-full border border-white/60 bg-white/65 px-3 py-1 text-[11px] text-slate-500">
+                    Manual control
+                  </span>
+                </div>
+                <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                  <Settings2 className="h-4 w-4" />
                   Advanced Configuration
                 </div>
-                Manual control over model parameters. Use with caution.
+                <p className="text-sm text-amber-900/76">
+                  Fine-tune device, model strategy and processing parameters.
+                  Use this when presets are not enough.
+                </p>
               </div>
 
               {/* Processing Device */}
-              <Card className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">
-                    Processing Device
-                  </label>
+              <Card className="space-y-4 rounded-[1.5rem] border-white/55 bg-[rgba(255,255,255,0.5)] p-5 text-slate-800 shadow-[0_20px_60px_rgba(141,150,179,0.14)] backdrop-blur-xl">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-800">
+                      Processing Device
+                    </label>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Choose how this run should use your machine.
+                    </p>
+                  </div>
                   <span
-                    className={`text-xs ${hasCuda ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                      hasCuda
+                        ? "border-emerald-300/55 bg-emerald-50/88 text-emerald-700"
+                        : "border-white/60 bg-white/65 text-slate-500"
+                    }`}
                   >
                     {hasCuda ? "CUDA available" : "CPU only"}
                   </span>
                 </div>
-                <select
-                  value={device}
-                  onChange={(e) => setDevice(e.target.value)}
-                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="auto">Auto (GPU if available)</option>
-                  <option value="cpu">CPU</option>
-                  {cudaGpus.length > 0 ? (
-                    cudaGpus.map((g: any, idx: number) => {
-                      const index = Number.isFinite(g?.index) ? g.index : idx;
-                      const label = g?.name
-                        ? `GPU (CUDA): ${g.name}`
-                        : `GPU (CUDA) #${index}`;
-                      return (
-                        <option key={`cuda:${index}`} value={`cuda:${index}`}>
-                          {label}
+                <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+                  <div className="space-y-3">
+                    <select
+                      value={device}
+                      onChange={(e) => setDevice(e.target.value)}
+                      className="flex h-11 w-full items-center justify-between rounded-[1rem] border border-white/60 bg-white/70 px-3 py-2 text-sm text-slate-800 outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="auto">Auto (GPU if available)</option>
+                      <option value="cpu">CPU</option>
+                      {cudaGpus.length > 0 ? (
+                        cudaGpus.map((g: any, idx: number) => {
+                          const index = Number.isFinite(g?.index) ? g.index : idx;
+                          const label = g?.name
+                            ? `GPU (CUDA): ${g.name}`
+                            : `GPU (CUDA) #${index}`;
+                          return (
+                            <option key={`cuda:${index}`} value={`cuda:${index}`}>
+                              {label}
+                            </option>
+                          );
+                        })
+                      ) : (
+                        <option value={primaryCudaDevice} disabled={!hasCuda}>
+                          GPU (CUDA)
                         </option>
-                      );
-                    })
-                  ) : (
-                    <option value={primaryCudaDevice} disabled={!hasCuda}>
-                      GPU (CUDA)
-                    </option>
-                  )}
-                </select>
-                <p className="text-xs text-muted-foreground">
-                  Choose Auto for best defaults. Use GPU (CUDA) for faster
-                  separation when available.
-                </p>
+                      )}
+                    </select>
+                    <p className="text-xs text-slate-500">
+                      Choose Auto for best defaults. Use GPU (CUDA) for faster
+                      separation when available.
+                    </p>
+                  </div>
 
-                <div className="pt-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      // Persist the current selection as the global default.
-                      // Also persist a preferred CUDA index when relevant.
-                      const isCuda = device.startsWith("cuda");
-                      const normalizedDevice =
-                        device === "cuda"
-                          ? globalAdvancedSettings?.preferredCudaDevice ||
-                            primaryCudaDevice
-                          : device;
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="stemsep-config-secondary rounded-[999px] border border-white/70 bg-white/72 px-4 text-[13px] font-normal tracking-[-0.2px] text-slate-700 hover:bg-white/88 hover:text-slate-900"
+                      onClick={() => {
+                        const isCuda = device.startsWith("cuda");
+                        const normalizedDevice =
+                          device === "cuda"
+                            ? globalAdvancedSettings?.preferredCudaDevice ||
+                              primaryCudaDevice
+                            : device;
 
-                      setAdvancedSettings({
-                        device: normalizedDevice,
-                        preferredCudaDevice: isCuda ? device : undefined,
-                      });
-                    }}
-                  >
-                    Set as default
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Saves your current CPU/GPU choice as the default for new
-                    runs.
-                  </p>
+                        setAdvancedSettings({
+                          device: normalizedDevice,
+                          preferredCudaDevice: isCuda ? device : undefined,
+                        });
+                      }}
+                    >
+                      Set as default
+                    </Button>
+                    <p className="max-w-[220px] text-xs text-slate-500">
+                      Saves your current CPU/GPU choice as the default for new
+                      runs.
+                    </p>
+                  </div>
                 </div>
               </Card>
 
-              {/* Single vs Ensemble Toggle */}
-              <div className="flex items-center space-x-4 mb-4">
-                <button
-                  onClick={() => setIsEnsembleMode(false)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${!isEnsembleMode ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
-                >
-                  Single Model
-                </button>
-                <button
-                  onClick={() => setIsEnsembleMode(true)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${isEnsembleMode ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
-                >
-                  <Layers className="w-4 h-4 inline mr-1" />
-                  Ensemble
-                </button>
-              </div>
+              <Card className="space-y-4 rounded-[1.5rem] border-white/55 bg-[rgba(255,255,255,0.5)] p-5 text-slate-800 shadow-[0_20px_60px_rgba(141,150,179,0.14)] backdrop-blur-xl">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-800">
+                      Separation Strategy
+                    </label>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Pick one model for a direct run, or build an ensemble for
+                      more control.
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-white/60 bg-white/65 px-3 py-1 text-[11px] text-slate-500">
+                    {isEnsembleMode ? "Ensemble" : "Single model"}
+                  </span>
+                </div>
 
-              {isEnsembleMode ? (
-                <EnsembleBuilder
-                  models={models}
-                  config={ensembleConfig}
-                  algorithm={ensembleAlgorithm as any}
-                  phaseFixEnabled={phaseFixEnabled}
-                  volumeCompEnabled={volumeCompEnabled}
-                  onVolumeCompEnabledChange={setVolumeCompEnabled}
-                  stemAlgorithms={stemAlgorithms}
-                  phaseFixParams={{
-                    ...phaseFixParams,
-                    enabled: phaseFixEnabled,
-                  }}
-                  onChange={(
-                    config,
-                    alg,
-                    newStemAlgos,
-                    newPhaseFixParams,
-                    newPhaseFixEnabled,
-                  ) => {
-                    setEnsembleConfig(config);
-                    setEnsembleAlgorithm(alg as any);
-                    if (newStemAlgos) setStemAlgorithms(newStemAlgos);
-                    if (newPhaseFixParams)
-                      setPhaseFixParams({
-                        lowHz: newPhaseFixParams.lowHz,
-                        highHz: newPhaseFixParams.highHz,
-                        highFreqWeight: newPhaseFixParams.highFreqWeight,
-                      });
-                    if (newPhaseFixEnabled !== undefined)
-                      setPhaseFixEnabled(newPhaseFixEnabled);
-                  }}
-                />
-              ) : (
-                <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={() => setIsEnsembleMode(false)}
+                    className={`stemsep-config-option px-4 py-2 text-sm font-medium transition-all ${!isEnsembleMode ? "stemsep-config-option-active" : ""}`}
+                  >
+                    Single Model
+                  </button>
+                  <button
+                    onClick={() => setIsEnsembleMode(true)}
+                    className={`stemsep-config-option px-4 py-2 text-sm font-medium transition-all ${isEnsembleMode ? "stemsep-config-option-active" : ""}`}
+                  >
+                    <Layers className="mr-1 inline h-4 w-4" />
+                    Ensemble
+                  </button>
+                </div>
+
+                {isEnsembleMode ? (
+                  <EnsembleBuilder
+                    models={models}
+                    config={ensembleConfig}
+                    algorithm={ensembleAlgorithm as any}
+                    phaseFixEnabled={phaseFixEnabled}
+                    volumeCompEnabled={volumeCompEnabled}
+                    onVolumeCompEnabledChange={setVolumeCompEnabled}
+                    stemAlgorithms={stemAlgorithms}
+                    phaseFixParams={{
+                      ...phaseFixParams,
+                      enabled: phaseFixEnabled,
+                    }}
+                    onChange={(
+                      config,
+                      alg,
+                      newStemAlgos,
+                      newPhaseFixParams,
+                      newPhaseFixEnabled,
+                    ) => {
+                      setEnsembleConfig(config);
+                      setEnsembleAlgorithm(alg as any);
+                      if (newStemAlgos) setStemAlgorithms(newStemAlgos);
+                      if (newPhaseFixParams)
+                        setPhaseFixParams({
+                          lowHz: newPhaseFixParams.lowHz,
+                          highHz: newPhaseFixParams.highHz,
+                          highFreqWeight: newPhaseFixParams.highFreqWeight,
+                        });
+                      if (newPhaseFixEnabled !== undefined)
+                        setPhaseFixEnabled(newPhaseFixEnabled);
+                    }}
+                  />
+                ) : (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Select Model</label>
+                    <label className="text-sm font-medium text-slate-800">
+                      Select Model
+                    </label>
                     <ModelSelector
                       selectedModelId={selectedModelId}
                       onSelectModel={setSelectedModelId}
                       models={models}
                     />
                   </div>
-                </div>
-              )}
+                )}
+              </Card>
 
               {isEnsembleMode && ensembleAlgorithm === "frequency_split" && (
-                <Card className="p-4 space-y-3">
-                  <div className="flex justify-between">
-                    <label className="text-sm font-medium">
-                      Crossover Frequency
-                    </label>
-                    <span className="text-sm font-mono bg-background px-2 rounded border">
+                <Card className="space-y-3 rounded-[1.5rem] border-white/55 bg-[rgba(255,255,255,0.5)] p-5 text-slate-800 shadow-[0_20px_60px_rgba(141,150,179,0.14)] backdrop-blur-xl">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <label className="text-sm font-medium text-slate-800">
+                        Crossover Frequency
+                      </label>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Split lows and highs between the first two ensemble
+                        models.
+                      </p>
+                    </div>
+                    <span className="rounded border border-white/60 bg-white/70 px-2.5 py-1 text-sm font-mono text-slate-700">
                       {_splitFreq} Hz
                     </span>
                   </div>
@@ -1638,9 +1716,9 @@ export function ConfigurePage({
                     step="50"
                     value={_splitFreq}
                     onChange={(e) => _setSplitFreq(parseInt(e.target.value))}
-                    className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                    className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-900/10 accent-slate-800"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-slate-500">
                     Frequencies below {_splitFreq}Hz use the first model (Low).
                     Above use the second (High).
                   </p>
@@ -1648,11 +1726,17 @@ export function ConfigurePage({
               )}
 
               {/* Advanced Parameters */}
-              <Card className="p-4 space-y-4">
-                <h4 className="font-medium">Processing Parameters</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-muted-foreground">
+              <Card className="space-y-4 rounded-[1.5rem] border-white/55 bg-[rgba(255,255,255,0.5)] p-5 text-slate-800 shadow-[0_20px_60px_rgba(141,150,179,0.14)] backdrop-blur-xl">
+                <div>
+                  <h4 className="font-medium text-slate-800">Processing Parameters</h4>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Tune chunking, augmentation and runtime behavior for this
+                    run.
+                  </p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs text-slate-500">
                       Overlap
                     </label>
                     <input
@@ -1660,7 +1744,7 @@ export function ConfigurePage({
                       step="1"
                       min="2"
                       max="50"
-                      className="w-full p-2 rounded border bg-background"
+                      className="h-11 w-full rounded-xl border border-white/60 bg-white/70 p-3 text-slate-800"
                       value={advancedParams.overlap}
                       onChange={(e) => {
                         const next = parseInt(e.target.value);
@@ -1674,8 +1758,8 @@ export function ConfigurePage({
                     />
                   </div>
 
-                  <div>
-                    <label className="text-xs text-muted-foreground">
+                  <div className="space-y-2">
+                    <label className="text-xs text-slate-500">
                       Shifts
                     </label>
                     <input
@@ -1683,7 +1767,7 @@ export function ConfigurePage({
                       step="1"
                       min="1"
                       max="20"
-                      className="w-full p-2 rounded border bg-background"
+                      className="h-11 w-full rounded-xl border border-white/60 bg-white/70 p-3 text-slate-800"
                       value={advancedParams.shifts}
                       onChange={(e) => {
                         const next = parseInt(e.target.value, 10)
@@ -1697,8 +1781,8 @@ export function ConfigurePage({
                     />
                   </div>
 
-                  <div>
-                    <label className="text-xs text-muted-foreground">
+                  <div className="space-y-2">
+                    <label className="text-xs text-slate-500">
                       TTA
                     </label>
                     <button
@@ -1707,24 +1791,24 @@ export function ConfigurePage({
                         setAdvancedParamsDirty(true)
                         setAdvancedParams((p) => ({ ...p, tta: !p.tta }))
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded border transition-colors ${
+                      className={`flex h-11 w-full items-center justify-between rounded-xl border px-3 transition-colors ${
                         advancedParams.tta
-                          ? "bg-emerald-500/10 border-emerald-500/30"
-                          : "bg-background border-border"
+                          ? "bg-emerald-50/82 border-emerald-300/55"
+                          : "bg-white/65 border-white/60"
                       }`}
                     >
-                      <span className="text-sm">{advancedParams.tta ? "ON" : "OFF"}</span>
+                      <span className="text-sm text-slate-800">{advancedParams.tta ? "ON" : "OFF"}</span>
                       <span
-                        className={`text-xs ${advancedParams.tta ? "text-emerald-400" : "text-muted-foreground"}`}
+                        className={`text-xs ${advancedParams.tta ? "text-emerald-700" : "text-slate-500"}`}
                       >
                         Test-time augmentation
                       </span>
                     </button>
                   </div>
 
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs text-muted-foreground">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="text-xs text-slate-500">
                         Segment Size ({advancedParams.segmentSize === 0 ? "Auto" : advancedParams.segmentSize})
                       </label>
                       <div className="flex gap-2">
@@ -1732,6 +1816,7 @@ export function ConfigurePage({
                           type="button"
                           variant="outline"
                           size="sm"
+                          className="stemsep-config-secondary rounded-[999px] border border-white/70 bg-white/72 px-4 text-[13px] font-normal tracking-[-0.2px] text-slate-700 hover:bg-white/88 hover:text-slate-900"
                           onClick={() => {
                             setAdvancedParamsDirty(true);
                             setAdvancedParams((p) => ({ ...p, segmentSize: 0 }));
@@ -1743,6 +1828,7 @@ export function ConfigurePage({
                           type="button"
                           variant="outline"
                           size="sm"
+                          className="stemsep-config-secondary rounded-[999px] border border-white/70 bg-white/72 px-4 text-[13px] font-normal tracking-[-0.2px] text-slate-700 hover:bg-white/88 hover:text-slate-900"
                           onClick={() => {
                             const best = maxSafeSegmentSize > 0 ? maxSafeSegmentSize : null;
                             if (!best) {
@@ -1764,7 +1850,7 @@ export function ConfigurePage({
                     </div>
                     <input
                       type="number"
-                      className="w-full p-2 rounded border bg-background"
+                      className="h-11 w-full rounded-xl border border-white/60 bg-white/70 p-3 text-slate-800 placeholder:text-slate-400"
                       value={advancedParams.segmentSize === 0 ? "" : advancedParams.segmentSize}
                       placeholder="Auto"
                       onChange={(e) => {
@@ -1814,9 +1900,19 @@ export function ConfigurePage({
       />
 
       {/* Footer */}
-      <div className="border-t bg-card/50 px-6 py-4">
-        <div className="max-w-2xl mx-auto flex justify-between">
-          <Button variant="outline" onClick={onBack}>
+      <div className="border-t border-white/60 bg-white/16 px-7 py-5 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+          <div className="rounded-full border border-white/40 bg-white/28 px-4 py-2 text-[12px] text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+            {mode === "simple"
+              ? "Choose a preset, tweak speed, then start."
+              : "Tune models and machine limits before starting."}
+          </div>
+          <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="stemsep-config-secondary rounded-[32px] border border-white/70 bg-white/72 px-5 py-3 text-[16px] font-normal tracking-[-0.3px] text-slate-700 hover:bg-white/88 hover:text-slate-900"
+          >
             Cancel
           </Button>
           <Button
@@ -1829,12 +1925,15 @@ export function ConfigurePage({
                 isEnsembleMode &&
                 validEnsembleModels.length < 2)
             }
+            className="stemsep-config-action relative overflow-hidden rounded-[38px] border border-white/75 bg-white/84 px-6 py-3 text-[18px] font-normal tracking-[-0.45px] text-[#23324c] shadow-[0_18px_36px_rgba(141,150,179,0.2)] transition-all duration-300 hover:scale-[1.02] hover:bg-white disabled:border-white/45 disabled:bg-white/45 disabled:text-slate-400 disabled:shadow-none"
           >
             <Zap className="w-4 h-4 mr-2" />
             Start Separation
           </Button>
         </div>
+        </div>
       </div>
+    </div>
     </div>
     </PageShell>
   );

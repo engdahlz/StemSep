@@ -11,19 +11,19 @@ interface WarningTipProps {
 export function WarningTip({ type, title, children, className }: WarningTipProps) {
     const styles = {
         info: {
-            bg: 'bg-blue-500/10 border-blue-500/30',
-            icon: <Info className="h-4 w-4 text-blue-400 shrink-0" />,
-            text: 'text-blue-200'
+            bg: 'border-sky-300/55 bg-sky-50/82',
+            icon: <Info className="h-4 w-4 shrink-0 text-sky-600" />,
+            text: 'text-sky-900/78'
         },
         warning: {
-            bg: 'bg-amber-500/10 border-amber-500/30',
-            icon: <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />,
-            text: 'text-amber-200'
+            bg: 'border-amber-300/55 bg-amber-50/82',
+            icon: <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />,
+            text: 'text-amber-900/80'
         },
         danger: {
-            bg: 'bg-red-500/10 border-red-500/30',
-            icon: <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />,
-            text: 'text-red-200'
+            bg: 'border-rose-300/55 bg-rose-50/82',
+            icon: <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />,
+            text: 'text-rose-900/78'
         }
     }
 
@@ -31,14 +31,14 @@ export function WarningTip({ type, title, children, className }: WarningTipProps
 
     return (
         <div className={cn(
-            "flex gap-2 p-3 rounded-lg border text-xs",
+            "flex gap-2 rounded-[1rem] border p-3 text-xs shadow-[0_12px_28px_rgba(141,150,179,0.08)] backdrop-blur-md",
             style.bg,
             style.text,
             className
         )}>
             {style.icon}
             <div>
-                {title && <p className="font-medium mb-0.5">{title}</p>}
+                {title && <p className="mb-0.5 font-medium">{title}</p>}
                 <p className="leading-relaxed opacity-90">{children}</p>
             </div>
         </div>

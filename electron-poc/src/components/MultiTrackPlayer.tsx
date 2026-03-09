@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Play, Pause, Loader2, Repeat, FastForward, Save, Trash2 } from 'lucide-react'
-import { Button } from './ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { WaveformTrack, type WaveformTrackHandle } from './WaveformTrack'
 import { toast } from 'sonner'
 
@@ -129,6 +127,13 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
         }))
     }
 
+    const setVolume = (stem: string, volume: number) => {
+        setTrackStates(prev => ({
+            ...prev,
+            [stem]: { ...prev[stem], volume }
+        }))
+    }
+
     const toggleSolo = (stem: string) => {
         setTrackStates(prev => {
             const newSoloed = !prev[stem].soloed
@@ -218,102 +223,127 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
     }
 
     return (
-        <Card className="w-full border-primary/20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <CardHeader className="pb-4">
-                <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <span>Multi-Track Preview</span>
-                        {!isAllReady && (
-                            <span className="text-sm font-normal text-muted-foreground flex items-center gap-2">
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                Loading stems ({readyStems.length}/{stemEntries.length})...
-                            </span>
-                        )}
+        <div className="w-full rounded-[2rem] border border-white/70 bg-[rgba(250,248,252,0.8)] p-6 text-slate-800 shadow-[0_40px_120px_rgba(141,150,179,0.22)] backdrop-blur-2xl">
+            <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className="stemsep-config-chip">
+                            Result Studio
+                        </span>
+                        <span className="stemsep-config-chip stemsep-config-chip-subtle normal-case tracking-[-0.1px]">
+                            {stemEntries.length} tracks
+                        </span>
                     </div>
-                    {onClose && (
-                        <Button variant="ghost" size="sm" onClick={onClose}>✕</Button>
+                    <h2 className="text-[20px] tracking-[-0.6px] text-slate-800">
+                        Multi-Track Preview
+                    </h2>
+                    <p className="mt-1 text-[13px] tracking-[-0.2px] text-slate-500">
+                        Mix, inspect and export your separated stems
+                    </p>
+                </div>
+                <div className="flex items-center gap-3">
+                    {!isAllReady && (
+                        <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/76 px-3 py-1.5 text-[12px] tracking-[-0.2px] text-slate-600">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Loading {readyStems.length}/{stemEntries.length}
+                        </span>
                     )}
-                </CardTitle>
-            </CardHeader>
+                    {onClose && (
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="stemsep-config-secondary rounded-[999px] border border-white/70 bg-white/72 px-4 py-2.5 text-[13px] text-slate-700 transition-all hover:bg-white/88 hover:text-slate-900"
+                        >
+                            Close
+                        </button>
+                    )}
+                </div>
+            </div>
 
-            <CardContent className="space-y-6">
-                <div className="flex items-center gap-4 p-4 bg-secondary/50 rounded-xl">
-                    <Button
-                        size="icon"
-                        className="h-12 w-12 rounded-full shadow-lg"
-                        onClick={handlePlayPause}
-                        disabled={!isAllReady}
+            <div className="mb-6 flex items-center gap-4 rounded-[1.35rem] border border-white/70 bg-white/54 p-4 shadow-[0_18px_38px_rgba(141,150,179,0.1)] backdrop-blur-xl">
+                <button
+                    type="button"
+                    className="stemsep-config-action relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-[1.1rem] border border-white/75 bg-white/86 text-[#23324c] transition-all hover:scale-[1.02] hover:bg-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={handlePlayPause}
+                    disabled={!isAllReady}
+                >
+                    {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="ml-0.5 h-5 w-5" />}
+                </button>
+
+                <div className="flex items-center gap-2">
+                    <FastForward className="h-4 w-4 text-slate-400" />
+                    <select
+                        className="h-9 rounded-xl border border-white/70 bg-white/76 px-3 text-[12px] text-slate-700 outline-none"
+                        value={playbackRate}
+                        onChange={(e) => setPlaybackRate(parseFloat(e.target.value))}
                     >
-                        {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
-                    </Button>
-
-                    <div className="flex items-center gap-2">
-                        <FastForward className="h-4 w-4 text-muted-foreground" />
-                        <select
-                            className="bg-background border rounded px-1 text-xs h-8 w-16"
-                            value={playbackRate}
-                            onChange={(e) => setPlaybackRate(parseFloat(e.target.value))}
-                        >
-                            <option value="0.5">0.5x</option>
-                            <option value="0.75">0.75x</option>
-                            <option value="1.0">1.0x</option>
-                            <option value="1.25">1.25x</option>
-                            <option value="1.5">1.5x</option>
-                        </select>
-                    </div>
-
-                    <div className="h-8 w-px bg-border mx-2" />
-
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant={isLooping ? "default" : "ghost"}
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={toggleLoop}
-                            title="Toggle Loop"
-                        >
-                            <Repeat className="h-4 w-4" />
-                        </Button>
-                        <div className="flex flex-col gap-1">
-                            <div className="flex gap-1">
-                                <Button
-                                    variant={loopStart !== null ? "secondary" : "outline"}
-                                    size="sm"
-                                    className="h-5 text-[10px] px-2"
-                                    onClick={() => setLoopPoint('start')}
-                                >
-                                    A {loopStart !== null ? formatTime(loopStart) : ''}
-                                </Button>
-                                <Button
-                                    variant={loopEnd !== null ? "secondary" : "outline"}
-                                    size="sm"
-                                    className="h-5 text-[10px] px-2"
-                                    onClick={() => setLoopPoint('end')}
-                                >
-                                    B {loopEnd !== null ? formatTime(loopEnd) : ''}
-                                </Button>
-                            </div>
-                        </div>
-                        {(loopStart !== null || loopEnd !== null) && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                onClick={clearLoop}
-                            >
-                                ✕
-                            </Button>
-                        )}
-                    </div>
-
-                    <div className="flex-1 flex flex-col justify-center gap-1">
-                        <div className="text-xs text-muted-foreground font-mono text-right">
-                            {formatTime(currentTime)} / {formatTime(duration)}
-                        </div>
-                    </div>
+                        <option value="0.5">0.5x</option>
+                        <option value="0.75">0.75x</option>
+                        <option value="1.0">1.0x</option>
+                        <option value="1.25">1.25x</option>
+                        <option value="1.5">1.5x</option>
+                    </select>
                 </div>
 
-                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                <div className="h-8 w-px bg-white/60" />
+
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={toggleLoop}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${
+                            isLooping
+                                ? 'bg-white text-slate-900 shadow-[0_8px_18px_rgba(141,150,179,0.14)]'
+                                : 'bg-white/65 text-slate-500 hover:bg-white/86 hover:text-slate-800'
+                        }`}
+                        title="Toggle Loop"
+                    >
+                        <Repeat className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setLoopPoint('start')}
+                        className={`rounded-lg px-2 py-1 text-[11px] tracking-[-0.2px] transition-all ${
+                            loopStart !== null
+                                ? 'bg-white text-slate-900 shadow-[0_8px_18px_rgba(141,150,179,0.14)]'
+                                : 'bg-white/65 text-slate-500 hover:bg-white/86 hover:text-slate-800'
+                        }`}
+                    >
+                        A {loopStart !== null ? formatTime(loopStart) : ''}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setLoopPoint('end')}
+                        className={`rounded-lg px-2 py-1 text-[11px] tracking-[-0.2px] transition-all ${
+                            loopEnd !== null
+                                ? 'bg-white text-slate-900 shadow-[0_8px_18px_rgba(141,150,179,0.14)]'
+                                : 'bg-white/65 text-slate-500 hover:bg-white/86 hover:text-slate-800'
+                        }`}
+                    >
+                        B {loopEnd !== null ? formatTime(loopEnd) : ''}
+                    </button>
+                    {(loopStart !== null || loopEnd !== null) && (
+                        <button
+                            type="button"
+                            onClick={clearLoop}
+                            className="rounded-lg px-2 py-1 text-[11px] tracking-[-0.2px] text-slate-500 transition-all hover:bg-white/66 hover:text-slate-800"
+                        >
+                            Reset
+                        </button>
+                    )}
+                </div>
+
+                <div className="ml-auto text-right">
+                    <div className="text-[12px] font-medium tracking-[-0.2px] text-slate-700">
+                        {formatTime(currentTime)} / {formatTime(duration)}
+                    </div>
+                    <div className="text-[11px] tracking-[-0.15px] text-slate-500">
+                        {stemEntries.length} active tracks
+                    </div>
+                </div>
+            </div>
+
+            <div className="stemsep-player-scroll max-h-[470px] space-y-3 overflow-y-auto pr-2">
                     {stemEntries.map(([stem, url]) => (
                         <WaveformTrack
                             key={stem}
@@ -335,26 +365,35 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
                             onSeek={handleSeek}
                             onTimeUpdate={handleMasterTimeUpdate}
                             onEnded={handleMasterEnded}
+                            onVolumeChange={(value) => setVolume(stem, value)}
                             onToggleMute={() => toggleMute(stem)}
                             onToggleSolo={() => toggleSolo(stem)}
                         />
                     ))}
-                </div>
+            </div>
 
-                {jobId && (
-                    <div className="flex justify-end gap-3 pt-4 border-t">
-                        <Button variant="outline" onClick={handleDiscard} className="text-destructive hover:text-destructive">
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Discard
-                        </Button>
-                        <Button onClick={handleSave} disabled={isSaving}>
-                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                            Save Outputs
-                        </Button>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+            {jobId && (
+                <div className="mt-5 flex justify-end gap-3 border-t border-white/60 pt-5">
+                    <button
+                        type="button"
+                        onClick={handleDiscard}
+                        className="inline-flex items-center gap-2 rounded-[999px] border border-rose-300/55 bg-rose-50/84 px-4 py-2.5 text-[13px] tracking-[-0.2px] text-rose-700 transition-all hover:bg-rose-100"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                        Discard
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="stemsep-config-action relative inline-flex items-center gap-2 overflow-hidden rounded-[999px] border border-white/75 bg-white/86 px-4 py-2.5 text-[13px] tracking-[-0.2px] text-[#23324c] transition-all hover:bg-white disabled:opacity-60"
+                    >
+                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Save Outputs
+                    </button>
+                </div>
+            )}
+        </div>
     )
 }
 

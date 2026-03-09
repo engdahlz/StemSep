@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Zap, Music2, Mic2, Wand2, Layers, Guitar } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { CollapsibleSection } from '@/components/ui/collapsible-section'
 import type { Preset } from '@/presets'
+import { cn } from '@/lib/utils'
 
 import {
   type SimpleGoal,
@@ -75,82 +73,104 @@ export function SimplePresetPicker({
 
   return (
     <div className="space-y-4">
-      <Card className="p-4 space-y-3">
+      <div className="space-y-4 rounded-[1.5rem] border border-white/55 bg-[rgba(255,255,255,0.5)] p-4 shadow-[0_20px_60px_rgba(141,150,179,0.14)] backdrop-blur-xl">
         <div className="flex items-center justify-between gap-3">
-          <div className="text-sm font-medium">Pick a preset</div>
+          <div>
+            <div className="text-sm font-medium text-slate-800">Pick a preset</div>
+            <div className="mt-1 text-[12px] text-slate-500">
+              Curated workflows for the new configuration surface.
+            </div>
+          </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant={showWorkflows ? 'default' : 'outline'}
-              size="sm"
+            <button
+              type="button"
               onClick={() => setShowWorkflows(v => !v)}
               title="Show/hide multi-step presets"
+              className={cn(
+                'rounded-full px-3 py-1.5 text-[12px] tracking-[-0.2px] transition-all',
+                showWorkflows
+                  ? 'bg-white text-[#111111]'
+                  : 'border border-white/60 bg-white/55 text-slate-600 hover:bg-white/75 hover:text-slate-800'
+              )}
             >
               Multi-step {showWorkflows ? 'ON' : 'OFF'}
-            </Button>
+            </button>
           </div>
         </div>
 
         {simpleSurfaceExists && (
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-slate-500">
             Simple mode is locked to a curated guide-driven set of premium workflows for this surface.
           </div>
         )}
 
         <div className="space-y-2">
-          <div className="text-xs text-muted-foreground">Goal</div>
+          <div className="text-xs text-slate-500">Goal</div>
           <div className="flex flex-wrap gap-2">
             {GOALS.map(g => (
-              <Button
+              <button
                 key={g.id}
-                variant={goal === g.id ? 'default' : 'outline'}
-                size="sm"
+                type="button"
                 onClick={() => setGoal(g.id)}
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] tracking-[-0.2px] transition-all',
+                  goal === g.id
+                    ? 'bg-white text-[#111111]'
+                    : 'bg-white/55 text-slate-600 hover:bg-white/75 hover:text-slate-800'
+                )}
               >
-                <span className="mr-2 text-muted-foreground">{g.icon}</span>
+                <span className={goal === g.id ? 'text-[#111111]' : 'text-slate-500'}>{g.icon}</span>
                 {g.label}
-              </Button>
+              </button>
             ))}
           </div>
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs text-muted-foreground">Mode</div>
+          <div className="text-xs text-slate-500">Mode</div>
           <div className="flex flex-wrap gap-2">
             {MODES.map(m => (
-              <Button
+              <button
                 key={m.id}
-                variant={mode === m.id ? 'default' : 'outline'}
-                size="sm"
+                type="button"
                 onClick={() => setMode(m.id)}
+                className={cn(
+                  'rounded-full px-3.5 py-1.5 text-[13px] tracking-[-0.2px] transition-all',
+                  mode === m.id
+                    ? 'bg-white text-[#111111]'
+                    : 'bg-white/55 text-slate-600 hover:bg-white/75 hover:text-slate-800'
+                )}
               >
                 {m.label}
-              </Button>
+              </button>
             ))}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Input
+          <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search presets…"
+            className="h-11 w-full rounded-2xl border border-white/60 bg-white/62 px-4 text-[14px] text-slate-800 outline-none placeholder:text-slate-400 focus:border-white focus:bg-white/82"
           />
-          <Button
-            variant="outline"
+          <button
+            type="button"
             onClick={() => {
               setGoal('all')
               setMode('all')
               setSearch('')
             }}
+            className="rounded-2xl border border-white/60 bg-white/55 px-4 py-3 text-[13px] text-slate-600 transition-all hover:bg-white/75 hover:text-slate-800"
           >
             Reset
-          </Button>
+          </button>
         </div>
-      </Card>
+      </div>
 
       {recommended.length > 0 && (
         <div className="space-y-2">
-          <div className="text-sm font-medium">Recommended</div>
+          <div className="text-sm font-medium text-slate-800">Recommended</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {recommended.map(p => (
               <SimplePresetCard
@@ -168,9 +188,10 @@ export function SimplePresetPicker({
       <CollapsibleSection
         title={`More options (${others.length})`}
         defaultOpen={recommended.length === 0}
+        className="border-white/55 bg-[rgba(255,255,255,0.5)]"
       >
         {others.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No presets match your filters.</div>
+          <div className="text-sm text-slate-500">No presets match your filters.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {others.map(p => (

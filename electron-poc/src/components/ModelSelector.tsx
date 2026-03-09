@@ -2,7 +2,6 @@ import * as React from "react"
 import { Check, ChevronsUpDown, Cpu } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
 
 interface Model {
@@ -68,33 +67,33 @@ export function ModelSelector({
 
     return (
         <div className={cn("relative", className)} ref={dropdownRef}>
-            <Button
-                variant="outline"
+            <button
+                type="button"
                 role="combobox"
                 aria-expanded={isOpen}
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full justify-between h-auto py-3 px-4 bg-background/50 backdrop-blur-sm border-border/50 hover:bg-accent/50"
+                className="flex h-auto w-full items-center justify-between rounded-[1.1rem] border border-white/60 bg-white/68 px-4 py-3 backdrop-blur-md transition-all hover:bg-white/84"
             >
                 <div className="flex flex-col items-start text-left gap-1 overflow-hidden w-full">
                     <div className="flex items-center justify-between w-full">
-                        <span className="font-semibold truncate flex items-center gap-2">
+                        <span className="flex items-center gap-2 truncate text-[14px] font-medium tracking-[-0.2px] text-slate-800">
                             {selectedModel ? selectedModel.name : "Choose a model..."}
                         </span>
                     </div>
                     {selectedModel && (
                         <div className="flex items-center gap-2 w-full">
-                            <span className="text-xs text-muted-foreground truncate opacity-80 font-normal">
+                            <span className="truncate text-xs font-normal text-slate-500">
                                 {selectedModel.architecture}
                             </span>
                             {selectedModel.stems && (
                                 <div className="flex gap-1">
                                     {selectedModel.stems.slice(0, 3).map(stem => (
-                                        <Badge key={stem} variant="secondary" className="text-[9px] h-3.5 px-1">
+                                        <Badge key={stem} variant="secondary" className="h-3.5 border-0 bg-slate-900/6 px-1 text-[9px] text-slate-600">
                                             {stem}
                                         </Badge>
                                     ))}
                                     {selectedModel.stems.length > 3 && (
-                                        <Badge variant="secondary" className="text-[9px] h-3.5 px-1">
+                                        <Badge variant="secondary" className="h-3.5 border-0 bg-slate-900/6 px-1 text-[9px] text-slate-600">
                                             +{selectedModel.stems.length - 3}
                                         </Badge>
                                     )}
@@ -103,34 +102,34 @@ export function ModelSelector({
                         </div>
                     )}
                 </div>
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+            </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 w-full mt-2 z-50 rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95">
+                <div className="absolute top-full left-0 z-50 mt-2 w-full overflow-hidden rounded-[1.2rem] border border-white/70 bg-[rgba(255,255,255,0.94)] text-slate-800 shadow-[0_24px_80px_rgba(141,150,179,0.24)] outline-none backdrop-blur-xl animate-in fade-in-0 zoom-in-95">
                     {/* Search Input */}
-                    <div className="p-2 border-b">
+                    <div className="border-b border-white/60 p-2">
                         <input
                             type="text"
                             placeholder="Search models..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full px-3 py-2 text-sm rounded-md border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-white"
                             autoFocus
                         />
                     </div>
 
                     <div className="max-h-[300px] overflow-y-auto p-1">
                         {filteredModels.length === 0 ? (
-                            <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                            <div className="px-3 py-6 text-center text-sm text-slate-500">
                                 No models found
                             </div>
                         ) : (
                             Object.entries(groupedModels).map(([arch, archModels]) => (
                                 <div key={arch}>
                                     {/* Architecture Group Header */}
-                                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-1 flex items-center gap-1">
-                                        <Cpu className="w-3 h-3" />
+                                    <div className="mt-1 flex items-center gap-1 px-2 py-1.5 text-xs font-semibold text-slate-500">
+                                        <Cpu className="h-3 w-3" />
                                         {arch}
                                     </div>
                                     {archModels.map((model) => (
@@ -142,8 +141,10 @@ export function ModelSelector({
                                                 setSearchQuery("")
                                             }}
                                             className={cn(
-                                                "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground",
-                                                selectedModelId === model.id && "bg-accent text-accent-foreground"
+                                                "relative flex cursor-pointer select-none items-center rounded-xl px-3 py-2.5 text-sm outline-none transition-colors",
+                                                selectedModelId === model.id
+                                                    ? "bg-white text-slate-900 shadow-[0_10px_24px_rgba(141,150,179,0.16)]"
+                                                    : "text-slate-700 hover:bg-white/70"
                                             )}
                                         >
                                             <div className="flex flex-col items-start gap-0.5 w-full">
@@ -151,19 +152,19 @@ export function ModelSelector({
                                                     <span className="font-medium">{model.name}</span>
                                                     <div className="flex items-center gap-2">
                                                         {model.vram_required && (
-                                                            <span className="text-[10px] text-muted-foreground">
+                                                            <span className="text-[10px] text-slate-500">
                                                                 {model.vram_required}GB
                                                             </span>
                                                         )}
                                                         {selectedModelId === model.id && (
-                                                            <Check className="h-4 w-4 text-primary" />
+                                                            <Check className="h-4 w-4 text-slate-900" />
                                                         )}
                                                     </div>
                                                 </div>
                                                 {model.stems && (
                                                     <div className="flex gap-1 mt-0.5">
                                                         {model.stems.map(stem => (
-                                                            <Badge key={stem} variant="secondary" className="text-[9px] h-3.5 px-1">
+                                                            <Badge key={stem} variant="secondary" className="h-3.5 border-0 bg-slate-900/6 px-1 text-[9px] text-slate-600">
                                                                 {stem}
                                                             </Badge>
                                                         ))}

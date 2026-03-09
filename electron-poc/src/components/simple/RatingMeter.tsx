@@ -16,14 +16,14 @@ export function RatingMeter({
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <span className="text-[11px] text-muted-foreground w-12 shrink-0">{label}</span>
+      <span className="w-12 shrink-0 text-[11px] text-slate-500">{label}</span>
       <div className="flex items-center gap-1">
         {Array.from({ length: max }).map((_, i) => (
           <span
             key={i}
             className={cn(
               'h-1.5 w-4 rounded-full transition-colors',
-              i < filled ? 'bg-primary/80' : 'bg-muted'
+              i < filled ? 'bg-gradient-to-r from-slate-700 to-slate-500' : 'bg-white/72'
             )}
           />
         ))}

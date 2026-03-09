@@ -7,8 +7,7 @@ import {
 } from 'react'
 import WaveSurfer from 'wavesurfer.js'
 import Spectrogram from 'wavesurfer.js/dist/plugins/spectrogram.esm.js'
-import { Volume2, VolumeX, Headphones, Activity, AlertTriangle } from 'lucide-react'
-import { Button } from './ui/button'
+import { Volume2, VolumeX, Activity, AlertTriangle, AudioLines, Drum, Guitar, Mic2, Piano } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { previewLoadMessage } from '../lib/previewErrors'
 import { toMediaUrl } from '../lib/media/toMediaUrl'
@@ -35,8 +34,18 @@ interface WaveformTrackProps {
     onSeek: (time: number) => void
     onTimeUpdate?: (time: number) => void
     onEnded?: () => void
+    onVolumeChange: (value: number) => void
     onToggleMute: () => void
     onToggleSolo: () => void
+}
+
+const getTrackIcon = (name: string) => {
+    const value = name.toLowerCase()
+    if (value.includes('vocal')) return Mic2
+    if (value.includes('drum') || value.includes('kick') || value.includes('snare')) return Drum
+    if (value.includes('guitar') || value.includes('bass')) return Guitar
+    if (value.includes('piano') || value.includes('key') || value.includes('synth')) return Piano
+    return AudioLines
 }
 
 export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>(function WaveformTrack({
@@ -56,6 +65,7 @@ export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>
     onSeek,
     onTimeUpdate,
     onEnded,
+    onVolumeChange,
     onToggleMute,
     onToggleSolo
 }, ref) {
@@ -67,6 +77,7 @@ export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>
     const isMasterRef = useRef(isMaster)
     const onTimeUpdateRef = useRef(onTimeUpdate)
     const onEndedRef = useRef(onEnded)
+    const TrackIcon = getTrackIcon(name)
 
     useEffect(() => {
         isMasterRef.current = isMaster
@@ -186,62 +197,42 @@ export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>
     }, [isReady, muted, volume])
 
     return (
-        <div className="flex items-center gap-4 p-2 bg-secondary/30 rounded-lg border border-border/50 transition-all duration-300">
-            <div className="w-32 flex flex-col gap-2 shrink-0">
-                <div className="flex items-center gap-2">
-                    <span
-                        className="w-3 h-3 rounded-full shrink-0"
-                        style={{ backgroundColor: color }}
-                    />
-                    <span className="text-sm font-medium truncate capitalize flex-1">{name}</span>
+        <div className={cn(
+            "flex items-center gap-4 rounded-[1.35rem] border p-4 backdrop-blur-md transition-all duration-300 shadow-[0_18px_34px_rgba(141,150,179,0.1)]",
+            muted ? "border-white/45 bg-white/36" : "border-white/70 bg-white/58"
+        )}>
+            <div className="flex w-32 shrink-0 items-center gap-3">
+                <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[1rem] border border-white/60 bg-white/65 shadow-[0_10px_24px_rgba(141,150,179,0.08)]"
+                    style={{ backgroundColor: `${color}33` }}
+                >
+                    <TrackIcon className="h-4 w-4" style={{ color }} />
                 </div>
-
-                <div className="flex gap-1">
-                    <Button
-                        variant={muted ? "destructive" : "ghost"}
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={onToggleMute}
-                        title="Toggle Mute"
-                    >
-                        {muted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-                    </Button>
-                    <Button
-                        variant={soloed ? "default" : "ghost"}
-                        size="sm"
-                        className={cn(
-                            "h-6 w-6 p-0",
-                            soloed && "bg-yellow-500 hover:bg-yellow-600"
-                        )}
-                        onClick={onToggleSolo}
-                        title="Toggle Solo"
-                    >
-                        <Headphones className="h-3 w-3" />
-                    </Button>
-                    <Button
-                        variant={showSpectrogram ? "default" : "ghost"}
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={() => setShowSpectrogram(!showSpectrogram)}
-                        title="Toggle Spectrogram"
-                    >
-                        <Activity className="h-3 w-3" />
-                    </Button>
+                <div className="min-w-0">
+                    <p className={cn(
+                        "truncate text-[13px] tracking-[-0.2px]",
+                        muted ? "text-slate-500" : "text-slate-800"
+                    )}>
+                        {name}
+                    </p>
+                    <p className="text-[11px] tracking-[-0.15px] text-slate-500">
+                        {showSpectrogram ? 'Spectrogram' : 'Waveform'}
+                    </p>
                 </div>
             </div>
 
             <div
                 className={cn(
-                    "flex-1 rounded overflow-hidden relative min-h-[64px] transition-all ease-in-out",
-                    showSpectrogram && "min-h-[192px]"
+                    "relative min-h-[72px] flex-1 overflow-hidden rounded-[1rem] border border-white/65 bg-white/72 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] transition-all ease-in-out",
+                    showSpectrogram && "min-h-[196px]"
                 )}
-                style={{ height: showSpectrogram ? 192 : height }}
+                style={{ height: showSpectrogram ? 196 : Math.max(height, 72) }}
                 ref={containerRef}
             >
                 {!isReady && (
-                    <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+                    <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500">
                         {loadError ? (
-                            <div className="flex items-center gap-2 px-3 text-center text-[11px] text-destructive">
+                            <div className="flex items-center gap-2 px-3 text-center text-[11px] text-rose-700">
                                 <AlertTriangle className="h-4 w-4 shrink-0" />
                                 <span>{loadError}</span>
                             </div>
@@ -250,6 +241,58 @@ export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>
                         )}
                     </div>
                 )}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2 rounded-[1rem] border border-white/65 bg-white/72 px-2 py-2 shadow-[0_10px_24px_rgba(141,150,179,0.08)]">
+                <button
+                    type="button"
+                    onClick={onToggleSolo}
+                    className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-lg text-[11px] tracking-[-0.2px] transition-all",
+                        soloed
+                            ? "bg-[#f2d675] text-[#1d1d1d]"
+                            : "bg-white/70 text-slate-500 hover:bg-white hover:text-slate-800"
+                    )}
+                    title="Toggle Solo"
+                >
+                    S
+                </button>
+                <button
+                    type="button"
+                    onClick={onToggleMute}
+                    className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-lg transition-all",
+                        muted
+                            ? "bg-[#f47174] text-white"
+                            : "bg-white/70 text-slate-500 hover:bg-white hover:text-slate-800"
+                    )}
+                    title="Toggle Mute"
+                >
+                    {muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                </button>
+                <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={volume}
+                    onChange={(event) => onVolumeChange(Number(event.target.value))}
+                    className="h-1.5 w-20 cursor-pointer accent-slate-600"
+                    title="Track volume"
+                />
+                <button
+                    type="button"
+                    onClick={() => setShowSpectrogram(!showSpectrogram)}
+                    className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-lg transition-all",
+                        showSpectrogram
+                            ? "bg-white text-slate-900 shadow-[0_8px_18px_rgba(141,150,179,0.14)]"
+                            : "bg-white/70 text-slate-500 hover:bg-white hover:text-slate-800"
+                    )}
+                    title="Toggle Spectrogram"
+                >
+                    <Activity className="h-3.5 w-3.5" />
+                </button>
             </div>
         </div>
     )

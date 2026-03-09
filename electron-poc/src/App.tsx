@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Sidebar } from "./components/Sidebar";
@@ -8,6 +8,7 @@ import { HistoryPage } from "./components/HistoryPage";
 import { SettingsPage } from "./components/SettingsPage";
 import { ConfigurePage, SeparationConfig } from "./components/ConfigurePage";
 import QualityLabPage from "./components/QualityLabPage";
+import { MachineAnalyzer } from "./components/MachineAnalyzer";
 import { logger } from "./utils/logger";
 import { useModelEvents } from "./hooks/useModelEvents";
 import { useModels } from "./hooks/useModels";
@@ -17,6 +18,7 @@ import { ALL_PRESETS } from "./presets";
 import { recipesToPresets } from "@/lib/recipePresets";
 import "./App.css";
 import type { Page } from "./types/navigation";
+import figmaHomeBg from "./assets/figma-home-bg.jpg";
 
 import { ResultsPage } from "./components/ResultsPage";
 import { PageShell } from "./components/PageShell";
@@ -40,8 +42,29 @@ interface ConfigureFileInfo {
   presetId?: string;
 }
 
+const PAGE_PARAM_KEY = "page";
+
+const isPage = (value: string | null): value is Page => {
+  return (
+    value === "home" ||
+    value === "models" ||
+    value === "settings" ||
+    value === "history" ||
+    value === "about" ||
+    value === "results" ||
+    value === "configure" ||
+    value === "quality"
+  );
+};
+
+const getInitialPage = (): Page => {
+  if (typeof window === "undefined") return "home";
+  const pageParam = new URLSearchParams(window.location.search).get(PAGE_PARAM_KEY);
+  return isPage(pageParam) ? pageParam : "home";
+};
+
 function App() {
-  const [currentPage, setCurrentPage] = useState<Page>("home");
+  const [currentPage, setCurrentPage] = useState<Page>(getInitialPage);
   const [preSelectedModel, setPreSelectedModel] = useState<
     string | undefined
   >();
@@ -101,6 +124,13 @@ function App() {
         removeBackendErrorListener();
       };
     }
+  }, [currentPage]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set(PAGE_PARAM_KEY, currentPage);
+    window.history.replaceState({}, "", url.toString());
   }, [currentPage]);
 
   useEffect(() => {
@@ -254,9 +284,24 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
+        <div className="relative h-screen w-screen overflow-hidden bg-[#ffffff] text-[#fafafa]">
+          <div
+            className="absolute inset-0 bg-center bg-cover bg-no-repeat"
+            style={{ backgroundImage: `url(${figmaHomeBg})` }}
+          />
+          {currentPage !== "configure" && (
+            <div className="pointer-events-none fixed left-0 right-0 top-5 z-30 flex justify-center">
+              <h1 className="text-[28px] font-normal tracking-[-1px] text-white drop-shadow-lg">
+                StemSep
+              </h1>
+            </div>
+          )}
+
+          {currentPage === "home" && <MachineAnalyzer />}
           <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
-          <main className="flex-1 overflow-hidden">{renderPage()}</main>
+          <main className="relative z-10 h-full w-full overflow-hidden">
+            {renderPage()}
+          </main>
         </div>
         <Toaster />
       </ThemeProvider>

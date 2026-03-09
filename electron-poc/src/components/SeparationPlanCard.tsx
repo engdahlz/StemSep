@@ -1,6 +1,5 @@
 import { AlertTriangle, CheckCircle2, Cpu, HardDrive, Loader2, Wand2 } from "lucide-react"
 import { Badge } from "./ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
 import type { SeparationPreflightReport } from "@/types/preflight"
 
 type SeparationPlanCardProps = {
@@ -39,63 +38,63 @@ export function SeparationPlanCard({
   }
 
   return (
-    <Card className="border-primary/20 bg-card/80">
-      <CardHeader className="pb-3">
+    <div className="rounded-[1.6rem] border border-white/55 bg-[rgba(255,255,255,0.5)] p-5 shadow-[0_24px_80px_rgba(141,150,179,0.14)] backdrop-blur-xl">
+      <div className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <CardTitle className="text-base">Execution Plan</CardTitle>
-            <div className="text-sm text-muted-foreground">
+            <h3 className="text-base font-medium text-slate-800">Execution Plan</h3>
+            <div className="text-sm text-slate-500">
               {plan?.workflow_name || "Resolving workflow"}
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             {loading && (
-              <Badge variant="secondary" className="gap-1.5">
+              <Badge variant="secondary" className="gap-1.5 border-0 bg-slate-900/6 text-slate-600">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Refreshing
               </Badge>
             )}
-            {plan?.difficulty && <Badge variant="outline">{plan.difficulty}</Badge>}
+            {plan?.difficulty && <Badge variant="outline" className="border-white/60 bg-white/60 text-slate-600">{plan.difficulty}</Badge>}
             {plan?.expected_runtime_tier && (
-              <Badge variant="secondary">{plan.expected_runtime_tier}</Badge>
+              <Badge variant="secondary" className="border-0 bg-slate-900/6 text-slate-600">{plan.expected_runtime_tier}</Badge>
             )}
             {plan?.should_use_simple && (
-              <Badge>{mode === "simple" ? "Simple fit" : "Prefers Simple"}</Badge>
+              <Badge className="border-0 bg-white text-[#111111]">{mode === "simple" ? "Simple fit" : "Prefers Simple"}</Badge>
             )}
             {plan?.should_use_advanced && (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="border-0 bg-slate-900/6 text-slate-600">
                 {mode === "advanced" ? "Advanced fit" : "Prefers Advanced"}
               </Badge>
             )}
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      </div>
+      <div className="space-y-4">
         {plan && (
           <div className="grid gap-3 md:grid-cols-4">
-            <div className="rounded-md border p-3">
-              <div className="text-xs text-muted-foreground">Workflow</div>
-              <div className="mt-1 font-medium capitalize">
+            <div className="rounded-xl border border-white/55 bg-[rgba(255,255,255,0.6)] p-3">
+              <div className="text-xs text-slate-500">Workflow</div>
+              <div className="mt-1 font-medium capitalize text-slate-800">
                 {plan.workflow_type || "single"}
               </div>
             </div>
-            <div className="rounded-md border p-3">
-              <div className="text-xs text-muted-foreground">Resolved Device</div>
-              <div className="mt-1 flex items-center gap-2 font-medium">
-                <Cpu className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-xl border border-white/55 bg-[rgba(255,255,255,0.6)] p-3">
+              <div className="text-xs text-slate-500">Resolved Device</div>
+              <div className="mt-1 flex items-center gap-2 font-medium text-slate-800">
+                <Cpu className="h-4 w-4 text-slate-400" />
                 {plan.resolved_device || "auto"}
               </div>
             </div>
-            <div className="rounded-md border p-3">
-              <div className="text-xs text-muted-foreground">Estimated VRAM</div>
-              <div className="mt-1 flex items-center gap-2 font-medium">
-                <HardDrive className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-xl border border-white/55 bg-[rgba(255,255,255,0.6)] p-3">
+              <div className="text-xs text-slate-500">Estimated VRAM</div>
+              <div className="mt-1 flex items-center gap-2 font-medium text-slate-800">
+                <HardDrive className="h-4 w-4 text-slate-400" />
                 {formatVram(plan.estimated_vram_gb)}
               </div>
             </div>
-            <div className="rounded-md border p-3">
-              <div className="text-xs text-muted-foreground">Overlap / Segment</div>
-              <div className="mt-1 font-medium">
+            <div className="rounded-xl border border-white/55 bg-[rgba(255,255,255,0.6)] p-3">
+              <div className="text-xs text-slate-500">Overlap / Segment</div>
+              <div className="mt-1 font-medium text-slate-800">
                 {formatOverlap(plan.resolved_overlap)} /{" "}
                 {plan.resolved_segment_size || "Auto"}
               </div>
@@ -104,7 +103,7 @@ export function SeparationPlanCard({
         )}
 
         {!!plan?.fallback_reason && (
-          <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+          <div className="flex items-start gap-2 rounded-xl border border-amber-300/60 bg-amber-50/82 p-3 text-sm text-amber-900/80">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{plan.fallback_reason}</span>
           </div>
@@ -112,14 +111,14 @@ export function SeparationPlanCard({
 
         {errors.length > 0 && (
           <div className="space-y-2">
-            <div className="text-sm font-medium text-destructive">
+            <div className="text-sm font-medium text-rose-700">
               Blocking issues
             </div>
             <div className="space-y-2">
               {errors.map((error, index) => (
                 <div
                   key={`${error}-${index}`}
-                  className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm"
+                  className="rounded-xl border border-rose-300/45 bg-rose-50/82 p-3 text-sm text-rose-800/80"
                 >
                   {error}
                 </div>
@@ -130,10 +129,10 @@ export function SeparationPlanCard({
 
         {runtimeBlocks.length > 0 && (
           <div className="space-y-2">
-            <div className="text-sm font-medium">Runtime blocks</div>
+            <div className="text-sm font-medium text-slate-800">Runtime blocks</div>
             <div className="flex flex-wrap gap-2">
               {runtimeBlocks.map((block, index) => (
-                <Badge key={`${block}-${index}`} variant="destructive">
+                <Badge key={`${block}-${index}`} variant="destructive" className="border-0 bg-rose-500/14 text-rose-700">
                   {block}
                 </Badge>
               ))}
@@ -143,16 +142,16 @@ export function SeparationPlanCard({
 
         {requiredModels.length > 0 && (
           <div className="space-y-2">
-            <div className="text-sm font-medium">Required models</div>
+            <div className="text-sm font-medium text-slate-800">Required models</div>
             <div className="flex flex-wrap gap-2">
-              {requiredModels.map((model) => (
+              {requiredModels.map((model, index) => (
                 <Badge
-                  key={model.id}
+                  key={`${model.id || model.name || "required-model"}-${index}`}
                   variant={model.installed ? "secondary" : "outline"}
                   className={
                     model.installed
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-                      : "border-amber-500/30 bg-amber-500/10 text-amber-200"
+                      ? "border-0 bg-emerald-500/14 text-emerald-700"
+                      : "border-amber-300/55 bg-amber-50/80 text-amber-800"
                   }
                 >
                   {model.name || model.id}
@@ -164,15 +163,15 @@ export function SeparationPlanCard({
 
         {recommendedAdjustments.length > 0 && (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Wand2 className="h-4 w-4 text-primary" />
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+              <Wand2 className="h-4 w-4 text-slate-500" />
               Recommended adjustments
             </div>
             <div className="space-y-2">
               {recommendedAdjustments.map((adjustment, index) => (
                 <div
                   key={`${adjustment}-${index}`}
-                  className="rounded-md border bg-muted/30 p-3 text-sm"
+                  className="rounded-xl border border-white/55 bg-[rgba(255,255,255,0.6)] p-3 text-sm text-slate-600"
                 >
                   {adjustment}
                 </div>
@@ -183,12 +182,12 @@ export function SeparationPlanCard({
 
         {warnings.length > 0 && (
           <div className="space-y-2">
-            <div className="text-sm font-medium">Warnings</div>
+            <div className="text-sm font-medium text-slate-800">Warnings</div>
             <div className="space-y-2">
               {warnings.map((warning, index) => (
                 <div
                   key={`${warning}-${index}`}
-                  className="rounded-md border border-amber-500/20 bg-amber-500/5 p-3 text-sm"
+                  className="rounded-xl border border-amber-300/55 bg-amber-50/80 p-3 text-sm text-amber-800"
                 >
                   {warning}
                 </div>
@@ -198,12 +197,12 @@ export function SeparationPlanCard({
         )}
 
         {report?.can_proceed === true && errors.length === 0 && (
-          <div className="flex items-center gap-2 text-sm text-emerald-300">
+          <div className="flex items-center gap-2 text-sm text-emerald-700">
             <CheckCircle2 className="h-4 w-4" />
             Backend preflight is green for the current plan.
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

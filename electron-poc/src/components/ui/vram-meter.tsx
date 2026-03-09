@@ -63,25 +63,25 @@ export function VRAMUsageMeter({ estimatedVRAM, availableVRAM, className }: VRAM
 
     const statusConfig = {
         safe: {
-            color: 'bg-green-500',
-            bgColor: 'bg-green-500/10',
-            textColor: 'text-green-500',
+            color: 'from-emerald-400 to-emerald-500',
+            bgColor: 'bg-emerald-50/82 border-emerald-300/55',
+            textColor: 'text-emerald-700',
             icon: CheckCircle,
             label: 'Safe',
             message: 'Plenty of VRAM available'
         },
         warning: {
-            color: 'bg-yellow-500',
-            bgColor: 'bg-yellow-500/10',
-            textColor: 'text-yellow-500',
+            color: 'from-amber-400 to-amber-500',
+            bgColor: 'bg-amber-50/82 border-amber-300/55',
+            textColor: 'text-amber-700',
             icon: AlertTriangle,
             label: 'Warning',
             message: 'Close other apps for best performance'
         },
         critical: {
-            color: 'bg-red-500',
-            bgColor: 'bg-red-500/10',
-            textColor: 'text-red-500',
+            color: 'from-rose-400 to-rose-500',
+            bgColor: 'bg-rose-50/82 border-rose-300/55',
+            textColor: 'text-rose-700',
             icon: XCircle,
             label: 'Critical',
             message: 'May cause out-of-memory errors'
@@ -92,9 +92,9 @@ export function VRAMUsageMeter({ estimatedVRAM, availableVRAM, className }: VRAM
     const Icon = config.icon
 
     return (
-        <div className={cn("space-y-2", className)}>
+        <div className={cn("rounded-[1.3rem] border p-4 shadow-[0_16px_36px_rgba(141,150,179,0.1)] backdrop-blur-md", config.bgColor, className)}>
             <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground flex items-center gap-1.5">
+                <span className="flex items-center gap-1.5 text-slate-600">
                     <Icon className={cn("w-3.5 h-3.5", config.textColor)} />
                     VRAM Usage
                 </span>
@@ -103,21 +103,26 @@ export function VRAMUsageMeter({ estimatedVRAM, availableVRAM, className }: VRAM
                 </span>
             </div>
 
-            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.52)]">
                 <div
                     className={cn(
-                        "h-full rounded-full transition-all duration-500",
+                        "h-full rounded-full bg-gradient-to-r transition-all duration-500",
                         config.color
                     )}
                     style={{ width: `${percentage}%` }}
                 />
             </div>
 
-            {status !== 'safe' && (
-                <p className={cn("text-[10px]", config.textColor)}>
-                    ⚠️ {config.message}
-                </p>
-            )}
+            <div className="mt-2 flex items-center justify-between text-[10px]">
+                <span className={cn("font-medium", config.textColor)}>{config.label}</span>
+                {status !== 'safe' ? (
+                    <p className={cn(config.textColor)}>
+                        {config.message}
+                    </p>
+                ) : (
+                    <p className="text-slate-500">{config.message}</p>
+                )}
+            </div>
         </div>
     )
 }

@@ -1,18 +1,20 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import { Upload, Loader2, Folder } from "lucide-react";
-import { Button } from "./ui/button";
-import { Card, CardContent } from "./ui/card";
-import { Input } from "./ui/input";
+import { CSSProperties, useState, useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  Disc3,
+  Headphones,
+  Mic2,
+  Music2,
+  Radio,
+  Upload,
+} from "lucide-react";
 
 import { PresetBrowser } from "./PresetBrowser";
 import SettingsDialog from "./SettingsDialog";
 import HistoryDialog from "./HistoryDialog";
 import { useStore } from "../stores/useStore";
 import { SeparationConfig } from "./ConfigurePage";
-import { BatchQueueList } from "./BatchQueueList";
 import { QueueItem } from "../types/store";
 import { toast } from "sonner";
-import { Badge } from "./ui/badge";
 import { ModelDetails } from "./ModelDetails";
 import { ALL_PRESETS, Preset } from "../presets";
 import { recipesToPresets } from "@/lib/recipePresets";
@@ -69,10 +71,6 @@ export default function SeparatePage({
       reason: "not_installed";
     }[]
   >([]);
-  const [youtubeUrl, setYoutubeUrl] = useState("");
-  const [youtubeStatus, setYoutubeStatus] = useState<string>("");
-  const [youtubePercent, setYoutubePercent] = useState<string>("");
-  const [isResolvingYoutube, setIsResolvingYoutube] = useState(false);
 
   const [selectedPreset, setSelectedPreset] =
     useState<string>("workflow_phase_fix_instrumental");
@@ -241,7 +239,6 @@ export default function SeparatePage({
   // Actions
   const addToQueueStore = useStore((state) => state.addToQueue);
   const removeFromQueue = useStore((state) => state.removeFromQueue);
-  const clearQueue = useStore((state) => state.clearQueue);
   const updateQueueItem = useStore((state) => state.updateQueueItem);
   const setSeparationStatus = useStore((state) => state.startSeparation);
   const setSeparationProgress = useStore(
@@ -254,17 +251,11 @@ export default function SeparatePage({
   const cancelSeparation = useStore((state) => state.cancelSeparation);
   const phaseParams = useStore((state) => state.settings.phaseParams);
 
-  // New hooks needed for navigation
-  const loadSession = useStore((state) => state.loadSession);
-
   // Global State
   const queue = useStore((state) => state.separation.queue);
   const isProcessing = useStore((state) => state.separation.isProcessing);
-  const isPaused = useStore((state) => state.separation.isPaused);
   const progressMessage = useStore((state) => state.separation.message);
   const separationStartTime = useStore((state) => state.separation.startTime);
-  const pauseQueue = useStore((state) => state.pauseQueue);
-  const resumeQueue = useStore((state) => state.resumeQueue);
 
   const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -316,6 +307,48 @@ export default function SeparatePage({
   // Handle pending separation config from ConfigurePage
   // Use a ref to prevent double-execution when queue updates
   const processingPendingConfigRef = useRef(false);
+  const heroIcons = useMemo(() => {
+    const orbitIcons = [Music2, Headphones, Mic2, Radio, Disc3, Upload];
+    const circles = [80, 120, 160];
+    const iconsPerCircle = [6, 8, 10];
+
+    return circles.flatMap((radius, circleIndex) => {
+      const count = iconsPerCircle[circleIndex];
+      return Array.from({ length: count }).flatMap((_, iconIndex) => {
+        const angle = (iconIndex / count) * Math.PI * 2;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        const rotation = Math.atan2(y, x) * (180 / Math.PI);
+        const Icon = orbitIcons[(circleIndex + iconIndex) % orbitIcons.length];
+
+        const buildStyle = (
+          opacity: number,
+          scale: number,
+          delayOffset: number,
+        ): CSSProperties => ({
+          "--stemsep-icon-x": `${x}px`,
+          "--stemsep-icon-y": `${y}px`,
+          "--stemsep-icon-rotation": `${rotation}deg`,
+          "--stemsep-icon-opacity": opacity,
+          "--stemsep-icon-scale": scale,
+          animationDelay: `${circleIndex * 0.01 + iconIndex * 0.002 + delayOffset}s`,
+        }) as CSSProperties;
+
+        return [
+          {
+            key: `orbit-${circleIndex}-${iconIndex}`,
+            Icon,
+            style: buildStyle(1, 1, 0),
+          },
+          {
+            key: `orbit-${circleIndex}-${iconIndex}-trail`,
+            Icon,
+            style: buildStyle(0.5, 0.7, 0.008),
+          },
+        ];
+      });
+    });
+  }, []);
 
   useEffect(() => {
     // Guard: Prevent double execution
@@ -428,18 +461,6 @@ export default function SeparatePage({
     queue,
     updateQueueItem,
   ]);
-
-  // YouTube download progress listener
-  useEffect(() => {
-    if (!window.electronAPI?.onYouTubeProgress) return;
-    const cleanup = window.electronAPI.onYouTubeProgress((data) => {
-      setYoutubeStatus(data.status || "");
-      setYoutubePercent(data.percent || "");
-    });
-    return () => {
-      cleanup?.();
-    };
-  }, []);
 
   // Check model availability
   useEffect(() => {
@@ -788,279 +809,98 @@ export default function SeparatePage({
     }
   }, []);
 
-  const handleResolveYouTube = useCallback(async () => {
-    if (!window.electronAPI?.resolveYouTubeUrl) {
-      toast.error("YouTube resolution is not available");
-      return;
-    }
-    const url = youtubeUrl.trim();
-    if (!url) {
-      toast.error("Paste a YouTube link first");
-      return;
-    }
-
-    try {
-      setIsResolvingYoutube(true);
-      setYoutubeStatus("starting");
-      setYoutubePercent("");
-
-      const result = await window.electronAPI.resolveYouTubeUrl(url);
-      if (!result.success) {
-        const hint = result.hint ? ` ${result.hint}` : "";
-        throw new Error(`${result.error}${hint}`.trim());
-      }
-      const resolvedPath = (result as any)?.file_path;
-      const title = (result as any)?.title;
-
-      if (!resolvedPath) {
-        throw new Error("No file path returned from backend");
-      }
-
-      await addToQueue([resolvedPath]);
-
-      // Navigate to configure using YouTube title as display name
-      const displayName =
-        title || resolvedPath.split(/[\\/]/).pop() || "YouTube Audio";
-      onNavigateToConfigure?.(displayName, resolvedPath, selectedPreset);
-      toast.success("YouTube audio ready");
-      setYoutubeUrl("");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      toast.error(`Failed to fetch YouTube audio: ${msg}`);
-    } finally {
-      setIsResolvingYoutube(false);
-    }
-  }, [youtubeUrl, addToQueue, onNavigateToConfigure, selectedPreset]);
-
-  const handlePreviewItem = (item: QueueItem) => {
-    // Convert QueueItem to HistoryItem format for loader
-    const historyItem: any = {
-      id: item.id,
-      backendJobId: item.backendJobId, // Ensure backend ID is passed!
-      inputFile: item.file,
-      status: item.status,
-      outputFiles: item.outputFiles,
-      modelName: item.modelId,
-      date: new Date().toISOString(),
-      settings: {},
-    };
-    loadSession(historyItem);
-    onNavigateToResults?.();
-  };
-
   return (
     <div
-      className="h-full flex flex-col bg-background text-foreground selection:bg-primary/30"
+      className="relative h-full overflow-hidden text-white selection:bg-white/20"
       onDragEnter={handleWindowDragEnter}
     >
-      <div className="flex-1 overflow-y-auto relative scroll-smooth">
-        {/* Background Ambient Glow */}
-        <div className="flex flex-col max-w-4xl mx-auto w-full p-6 gap-8 relative z-10 animate-in fade-in duration-700">
-          {/* 1. Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                New Separation
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Drop your audio files to begin.
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowHistory(true)}
-              >
-                <Folder className="w-4 h-4 mr-2" />
-                History
-              </Button>
-            </div>
-          </div>
-
-          {/* 2. Upload Area - Expanded */}
-          <div className="flex-1 min-h-[400px] flex flex-col">
-            <Card
-              className={`flex-1 border-2 border-dashed transition-all duration-500 overflow-hidden group relative flex flex-col
-                ${isDragging ? "border-primary bg-muted" : "border-border/60 hover:border-border"}
-                `}
-            >
-              {/* Interactive Overlay - Handles all events */}
-              <div
-                className="absolute inset-0 z-50 cursor-pointer"
-                onClick={() => {
-                  handleFileSelect();
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsDragging(true);
-                }}
-                onDragLeave={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsDragging(false);
-                }}
-                onDrop={handleCardDrop}
-              />
-
-              {/* Background Glow */}
-              <CardContent className="flex-1 flex flex-col items-center justify-center text-center space-y-8 relative z-10 pointer-events-none py-20">
-                <div
-                  className={`p-8 border border-border bg-background transition-colors duration-200 ${isDragging ? "text-foreground" : "text-muted-foreground"}`}
-                >
-                  <Upload
-                    className={`w-16 h-16 transition-all duration-200 ${isDragging ? "" : ""}`}
-                  />
-                </div>
-                <div className="space-y-4 max-w-md mx-auto">
-                  <h3 className="text-3xl font-bold tracking-tight">
-                    {isDragging
-                      ? "Drop files to separate"
-                      : "Drop audio files here"}
-                  </h3>
-                  <p className="text-muted-foreground text-lg">
-                    or click anywhere to browse
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-2 pt-4">
-                    <Badge
-                      variant="secondary"
-                      className="bg-background border-border text-xs px-3 py-1"
-                    >
-                      MP3
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="bg-background border-border text-xs px-3 py-1"
-                    >
-                      WAV
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="bg-background border-border text-xs px-3 py-1"
-                    >
-                      FLAC
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className="bg-background border-border text-xs px-3 py-1"
-                    >
-                      M4A
-                    </Badge>
+      <div className="absolute inset-0 flex items-end justify-center px-6 pb-[18%]">
+        <div className="flex flex-col items-center">
+          <div className="group relative">
+            <div className="stemsep-orbit-shell pointer-events-none absolute left-1/2 top-1/2 z-10 h-[360px] w-[360px] -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+              <div className="stemsep-orbit-rotor relative h-full w-full">
+                {heroIcons.map(({ key, Icon, style }) => (
+                  <div
+                    key={key}
+                    className="stemsep-orbit-node absolute left-1/2 top-1/2 flex h-11 w-11 items-center justify-center text-white"
+                    style={style}
+                  >
+                    <Icon className="stemsep-orbit-icon h-4 w-4 drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]" />
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* 2b. YouTube Input */}
-          <Card className="p-4">
-            <div className="flex flex-col gap-3">
-              <div className="text-sm font-medium">YouTube link</div>
-              <div className="flex gap-2">
-                <Input
-                  value={youtubeUrl}
-                  onChange={(e) => setYoutubeUrl(e.target.value)}
-                  placeholder="Paste a YouTube URL (youtube.com / youtu.be)"
-                  disabled={isResolvingYoutube}
-                />
-                <Button
-                  variant="outline"
-                  onClick={handleResolveYouTube}
-                  disabled={isResolvingYoutube || !youtubeUrl.trim()}
-                >
-                  {isResolvingYoutube ? "Fetching…" : "Fetch"}
-                </Button>
-              </div>
-              {(youtubeStatus || youtubePercent) && (
-                <div className="text-xs text-muted-foreground">
-                  {youtubeStatus}
-                  {youtubePercent ? ` - ${youtubePercent}` : ""}
-                </div>
-              )}
-              <div className="text-xs text-muted-foreground">
-                Tip: The audio is downloaded to a temporary WAV file and then
-                treated like a normal local file.
+                ))}
               </div>
             </div>
-          </Card>
 
-          {/* 3. Queue & Actions */}
+            <button
+              type="button"
+              onClick={() => {
+                handleFileSelect();
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+              }}
+              onDrop={handleCardDrop}
+              className={`stemsep-home-button relative z-20 flex flex-row items-center justify-center gap-0.5 overflow-visible rounded-[38px] border px-[22px] py-3 text-center text-[20px] font-normal tracking-[-0.7px] text-white transition-all duration-300 ${
+                isDragging
+                  ? "scale-105 border-white/50 bg-white/30 shadow-2xl shadow-black/30"
+                  : "border-white/30 bg-white/20 shadow-xl shadow-black/20 hover:scale-105 hover:border-white/50 hover:bg-white/30 hover:shadow-2xl hover:shadow-black/30 active:scale-95"
+              }`}
+            >
+              <span className="relative z-20 leading-[1.4] drop-shadow-lg">
+                Separate
+              </span>
+            </button>
+          </div>
+
+          <div className="mt-4 min-h-5 text-center text-[13px] tracking-[-0.2px] text-white/58 drop-shadow">
+            {isDragging
+              ? "Drop files to start a new separation"
+              : queue.length > 0
+                ? isProcessing
+                  ? `Processing ${queue.filter((item) => item.status === "completed").length}/${queue.length}${progressMessage ? ` · ${progressMessage}` : ""}${processingTimingText ? ` · ${processingTimingText}` : ""}`
+                  : `Queue ready · ${queue.length} file${queue.length > 1 ? "s" : ""} pending`
+                : ""}
+          </div>
+
           {queue.length > 0 && (
-            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-              <BatchQueueList
-                queue={queue}
-                onRemoveItem={removeFromQueue}
-                onClearQueue={clearQueue}
-                onPreviewItem={handlePreviewItem}
-                isProcessing={isProcessing}
-                isPaused={isPaused}
-                onPause={pauseQueue}
-                onResume={resumeQueue}
-              />
-
-              {/* Action Bar */}
-              <div className="sticky bottom-6 bg-background p-4 border flex items-center justify-between gap-4 z-[60]">
-                <div className="text-sm text-muted-foreground pl-2">
-                  {isProcessing ? (
-                    <span className="flex items-center gap-2 text-primary font-medium">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="flex flex-col">
-                        <span>
-                          Processing{" "}
-                          {queue.filter((i) => i.status === "completed").length}{" "}
-                          / {queue.length} files...
-                        </span>
-                        {progressMessage && (
-                          <span className="text-xs text-muted-foreground">
-                            {progressMessage}
-                          </span>
-                        )}
-                        {processingTimingText && (
-                          <span className="text-xs text-muted-foreground">
-                            {processingTimingText}
-                          </span>
-                        )}
-                      </span>
-                    </span>
-                  ) : (
-                    <span>
-                      Ready to configure <b>{queue.length}</b> files
-                    </span>
-                  )}
-                </div>
-                {isProcessing ? (
-                  <Button
-                    size="lg"
-                    variant="destructive"
-                    className="px-8 text-base font-semibold"
-                    onClick={cancelSeparation}
-                  >
-                    Cancel
-                  </Button>
-                ) : (
-                  <Button
-                    size="lg"
-                    className="px-8 text-base font-semibold"
-                    disabled={queue.length === 0}
-                    onClick={() => {
-                      const item = queue[0];
-                      if (item) {
-                        const fileName =
-                          item.file.split(/[\\/]/).pop() || "Unknown";
-                        onNavigateToConfigure?.(
-                          fileName,
-                          item.file,
-                          selectedPreset,
-                        );
-                      }
-                    }}
-                  >
-                    Configure Separation
-                  </Button>
-                )}
-              </div>
+            <div className="mt-4 flex items-center gap-2">
+              {!isProcessing && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const item = queue[0];
+                    if (!item) return;
+                    const fileName = item.file.split(/[\\/]/).pop() || "Unknown";
+                    onNavigateToConfigure?.(fileName, item.file, selectedPreset);
+                  }}
+                  className="rounded-[18px] border border-white/20 bg-white/12 px-4 py-2 text-[13px] tracking-[-0.2px] text-white/82 backdrop-blur-md transition-all hover:bg-white/18"
+                >
+                  Configure
+                </button>
+              )}
+              {isProcessing && (
+                <button
+                  type="button"
+                  onClick={cancelSeparation}
+                  className="rounded-[18px] border border-white/20 bg-white/12 px-4 py-2 text-[13px] tracking-[-0.2px] text-white/82 backdrop-blur-md transition-all hover:bg-white/18"
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => onNavigateToResults?.()}
+                className="rounded-[18px] border border-white/20 bg-white/12 px-4 py-2 text-[13px] tracking-[-0.2px] text-white/82 backdrop-blur-md transition-all hover:bg-white/18"
+              >
+                Result Studio
+              </button>
             </div>
           )}
         </div>

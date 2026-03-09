@@ -1,9 +1,6 @@
 import { useState } from 'react'
 import { Plus, Trash2, Info, Settings2, Sliders } from 'lucide-react'
 
-import { Button } from './ui/button'
-import { Card } from './ui/card'
-
 interface Model {
     id: string
     name: string
@@ -136,7 +133,7 @@ export function EnsembleBuilder({
     return (
         <div className="space-y-4">
             {/* Phase Fix Checkbox */}
-            <div className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
+            <div className="flex items-center gap-3 rounded-[1.1rem] border border-white/60 bg-white/62 p-3">
                 <input
                     type="checkbox"
                     id="phaseFixEnabled"
@@ -145,17 +142,17 @@ export function EnsembleBuilder({
                     className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
                 <div>
-                    <label htmlFor="phaseFixEnabled" className="text-sm font-medium cursor-pointer">
+                    <label htmlFor="phaseFixEnabled" className="cursor-pointer text-sm font-medium text-slate-800">
                         Enable Phase Fix
                     </label>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500">
                         Reduces metallic Roformer buzzing. Applied before ensemble.
                     </p>
                 </div>
             </div>
 
             {/* Volume Compensation Checkbox */}
-            <div className="flex items-center gap-3 p-3 rounded-lg border bg-card/50">
+            <div className="flex items-center gap-3 rounded-[1.1rem] border border-white/60 bg-white/62 p-3">
                 <input
                     type="checkbox"
                     id="volumeCompEnabled"
@@ -164,10 +161,10 @@ export function EnsembleBuilder({
                     className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
                 <div>
-                    <label htmlFor="volumeCompEnabled" className="text-sm font-medium cursor-pointer">
+                    <label htmlFor="volumeCompEnabled" className="cursor-pointer text-sm font-medium text-slate-800">
                         Enable VC
                     </label>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500">
                         Adds headroom when combining multiple models (reduces clipping risk). When enabled, uses best defaults.
                     </p>
                 </div>
@@ -175,11 +172,11 @@ export function EnsembleBuilder({
 
             {/* Algorithm Selection */}
             <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Ensemble Algorithm</label>
+                <label className="text-sm font-medium text-slate-800">Ensemble Algorithm</label>
                 <select
                     value={algorithm}
                     onChange={(e) => handleAlgorithmChange(e.target.value)}
-                    className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="h-9 rounded-xl border border-white/60 bg-white/70 px-3 py-1 text-sm text-slate-800 shadow-sm transition-colors outline-none"
                 >
                     <option value="average">Average (Balanced SDR)</option>
                     <option value="max_spec">Max Spec (Fullest)</option>
@@ -191,32 +188,32 @@ export function EnsembleBuilder({
             {/* Models List */}
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Models ({config.length})</label>
-                    <Button variant="outline" size="sm" onClick={handleAddModel} className="h-8">
+                    <label className="text-sm font-medium text-slate-800">Models ({config.length})</label>
+                    <button type="button" onClick={handleAddModel} className="inline-flex h-8 items-center rounded-full border border-white/60 bg-white/62 px-3 text-[12px] text-slate-600 transition-all hover:bg-white/82 hover:text-slate-800">
                         <Plus className="w-3 h-3 mr-1" />
                         Add Model
-                    </Button>
+                    </button>
                 </div>
 
                 {config.length === 0 && (
-                    <div className="text-center p-8 border-2 border-dashed rounded-lg text-muted-foreground text-sm">
+                    <div className="rounded-[1.1rem] border border-dashed border-white/60 p-8 text-center text-sm text-slate-500">
                         No models selected. Add models to create an ensemble.
                     </div>
                 )}
 
                 {config.length > 4 && (
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 p-2 rounded-md text-xs text-yellow-600 dark:text-yellow-400">
+                    <div className="rounded-xl border border-amber-300/55 bg-amber-50/82 p-2 text-xs text-amber-800">
                         ⚠️ Using {config.length} models. Quality may degrade after 4-5 models.
                     </div>
                 )}
 
                 {config.map((item, index) => (
-                    <Card key={index} className="p-3 flex items-center gap-3">
+                    <div key={index} className="flex items-center gap-3 rounded-[1.1rem] border border-white/60 bg-white/62 p-3">
                         <div className="flex-1">
                             <select
                                 value={item.model_id}
                                 onChange={(e) => handleUpdateModel(index, 'model_id', e.target.value)}
-                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                className="flex h-9 w-full rounded-xl border border-white/60 bg-white/76 px-3 py-1 text-sm text-slate-800 shadow-sm outline-none"
                             >
                                 <option value="" disabled>Select Model</option>
                                 {availableModels.map(m => (
@@ -233,7 +230,7 @@ export function EnsembleBuilder({
                                     type="number"
                                     value={item.weight}
                                     onChange={(e) => handleUpdateModel(index, 'weight', parseFloat(e.target.value) || 1)}
-                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                    className="flex h-9 w-full rounded-xl border border-white/60 bg-white/76 px-3 py-1 text-sm text-slate-800 shadow-sm outline-none"
                                     placeholder="Weight"
                                     step="0.1"
                                     min="0.1"
@@ -242,66 +239,64 @@ export function EnsembleBuilder({
                         )}
 
                         {phaseFixEnabled && (
-                            <div className="w-32 text-xs text-muted-foreground">
+                            <div className="w-32 text-xs text-slate-500">
                                 {index === 0 ? '🎵 Magnitude' : index === 1 ? '📊 Phase Ref' : '(ignored)'}
                             </div>
                         )}
 
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                        <button
+                            type="button"
+                            className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/58 text-slate-500 transition-all hover:bg-rose-500/12 hover:text-rose-700"
                             onClick={() => handleRemoveModel(index)}
                         >
                             <Trash2 className="w-4 h-4" />
-                        </Button>
-                    </Card>
+                        </button>
+                    </div>
                 ))}
             </div>
 
             {/* Advanced Settings Toggle */}
-            <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-muted-foreground"
+            <button
+                type="button"
+                className="flex w-full items-center justify-start rounded-xl border border-white/60 bg-white/58 px-3 py-2.5 text-sm text-slate-600 transition-all hover:bg-white/78 hover:text-slate-800"
                 onClick={() => setShowAdvanced(!showAdvanced)}
             >
                 <Settings2 className="w-4 h-4 mr-2" />
                 {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
-            </Button>
+            </button>
 
             {/* Advanced Settings Panel */}
             {showAdvanced && (
-                <Card className="p-4 space-y-4 bg-secondary/20">
+                <div className="space-y-4 rounded-[1.2rem] border border-white/60 bg-white/58 p-4">
                     {/* Per-Stem Algorithm Selection */}
                     <div className="space-y-2">
-                        <label className="text-sm font-medium flex items-center gap-2">
+                        <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
                             <Sliders className="w-4 h-4" />
                             Per-Stem Algorithm
                         </label>
                         <select
                             value={stemAlgoPreset}
                             onChange={(e) => handleStemAlgoPresetChange(e.target.value)}
-                            className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                            className="h-9 w-full rounded-xl border border-white/60 bg-white/76 px-3 py-1 text-sm text-slate-800 shadow-sm outline-none"
                         >
                             {Object.entries(STEM_ALGORITHM_PRESETS).map(([key, preset]) => (
                                 <option key={key} value={key}>{preset.description}</option>
                             ))}
                         </select>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-slate-500">
                             Vocals: {stemAlgorithms?.vocals || 'average'} | Instrumental: {stemAlgorithms?.instrumental || 'average'}
                         </div>
                     </div>
 
                     {/* Phase Fixer Controls */}
                     {phaseFixEnabled && (
-                        <div className="space-y-3 pt-2 border-t">
-                            <label className="text-sm font-medium">Phase Fixer Settings</label>
+                        <div className="space-y-3 border-t border-white/55 pt-2">
+                            <label className="text-sm font-medium text-slate-800">Phase Fixer Settings</label>
 
                             <select
                                 value={phasePreset}
                                 onChange={(e) => handlePhasePresetChange(e.target.value)}
-                                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                                className="h-9 w-full rounded-xl border border-white/60 bg-white/76 px-3 py-1 text-sm text-slate-800"
                             >
                                 {Object.entries(PHASE_FIX_PRESETS).map(([key, preset]) => (
                                     <option key={key} value={key}>{preset.description}</option>
@@ -310,36 +305,36 @@ export function EnsembleBuilder({
 
                             <div className="grid grid-cols-3 gap-2">
                                 <div>
-                                    <label className="text-xs text-muted-foreground">Low Hz</label>
+                                    <label className="text-xs text-slate-500">Low Hz</label>
                                     <input
                                         type="number"
                                         value={phaseFixParams?.lowHz ?? 500}
                                         onChange={(e) => handlePhaseParamChange('lowHz', parseInt(e.target.value))}
-                                        className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
+                                        className="h-8 w-full rounded-lg border border-white/60 bg-white/76 px-2 text-sm text-slate-800"
                                         min={100}
                                         max={5000}
                                         step={100}
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-muted-foreground">High Hz</label>
+                                    <label className="text-xs text-slate-500">High Hz</label>
                                     <input
                                         type="number"
                                         value={phaseFixParams?.highHz ?? 5000}
                                         onChange={(e) => handlePhaseParamChange('highHz', parseInt(e.target.value))}
-                                        className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
+                                        className="h-8 w-full rounded-lg border border-white/60 bg-white/76 px-2 text-sm text-slate-800"
                                         min={1000}
                                         max={20000}
                                         step={500}
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-muted-foreground">Weight</label>
+                                    <label className="text-xs text-slate-500">Weight</label>
                                     <input
                                         type="number"
                                         value={phaseFixParams?.highFreqWeight ?? 2.0}
                                         onChange={(e) => handlePhaseParamChange('highFreqWeight', parseFloat(e.target.value))}
-                                        className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm"
+                                        className="h-8 w-full rounded-lg border border-white/60 bg-white/76 px-2 text-sm text-slate-800"
                                         min={0.1}
                                         max={3.0}
                                         step={0.1}
@@ -348,12 +343,12 @@ export function EnsembleBuilder({
                             </div>
                         </div>
                     )}
-                </Card>
+                </div>
             )}
 
             {/* Algorithm Info */}
-            <div className="bg-secondary/20 p-3 rounded-md text-xs text-muted-foreground flex gap-2">
-                <Info className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="flex gap-2 rounded-xl border border-white/60 bg-white/58 p-3 text-xs text-slate-600">
+                <Info className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                     {algorithm === 'max_spec' && "Max Spec takes the highest magnitude for each frequency bin. Great for fullness but may increase bleed."}
                     {algorithm === 'average' && "Average blends waveforms evenly. Highest SDR, safest default. Use weights to favor certain models."}
