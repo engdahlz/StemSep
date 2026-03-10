@@ -108,6 +108,7 @@ const getAction = (
   onResume: (id: string) => void,
   onDetails: (model: Model) => void,
 ) => {
+  const downloadMode = model.download?.mode;
   if (model.installed) {
     return {
       label: "Use",
@@ -132,8 +133,24 @@ const getAction = (
       onClick: () => onPause(model.id),
     };
   }
+  if (downloadMode === "manual") {
+    return {
+      label: "Manual Setup",
+      icon: Download,
+      className: "bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-900",
+      onClick: () => onDetails(model),
+    };
+  }
+  if (downloadMode === "unavailable") {
+    return {
+      label: "Unavailable",
+      icon: Download,
+      className: "bg-gray-100 text-gray-400 cursor-not-allowed",
+      onClick: () => onDetails(model),
+    };
+  }
   return {
-    label: "Download",
+    label: model.download?.artifact_count && model.download.artifact_count > 1 ? "Download Pack" : "Download",
     icon: Download,
     className: "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900",
     onClick: () => onDownload(model.id),
@@ -243,6 +260,16 @@ export function ModelCard({
             {model.runtime?.engine && (
               <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
                 {normalizeLabel(model.runtime.engine)}
+              </span>
+            )}
+            {model.download?.mode === "manual" && (
+              <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
+                Manual Setup
+              </span>
+            )}
+            {model.download?.artifact_count && model.download.artifact_count > 1 && (
+              <span className="rounded-md bg-sky-50 px-2 py-0.5 text-[11px] text-sky-700">
+                {model.download.artifact_count} files
               </span>
             )}
             <span className="flex items-center gap-1">

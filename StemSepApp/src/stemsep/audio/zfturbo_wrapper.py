@@ -36,9 +36,10 @@ class RoformerSeparator:
     - Config just needs model params, not full training/inference sections
     """
 
-    def __init__(self, models_dir: Path, device: str = None):
+    def __init__(self, models_dir: Path, device: str = None, model_manager=None):
         self.models_dir = Path(models_dir)
         self.logger = logging.getLogger(__name__)
+        self.model_manager = model_manager
 
         # Device selection
         if device:
@@ -53,9 +54,26 @@ class RoformerSeparator:
         # Model cache
         self._model_cache = {}
 
+    def _get_model_manager(self):
+        if self.model_manager is not None:
+            return self.model_manager
+        from stemsep.models.model_manager import ModelManager
+
+        self.model_manager = ModelManager(models_dir=self.models_dir)
+        return self.model_manager
+
+    def _resolve_bundle(self, model_id: str) -> Dict[str, Any]:
+        try:
+            return self._get_model_manager().get_model_file_bundle(model_id)
+        except Exception as e:
+            self.logger.debug(f"Failed to resolve model bundle for {model_id}: {e}")
+            return {"checkpoint_path": None, "config_path": None}
+
     def _load_config(self, model_id: str) -> Dict[str, Any]:
         """Load model config from YAML file."""
-        config_path = self.models_dir / f"{model_id}.yaml"
+        bundle = self._resolve_bundle(model_id)
+        config_path = bundle.get("config_path") or (self.models_dir / f"{model_id}.yaml")
+        config_path = Path(config_path)
         if not config_path.exists():
             raise FileNotFoundError(f"Config not found: {config_path}")
 
@@ -190,7 +208,9 @@ class RoformerSeparator:
             model = self._create_mel_band_roformer(model_cfg)
 
         # Load checkpoint
-        ckpt_path = self.models_dir / f"{model_id}.ckpt"
+        bundle = self._resolve_bundle(model_id)
+        ckpt_path = bundle.get("checkpoint_path") or (self.models_dir / f"{model_id}.ckpt")
+        ckpt_path = Path(ckpt_path)
         if not ckpt_path.exists():
             raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
 

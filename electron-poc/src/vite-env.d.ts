@@ -63,6 +63,7 @@ interface SystemRuntimeInfo {
 
 interface ElectronAPI {
     selectOutputDirectory: () => Promise<string | null>
+    selectModelsDirectory: () => Promise<string | null>
     openAudioFileDialog: () => Promise<string[] | null>
     openModelFileDialog: () => Promise<string[] | null>
     scanDirectory: (folderPath: string) => Promise<string[]>
@@ -145,6 +146,8 @@ interface ElectronAPI {
     // Model operations
     getModels: () => Promise<any[]>
     getModelTech: (modelId: string) => Promise<any>
+    resolveModelDownload: (modelId: string) => Promise<any>
+    getModelInstallation: (modelId: string) => Promise<any>
     getRecipes: () => Promise<Recipe[]>
     qualityBaselineCreate: (payload: Record<string, any>) => Promise<any>
     qualityCompare: (payload: Record<string, any>) => Promise<any>
@@ -166,10 +169,10 @@ interface ElectronAPI {
     getSystemRuntimeInfo: () => Promise<SystemRuntimeInfo>
     getWorkflows: () => Promise<{ workflows: Record<string, any> }>
     checkPresetModels: (presetMappings: Record<string, string>) => Promise<Record<string, boolean>>
-    onDownloadProgress: (callback: (data: { modelId: string; progress: number }) => void) => () => void
-    onDownloadComplete: (callback: (data: { modelId: string }) => void) => () => void
+    onDownloadProgress: (callback: (data: { modelId: string; progress: number; artifactIndex?: number; artifactCount?: number; currentFile?: string; currentRelativePath?: string; message?: string }) => void) => () => void
+    onDownloadComplete: (callback: (data: { modelId: string; artifactCount?: number }) => void) => () => void
     onDownloadError: (callback: (data: { modelId: string; error: string }) => void) => () => void
-    onDownloadPaused: (callback: (data: { modelId: string }) => void) => () => void
+    onDownloadPaused: (callback: (data: { modelId: string; artifactIndex?: number; artifactCount?: number; currentFile?: string; currentRelativePath?: string; progress?: number }) => void) => () => void
     openDirectoryDialog: () => Promise<{ canceled: boolean; filePaths: string[] }>
     onBackendError: (callback: (data: { error: string }) => void) => () => void
     onBridgeReady: (callback: (data: { capabilities: string[]; modelsCount: number; recipesCount: number }) => void) => () => void
@@ -182,6 +185,7 @@ interface ElectronAPI {
     onWatchFileDetected: (callback: (path: string) => void) => () => void
 
     // App Config
+    setModelsDir: (modelsDir: string) => Promise<{ success: boolean; modelsDir: string; models?: any[] }>
     saveAppConfig: (config: Record<string, any>) => Promise<boolean>
     getAppConfig: () => Promise<Record<string, any>>
 

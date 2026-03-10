@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
 import { RuntimeDoctorCard } from "./RuntimeDoctorCard";
+import { normalizeModel } from "../lib/models/normalizeModel";
 
 type Tab = "general" | "audio" | "advanced";
 type CudaDevice = { id: string; name?: string; index?: number };
@@ -39,6 +40,7 @@ export function SettingsPage() {
     setTheme: setStoreTheme,
     setDefaultOutputDir,
     setModelsDir,
+    setModels,
     setDefaultModel,
     setAdvancedSettings,
     models,
@@ -92,33 +94,23 @@ export function SettingsPage() {
 
   const handleBrowseModelsDir = async () => {
     try {
-      const result = await window.electronAPI.selectOutputDirectory();
+      const result = await window.electronAPI.selectModelsDirectory?.();
       if (result) {
         const newPath = result;
-
-        // Show confirmation with explanation
-        const confirmed = confirm(
-          `Change models directory to:\n${newPath}\n\n` +
-            `⚠️ Important:\n` +
-            `• Models will NOT be moved automatically\n` +
-            `• You will need to re-download your models\n` +
-            `• Restart the app for changes to take effect\n\n` +
-            `Continue?`,
-        );
-
-        if (!confirmed) return;
-
+        const applied = await window.electronAPI.setModelsDir?.(newPath);
         setModelsDir(newPath);
-        // Also save to app-config so main process can read at startup
-        await window.electronAPI.saveAppConfig?.({ modelsDir: newPath });
-
-        // Show restart reminder
-        alert(
-          "Models directory updated!\n\nPlease restart the app and re-download your models.",
-        );
+        if (Array.isArray(applied?.models)) {
+          setModels(applied.models.map(normalizeModel));
+        } else if (window.electronAPI?.getModels) {
+          const refreshed = await window.electronAPI.getModels();
+          if (Array.isArray(refreshed)) {
+            setModels(refreshed.map(normalizeModel));
+          }
+        }
       }
     } catch (error) {
       console.error("Failed to open directory dialog:", error);
+      alert(`Failed to apply models directory: ${String(error)}`);
     }
   };
 
@@ -290,9 +282,9 @@ export function SettingsPage() {
                       Browse
                     </Button>
                   </div>
-                  <p className="text-xs text-amber-500 flex items-center gap-1">
-                    ⚠️ Requires app restart to take effect. Existing models are
-                    not moved.
+                  <p className="text-xs text-muted-foreground">
+                    Changes apply immediately. Existing models are not moved
+                    automatically.
                   </p>
                 </CardContent>
               </Card>

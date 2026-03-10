@@ -68,6 +68,48 @@ struct BackendConfig {
     models_dir: PathBuf,
 }
 
+#[derive(Debug, Clone, Serialize)]
+struct ResolvedSourceLink {
+    role: String,
+    url: String,
+    host: String,
+    manual: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ResolvedArtifact {
+    kind: String,
+    filename: String,
+    relative_path: String,
+    required: bool,
+    manual: bool,
+    exists: bool,
+    source: Option<String>,
+    source_host: Option<String>,
+    sha256: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ResolvedInstallationStatus {
+    installed: bool,
+    missing_artifacts: Vec<String>,
+    relative_paths: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ResolvedDownloadManifest {
+    model_id: String,
+    family: String,
+    mode: String,
+    install_mode: String,
+    artifact_count: usize,
+    downloadable_artifact_count: usize,
+    source_policy: String,
+    sources: Vec<ResolvedSourceLink>,
+    artifacts: Vec<ResolvedArtifact>,
+    manual_instructions: Vec<String>,
+}
+
 fn parse_arg_value(args: &[OsString], name: &str) -> Option<String> {
     let mut i = 0;
     while i < args.len() {
@@ -280,60 +322,13 @@ fn detect_runtime_adapter(model_obj: &Value) -> Option<String> {
     }
 }
 
-fn push_missing_runtime_asset(models_dir: &Path, missing: &mut Vec<String>, filename: &str) {
-    let trimmed = filename.trim();
-    if trimmed.is_empty() || trimmed.contains(".MISSING") {
-        return;
-    }
-    if !models_dir.join(trimmed).exists() && !missing.iter().any(|m| m == trimmed) {
-        missing.push(trimmed.to_string());
-    }
-}
-
 fn collect_missing_runtime_assets(models_dir: &Path, model_id: &str, model_obj: &Value) -> Vec<String> {
-    let mut missing: Vec<String> = Vec::new();
-
-    if let Some(filename) = model_obj
-        .get("runtime")
-        .and_then(|v| v.get("config_ref"))
-        .and_then(|v| v.as_str())
-    {
-        push_missing_runtime_asset(models_dir, &mut missing, filename);
-    }
-    if let Some(filename) = model_obj
-        .get("runtime")
-        .and_then(|v| v.get("checkpoint_ref"))
-        .and_then(|v| v.as_str())
-    {
-        push_missing_runtime_asset(models_dir, &mut missing, filename);
-    }
-    if let Some(files) = model_obj
-        .get("runtime")
-        .and_then(|v| v.get("required_files"))
-        .and_then(|v| v.as_array())
-    {
-        for file in files.iter().filter_map(|v| v.as_str()) {
-            push_missing_runtime_asset(models_dir, &mut missing, file);
-        }
-    }
-
-    if missing.is_empty() {
-        let _ = model_id;
-        if let Some(artifacts) = model_obj.get("artifacts").and_then(|v| v.as_object()) {
-            if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
-                if let Some(filename) = primary.get("filename").and_then(|v| v.as_str()) {
-                    push_missing_runtime_asset(models_dir, &mut missing, filename);
-                }
-            }
-            if let Some(config) = artifacts.get("config").and_then(|v| v.as_object()) {
-                if let Some(filename) = config.get("filename").and_then(|v| v.as_str()) {
-                    push_missing_runtime_asset(models_dir, &mut missing, filename);
-                }
-            }
-        }
-    }
-
-    missing
+    let cfg = BackendConfig {
+        assets_dir: PathBuf::new(),
+        models_dir: models_dir.to_path_buf(),
+    };
+    let manifest = resolve_model_download_manifest(&cfg, model_id, model_obj);
+    resolve_installation_status(&cfg, &manifest).missing_artifacts
 }
 
 fn collect_workflow_model_ids(workflow: &Value) -> Vec<String> {
@@ -364,30 +359,6 @@ fn collect_workflow_model_ids(workflow: &Value) -> Vec<String> {
     ids
 }
 
-fn load_model_id_aliases(cfg: &BackendConfig) -> Value {
-    // Best-effort: aliases are optional and should never crash backend if missing/malformed
-    let p = cfg
-        .assets_dir
-        .join("registry")
-        .join("model_id_aliases.json");
-    read_json_file(&p).unwrap_or(Value::Null)
-}
-
-fn resolve_model_id_alias(cfg: &BackendConfig, model_id: &str) -> String {
-    let aliases_json = load_model_id_aliases(cfg);
-    let Some(map) = aliases_json.get("aliases").and_then(|v| v.as_object()) else {
-        return model_id.to_string();
-    };
-
-    if let Some(v) = map.get(model_id).and_then(|v| v.as_str()) {
-        if !v.trim().is_empty() {
-            return v.to_string();
-        }
-    }
-
-    model_id.to_string()
-}
-
 fn url_basename(url: &str) -> Option<String> {
     let trimmed = url.split('?').next().unwrap_or(url);
     trimmed.split('/').last().and_then(|s| {
@@ -399,89 +370,616 @@ fn url_basename(url: &str) -> Option<String> {
     })
 }
 
-fn lookup_model_artifact_filenames(
-    cfg: &BackendConfig,
-    model_id: &str,
-) -> Result<(Option<String>, Option<String>)> {
-    let model_id = resolve_model_id_alias(cfg, model_id);
-    let models_json = load_models_with_guide_overrides(cfg)?;
-    let models = models_json
-        .get("models")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-
-    for m in models {
-        let id = m.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        if id != model_id {
-            continue;
-        }
-
-        let artifacts = m.get("artifacts").and_then(|v| v.as_object());
-        if artifacts.is_none() {
-            return Ok((None, None));
-        }
-        let artifacts = artifacts.unwrap();
-
-        let mut ckpt: Option<String> = None;
-        let mut cfg_name: Option<String> = None;
-
-        if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
-            if let Some(fname) = primary.get("filename").and_then(|v| v.as_str()) {
-                let f = fname.trim();
-                if !f.is_empty() && !f.contains(".MISSING") {
-                    ckpt = Some(f.to_string());
-                }
-            }
-        }
-
-        if let Some(c) = artifacts.get("config").and_then(|v| v.as_object()) {
-            if let Some(fname) = c.get("filename").and_then(|v| v.as_str()) {
-                let f = fname.trim();
-                if !f.is_empty() && !f.contains(".MISSING") {
-                    cfg_name = Some(f.to_string());
-                }
-            }
-        }
-
-        return Ok((ckpt, cfg_name));
+fn url_host(url: &str) -> Option<String> {
+    let trimmed = url.trim();
+    if trimmed.is_empty() {
+        return None;
     }
-
-    Ok((None, None))
+    let after_scheme = trimmed
+        .split("://")
+        .nth(1)
+        .unwrap_or(trimmed);
+    let host = after_scheme
+        .split('/')
+        .next()
+        .unwrap_or("")
+        .trim()
+        .trim_end_matches(':');
+    if host.is_empty() {
+        None
+    } else {
+        Some(host.to_string())
+    }
 }
 
-fn lookup_model_links(
-    cfg: &BackendConfig,
-    model_id: &str,
-) -> Result<(Option<String>, Option<String>)> {
-    let model_id = resolve_model_id_alias(cfg, model_id);
-    let models_json = load_models_with_guide_overrides(cfg)?;
-    let models = models_json
+fn find_model_object(models_json: &Value, model_id: &str) -> Option<Value> {
+    models_json
         .get("models")
         .and_then(|v| v.as_array())
+        .and_then(|arr| {
+            arr.iter()
+                .find(|m| m.get("id").and_then(|v| v.as_str()) == Some(model_id))
+        })
         .cloned()
-        .unwrap_or_default();
-    for m in models {
-        let id = m.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        if id == model_id {
-            let mut ckpt: Option<String> = None;
-            let mut cfg_url: Option<String> = None;
-            if let Some(links) = m.get("links") {
-                if let Some(u) = links.get("checkpoint").and_then(|v| v.as_str()) {
-                    if !u.trim().is_empty() {
-                        ckpt = Some(u.to_string());
-                    }
-                }
-                if let Some(u) = links.get("config").and_then(|v| v.as_str()) {
-                    if !u.trim().is_empty() {
-                        cfg_url = Some(u.to_string());
-                    }
+}
+
+fn model_family(model_obj: &Value) -> String {
+    let engine = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("engine"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let model_type = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("model_type"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let architecture = model_obj
+        .get("architecture")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_lowercase();
+
+    if engine == "demucs_native" || architecture.contains("demucs") || model_type.contains("demucs") {
+        return "demucs".to_string();
+    }
+    if architecture == "vr" || model_type == "vr" {
+        return "vr".to_string();
+    }
+    if architecture.contains("mdx") || model_type.contains("mdx") {
+        return "mdx".to_string();
+    }
+    if engine == "msst_builtin"
+        || engine == "custom_builtin_variant"
+        || architecture.contains("roformer")
+        || architecture.contains("scnet")
+        || architecture.contains("apollo")
+        || architecture.contains("bandit")
+        || model_type.contains("roformer")
+        || model_type.contains("scnet")
+        || model_type.contains("apollo")
+        || model_type.contains("bandit")
+    {
+        return "msst".to_string();
+    }
+    "other".to_string()
+}
+
+fn artifact_relative_path(model_obj: &Value, model_id: &str, filename: &str) -> String {
+    if let Some(download_artifacts) = model_obj
+        .get("download")
+        .and_then(|v| v.get("artifacts"))
+        .and_then(|v| v.as_array())
+    {
+        for item in download_artifacts {
+            let Some(item_filename) = item.get("filename").and_then(|v| v.as_str()) else {
+                continue;
+            };
+            if item_filename != filename {
+                continue;
+            }
+            if let Some(relative) = item.get("relative_path").and_then(|v| v.as_str()) {
+                let trimmed = relative.trim();
+                if !trimmed.is_empty() {
+                    return trimmed.replace('\\', "/");
                 }
             }
-            return Ok((ckpt, cfg_url));
         }
     }
-    Ok((None, None))
+
+    format!("{}/{}/{}", model_family(model_obj), model_id, filename).replace('\\', "/")
+}
+
+fn is_stale_legacy_mirror_url(url: &str) -> bool {
+    url.to_ascii_lowercase()
+        .contains("github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/")
+}
+
+fn legacy_artifact_paths(
+    models_dir: &Path,
+    model_id: &str,
+    kind: &str,
+    filename: &str,
+) -> Vec<PathBuf> {
+    let mut candidates = vec![models_dir.join(filename)];
+    let ext = Path::new(filename)
+        .extension()
+        .and_then(|v| v.to_str())
+        .map(|value| format!(".{value}"));
+    if let Some(ext) = ext {
+        candidates.push(models_dir.join(format!("{model_id}{ext}")));
+    }
+    if kind == "config" {
+        candidates.push(models_dir.join(format!("{model_id}.yaml")));
+        candidates.push(models_dir.join(format!("{model_id}.yml")));
+    }
+    candidates.sort();
+    candidates.dedup();
+    candidates
+}
+
+fn artifact_exists_anywhere(
+    models_dir: &Path,
+    model_id: &str,
+    artifact: &ResolvedArtifact,
+) -> bool {
+    let canonical = models_dir.join(artifact.relative_path.replace('/', "\\"));
+    if canonical.exists() {
+        return true;
+    }
+    legacy_artifact_paths(models_dir, model_id, &artifact.kind, &artifact.filename)
+        .iter()
+        .any(|path| path.exists())
+}
+
+fn resolve_model_download_manifest(
+    cfg: &BackendConfig,
+    model_id: &str,
+    model_obj: &Value,
+) -> ResolvedDownloadManifest {
+    let links = model_obj.get("links").and_then(|v| v.as_object());
+    let runtime = model_obj.get("runtime").and_then(|v| v.as_object());
+    let install = model_obj.get("install").and_then(|v| v.as_object());
+    let install_mode = install
+        .and_then(|v| v.get("mode"))
+        .and_then(|v| v.as_str())
+        .or_else(|| runtime.and_then(|v| v.get("install_mode")).and_then(|v| v.as_str()))
+        .unwrap_or("direct")
+        .to_string();
+    let manual_registry = install_mode == "manual"
+        || runtime
+            .and_then(|v| v.get("requires_manual_assets"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
+    let mut sources: Vec<ResolvedSourceLink> = Vec::new();
+    let mut seen_source_urls: Vec<String> = Vec::new();
+    let mut push_source = |role: &str, url: &str, manual: bool| {
+        let trimmed = url.trim();
+        if trimmed.is_empty() || seen_source_urls.iter().any(|existing| existing == trimmed) {
+            return;
+        }
+        seen_source_urls.push(trimmed.to_string());
+        sources.push(ResolvedSourceLink {
+            role: role.to_string(),
+            url: trimmed.to_string(),
+            host: url_host(trimmed).unwrap_or_else(|| "unknown".to_string()),
+            manual,
+        });
+    };
+
+    if let Some(links_obj) = links {
+        if let Some(url) = links_obj.get("checkpoint").and_then(|v| v.as_str()) {
+            push_source("checkpoint", url, manual_registry);
+        }
+        if let Some(url) = links_obj.get("config").and_then(|v| v.as_str()) {
+            push_source("config", url, manual_registry);
+        }
+        if let Some(url) = links_obj.get("homepage").and_then(|v| v.as_str()) {
+            push_source("homepage", url, true);
+        }
+    }
+    if let Some(download_sources) = model_obj
+        .get("download")
+        .and_then(|v| v.get("sources"))
+        .and_then(|v| v.as_array())
+    {
+        for source in download_sources {
+            let Some(url) = source.get("url").and_then(|v| v.as_str()) else {
+                continue;
+            };
+            let role = source
+                .get("role")
+                .and_then(|v| v.as_str())
+                .unwrap_or("source");
+            let manual = source
+                .get("manual")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true);
+            push_source(role, url, manual);
+        }
+    }
+
+    fn push_artifact_entry(
+        models_dir: &Path,
+        model_obj: &Value,
+        model_id: &str,
+        artifacts: &mut Vec<ResolvedArtifact>,
+        seen_paths: &mut Vec<String>,
+        kind: &str,
+        filename: &str,
+        source: Option<String>,
+        required: bool,
+        manual: bool,
+        sha256: Option<String>,
+        explicit_relative_path: Option<String>,
+    ) {
+        let trimmed = filename.trim();
+        if trimmed.is_empty() || trimmed.contains(".MISSING") {
+            return;
+        }
+        let relative_path = explicit_relative_path
+            .filter(|value| !value.trim().is_empty())
+            .unwrap_or_else(|| artifact_relative_path(model_obj, model_id, trimmed));
+        if seen_paths.iter().any(|existing| existing == &relative_path) {
+            return;
+        }
+        seen_paths.push(relative_path.clone());
+        let source_host = source.as_deref().and_then(url_host);
+        let stale_legacy_mirror = source
+            .as_deref()
+            .map(is_stale_legacy_mirror_url)
+            .unwrap_or(false);
+        let probe = ResolvedArtifact {
+            kind: kind.to_string(),
+            filename: trimmed.to_string(),
+            relative_path: relative_path.clone(),
+            required,
+            manual: manual || stale_legacy_mirror,
+            exists: false,
+            source: source.clone(),
+            source_host: source_host.clone(),
+            sha256: sha256.clone(),
+        };
+        let exists = artifact_exists_anywhere(models_dir, model_id, &probe);
+        artifacts.push(ResolvedArtifact {
+            kind: kind.to_string(),
+            filename: trimmed.to_string(),
+            relative_path,
+            required,
+            manual: manual || stale_legacy_mirror,
+            exists,
+            source,
+            source_host,
+            sha256,
+        });
+    }
+
+    let mut artifacts: Vec<ResolvedArtifact> = Vec::new();
+    let mut seen_paths: Vec<String> = Vec::new();
+
+    if let Some(download_artifacts) = model_obj
+        .get("download")
+        .and_then(|v| v.get("artifacts"))
+        .and_then(|v| v.as_array())
+    {
+        for item in download_artifacts {
+            let Some(filename) = item.get("filename").and_then(|v| v.as_str()) else {
+                continue;
+            };
+            let kind = item.get("kind").and_then(|v| v.as_str()).unwrap_or("aux");
+            let source = item
+                .get("source")
+                .and_then(|v| v.as_str())
+                .map(|v| v.to_string());
+            let required = item
+                .get("required")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true);
+            let manual = item
+                .get("manual")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(manual_registry || source.is_none());
+            let relative_path = item
+                .get("relative_path")
+                .and_then(|v| v.as_str())
+                .map(|v| v.replace('\\', "/"));
+            let sha256 = item
+                .get("sha256")
+                .and_then(|v| v.as_str())
+                .map(|v| v.to_string());
+            push_artifact_entry(
+                &cfg.models_dir,
+                model_obj,
+                model_id,
+                &mut artifacts,
+                &mut seen_paths,
+                kind,
+                filename,
+                source,
+                required,
+                manual,
+                sha256,
+                relative_path,
+            );
+        }
+    } else {
+        if let Some(artifacts_obj) = model_obj.get("artifacts").and_then(|v| v.as_object()) {
+            if let Some(primary) = artifacts_obj.get("primary").and_then(|v| v.as_object()) {
+                if let Some(filename) = primary.get("filename").and_then(|v| v.as_str()) {
+                    let source = links
+                        .and_then(|v| v.get("checkpoint"))
+                        .and_then(|v| v.as_str())
+                        .map(|v| v.to_string());
+                    let kind = primary.get("kind").and_then(|v| v.as_str()).unwrap_or("checkpoint");
+                    let sha256 = primary.get("sha256").and_then(|v| v.as_str()).map(|v| v.to_string());
+                    let manual = manual_registry && source.is_none();
+                    push_artifact_entry(
+                        &cfg.models_dir,
+                        model_obj,
+                        model_id,
+                        &mut artifacts,
+                        &mut seen_paths,
+                        kind,
+                        filename,
+                        source,
+                        true,
+                        manual,
+                        sha256,
+                        None,
+                    );
+                }
+            }
+            if let Some(config_obj) = artifacts_obj.get("config").and_then(|v| v.as_object()) {
+                if let Some(filename) = config_obj.get("filename").and_then(|v| v.as_str()) {
+                    let source = links
+                        .and_then(|v| v.get("config"))
+                        .and_then(|v| v.as_str())
+                        .map(|v| v.to_string());
+                    let kind = config_obj.get("kind").and_then(|v| v.as_str()).unwrap_or("config");
+                    let sha256 = config_obj.get("sha256").and_then(|v| v.as_str()).map(|v| v.to_string());
+                    let manual = manual_registry && source.is_none();
+                    push_artifact_entry(
+                        &cfg.models_dir,
+                        model_obj,
+                        model_id,
+                        &mut artifacts,
+                        &mut seen_paths,
+                        kind,
+                        filename,
+                        source,
+                        true,
+                        manual,
+                        sha256,
+                        None,
+                    );
+                }
+            }
+            if let Some(additional) = artifacts_obj.get("additional").and_then(|v| v.as_array()) {
+                for entry in additional {
+                    let Some(filename) = entry.get("filename").and_then(|v| v.as_str()) else {
+                        continue;
+                    };
+                    let source = entry.get("url").and_then(|v| v.as_str()).map(|v| v.to_string());
+                    let kind = entry.get("kind").and_then(|v| v.as_str()).unwrap_or("aux");
+                    let sha256 = entry.get("sha256").and_then(|v| v.as_str()).map(|v| v.to_string());
+                    let manual = manual_registry && source.is_none();
+                    push_artifact_entry(
+                        &cfg.models_dir,
+                        model_obj,
+                        model_id,
+                        &mut artifacts,
+                        &mut seen_paths,
+                        kind,
+                        filename,
+                        source,
+                        true,
+                        manual,
+                        sha256,
+                        None,
+                    );
+                }
+            }
+        }
+
+        if artifacts.is_empty() {
+            if let Some(filename) = runtime
+                .and_then(|v| v.get("checkpoint_ref"))
+                .and_then(|v| v.as_str())
+            {
+                let source = links
+                    .and_then(|v| v.get("checkpoint"))
+                    .and_then(|v| v.as_str())
+                    .map(|v| v.to_string());
+                let manual = manual_registry || source.is_none();
+                push_artifact_entry(
+                    &cfg.models_dir,
+                    model_obj,
+                    model_id,
+                    &mut artifacts,
+                    &mut seen_paths,
+                    "checkpoint",
+                    filename,
+                    source,
+                    true,
+                    manual,
+                    None,
+                    None,
+                );
+            } else if let Some(url) = links
+                .and_then(|v| v.get("checkpoint"))
+                .and_then(|v| v.as_str())
+            {
+                let filename = url_basename(url).unwrap_or_else(|| format!("{model_id}.bin"));
+                push_artifact_entry(
+                    &cfg.models_dir,
+                    model_obj,
+                    model_id,
+                    &mut artifacts,
+                    &mut seen_paths,
+                    "checkpoint",
+                    &filename,
+                    Some(url.to_string()),
+                    true,
+                    false,
+                    None,
+                    None,
+                );
+            }
+        }
+
+        if let Some(filename) = runtime
+            .and_then(|v| v.get("config_ref"))
+            .and_then(|v| v.as_str())
+        {
+            let source = links
+                .and_then(|v| v.get("config"))
+                .and_then(|v| v.as_str())
+                .map(|v| v.to_string());
+            let manual = manual_registry || source.is_none();
+            push_artifact_entry(
+                &cfg.models_dir,
+                model_obj,
+                model_id,
+                &mut artifacts,
+                &mut seen_paths,
+                "config",
+                filename,
+                source,
+                true,
+                manual,
+                None,
+                None,
+            );
+        } else if let Some(url) = links
+            .and_then(|v| v.get("config"))
+            .and_then(|v| v.as_str())
+        {
+            if let Some(filename) = url_basename(url) {
+                push_artifact_entry(
+                    &cfg.models_dir,
+                    model_obj,
+                    model_id,
+                    &mut artifacts,
+                    &mut seen_paths,
+                    "config",
+                    &filename,
+                    Some(url.to_string()),
+                    true,
+                    false,
+                    None,
+                    None,
+                );
+            }
+        }
+    }
+
+    if let Some(required_files) = runtime
+        .and_then(|v| v.get("required_files"))
+        .and_then(|v| v.as_array())
+    {
+        for filename in required_files.iter().filter_map(|v| v.as_str()) {
+            let already_known = artifacts.iter().any(|artifact| artifact.filename == filename);
+            if already_known {
+                continue;
+            }
+            push_artifact_entry(
+                &cfg.models_dir,
+                model_obj,
+                model_id,
+                &mut artifacts,
+                &mut seen_paths,
+                "aux",
+                filename,
+                None,
+                true,
+                true,
+                None,
+                None,
+            );
+        }
+    }
+
+    let manual_instructions = if let Some(notes) = install.and_then(|v| v.get("notes")).and_then(|v| v.as_array()) {
+        notes
+            .iter()
+            .filter_map(|value| value.as_str())
+            .map(|value| value.to_string())
+            .collect::<Vec<_>>()
+    } else {
+        Vec::new()
+    };
+    let mut manual_instructions = manual_instructions;
+    let needs_manual_guidance = manual_registry
+        || sources
+            .iter()
+            .any(|source| is_stale_legacy_mirror_url(&source.url));
+    if needs_manual_guidance {
+        if !manual_instructions.iter().any(|entry| entry.contains("Place")) {
+            let folder = format!("{}/{}/", model_family(model_obj), model_id);
+            manual_instructions.push(format!(
+                "Place the required files under {folder} inside the configured models directory."
+            ));
+        }
+        if sources.iter().any(|source| is_stale_legacy_mirror_url(&source.url)) {
+            manual_instructions.push(
+                "Legacy StemSep mirror links for this model are stale. Use the listed source references or install the files manually until a verified direct upstream is curated."
+                    .to_string(),
+            );
+        }
+        if sources.is_empty() {
+            manual_instructions.push(
+                "This model does not expose verified direct-download URLs yet. Use the listed required filenames and install notes for manual setup."
+                    .to_string(),
+            );
+        }
+    }
+
+    let downloadable_artifact_count = artifacts
+        .iter()
+        .filter(|artifact| !artifact.manual && artifact.source.is_some())
+        .count();
+    let mode = if artifacts.is_empty() {
+        "unavailable".to_string()
+    } else if downloadable_artifact_count == 0 {
+        "manual".to_string()
+    } else if artifacts.len() > 1 {
+        "multi_artifact_direct".to_string()
+    } else {
+        "direct".to_string()
+    };
+    let source_policy = if sources
+        .iter()
+        .any(|source| is_stale_legacy_mirror_url(&source.url))
+    {
+        "legacy_mirror_manual".to_string()
+    } else if sources
+        .iter()
+        .any(|source| source.host.contains("github.com/engdahlz/stemsep-models"))
+    {
+        "mirror_fallback".to_string()
+    } else if manual_registry {
+        "manual_verified".to_string()
+    } else {
+        "upstream_direct".to_string()
+    };
+
+    ResolvedDownloadManifest {
+        model_id: model_id.to_string(),
+        family: model_family(model_obj),
+        mode,
+        install_mode,
+        artifact_count: artifacts.len(),
+        downloadable_artifact_count,
+        source_policy,
+        sources,
+        artifacts,
+        manual_instructions,
+    }
+}
+
+fn resolve_installation_status(
+    _cfg: &BackendConfig,
+    manifest: &ResolvedDownloadManifest,
+) -> ResolvedInstallationStatus {
+    let relative_paths = manifest
+        .artifacts
+        .iter()
+        .map(|artifact| artifact.relative_path.clone())
+        .collect::<Vec<_>>();
+    let missing_artifacts = manifest
+        .artifacts
+        .iter()
+        .filter(|artifact| artifact.required && !artifact.exists)
+        .map(|artifact| artifact.relative_path.clone())
+        .collect::<Vec<_>>();
+    ResolvedInstallationStatus {
+        installed: missing_artifacts.is_empty() && !manifest.artifacts.is_empty(),
+        missing_artifacts,
+        relative_paths,
+    }
 }
 
 fn download_with_progress_cancellable(
@@ -489,6 +987,10 @@ fn download_with_progress_cancellable(
     dest_path: &Path,
     stdout: Arc<Mutex<io::Stdout>>,
     model_id: String,
+    artifact_index: usize,
+    artifact_count: usize,
+    current_file: String,
+    current_relative_path: String,
     cancel: Option<Arc<AtomicBool>>,
 ) -> Result<()> {
     std::fs::create_dir_all(
@@ -535,6 +1037,10 @@ fn download_with_progress_cancellable(
             "type": "progress",
             "model_id": model_id,
             "progress": 0,
+            "artifactIndex": artifact_index,
+            "artifactCount": artifact_count,
+            "currentFile": current_file,
+            "currentRelativePath": current_relative_path,
             "message": if existing_len > 0 { "Resuming download" } else { "Starting download" }
         }),
     );
@@ -649,6 +1155,10 @@ fn download_with_progress_cancellable(
                     "type": "progress",
                     "model_id": model_id,
                     "progress": pct,
+                    "artifactIndex": artifact_index,
+                    "artifactCount": artifact_count,
+                    "currentFile": current_file,
+                    "currentRelativePath": current_relative_path,
                     "message": "Resumed"
                 }),
             );
@@ -666,6 +1176,10 @@ fn download_with_progress_cancellable(
                 serde_json::json!({
                     "type": "paused",
                     "model_id": model_id,
+                    "artifactIndex": artifact_index,
+                    "artifactCount": artifact_count,
+                    "currentFile": current_file,
+                    "currentRelativePath": current_relative_path,
                     "progress": total.map(|t| ((downloaded as f64 / t as f64) * 100.0).floor() as i64)
                 }),
             );
@@ -689,6 +1203,10 @@ fn download_with_progress_cancellable(
                         "type": "progress",
                         "model_id": model_id,
                         "progress": pct,
+                        "artifactIndex": artifact_index,
+                        "artifactCount": artifact_count,
+                        "currentFile": current_file,
+                        "currentRelativePath": current_relative_path,
                     }),
                 );
             }
@@ -712,6 +1230,8 @@ fn download_with_progress_cancellable(
 struct DownloadFile {
     url: String,
     dest_path: PathBuf,
+    relative_path: String,
+    filename: String,
 }
 
 #[derive(Clone)]
@@ -764,6 +1284,10 @@ impl DownloadManager {
                     &f.dest_path,
                     stdout.clone(),
                     model_id_clone.clone(),
+                    idx + 1,
+                    files.len(),
+                    f.filename.clone(),
+                    f.relative_path.clone(),
                     Some(cancel.clone()),
                 );
 
@@ -808,6 +1332,7 @@ impl DownloadManager {
                     "model_id": model_id_clone,
                     "path": primary_path,
                     "paths": completed_paths,
+                    "artifactCount": files.len(),
                 }),
             );
             mgr.clear_task(&model_id_clone);
@@ -859,65 +1384,20 @@ impl DownloadManager {
 
 fn remove_model_files(cfg: &BackendConfig, model_id: &str) -> Result<usize> {
     let models_json = load_models_with_guide_overrides(cfg)?;
-    let models = models_json
-        .get("models")
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-
     let mut candidates: Vec<PathBuf> = Vec::new();
-
-    // Basenames from registry links
-    if let Some(m) = models
-        .iter()
-        .find(|m| m.get("id").and_then(|v| v.as_str()) == Some(model_id))
-    {
-        // Prefer explicit artifact filenames when present.
-        if let Some(artifacts) = m.get("artifacts").and_then(|v| v.as_object()) {
-            if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
-                if let Some(fname) = primary.get("filename").and_then(|v| v.as_str()) {
-                    let f = fname.trim();
-                    if !f.is_empty() && !f.contains(".MISSING") {
-                        candidates.push(cfg.models_dir.join(f));
-                        candidates.push(cfg.models_dir.join(format!("{f}.part")));
-                    }
-                }
-            }
-            if let Some(c) = artifacts.get("config").and_then(|v| v.as_object()) {
-                if let Some(fname) = c.get("filename").and_then(|v| v.as_str()) {
-                    let f = fname.trim();
-                    if !f.is_empty() && !f.contains(".MISSING") {
-                        candidates.push(cfg.models_dir.join(f));
-                        candidates.push(cfg.models_dir.join(format!("{f}.part")));
-                    }
+    if let Some(model_obj) = find_model_object(&models_json, model_id) {
+        let manifest = resolve_model_download_manifest(cfg, model_id, &model_obj);
+        for artifact in &manifest.artifacts {
+            let target = cfg.models_dir.join(artifact.relative_path.replace('/', "\\"));
+            candidates.push(target.clone());
+            candidates.push(target.with_file_name(format!("{}.part", artifact.filename)));
+            for legacy in legacy_artifact_paths(&cfg.models_dir, model_id, &artifact.kind, &artifact.filename) {
+                candidates.push(legacy.clone());
+                if let Some(name) = legacy.file_name().and_then(|value| value.to_str()) {
+                    candidates.push(legacy.with_file_name(format!("{name}.part")));
                 }
             }
         }
-
-        if let Some(links) = m.get("links") {
-            for key in ["checkpoint", "config"] {
-                if let Some(u) = links.get(key).and_then(|v| v.as_str()) {
-                    if let Some(base) = url_basename(u) {
-                        candidates.push(cfg.models_dir.join(&base));
-                        candidates.push(cfg.models_dir.join(format!("{base}.part")));
-                    }
-                }
-            }
-        }
-    }
-
-    // Common id-based filenames
-    for ext in [
-        ".ckpt",
-        ".pth",
-        ".pt",
-        ".onnx",
-        ".safetensors",
-        ".yaml",
-        ".yml",
-    ] {
-        candidates.push(cfg.models_dir.join(format!("{model_id}{ext}")));
-        candidates.push(cfg.models_dir.join(format!("{model_id}{ext}.part")));
     }
 
     candidates.sort();
@@ -948,123 +1428,15 @@ fn remove_model_files(cfg: &BackendConfig, model_id: &str) -> Result<usize> {
 }
 
 fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -> bool {
-    // If registry declares explicit files, require checkpoint.
-    // Config is optional for some models (e.g. standard ones), but checkpoint is mandatory.
-    let mut artifact_ckpt_ok = false;
-    let mut artifact_cfg_ok = false;
-    let runtime_ckpt = model_obj
-        .get("runtime")
-        .and_then(|v| v.get("checkpoint_ref"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
-    let runtime_cfg = model_obj
-        .get("runtime")
-        .and_then(|v| v.get("config_ref"))
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
-    let runtime_required_files = model_obj
-        .get("runtime")
-        .and_then(|v| v.get("required_files"))
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default();
-    if let Some(artifacts) = model_obj.get("artifacts").and_then(|v| v.as_object()) {
-        if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
-            if let Some(fname) = primary.get("filename").and_then(|v| v.as_str()) {
-                let f = fname.trim();
-                if !f.is_empty() && !f.contains(".MISSING") {
-                    artifact_ckpt_ok = models_dir.join(f).exists();
-                }
-            }
-        }
-        if let Some(cfg_obj) = artifacts.get("config").and_then(|v| v.as_object()) {
-            if let Some(fname) = cfg_obj.get("filename").and_then(|v| v.as_str()) {
-                let f = fname.trim();
-                if !f.is_empty() && !f.contains(".MISSING") {
-                    artifact_cfg_ok = models_dir.join(f).exists();
-                }
-            }
-        }
+    let cfg = BackendConfig {
+        assets_dir: PathBuf::new(),
+        models_dir: models_dir.to_path_buf(),
+    };
+    let manifest = resolve_model_download_manifest(&cfg, model_id, model_obj);
+    if !manifest.artifacts.is_empty() {
+        return resolve_installation_status(&cfg, &manifest).installed;
     }
 
-    if let Some(links) = model_obj.get("links") {
-        let ok_ckpt;
-        let mut ok_cfg = true;
-
-        let ckpt_link = links
-            .get("checkpoint")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        if let Some(runtime_ckpt) = runtime_ckpt.as_deref() {
-            ok_ckpt = models_dir.join(runtime_ckpt).exists();
-        } else if artifact_ckpt_ok {
-            ok_ckpt = true;
-        } else if !ckpt_link.trim().is_empty() {
-            ok_ckpt = if ckpt_link.to_lowercase().contains(".onnx") {
-                models_dir.join(format!("{model_id}.onnx")).exists()
-            } else if let Some(base) = url_basename(ckpt_link) {
-                models_dir.join(base).exists()
-            } else {
-                false
-            };
-        } else {
-            // If checkpoint link is empty in registry, it can't be "installed" via registry path.
-            ok_ckpt = false;
-        }
-
-        let cfg_link = links.get("config").and_then(|v| v.as_str()).unwrap_or("");
-        if runtime_cfg.is_some() || !cfg_link.trim().is_empty() {
-            // Prefer stable per-model config filenames to avoid collisions like "config.yaml".
-            // Still accept historical basename installs.
-            let alias_yaml = models_dir.join(format!("{model_id}.yaml"));
-            let alias_yml = models_dir.join(format!("{model_id}.yml"));
-            let base_ok = url_basename(cfg_link)
-                .map(|base| models_dir.join(base).exists())
-                .unwrap_or(false);
-            ok_cfg = artifact_cfg_ok
-                || runtime_cfg
-                    .as_deref()
-                    .map(|cfg| models_dir.join(cfg).exists())
-                    .unwrap_or(false)
-                || alias_yaml.exists()
-                || alias_yml.exists()
-                || base_ok;
-        }
-
-        if !runtime_required_files.is_empty()
-            && !runtime_required_files
-                .iter()
-                .filter_map(|v| v.as_str())
-                .all(|file| models_dir.join(file).exists())
-        {
-            return false;
-        }
-
-        if ok_ckpt && ok_cfg {
-            return true;
-        }
-        // If we had links and failed, don't fall back to heuristic (to avoid false positives)
-        if !ckpt_link.trim().is_empty() || !cfg_link.trim().is_empty() {
-            return false;
-        }
-    }
-
-    // If model has no declared links but has explicit artifact naming, accept that as installed.
-    if runtime_required_files
-        .iter()
-        .filter_map(|v| v.as_str())
-        .all(|file| models_dir.join(file).exists())
-        && !runtime_required_files.is_empty()
-    {
-        return true;
-    }
-
-    if artifact_ckpt_ok {
-        return true;
-    }
-
-    // Fallback heuristic for models without explicit links or custom models.
-    // MUST find at least one checkpoint-like file.
     for ext in [".ckpt", ".pth", ".pt", ".onnx", ".safetensors"] {
         if models_dir.join(format!("{model_id}{ext}")).exists() {
             return true;
@@ -3105,13 +3477,21 @@ fn main() -> Result<()> {
                 let mut out: Vec<Value> = Vec::with_capacity(models.len());
                 for m in models {
                     let id = m.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                    let installed = if !id.is_empty() {
-                        any_model_file_exists(&cfg.models_dir, id, &m)
+                    let (installed, download_value, installation_value) = if !id.is_empty() {
+                        let manifest = resolve_model_download_manifest(&cfg, id, &m);
+                        let installation = resolve_installation_status(&cfg, &manifest);
+                        (
+                            installation.installed,
+                            serde_json::to_value(&manifest).unwrap_or(Value::Null),
+                            serde_json::to_value(&installation).unwrap_or(Value::Null),
+                        )
                     } else {
-                        false
+                        (false, Value::Null, Value::Null)
                     };
                     let mut obj = m.as_object().cloned().unwrap_or_default();
                     obj.insert("installed".to_string(), Value::from(installed));
+                    obj.insert("download".to_string(), download_value);
+                    obj.insert("installation".to_string(), installation_value);
                     out.push(Value::Object(obj));
                 }
 
@@ -3222,40 +3602,54 @@ fn main() -> Result<()> {
                         .ok_or_else(|| anyhow!("model_id is required"))?
                         .to_string();
 
-                    let (ckpt_url, cfg_url) = lookup_model_links(&cfg, &model_id)?;
-                    let ckpt_url = ckpt_url.ok_or_else(|| {
-                        anyhow!("No checkpoint URL found for model_id: {model_id}")
-                    })?;
+                    let models_json = load_models_with_guide_overrides(&cfg)?;
+                    let model_obj = find_model_object(&models_json, &model_id)
+                        .ok_or_else(|| anyhow!("Unknown model_id: {model_id}"))?;
+                    let manifest = resolve_model_download_manifest(&cfg, &model_id, &model_obj);
+                    let installation = resolve_installation_status(&cfg, &manifest);
+                    let files: Vec<DownloadFile> = manifest
+                        .artifacts
+                        .iter()
+                        .filter(|artifact| {
+                            artifact.required
+                                && !artifact.manual
+                                && artifact.source.is_some()
+                                && !artifact.exists
+                        })
+                        .map(|artifact| DownloadFile {
+                            url: artifact.source.clone().unwrap_or_default(),
+                            dest_path: cfg.models_dir.join(artifact.relative_path.replace('/', "\\")),
+                            relative_path: artifact.relative_path.clone(),
+                            filename: artifact.filename.clone(),
+                        })
+                        .collect();
 
-                    let (artifact_ckpt, _artifact_cfg) =
-                        lookup_model_artifact_filenames(&cfg, &model_id).unwrap_or((None, None));
-
-                    let ckpt_dest = if ckpt_url.to_lowercase().contains(".onnx") {
-                        cfg.models_dir.join(format!("{model_id}.onnx"))
-                    } else if let Some(fname) = &artifact_ckpt {
-                        cfg.models_dir.join(fname)
-                    } else if let Some(base) = url_basename(&ckpt_url) {
-                        cfg.models_dir.join(base)
-                    } else {
-                        cfg.models_dir.join(format!("{model_id}.bin"))
-                    };
-
-                    let mut files: Vec<DownloadFile> = vec![DownloadFile {
-                        url: ckpt_url.clone(),
-                        dest_path: ckpt_dest.clone(),
-                    }];
-                    if let Some(u) = cfg_url {
-                        let cfg_dest = match url_basename(&u) {
-                            Some(base) if base.to_lowercase().ends_with(".yml") => {
-                                cfg.models_dir.join(format!("{model_id}.yml"))
-                            }
-                            _ => cfg.models_dir.join(format!("{model_id}.yaml")),
-                        };
-                        files.push(DownloadFile {
-                            url: u,
-                            dest_path: cfg_dest,
-                        });
+                    if files.is_empty() {
+                        if installation.installed {
+                            send_ok(
+                                &stdout,
+                                req_id,
+                                serde_json::json!({
+                                    "scheduled": false,
+                                    "model_id": model_id,
+                                    "already_installed": true,
+                                    "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
+                                    "installation": serde_json::to_value(&installation).unwrap_or(Value::Null)
+                                }),
+                            )?;
+                            return Ok(());
+                        }
+                        if manifest.mode == "manual" {
+                            return Err(anyhow!(
+                                "Model {model_id} requires manual setup. Open Model Details for required files and source links."
+                            ));
+                        }
+                        return Err(anyhow!("No downloadable artifacts found for model_id: {model_id}"));
                     }
+
+                    let primary_path = files
+                        .first()
+                        .map(|file| file.dest_path.to_string_lossy().to_string());
 
                     downloads.start(&model_id, files.clone(), stdout.clone());
 
@@ -3266,11 +3660,13 @@ fn main() -> Result<()> {
                         serde_json::json!({
                             "scheduled": true,
                             "model_id": model_id,
-                            "dest": ckpt_dest.to_string_lossy(),
+                            "dest": primary_path,
                             "files": files
                                 .iter()
                                 .map(|f| f.dest_path.to_string_lossy().to_string())
-                                .collect::<Vec<_>>()
+                                .collect::<Vec<_>>(),
+                            "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
+                            "installation": serde_json::to_value(&installation).unwrap_or(Value::Null)
                         }),
                     )?;
                     Ok(())
@@ -3310,38 +3706,25 @@ fn main() -> Result<()> {
                     let resumed = downloads.resume(&model_id, stdout.clone());
                     if !resumed {
                         // Fresh start
-                        let (ckpt_url, cfg_url) = lookup_model_links(&cfg, &model_id)?;
-                        let ckpt_url = ckpt_url.ok_or_else(|| {
-                            anyhow!("No checkpoint URL found for model_id: {model_id}")
-                        })?;
-
-                        let (artifact_ckpt, _artifact_cfg) =
-                            lookup_model_artifact_filenames(&cfg, &model_id)
-                                .unwrap_or((None, None));
-                        let ckpt_dest = if ckpt_url.to_lowercase().contains(".onnx") {
-                            cfg.models_dir.join(format!("{model_id}.onnx"))
-                        } else if let Some(fname) = &artifact_ckpt {
-                            cfg.models_dir.join(fname)
-                        } else if let Some(base) = url_basename(&ckpt_url) {
-                            cfg.models_dir.join(base)
-                        } else {
-                            cfg.models_dir.join(format!("{model_id}.bin"))
-                        };
-                        let mut files: Vec<DownloadFile> = vec![DownloadFile {
-                            url: ckpt_url.clone(),
-                            dest_path: ckpt_dest,
-                        }];
-                        if let Some(u) = cfg_url {
-                            let cfg_dest = match url_basename(&u) {
-                                Some(base) if base.to_lowercase().ends_with(".yml") => {
-                                    cfg.models_dir.join(format!("{model_id}.yml"))
-                                }
-                                _ => cfg.models_dir.join(format!("{model_id}.yaml")),
-                            };
-                            files.push(DownloadFile {
-                                url: u,
-                                dest_path: cfg_dest,
-                            });
+                        let models_json = load_models_with_guide_overrides(&cfg)?;
+                        let model_obj = find_model_object(&models_json, &model_id)
+                            .ok_or_else(|| anyhow!("Unknown model_id: {model_id}"))?;
+                        let manifest = resolve_model_download_manifest(&cfg, &model_id, &model_obj);
+                        let files: Vec<DownloadFile> = manifest
+                            .artifacts
+                            .iter()
+                            .filter(|artifact| artifact.required && !artifact.manual && artifact.source.is_some())
+                            .map(|artifact| DownloadFile {
+                                url: artifact.source.clone().unwrap_or_default(),
+                                dest_path: cfg.models_dir.join(artifact.relative_path.replace('/', "\\")),
+                                relative_path: artifact.relative_path.clone(),
+                                filename: artifact.filename.clone(),
+                            })
+                            .collect();
+                        if files.is_empty() {
+                            return Err(anyhow!(
+                                "Model {model_id} does not expose downloadable artifacts for resume"
+                            ));
                         }
                         downloads.start(&model_id, files, stdout.clone());
                     }
@@ -4584,12 +4967,17 @@ fn main() -> Result<()> {
                     .and_then(|v| v.as_object())
                     .cloned()
                     .unwrap_or_default();
+                let models_json = load_models_with_guide_overrides(&cfg)?;
 
                 let mut availability = Map::new();
                 for (preset_name, model_id_val) in preset_mappings {
                     let installed = model_id_val
                         .as_str()
-                        .map(|id| any_model_file_exists(&cfg.models_dir, id, &Value::Null))
+                        .map(|id| {
+                            find_model_object(&models_json, id)
+                                .map(|model_obj| any_model_file_exists(&cfg.models_dir, id, &model_obj))
+                                .unwrap_or(false)
+                        })
                         .unwrap_or(false);
                     availability.insert(preset_name, Value::from(installed));
                 }
@@ -4612,6 +5000,8 @@ fn main() -> Result<()> {
                     .into_iter()
                     .find(|m| m.get("id").and_then(|v| v.as_str()) == Some(model_id));
                 if let Some(m) = found {
+                    let manifest = resolve_model_download_manifest(&cfg, model_id, &m);
+                    let installation = resolve_installation_status(&cfg, &manifest);
                     send_ok(
                         &stdout,
                         req.id,
@@ -4640,8 +5030,65 @@ fn main() -> Result<()> {
                             "workflow_groups": m.get("workflow_groups").cloned().unwrap_or(Value::Array(vec![])),
                             "quality_axes": m.get("quality_axes").cloned().unwrap_or(Value::Null),
                             "content_fit": m.get("content_fit").cloned().unwrap_or(Value::Array(vec![])),
-                            "operating_profiles": m.get("operating_profiles").cloned().unwrap_or(Value::Null)
+                            "operating_profiles": m.get("operating_profiles").cloned().unwrap_or(Value::Null),
+                            "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
+                            "installation": serde_json::to_value(&installation).unwrap_or(Value::Null),
+                            "installed": installation.installed
                         }),
+                    )?;
+                } else {
+                    send_err(
+                        &stdout,
+                        req.id,
+                        "NOT_FOUND",
+                        &format!("Unknown model_id: {model_id}"),
+                    )?;
+                }
+            }
+            "resolve_model_download" => {
+                let model_id = req.extra.get("model_id").and_then(|v| v.as_str());
+                if model_id.is_none() {
+                    send_err(&stdout, req.id, "INVALID", "model_id is required")?;
+                    continue;
+                }
+                let model_id = model_id.unwrap();
+                let models_json = load_models_with_guide_overrides(&cfg)?;
+                if let Some(model_obj) = find_model_object(&models_json, model_id) {
+                    let manifest = resolve_model_download_manifest(&cfg, model_id, &model_obj);
+                    let installation = resolve_installation_status(&cfg, &manifest);
+                    send_ok(
+                        &stdout,
+                        req.id,
+                        serde_json::json!({
+                            "model_id": model_id,
+                            "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
+                            "installation": serde_json::to_value(&installation).unwrap_or(Value::Null)
+                        }),
+                    )?;
+                } else {
+                    send_err(
+                        &stdout,
+                        req.id,
+                        "NOT_FOUND",
+                        &format!("Unknown model_id: {model_id}"),
+                    )?;
+                }
+            }
+            "get_model_installation" => {
+                let model_id = req.extra.get("model_id").and_then(|v| v.as_str());
+                if model_id.is_none() {
+                    send_err(&stdout, req.id, "INVALID", "model_id is required")?;
+                    continue;
+                }
+                let model_id = model_id.unwrap();
+                let models_json = load_models_with_guide_overrides(&cfg)?;
+                if let Some(model_obj) = find_model_object(&models_json, model_id) {
+                    let manifest = resolve_model_download_manifest(&cfg, model_id, &model_obj);
+                    let installation = resolve_installation_status(&cfg, &manifest);
+                    send_ok(
+                        &stdout,
+                        req.id,
+                        serde_json::to_value(&installation).unwrap_or(Value::Null),
                     )?;
                 } else {
                     send_err(

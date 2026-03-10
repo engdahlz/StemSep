@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openAudioFileDialog: () => ipcRenderer.invoke('open-audio-file-dialog'),
   openModelFileDialog: () => ipcRenderer.invoke('open-model-file-dialog'),
   selectOutputDirectory: () => ipcRenderer.invoke('select-output-directory'),
+  selectModelsDirectory: () => ipcRenderer.invoke('select-models-directory'),
   openFolder: (folderPath: string) => ipcRenderer.invoke('open-folder', folderPath),
   checkFileExists: (filePath: string) => ipcRenderer.invoke('check-file-exists', filePath),
   readAudioFile: (filePath: string) => ipcRenderer.invoke('read-audio-file', filePath),
@@ -65,6 +66,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Model operations
   getModels: () => ipcRenderer.invoke('get-models'),
   getModelTech: (modelId: string) => ipcRenderer.invoke('get-model-tech', modelId),
+  resolveModelDownload: (modelId: string) => ipcRenderer.invoke('resolve-model-download', modelId),
+  getModelInstallation: (modelId: string) => ipcRenderer.invoke('get-model-installation', modelId),
   getRecipes: () => ipcRenderer.invoke('get-recipes'),
   qualityBaselineCreate: (payload: Record<string, any>) =>
     ipcRenderer.invoke('quality-baseline-create', payload),
@@ -83,12 +86,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getWorkflows: () => ipcRenderer.invoke('get-workflows'),
 
   // Model download progress
-  onDownloadProgress: (callback: (data: { modelId: string, progress: number }) => void) => {
+  onDownloadProgress: (callback: (data: { modelId: string, progress: number, artifactIndex?: number, artifactCount?: number, currentFile?: string, currentRelativePath?: string, message?: string }) => void) => {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('download-progress', handler)
     return () => ipcRenderer.removeListener('download-progress', handler)
   },
-  onDownloadComplete: (callback: (data: { modelId: string }) => void) => {
+  onDownloadComplete: (callback: (data: { modelId: string, artifactCount?: number }) => void) => {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('download-complete', handler)
     return () => ipcRenderer.removeListener('download-complete', handler)
@@ -98,7 +101,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('download-error', handler)
     return () => ipcRenderer.removeListener('download-error', handler)
   },
-  onDownloadPaused: (callback: (data: { modelId: string }) => void) => {
+  onDownloadPaused: (callback: (data: { modelId: string, artifactIndex?: number, artifactCount?: number, currentFile?: string, currentRelativePath?: string, progress?: number }) => void) => {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('download-paused', handler)
     return () => ipcRenderer.removeListener('download-paused', handler)
@@ -147,6 +150,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // App Config (for settings that main process needs)
+  setModelsDir: (modelsDir: string) => ipcRenderer.invoke('set-models-dir', modelsDir),
   saveAppConfig: (config: Record<string, any>) => ipcRenderer.invoke('save-app-config', config),
   getAppConfig: () => ipcRenderer.invoke('get-app-config'),
 

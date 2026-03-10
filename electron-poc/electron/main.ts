@@ -1641,6 +1641,9 @@ function ensurePythonBridge() {
     rejectAllPendingBackendCommands(
       new Error(`Backend bridge exited with code ${code ?? "unknown"}`),
     );
+    rejectBridgeReadyWaiters(
+      new Error(`Backend bridge exited with code ${code ?? "unknown"}`),
+    );
     detachBackendMessageRouter();
     pythonBridge = null;
     backendProcess = null;
@@ -2373,6 +2376,11 @@ type PendingBackendCommand = {
 const pendingBackendCommands = new Map<string, PendingBackendCommand>();
 const backendEventSubscribers = new Map<string, Set<(msg: any) => void>>();
 let backendMessageRouter: ((data: Buffer) => void) | null = null;
+let bridgeReadyWaiters: Array<{
+  resolve: () => void;
+  reject: (reason?: any) => void;
+  timeout: NodeJS.Timeout;
+}> = [];
 
 function subscribeBackendEvent(
   eventType: string,
@@ -2524,6 +2532,55 @@ function rejectAllPendingBackendCommands(error: Error) {
   }
 }
 
+function resolveBridgeReadyWaiters() {
+  for (const waiter of bridgeReadyWaiters.splice(0)) {
+    clearTimeout(waiter.timeout);
+    waiter.resolve();
+  }
+}
+
+function rejectBridgeReadyWaiters(error: Error) {
+  for (const waiter of bridgeReadyWaiters.splice(0)) {
+    clearTimeout(waiter.timeout);
+    waiter.reject(error);
+  }
+}
+
+function waitForBridgeReady(timeoutMs = 30000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      bridgeReadyWaiters = bridgeReadyWaiters.filter((entry) => entry.resolve !== resolve);
+      reject(new Error(`Backend did not become ready within ${timeoutMs}ms`));
+    }, timeoutMs);
+    bridgeReadyWaiters.push({ resolve, reject, timeout });
+  });
+}
+
+async function restartBackendAndWait(
+  reason: string,
+  timeoutMs = 45000,
+): Promise<void> {
+  const readyPromise = waitForBridgeReady(timeoutMs);
+  requestBridgeRestart(reason);
+  try {
+    await readyPromise;
+    return;
+  } catch (eventError) {
+    let lastError: unknown = eventError;
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      try {
+        await sendPythonCommand("ping", {}, 4000);
+        return;
+      } catch (error) {
+        lastError = error;
+        await new Promise((resolve) => setTimeout(resolve, 400));
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
+  }
+}
+
 function routeBackendMessage(msg: any) {
   const hasResponseShape =
     msg && Object.prototype.hasOwnProperty.call(msg, "id") &&
@@ -2543,15 +2600,18 @@ function routeBackendMessage(msg: any) {
     }
   }
 
-  if (msg?.type === "bridge_ready" && mainWindow && !mainWindow.isDestroyed()) {
+  if (msg?.type === "bridge_ready") {
     log(
       `Bridge ready! Capabilities: ${msg.capabilities?.join(", ")}, Models: ${msg.models_count}, Recipes: ${msg.recipes_count}`,
     );
-    mainWindow.webContents.send("bridge-ready", {
-      capabilities: msg.capabilities,
-      modelsCount: msg.models_count,
-      recipesCount: msg.recipes_count,
-    });
+    resolveBridgeReadyWaiters();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("bridge-ready", {
+        capabilities: msg.capabilities,
+        modelsCount: msg.models_count,
+        recipesCount: msg.recipes_count,
+      });
+    }
   } else if (
     msg?.type === "progress" &&
     msg?.model_id &&
@@ -2561,6 +2621,11 @@ function routeBackendMessage(msg: any) {
     mainWindow.webContents.send("download-progress", {
       modelId: msg.model_id,
       progress: msg.progress,
+      artifactIndex: msg.artifactIndex,
+      artifactCount: msg.artifactCount,
+      currentFile: msg.currentFile,
+      currentRelativePath: msg.currentRelativePath,
+      message: msg.message,
     });
   } else if (
     msg?.type === "complete" &&
@@ -2570,6 +2635,7 @@ function routeBackendMessage(msg: any) {
   ) {
     mainWindow.webContents.send("download-complete", {
       modelId: msg.model_id,
+      artifactCount: msg.artifactCount,
     });
   } else if (
     msg?.type === "error" &&
@@ -2589,6 +2655,11 @@ function routeBackendMessage(msg: any) {
   ) {
     mainWindow.webContents.send("download-paused", {
       modelId: msg.model_id,
+      artifactIndex: msg.artifactIndex,
+      artifactCount: msg.artifactCount,
+      currentFile: msg.currentFile,
+      currentRelativePath: msg.currentRelativePath,
+      progress: msg.progress,
     });
   } else if (
     msg?.type === "separation_progress" &&
@@ -3426,6 +3497,20 @@ ipcMain.handle("select-output-directory", async () => {
   }
 });
 
+ipcMain.handle("select-models-directory", async () => {
+  if (!mainWindow) return null;
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ["openDirectory", "createDirectory"],
+      title: "Choose Models Directory",
+    });
+    return result.filePaths[0] || null;
+  } catch (error) {
+    log("Error selecting models directory:", error);
+    throw new Error("Failed to open models directory dialog");
+  }
+});
+
 // Scan directory for audio files
 ipcMain.handle("scan-directory", async (event, folderPath: string) => {
   const audioExtensions = new Set([".mp3", ".wav", ".flac", ".ogg", ".m4a"]);
@@ -3572,6 +3657,22 @@ ipcMain.handle("get-models", async () => {
 
 ipcMain.handle("get-model-tech", async (_event, modelId: string) => {
   return sendPythonCommandWithRetry("get_model_tech", { model_id: modelId }, 20000);
+});
+
+ipcMain.handle("resolve-model-download", async (_event, modelId: string) => {
+  return sendPythonCommandWithRetry(
+    "resolve_model_download",
+    { model_id: modelId },
+    20000,
+  );
+});
+
+ipcMain.handle("get-model-installation", async (_event, modelId: string) => {
+  return sendPythonCommandWithRetry(
+    "get_model_installation",
+    { model_id: modelId },
+    20000,
+  );
 });
 
 ipcMain.handle(
@@ -3853,6 +3954,28 @@ ipcMain.handle("stop-watch-mode", async () => {
 });
 
 // App config persistence for main process settings (like modelsDir)
+ipcMain.handle("set-models-dir", async (_event, modelsDir: string) => {
+  const normalized = typeof modelsDir === "string" ? modelsDir.trim() : "";
+  if (!normalized) {
+    throw new Error("Models directory is required.");
+  }
+
+  fs.mkdirSync(normalized, { recursive: true });
+  const saved = writeAppConfig({ modelsDir: normalized });
+  if (!saved) {
+    throw new Error("Failed to persist models directory.");
+  }
+
+  await restartBackendAndWait("updated models directory");
+  const models = await sendPythonCommandWithRetry("get_models", {}, 120000);
+
+  return {
+    success: true,
+    modelsDir: normalized,
+    models,
+  };
+});
+
 ipcMain.handle(
   "save-app-config",
   async (_event, config: Record<string, any>) => {

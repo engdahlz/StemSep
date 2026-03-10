@@ -180,6 +180,37 @@ export interface Model {
     }
   >;
   content_fit?: string[];
+  download?: {
+    mode?: "direct" | "multi_artifact_direct" | "manual" | "unavailable" | string;
+    install_mode?: "direct" | "manual" | "custom_runtime" | string;
+    family?: string;
+    artifact_count?: number;
+    downloadable_artifact_count?: number;
+    source_policy?: string;
+    manual_instructions?: string[];
+    sources?: Array<{
+      role: string;
+      url: string;
+      host: string;
+      manual?: boolean;
+    }>;
+    artifacts?: Array<{
+      kind: string;
+      filename: string;
+      relative_path: string;
+      required: boolean;
+      manual: boolean;
+      exists?: boolean;
+      source?: string | null;
+      source_host?: string | null;
+      sha256?: string | null;
+    }>;
+  };
+  installation?: {
+    installed?: boolean;
+    missing_artifacts?: string[];
+    relative_paths?: string[];
+  };
 }
 
 export type Recipe = import("./recipes").Recipe;

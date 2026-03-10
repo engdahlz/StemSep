@@ -48,8 +48,34 @@
       "install": {
         "mode": "manual",
         "notes": [
-          "Place the Demucs yaml/weights in the configured models directory.",
+          "Download the official Demucs yaml and .th weights from the upstream Demucs release assets.",
+          "Place them under demucs/htdemucs/ inside the configured model root.",
           "Use this for workflows that need Demucs as a local fallback or reference."
+        ]
+      },
+      "download": {
+        "sources": [
+          {
+            "role": "official_release",
+            "url": "https://github.com/facebookresearch/demucs",
+            "manual": true
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "config",
+            "filename": "htdemucs.yaml",
+            "relative_path": "demucs/htdemucs/htdemucs.yaml",
+            "required": true,
+            "manual": true
+          },
+          {
+            "kind": "checkpoint",
+            "filename": "htdemucs.th",
+            "relative_path": "demucs/htdemucs/htdemucs.th",
+            "required": true,
+            "manual": true
+          }
         ]
       },
       "quality_role": [
@@ -151,19 +177,95 @@
         "install_burden": "high",
         "engine": "demucs_native",
         "model_type": "htdemucs",
-        "config_ref": "htdemucs-ft.yaml",
-        "checkpoint_ref": "htdemucs-ft.th",
-        "install_mode": "manual",
-        "requires_manual_assets": true,
+        "config_ref": "htdemucs_ft.yaml",
+        "checkpoint_ref": "f7e0c4bc-ba3fe64a.th",
+        "install_mode": "direct",
+        "requires_manual_assets": false,
         "required_files": [
-          "htdemucs-ft.yaml",
-          "htdemucs-ft.th"
+          "htdemucs_ft.yaml",
+          "f7e0c4bc-ba3fe64a.th",
+          "d12395a8-e57c48e6.th",
+          "92cfc3b6-ef3bcb9c.th",
+          "04573f0d-f3cf25b2.th"
         ]
       },
       "install": {
-        "mode": "manual",
+        "mode": "direct",
         "notes": [
-          "Manual install required. Recommended for curated premium workflows, not simple mode."
+          "StemSep downloads the Demucs YAML bag file together with all required upstream .th weights.",
+          "Files are stored under demucs/htdemucs-ft/ inside the configured model root.",
+          "Recommended for curated premium workflows, not simple mode."
+        ]
+      },
+      "download": {
+        "sources": [
+          {
+            "role": "demucs_weights_1",
+            "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th",
+            "manual": false
+          },
+          {
+            "role": "demucs_weights_2",
+            "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th",
+            "manual": false
+          },
+          {
+            "role": "demucs_weights_3",
+            "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th",
+            "manual": false
+          },
+          {
+            "role": "demucs_weights_4",
+            "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/04573f0d-f3cf25b2.th",
+            "manual": false
+          },
+          {
+            "role": "yaml_config",
+            "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/htdemucs_ft.yaml",
+            "manual": false
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "weights",
+            "filename": "f7e0c4bc-ba3fe64a.th",
+            "relative_path": "demucs/htdemucs-ft/f7e0c4bc-ba3fe64a.th",
+            "required": true,
+            "manual": false,
+            "source": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th"
+          },
+          {
+            "kind": "weights",
+            "filename": "d12395a8-e57c48e6.th",
+            "relative_path": "demucs/htdemucs-ft/d12395a8-e57c48e6.th",
+            "required": true,
+            "manual": false,
+            "source": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th"
+          },
+          {
+            "kind": "weights",
+            "filename": "92cfc3b6-ef3bcb9c.th",
+            "relative_path": "demucs/htdemucs-ft/92cfc3b6-ef3bcb9c.th",
+            "required": true,
+            "manual": false,
+            "source": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th"
+          },
+          {
+            "kind": "weights",
+            "filename": "04573f0d-f3cf25b2.th",
+            "relative_path": "demucs/htdemucs-ft/04573f0d-f3cf25b2.th",
+            "required": true,
+            "manual": false,
+            "source": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/04573f0d-f3cf25b2.th"
+          },
+          {
+            "kind": "config",
+            "filename": "htdemucs_ft.yaml",
+            "relative_path": "demucs/htdemucs-ft/htdemucs_ft.yaml",
+            "required": true,
+            "manual": false,
+            "source": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/htdemucs_ft.yaml"
+          }
         ]
       },
       "quality_role": [
@@ -208,11 +310,11 @@
         "busy_mix"
       ],
       "status": {
-        "readiness": "manual",
+        "readiness": "downloadable",
         "simple_allowed": false,
         "curated": false,
         "support_tier": "supported_advanced",
-        "blocking_reason": "Manual Demucs assets required before this runtime can be used."
+        "blocking_reason": "Advanced-only Demucs package with multi-file upstream weights."
       }
     },
     {
@@ -253,19 +355,46 @@
         "install_burden": "high",
         "engine": "demucs_native",
         "model_type": "htdemucs_6s",
-        "config_ref": "htdemucs-6s.yaml",
-        "checkpoint_ref": "htdemucs-6s.th",
+        "config_ref": "htdemucs_6s.yaml",
+        "checkpoint_ref": "htdemucs_6s.th",
         "install_mode": "manual",
         "requires_manual_assets": true,
         "required_files": [
-          "htdemucs-6s.yaml",
-          "htdemucs-6s.th"
+          "htdemucs_6s.yaml",
+          "htdemucs_6s.th"
         ]
       },
       "install": {
         "mode": "manual",
         "notes": [
-          "Manual install required for advanced special-stem workflows."
+          "Download the official 6-stem Demucs yaml and .th weights from the Demucs upstream assets.",
+          "Place them under demucs/htdemucs-6s/ inside the configured model root.",
+          "Use this only for advanced special-stem workflows."
+        ]
+      },
+      "download": {
+        "sources": [
+          {
+            "role": "official_release",
+            "url": "https://github.com/facebookresearch/demucs",
+            "manual": true
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "config",
+            "filename": "htdemucs_6s.yaml",
+            "relative_path": "demucs/htdemucs-6s/htdemucs_6s.yaml",
+            "required": true,
+            "manual": true
+          },
+          {
+            "kind": "checkpoint",
+            "filename": "htdemucs_6s.th",
+            "relative_path": "demucs/htdemucs-6s/htdemucs_6s.th",
+            "required": true,
+            "manual": true
+          }
         ]
       },
       "quality_role": [
@@ -361,7 +490,36 @@
       "install": {
         "mode": "manual",
         "notes": [
-          "Manual Apollo assets required until the runtime bundle is curated."
+          "Manual Apollo assets required until the runtime bundle is curated.",
+          "Place the YAML and checkpoint under msst/apollo-restoration/ inside the configured model root."
+        ]
+      },
+      "links": {
+        "homepage": "https://github.com/jarredou/Apollo-Colab-Inference"
+      },
+      "download": {
+        "sources": [
+          {
+            "role": "manual_reference",
+            "url": "https://github.com/jarredou/Apollo-Colab-Inference",
+            "manual": true
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "config",
+            "filename": "apollo-restoration.yaml",
+            "relative_path": "msst/apollo-restoration/apollo-restoration.yaml",
+            "required": true,
+            "manual": true
+          },
+          {
+            "kind": "checkpoint",
+            "filename": "apollo-restoration.ckpt",
+            "relative_path": "msst/apollo-restoration/apollo-restoration.ckpt",
+            "required": true,
+            "manual": true
+          }
         ]
       },
       "status": {
@@ -460,7 +618,36 @@
       "install": {
         "mode": "manual",
         "notes": [
-          "Manual BandIt config and checkpoint required."
+          "Manual BandIt config and checkpoint required.",
+          "Place the YAML and checkpoint under msst/bandit-dnr/ inside the configured model root."
+        ]
+      },
+      "links": {
+        "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training"
+      },
+      "download": {
+        "sources": [
+          {
+            "role": "manual_reference",
+            "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training",
+            "manual": true
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "config",
+            "filename": "bandit-dnr.yaml",
+            "relative_path": "msst/bandit-dnr/bandit-dnr.yaml",
+            "required": true,
+            "manual": true
+          },
+          {
+            "kind": "checkpoint",
+            "filename": "bandit-dnr.ckpt",
+            "relative_path": "msst/bandit-dnr/bandit-dnr.ckpt",
+            "required": true,
+            "manual": true
+          }
         ]
       },
       "status": {
@@ -553,7 +740,36 @@
       "install": {
         "mode": "manual",
         "notes": [
-          "Manual SCNet masked assets required for advanced comparison workflows."
+          "Manual SCNet masked assets required for advanced comparison workflows.",
+          "Place the YAML and checkpoint under msst/scnet-masked-xl/ inside the configured model root."
+        ]
+      },
+      "links": {
+        "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training"
+      },
+      "download": {
+        "sources": [
+          {
+            "role": "manual_reference",
+            "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training",
+            "manual": true
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "config",
+            "filename": "scnet-masked-xl.yaml",
+            "relative_path": "msst/scnet-masked-xl/scnet-masked-xl.yaml",
+            "required": true,
+            "manual": true
+          },
+          {
+            "kind": "checkpoint",
+            "filename": "scnet-masked-xl.ckpt",
+            "relative_path": "msst/scnet-masked-xl/scnet-masked-xl.ckpt",
+            "required": true,
+            "manual": true
+          }
         ]
       },
       "status": {

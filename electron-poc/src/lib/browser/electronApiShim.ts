@@ -11,9 +11,21 @@ type DownloadProgressPayload = {
   progress: number
   speed?: number
   eta?: number
+  artifactIndex?: number
+  artifactCount?: number
+  currentFile?: string
+  currentRelativePath?: string
+  message?: string
 }
 
-type DownloadSimplePayload = { modelId: string }
+type DownloadSimplePayload = {
+  modelId: string
+  artifactCount?: number
+  artifactIndex?: number
+  currentFile?: string
+  currentRelativePath?: string
+  progress?: number
+}
 type DownloadErrorPayload = { modelId: string; error: string }
 type BackendErrorPayload = { error: string }
 type YouTubeProgressPayload = {
@@ -250,6 +262,7 @@ export function installBrowserElectronApi() {
     resolveMediaUrl?: (filePath: string) => string
   } = {
     selectOutputDirectory: async () => appConfig.outputDir || "Browser Downloads",
+    selectModelsDirectory: async () => appConfig.modelsDir || "Browser Model Cache",
     openDirectoryDialog: async () => ({
       canceled: false,
       filePaths: [appConfig.outputDir || "Browser Downloads"],
@@ -468,6 +481,21 @@ export function installBrowserElectronApi() {
     onExportProgress: (callback) => exportProgressEmitter.subscribe(callback),
     getModels: async () => hydrateModelList(),
     getModelTech: async (modelId) => hydrateModelList().find((model) => model.id === modelId) || null,
+    resolveModelDownload: async (modelId) => {
+      const model = hydrateModelList().find((entry) => entry.id === modelId)
+      return model
+        ? {
+            modelId,
+            download: model.download || null,
+            installation:
+              model.installation || { installed: !!model.installed, missing_artifacts: [] },
+          }
+        : null
+    },
+    getModelInstallation: async (modelId) => {
+      const model = hydrateModelList().find((entry) => entry.id === modelId)
+      return model?.installation || { installed: !!model?.installed, missing_artifacts: [] }
+    },
     getRecipes: async () => [],
     qualityBaselineCreate: async (payload) => {
       qualityProgressEmitter.emit({ kind: "progress", message: "Creating browser baseline..." })
@@ -666,6 +694,11 @@ export function installBrowserElectronApi() {
     startWatchMode: async () => true,
     stopWatchMode: async () => true,
     onWatchFileDetected: (callback) => watchFileEmitter.subscribe(callback),
+    setModelsDir: async (modelsDir) => {
+      appConfig = { ...appConfig, modelsDir }
+      persistConfig()
+      return { success: true, modelsDir, models: hydrateModelList() }
+    },
     saveAppConfig: async (config) => {
       appConfig = { ...appConfig, ...config }
       persistConfig()

@@ -76,6 +76,11 @@ export function ModelDetails({
   const phaseFixReferences = resolvedModel.phase_fix?.references || {};
   const qualityAxes = resolvedModel.quality_axes || {};
   const operatingProfiles = resolvedModel.operating_profiles || {};
+  const downloadInfo = resolvedModel.download;
+  const installation = resolvedModel.installation;
+  const downloadSources = downloadInfo?.sources || [];
+  const downloadArtifacts = downloadInfo?.artifacts || [];
+  const manualInstructions = downloadInfo?.manual_instructions || [];
 
   const chunkSizeDisplay =
     resolvedModel.chunk_size ||
@@ -462,6 +467,153 @@ export function ModelDetails({
               </div>
             </div>
           )}
+
+          {(downloadInfo || installation) && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Installation
+              </h3>
+              <div className="rounded-lg border border-border/50 bg-secondary/20 p-4 space-y-3">
+                <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                  {downloadInfo?.mode && (
+                    <div className="flex justify-between py-1 border-b border-border/30">
+                      <span className="text-muted-foreground">Download Mode</span>
+                      <span className="font-medium text-foreground/90 capitalize">
+                        {String(downloadInfo.mode).replace(/_/g, " ")}
+                      </span>
+                    </div>
+                  )}
+                  {downloadInfo?.source_policy && (
+                    <div className="flex justify-between py-1 border-b border-border/30">
+                      <span className="text-muted-foreground">Source Policy</span>
+                      <span className="font-medium text-foreground/90 capitalize">
+                        {String(downloadInfo.source_policy).replace(/_/g, " ")}
+                      </span>
+                    </div>
+                  )}
+                  {downloadInfo?.family && (
+                    <div className="flex justify-between py-1 border-b border-border/30">
+                      <span className="text-muted-foreground">Storage Family</span>
+                      <span className="font-medium text-foreground/90">
+                        {downloadInfo.family}
+                      </span>
+                    </div>
+                  )}
+                  {typeof downloadInfo?.artifact_count === "number" && (
+                    <div className="flex justify-between py-1 border-b border-border/30">
+                      <span className="text-muted-foreground">Artifacts</span>
+                      <span className="font-medium text-foreground/90">
+                        {downloadInfo.artifact_count}
+                      </span>
+                    </div>
+                  )}
+                  {typeof downloadInfo?.downloadable_artifact_count === "number" && (
+                    <div className="flex justify-between py-1 border-b border-border/30">
+                      <span className="text-muted-foreground">Direct Files</span>
+                      <span className="font-medium text-foreground/90">
+                        {downloadInfo.downloadable_artifact_count}
+                      </span>
+                    </div>
+                  )}
+                  {installation && (
+                    <div className="flex justify-between py-1 border-b border-border/30">
+                      <span className="text-muted-foreground">Installed</span>
+                      <span className="font-medium text-foreground/90">
+                        {installation.installed ? "Yes" : "No"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {downloadArtifacts.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Artifact Plan
+                    </h4>
+                    <div className="space-y-2">
+                      {downloadArtifacts.map((artifact) => (
+                        <div
+                          key={`${artifact.relative_path}:${artifact.kind}`}
+                          className="rounded-md border border-border/40 bg-background/60 px-3 py-2 text-sm"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-medium text-foreground/90">
+                              {artifact.filename}
+                            </span>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>{artifact.kind}</span>
+                              <span>{artifact.manual ? "Manual" : "Direct"}</span>
+                              <span>{artifact.exists ? "Present" : "Missing"}</span>
+                            </div>
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground break-all">
+                            {artifact.relative_path}
+                          </div>
+                          {artifact.source_host && (
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              Source: {artifact.source_host}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {downloadSources.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Sources
+                    </h4>
+                    <div className="space-y-2">
+                      {downloadSources.map((source) => (
+                        <div
+                          key={`${source.role}:${source.url}`}
+                          className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-background/60 px-3 py-2 text-sm"
+                        >
+                          <div className="min-w-0">
+                            <div className="font-medium text-foreground/90">
+                              {source.role}
+                            </div>
+                            <div className="text-xs text-muted-foreground break-all">
+                              {source.host}
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.electronAPI?.openExternalUrl?.(source.url)}
+                            className="shrink-0 gap-1"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Open
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {manualInstructions.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Manual Setup
+                    </h4>
+                    <div className="space-y-1 text-sm text-foreground/90">
+                      {manualInstructions.map((instruction) => (
+                        <p key={instruction}>{instruction}</p>
+                      ))}
+                    </div>
+                    {installation?.missing_artifacts?.length ? (
+                      <p className="text-xs text-muted-foreground">
+                        Missing: {installation.missing_artifacts.join(", ")}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {Object.keys(phaseFixReferences).length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
@@ -521,19 +673,41 @@ export function ModelDetails({
           <div className="flex gap-2">
             {!resolvedModel.installed ? (
               <Button
-                onClick={() => onDownload?.(resolvedModel.id)}
+                onClick={() => {
+                  if (downloadInfo?.mode === "manual") {
+                    const primarySource = downloadSources[0]?.url;
+                    if (primarySource) {
+                      void window.electronAPI?.openExternalUrl?.(primarySource);
+                    }
+                    return;
+                  }
+                  onDownload?.(resolvedModel.id);
+                }}
                 className="gap-2"
-                disabled={resolvedModel.downloading}
+                disabled={resolvedModel.downloading || downloadInfo?.mode === "unavailable"}
+                variant={downloadInfo?.mode === "manual" ? "outline" : "default"}
               >
-                {resolvedModel.downloading ? (
+                {downloadInfo?.mode === "manual" ? (
+                  <>
+                    <ExternalLink className="h-4 w-4" />
+                    Open Source
+                  </>
+                ) : resolvedModel.downloading ? (
                   <>
                     <Download className="h-4 w-4 animate-bounce" />
                     Downloading...
                   </>
+                ) : downloadInfo?.mode === "unavailable" ? (
+                  <>
+                    <Download className="h-4 w-4" />
+                    Unavailable
+                  </>
                 ) : (
                   <>
                     <Download className="h-4 w-4" />
-                    Download Model
+                    {downloadInfo?.artifact_count && downloadInfo.artifact_count > 1
+                      ? `Download ${downloadInfo.artifact_count} Files`
+                      : "Download Model"}
                   </>
                 )}
               </Button>

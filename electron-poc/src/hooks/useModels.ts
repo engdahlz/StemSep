@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../stores/useStore'
 import { logger } from '../utils/logger'
+import { normalizeModel } from '../lib/models/normalizeModel'
 
 export function useModels() {
     const { setModels } = useStore()
@@ -22,15 +23,7 @@ export function useModels() {
                 // We assume backendModels is an array based on usage in other files
                 const modelsArray = Array.isArray(backendModels) ? backendModels : Object.values(backendModels)
 
-                const convertedModels = modelsArray.map((m: any) => ({
-                    ...m,
-                    category: m.category || 'primary',
-                    installed: m.installed === true,
-                    downloading: false,
-                    downloadPaused: false,
-                    downloadProgress: 0,
-                    recommended: m.recommended || false,
-                }))
+                const convertedModels = modelsArray.map(normalizeModel)
 
                 setModels(convertedModels)
                 logger.info(`Loaded ${convertedModels.length} models`, { count: convertedModels.length }, 'useModels')

@@ -58,6 +58,7 @@ class ModelInfo:
     workflow_roles: Optional[List[str]] = None
     operating_profiles: Optional[Dict[str, Any]] = None
     content_fit: Optional[List[str]] = None
+    download: Optional[Dict[str, Any]] = None
 
     installed: bool = False
 
@@ -313,6 +314,7 @@ class ModelManager:
                     workflow_roles=m.get("workflow_roles"),
                     operating_profiles=m.get("operating_profiles"),
                     content_fit=m.get("content_fit"),
+                    download=m.get("download"),
                     installed=False,
                 )
             except Exception as e:
@@ -344,128 +346,381 @@ class ModelManager:
             return None
         return fn
 
+    def _model_family(self, model: Optional[ModelInfo]) -> str:
+        if not model:
+            return "other"
+        runtime = model.runtime if isinstance(model.runtime, dict) else {}
+        engine = str(runtime.get("engine") or "").strip().lower()
+        model_type = str(runtime.get("model_type") or "").strip().lower()
+        architecture = str(model.architecture or "").strip().lower()
+        if engine == "demucs_native" or "demucs" in architecture or "demucs" in model_type:
+            return "demucs"
+        if architecture == "vr" or model_type == "vr":
+            return "vr"
+        if "mdx" in architecture or "mdx" in model_type:
+            return "mdx"
+        if (
+            engine in {"msst_builtin", "custom_builtin_variant"}
+            or "roformer" in architecture
+            or "roformer" in model_type
+            or "scnet" in architecture
+            or "scnet" in model_type
+            or "apollo" in architecture
+            or "apollo" in model_type
+            or "bandit" in architecture
+            or "bandit" in model_type
+        ):
+            return "msst"
+        return "other"
+
+    def _artifact_relative_path(
+        self, model_id: str, model: Optional[ModelInfo], filename: str
+    ) -> str:
+        if model and isinstance(model.download, dict):
+            for item in model.download.get("artifacts") or []:
+                if not isinstance(item, dict):
+                    continue
+                if str(item.get("filename") or "").strip() != filename:
+                    continue
+                relative = str(item.get("relative_path") or "").strip()
+                if relative:
+                    return relative.replace("\\", "/")
+        return f"{self._model_family(model)}/{model_id}/{filename}".replace("\\", "/")
+
+    def _is_stale_legacy_mirror_url(self, url: Optional[str]) -> bool:
+        if not isinstance(url, str):
+            return False
+        normalized = url.strip().lower()
+        return (
+            "github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/"
+            in normalized
+        )
+
+    def _legacy_artifact_paths(
+        self, model_id: str, kind: str, filename: str
+    ) -> List[Path]:
+        candidates = [self.models_dir / filename]
+        suffix = Path(filename).suffix
+        if suffix:
+            candidates.append(self.models_dir / f"{model_id}{suffix}")
+        if kind == "config":
+            candidates.append(self.models_dir / f"{model_id}.yaml")
+            candidates.append(self.models_dir / f"{model_id}.yml")
+        deduped: List[Path] = []
+        seen = set()
+        for candidate in candidates:
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+            deduped.append(candidate)
+        return deduped
+
+    def resolve_download_manifest(self, model_id: str) -> Dict[str, Any]:
+        model = self.models.get(model_id)
+        if not model:
+            return {
+                "model_id": model_id,
+                "family": "other",
+                "mode": "unavailable",
+                "install_mode": "unknown",
+                "artifact_count": 0,
+                "downloadable_artifact_count": 0,
+                "source_policy": "unknown",
+                "sources": [],
+                "artifacts": [],
+                "manual_instructions": [],
+            }
+
+        runtime = model.runtime if isinstance(model.runtime, dict) else {}
+        install = model.install if isinstance(model.install, dict) else {}
+        links = model.links if isinstance(model.links, dict) else {}
+        install_mode = (
+            str(install.get("mode") or runtime.get("install_mode") or "direct")
+            .strip()
+            .lower()
+        )
+        manual_registry = install_mode == "manual" or bool(
+            runtime.get("requires_manual_assets")
+        )
+
+        sources: List[Dict[str, Any]] = []
+        seen_sources = set()
+
+        def push_source(role: str, url: Optional[str], manual: bool) -> None:
+            if not isinstance(url, str):
+                return
+            trimmed = url.strip()
+            if not trimmed or trimmed in seen_sources:
+                return
+            seen_sources.add(trimmed)
+            host = ""
+            try:
+                host = trimmed.split("://", 1)[-1].split("/", 1)[0].strip()
+            except Exception:
+                host = ""
+            sources.append(
+                {
+                    "role": role,
+                    "url": trimmed,
+                    "host": host or "unknown",
+                    "manual": manual,
+                }
+            )
+
+        push_source("checkpoint", links.get("checkpoint"), manual_registry)
+        push_source("config", links.get("config"), manual_registry)
+        push_source("homepage", links.get("homepage"), True)
+        if isinstance(model.download, dict):
+            for source in model.download.get("sources") or []:
+                if not isinstance(source, dict):
+                    continue
+                push_source(
+                    str(source.get("role") or "source"),
+                    source.get("url"),
+                    bool(source.get("manual", True)),
+                )
+
+        artifacts: List[Dict[str, Any]] = []
+        seen_rel_paths = set()
+
+        def push_artifact(
+            kind: str,
+            filename: Optional[str],
+            source: Optional[str],
+            *,
+            required: bool = True,
+            manual: bool = False,
+            sha256: Optional[str] = None,
+            relative_path: Optional[str] = None,
+        ) -> None:
+            if not isinstance(filename, str):
+                return
+            trimmed = filename.strip()
+            if not trimmed or ".MISSING" in trimmed:
+                return
+            rel = (
+                relative_path.strip().replace("\\", "/")
+                if isinstance(relative_path, str) and relative_path.strip()
+                else self._artifact_relative_path(model_id, model, trimmed)
+            )
+            if rel in seen_rel_paths:
+                return
+            seen_rel_paths.add(rel)
+            canonical = self.models_dir / Path(rel)
+            legacy_candidates = self._legacy_artifact_paths(model_id, kind, trimmed)
+            exists = canonical.exists() or any(path.exists() for path in legacy_candidates)
+            stale_legacy_mirror = self._is_stale_legacy_mirror_url(source)
+            artifacts.append(
+                {
+                    "kind": kind,
+                    "filename": trimmed,
+                    "relative_path": rel,
+                    "required": required,
+                    "manual": manual or stale_legacy_mirror,
+                    "exists": exists,
+                    "source": source,
+                    "source_host": source.split("://", 1)[-1].split("/", 1)[0]
+                    if isinstance(source, str) and source.strip()
+                    else None,
+                    "sha256": sha256,
+                }
+            )
+
+        if isinstance(model.download, dict) and isinstance(model.download.get("artifacts"), list):
+            for item in model.download.get("artifacts") or []:
+                if not isinstance(item, dict):
+                    continue
+                push_artifact(
+                    str(item.get("kind") or "aux"),
+                    item.get("filename"),
+                    item.get("source"),
+                    required=bool(item.get("required", True)),
+                    manual=bool(item.get("manual", manual_registry or not item.get("source"))),
+                    sha256=item.get("sha256"),
+                    relative_path=item.get("relative_path"),
+                )
+        else:
+            artifact_ckpt = self._artifact_filename(model, "primary")
+            artifact_cfg = self._artifact_filename(model, "config")
+            runtime_ckpt = runtime.get("checkpoint_ref")
+            runtime_cfg = runtime.get("config_ref")
+
+            checkpoint_source = links.get("checkpoint")
+            config_source = links.get("config")
+
+            push_artifact(
+                "checkpoint",
+                artifact_ckpt or runtime_ckpt or self._url_basename(checkpoint_source or ""),
+                checkpoint_source,
+                manual=manual_registry and not checkpoint_source,
+            )
+            if artifact_cfg or runtime_cfg or config_source:
+                push_artifact(
+                    "config",
+                    artifact_cfg or runtime_cfg or self._url_basename(config_source or ""),
+                    config_source,
+                    manual=manual_registry and not config_source,
+                )
+
+        for required_file in runtime.get("required_files") or []:
+            filename = str(required_file or "").strip()
+            if not filename:
+                continue
+            if any(artifact["filename"] == filename for artifact in artifacts):
+                continue
+            push_artifact("aux", filename, None, manual=True)
+
+        manual_instructions = [
+            str(note)
+            for note in (install.get("notes") or [])
+            if isinstance(note, str) and note.strip()
+        ]
+        needs_manual_guidance = manual_registry or any(
+            self._is_stale_legacy_mirror_url(source.get("url")) for source in sources
+        )
+        if needs_manual_guidance and not any("Place the required files" in note for note in manual_instructions):
+            manual_instructions.append(
+                f"Place the required files under {self._model_family(model)}/{model_id}/ inside the configured models directory."
+            )
+        if any(self._is_stale_legacy_mirror_url(source.get("url")) for source in sources):
+            manual_instructions.append(
+                "Legacy StemSep mirror links for this model are stale. Use the listed source references or install the files manually until a verified direct upstream is curated."
+            )
+        if manual_registry and not sources:
+            manual_instructions.append(
+                "This model does not expose verified direct-download URLs yet. Use the listed required filenames and install notes for manual setup."
+            )
+
+        downloadable_artifact_count = sum(
+            1 for artifact in artifacts if not artifact["manual"] and artifact.get("source")
+        )
+        if not artifacts:
+            mode = "unavailable"
+        elif downloadable_artifact_count == 0:
+            mode = "manual"
+        elif len(artifacts) > 1:
+            mode = "multi_artifact_direct"
+        else:
+            mode = "direct"
+        source_policy = (
+            "legacy_mirror_manual"
+            if any(self._is_stale_legacy_mirror_url(source["url"]) for source in sources)
+            else "mirror_fallback"
+            if any("github.com/engdahlz/stemsep-models" in source["url"] for source in sources)
+            else "manual_verified"
+            if manual_registry
+            else "upstream_direct"
+        )
+
+        return {
+            "model_id": model_id,
+            "family": self._model_family(model),
+            "mode": mode,
+            "install_mode": install_mode,
+            "artifact_count": len(artifacts),
+            "downloadable_artifact_count": downloadable_artifact_count,
+            "source_policy": source_policy,
+            "sources": sources,
+            "artifacts": artifacts,
+            "manual_instructions": manual_instructions,
+        }
+
+    def get_model_file_bundle(self, model_id: str) -> Dict[str, Any]:
+        manifest = self.resolve_download_manifest(model_id)
+        artifacts = manifest.get("artifacts") or []
+        missing = []
+        relative_paths = []
+        checkpoint_path: Optional[Path] = None
+        config_path: Optional[Path] = None
+
+        for artifact in artifacts:
+            if not isinstance(artifact, dict):
+                continue
+            rel = str(artifact.get("relative_path") or "").strip()
+            if rel:
+                relative_paths.append(rel)
+            canonical = self.models_dir / Path(rel) if rel else None
+            legacy = self._legacy_artifact_paths(
+                model_id,
+                str(artifact.get("kind") or "aux"),
+                str(artifact.get("filename") or ""),
+            )
+            existing = canonical if canonical and canonical.exists() else next(
+                (path for path in legacy if path.exists()),
+                None,
+            )
+            if bool(artifact.get("required", True)) and existing is None:
+                missing.append(rel or str(artifact.get("filename") or ""))
+            kind = str(artifact.get("kind") or "")
+            if kind != "config" and checkpoint_path is None and existing is not None:
+                checkpoint_path = existing
+            if kind == "config" and config_path is None and existing is not None:
+                config_path = existing
+
+        installed = len(artifacts) > 0 and len(missing) == 0
+        return {
+            "model_id": model_id,
+            "download": manifest,
+            "installation": {
+                "installed": installed,
+                "missing_artifacts": missing,
+                "relative_paths": relative_paths,
+            },
+            "checkpoint_path": checkpoint_path,
+            "config_path": config_path,
+            "artifacts": artifacts,
+        }
+
     def _is_installed(self, model_id: str, model: Optional[ModelInfo]) -> bool:
         if not model_id:
             return False
-
-        ckpt_url = None
-        cfg_url = None
-        if model and isinstance(model.links, dict):
-            ckpt_url = model.links.get("checkpoint")
-            cfg_url = model.links.get("config")
-
-        artifact_ckpt = self._artifact_filename(model, "primary")
-        artifact_cfg = self._artifact_filename(model, "config")
-        runtime_cfg = None
-        runtime_ckpt = None
-        runtime_required_files: List[str] = []
-        if model and isinstance(model.runtime, dict):
-            runtime_cfg = model.runtime.get("config_ref")
-            runtime_ckpt = model.runtime.get("checkpoint_ref")
-            runtime_required_files = [
-                str(item).strip()
-                for item in (model.runtime.get("required_files") or [])
-                if str(item).strip()
-            ]
-
-        # Checkpoint requirement
-        ok_ckpt = False
-        if runtime_ckpt:
-            ok_ckpt = (self.models_dir / str(runtime_ckpt)).exists()
-        elif artifact_ckpt:
-            ok_ckpt = (self.models_dir / artifact_ckpt).exists()
-        elif isinstance(ckpt_url, str) and ckpt_url.strip():
-            if ".onnx" in ckpt_url.lower():
-                ok_ckpt = (self.models_dir / f"{model_id}.onnx").exists()
-            else:
-                base = self._url_basename(ckpt_url)
-                ok_ckpt = bool(base and (self.models_dir / base).exists())
-
-        # Config requirement (only if registry declares a config link)
-        ok_cfg = True
-        if runtime_cfg or (isinstance(cfg_url, str) and cfg_url.strip()):
-            cfg_candidates: List[Path] = []
-            if runtime_cfg:
-                cfg_candidates.append(self.models_dir / str(runtime_cfg))
-            if artifact_cfg:
-                cfg_candidates.append(self.models_dir / artifact_cfg)
-
-            cfg_candidates.append(self.models_dir / f"{model_id}.yaml")
-            cfg_candidates.append(self.models_dir / f"{model_id}.yml")
-            base = self._url_basename(cfg_url)
-            if base:
-                cfg_candidates.append(self.models_dir / base)
-
-            ok_cfg = any(p.exists() for p in cfg_candidates)
-
-        if runtime_required_files:
-            required_ok = all((self.models_dir / item).exists() for item in runtime_required_files)
-            ok_ckpt = ok_ckpt and required_ok if runtime_ckpt else required_ok
-            ok_cfg = ok_cfg and required_ok
-
-        # If registry provides any explicit requirements (links or artifact filenames), be strict.
-        if (
-            runtime_ckpt
-            or runtime_cfg
-            or runtime_required_files
-            or artifact_ckpt
-            or artifact_cfg
-            or (isinstance(ckpt_url, str) and ckpt_url.strip())
-            or (isinstance(cfg_url, str) and cfg_url.strip())
-        ):
-            return ok_ckpt and ok_cfg
-
-        # Fallback heuristic for models without explicit links/artifacts.
-        for ext in [".ckpt", ".pth", ".pt", ".onnx", ".safetensors", ".yaml", ".yml"]:
-            if (self.models_dir / f"{model_id}{ext}").exists():
-                return True
-
-        return False
+        bundle = self.get_model_file_bundle(model_id)
+        installation = bundle.get("installation") or {}
+        return bool(installation.get("installed"))
 
     def _candidate_files(self, model_id: str, model: Optional[ModelInfo]) -> List[Path]:
+        bundle = self.get_model_file_bundle(model_id)
         candidates: List[Path] = []
+        seen = set()
 
-        # Prefer explicit artifact filenames when present
-        ckpt_fn = self._artifact_filename(model, "primary")
-        if ckpt_fn:
-            candidates.append(self.models_dir / ckpt_fn)
-        cfg_fn = self._artifact_filename(model, "config")
-        if cfg_fn:
-            candidates.append(self.models_dir / cfg_fn)
-        if model and isinstance(model.runtime, dict):
-            if model.runtime.get("checkpoint_ref"):
-                candidates.append(self.models_dir / str(model.runtime["checkpoint_ref"]))
-            if model.runtime.get("config_ref"):
-                candidates.append(self.models_dir / str(model.runtime["config_ref"]))
-            for item in model.runtime.get("required_files") or []:
-                if item:
-                    candidates.append(self.models_dir / str(item))
+        for artifact in bundle.get("artifacts") or []:
+            if not isinstance(artifact, dict):
+                continue
+            rel = str(artifact.get("relative_path") or "").strip()
+            if rel:
+                path = self.models_dir / Path(rel)
+                if path not in seen:
+                    seen.add(path)
+                    candidates.append(path)
+            filename = str(artifact.get("filename") or "").strip()
+            kind = str(artifact.get("kind") or "aux")
+            for legacy in self._legacy_artifact_paths(model_id, kind, filename):
+                if legacy not in seen:
+                    seen.add(legacy)
+                    candidates.append(legacy)
 
-        # Try explicit filename from links
-        if model and model.links:
-            ckpt = model.links.get("checkpoint")
-            cfg = model.links.get("config")
-            for url in [ckpt, cfg]:
-                b = self._url_basename(url) if url else None
-                if b:
-                    candidates.append(self.models_dir / b)
-
-        # Common naming
-        for ext in [".ckpt", ".pth", ".pt", ".onnx", ".safetensors", ".yaml", ".yml"]:
-            candidates.append(self.models_dir / f"{model_id}{ext}")
+        if not candidates:
+            for ext in [".ckpt", ".pth", ".pt", ".onnx", ".safetensors", ".yaml", ".yml"]:
+                path = self.models_dir / f"{model_id}{ext}"
+                if path not in seen:
+                    seen.add(path)
+                    candidates.append(path)
 
         return candidates
 
     def _refresh_install_flags(self):
         self.installed_models = {}
         for mid, model in self.models.items():
-            installed = self._is_installed(mid, model)
+            bundle = self.get_model_file_bundle(mid)
+            installation = bundle.get("installation") or {}
+            installed = bool(installation.get("installed"))
             if installed:
-                primary = None
-                for p in self._candidate_files(mid, model):
-                    if p.exists():
-                        primary = p
-                        break
+                primary = bundle.get("checkpoint_path") or bundle.get("config_path")
+                if primary is None:
+                    for p in self._candidate_files(mid, model):
+                        if p.exists():
+                            primary = p
+                            break
                 if primary:
                     self.installed_models[mid] = primary
             model.installed = installed
@@ -491,6 +746,17 @@ class ModelManager:
         m = self.models.get(model_id)
         if not m:
             return None
+
+        bundle = self.get_model_file_bundle(model_id)
+        family = str((bundle.get("download") or {}).get("family") or "").lower()
+        config_path = bundle.get("config_path")
+        if family == "demucs" and config_path:
+            return Path(config_path).name
+        checkpoint_path = bundle.get("checkpoint_path")
+        if checkpoint_path:
+            return Path(checkpoint_path).name
+        if config_path:
+            return Path(config_path).name
 
         # Prefer explicit artifact filename when available
         artifact_ckpt = self._artifact_filename(m, "primary")
@@ -550,23 +816,19 @@ class ModelManager:
             }
 
         expected_primary = self.get_expected_local_filename(model_id)
+        bundle = self.get_model_file_bundle(model_id)
+        checkpoint_path = bundle.get("checkpoint_path")
+        config_path = bundle.get("config_path")
 
         # Best-effort filename repair:
         # If registry stores files under URL basenames (common), create a local alias
         # so tools expecting `model_id.yaml` + `model_id.<weights>` can work.
-        if auto_repair_filenames and m.links and isinstance(m.links, dict):
+        if auto_repair_filenames and checkpoint_path and config_path:
             try:
-                ckpt_url = m.links.get("checkpoint") or ""
-                cfg_url = m.links.get("config") or ""
+                ckpt_src = Path(checkpoint_path)
+                cfg_src = Path(config_path)
 
-                ckpt_base = self._url_basename(str(ckpt_url)) if ckpt_url else None
-                cfg_base = self._url_basename(str(cfg_url)) if cfg_url else None
-
-                # Only attempt aliasing when both pieces exist locally.
-                ckpt_src = (self.models_dir / ckpt_base) if ckpt_base else None
-                cfg_src = (self.models_dir / cfg_base) if cfg_base else None
-
-                if ckpt_src and cfg_src and ckpt_src.exists() and cfg_src.exists():
+                if ckpt_src.exists() and cfg_src.exists():
                     # Alias weights as `<model_id>.<ext>` (e.g. .ckpt)
                     weight_ext = ckpt_src.suffix
                     if weight_ext:
@@ -597,9 +859,9 @@ class ModelManager:
         # so the official audio-separator path can be used.
         if auto_repair_filenames and model_id == "mel-band-roformer-kim":
             try:
-                ckpt_src = self.models_dir / "MelBandRoformer.ckpt"
+                ckpt_src = Path(checkpoint_path) if checkpoint_path else None
                 ckpt_alias = self.models_dir / "vocals_mel_band_roformer.ckpt"
-                if ckpt_src.exists() and not ckpt_alias.exists():
+                if ckpt_src and ckpt_src.exists() and not ckpt_alias.exists():
                     try:
                         os.link(str(ckpt_src), str(ckpt_alias))
                     except Exception:
@@ -621,6 +883,8 @@ class ModelManager:
             "expected_filename": expected_primary,
             "expected_files": [str(p) for p in self._candidate_files(model_id, m)],
             "links": m.links or {},
+            "download": bundle.get("download"),
+            "installation": bundle.get("installation"),
         }
 
         if not m.installed:
@@ -633,6 +897,7 @@ class ModelManager:
         m = self.models.get(model_id)
         if not m:
             return {"ok": False, "error": f"Unknown model_id: {model_id}"}
+        bundle = self.get_model_file_bundle(model_id)
 
         # Include strict-spec registry fields so UI/backend can make deterministic decisions
         # (runtime routing, compatibility gating, requirements warnings, phase-fix reference selection).
@@ -667,6 +932,9 @@ class ModelManager:
             "recommended_settings": m.recommended_settings
             if isinstance(m.recommended_settings, dict)
             else None,
+            "download": bundle.get("download"),
+            "installation": bundle.get("installation"),
+            "installed": bool(m.installed),
         }
 
     async def download_model(self, model_id: str) -> bool:
@@ -675,7 +943,7 @@ class ModelManager:
         NOTE: This is kept minimal; the full downloader lives in other parts of the project.
         """
         m = self.models.get(model_id)
-        if not m or not m.links:
+        if not m:
             return False
 
         try:
@@ -683,13 +951,26 @@ class ModelManager:
 
             self.models_dir.mkdir(parents=True, exist_ok=True)
 
-            def download(url: str) -> bool:
-                if not url:
+            manifest = self.resolve_download_manifest(model_id)
+            direct_artifacts = [
+                artifact
+                for artifact in (manifest.get("artifacts") or [])
+                if isinstance(artifact, dict)
+                and not bool(artifact.get("manual"))
+                and str(artifact.get("source") or "").strip()
+            ]
+
+            if not direct_artifacts:
+                log.warning("download_model called for non-direct model %s", model_id)
+                return False
+
+            def download(artifact: Dict[str, Any]) -> bool:
+                url = str(artifact.get("source") or "").strip()
+                rel = str(artifact.get("relative_path") or "").strip()
+                if not url or not rel:
                     return False
-                name = self._url_basename(url)
-                if not name:
-                    return False
-                dest = self.models_dir / name
+                dest = self.models_dir / Path(rel)
+                dest.parent.mkdir(parents=True, exist_ok=True)
                 if dest.exists():
                     return True
                 self._emit_download_progress(model_id, 0.0)
@@ -697,13 +978,10 @@ class ModelManager:
                 self._emit_download_progress(model_id, 1.0)
                 return dest.exists()
 
-            ok_ckpt = download(m.links.get("checkpoint") or "")
-            ok_cfg = True
-            if m.links.get("config"):
-                ok_cfg = download(m.links.get("config") or "")
+            ok = all(download(artifact) for artifact in direct_artifacts)
 
             self._refresh_install_flags()
-            return bool(ok_ckpt and ok_cfg and self.is_model_installed(model_id))
+            return bool(ok and self.is_model_installed(model_id))
         except Exception as e:
             log.error(f"download_model failed for {model_id}: {e}")
             return False

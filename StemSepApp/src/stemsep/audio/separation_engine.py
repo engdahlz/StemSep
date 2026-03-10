@@ -789,8 +789,9 @@ class SeparationEngine:
             target_instrument = None
             expected_in_channel = None
             if self.model_manager:
-                config_path = self.model_manager.models_dir / f"{model_id}.yaml"
-                if config_path.exists():
+                bundle = self.model_manager.get_model_file_bundle(model_id)
+                config_path = bundle.get("config_path")
+                if config_path and Path(config_path).exists():
                     try:
                         import yaml
 
@@ -1027,6 +1028,8 @@ class SeparationEngine:
             arch = model_info.get("architecture", "").lower()
             is_demucs = "demucs" in arch or "htdemucs" in arch
 
+            bundle = self._resolve_model_bundle(model_id) if self.model_manager else None
+
             if self.model_manager and not is_demucs:
                 if not self.model_manager.is_model_installed(model_id):
                     # IMPORTANT: Do not silently substitute a different model.
@@ -1045,86 +1048,27 @@ class SeparationEngine:
                 except Exception:
                     pass
 
-                # Resolve checkpoint path.
-                # ModelManager.installed_models maps model_id -> Path (not an object).
-                links = (
-                    model_info.get("links") if isinstance(model_info, dict) else None
-                )
-                ckpt_url = links.get("checkpoint") if isinstance(links, dict) else None
-
-                def _url_basename(url: Optional[str]) -> Optional[str]:
-                    if not url or not isinstance(url, str):
-                        return None
-                    return url.split("?")[0].rstrip("/").split("/")[-1]
-
-                preferred: List[Path] = []
-                ckpt_base = _url_basename(ckpt_url)
-                if ckpt_base:
-                    preferred.append(self.model_manager.models_dir / ckpt_base)
-
-                # Common aliases created by ensure_model_ready()
-                for ext in [".ckpt", ".chpt", ".pth", ".pt", ".safetensors", ".onnx"]:
-                    preferred.append(self.model_manager.models_dir / f"{model_id}{ext}")
-
-                # Best-effort scan for any model_id.* non-config artifact
-                preferred.extend(
-                    sorted(self.model_manager.models_dir.glob(f"{model_id}.*"))
-                )
-
-                checkpoint_path = None
-                for p in preferred:
-                    try:
-                        if not p.exists():
-                            continue
-                        if p.suffix.lower() in (".yaml", ".yml"):
-                            continue
-                        checkpoint_path = p
-                        break
-                    except Exception:
-                        continue
-
-                if (
-                    checkpoint_path is None
-                    and model_id in self.model_manager.installed_models
-                ):
+                checkpoint_path = bundle.get("checkpoint_path") if bundle else None
+                if checkpoint_path is None and model_id in self.model_manager.installed_models:
                     checkpoint_path = self.model_manager.installed_models[model_id]
-
                 if checkpoint_path is None:
                     checkpoint_path = self.model_manager.models_dir / f"{model_id}.ckpt"
             else:
                 # Fallback if no manager (shouldn't happen in normal app usage)
                 checkpoint_path = Path(f"models/{model_id}.ckpt")
+            checkpoint_path = Path(checkpoint_path)
 
             # Get configuration
             # Priority: 1. YAML file, 2. Factory Defaults based on ID/Architecture
             config = {}
             from stemsep.models.model_factory import ModelFactory
 
+            config_path = None
             if self.model_manager:
-                config_path = self.model_manager.models_dir / f"{model_id}.yaml"
-
-                # If config missing but URL exists, try to download
-                if not config_path.exists() and model_info.get("config_url"):
-                    self.logger.info(f"Config missing for {model_id}, downloading...")
-                    try:
-                        import aiohttp
-
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(model_info["config_url"]) as resp:
-                                if resp.status == 200:
-                                    text = await resp.text()
-                                    config_path.write_text(text, encoding="utf-8")
-                                    self.logger.info(
-                                        f"Config downloaded to {config_path}"
-                                    )
-                                else:
-                                    self.logger.warning(
-                                        f"Config download failed with status {resp.status}"
-                                    )
-                    except Exception as e:
-                        self.logger.warning(f"Failed to download config: {e}")
-
-                if config_path.exists():
+                config_path = bundle.get("config_path") if bundle else None
+                if config_path is not None:
+                    config_path = Path(config_path)
+                if config_path is not None and config_path.exists():
                     try:
                         import yaml
 
@@ -1168,6 +1112,14 @@ class SeparationEngine:
                             config_to_save["model"]["freqs_per_bands"] = list(
                                 config_to_save["model"]["freqs_per_bands"]
                             )
+                        if config_path is None:
+                            config_path = (
+                                self.model_manager.models_dir
+                                / "configs"
+                                / model_id
+                                / f"{model_id}.yaml"
+                            )
+                        config_path.parent.mkdir(parents=True, exist_ok=True)
                         config_path.write_text(
                             yaml.dump(config_to_save, default_flow_style=False)
                         )
@@ -1759,6 +1711,21 @@ class SeparationEngine:
             "scnet_xl": {"architecture": "SCNet", "stems": ["vocals", "instrumental"]},
         }
         return models.get(model_id)
+
+    def _resolve_model_bundle(self, model_id: str) -> Dict:
+        if self.model_manager:
+            try:
+                bundle = self.model_manager.get_model_file_bundle(model_id)
+                if isinstance(bundle, dict):
+                    return bundle
+            except Exception as e:
+                self.logger.debug(f"Failed to resolve bundle for {model_id}: {e}")
+        return {
+            "checkpoint_path": None,
+            "config_path": None,
+            "installation": {"installed": False, "missing_artifacts": []},
+            "artifacts": [],
+        }
 
     def _apply_vram_guard(self, model_info, segment_size, device):
         """Check VRAM and adjust segment size using safe presets"""

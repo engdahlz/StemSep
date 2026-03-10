@@ -6,6 +6,7 @@ import { Model, useStore } from "../stores/useStore";
 import { ModelCard } from "./ModelCard";
 import { ModelDetails } from "./ModelDetails";
 import { PageShell } from "./PageShell";
+import { normalizeModel } from "../lib/models/normalizeModel";
 
 type SortKey = "Popular" | "Rating" | "Newest";
 
@@ -16,37 +17,6 @@ interface ModelsPageProps {
   onModelDownloadComplete?: () => void;
   onBack?: () => void;
 }
-
-const toModel = (m: any) => ({
-  ...m,
-  id: typeof m?.id === "string" ? m.id : String(m?.id ?? ""),
-  name:
-    typeof m?.name === "string" && m.name.trim()
-      ? m.name
-      : (m?.id ?? "Unknown model"),
-  description: typeof m?.description === "string" ? m.description : "",
-  stems: Array.isArray(m?.stems) ? m.stems : [],
-  architecture: typeof m?.architecture === "string" ? m.architecture : "Unknown",
-  version: typeof m?.version === "string" ? m.version : "",
-  speed: typeof m?.speed === "string" ? m.speed : "unknown",
-  vram_required:
-    typeof m?.vram_required === "number"
-      ? m.vram_required
-      : Number(m?.vram_required ?? 0),
-  file_size:
-    typeof m?.file_size === "number" ? m.file_size : Number(m?.file_size ?? 0),
-  sdr: typeof m?.sdr === "number" ? m.sdr : Number(m?.sdr ?? 0),
-  fullness:
-    typeof m?.fullness === "number" ? m.fullness : Number(m?.fullness ?? 0),
-  bleedless:
-    typeof m?.bleedless === "number" ? m.bleedless : Number(m?.bleedless ?? 0),
-  category: m?.category || "primary",
-  installed: !!m?.installed,
-  downloading: false,
-  downloadPaused: false,
-  downloadProgress: 0,
-  recommended: !!m?.recommended,
-});
 
 const normalizeLabel = (value: string | undefined | null) =>
   String(value || "")
@@ -100,7 +70,7 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
       }
       try {
         const backendModels = await window.electronAPI.getModels();
-        const converted = backendModels.map(toModel);
+        const converted = backendModels.map(normalizeModel);
         setModels(converted);
         logger.info(
           `Loaded ${converted.length} models`,
@@ -170,8 +140,17 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
   }, [activeArch, activeCategory, models, searchQuery, sortBy]);
 
   const handleDownload = async (modelId: string) => {
-    startDownload(modelId);
     try {
+      const model = models.find((entry) => entry.id === modelId);
+      if (model?.download?.mode === "manual") {
+        setDetailsModel(model);
+        return;
+      }
+      if (model?.download?.mode === "unavailable") {
+        setDownloadError(modelId, "No verified download source is configured for this model yet.");
+        return;
+      }
+      startDownload(modelId);
       await window.electronAPI?.downloadModel?.(modelId);
     } catch (error) {
       setDownloadError(modelId, String(error));
@@ -203,7 +182,7 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
       const model = models.find((item) => item.id === modelId);
       if (model?.is_custom || modelId.startsWith("custom_")) {
         const backendModels = await window.electronAPI?.getModels?.();
-        if (backendModels) setModels(backendModels.map(toModel));
+        if (backendModels) setModels(backendModels.map(normalizeModel));
         return;
       }
       setModelInstalled(modelId, false);

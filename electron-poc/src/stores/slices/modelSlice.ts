@@ -31,6 +31,11 @@ export const createModelSlice: StateCreator<AppState, [["zustand/immer", never]]
         const model = state.models.find(m => m.id === modelId)
         if (model) {
             model.installed = true
+            model.installation = {
+                ...(model.installation || {}),
+                installed: true,
+                missing_artifacts: [],
+            }
             model.downloading = false
             model.downloadProgress = 100
             model.downloadSpeed = undefined
@@ -71,6 +76,10 @@ export const createModelSlice: StateCreator<AppState, [["zustand/immer", never]]
         const model = state.models.find(m => m.id === modelId)
         if (model) {
             model.installed = installed
+            model.installation = {
+                ...(model.installation || {}),
+                installed,
+            }
         }
     }),
 })

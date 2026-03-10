@@ -135,6 +135,23 @@ class SimpleSeparator:
         except Exception:
             pass
 
+    def _get_model_manager(self):
+        from stemsep.models.model_manager import ModelManager
+
+        return ModelManager(models_dir=self.models_dir)
+
+    def _resolve_model_bundle(self, model_id: str) -> Dict[str, Any]:
+        try:
+            mm = self._get_model_manager()
+            return mm.get_model_file_bundle(model_id)
+        except Exception as e:
+            self.logger.debug(f"Bundle resolution failed for '{model_id}': {e}")
+            return {
+                "checkpoint_path": None,
+                "config_path": None,
+                "installation": {"installed": False, "missing_artifacts": []},
+            }
+
     def get_model_filename(self, model_id: str) -> str:
         """
         Resolve a model_id to an actual filename inside models_dir.
@@ -147,11 +164,25 @@ class SimpleSeparator:
         4) If a file exists locally matching model_id + common extensions, use it.
         5) Fall back to returning model_id and let audio-separator handle it.
         """
-        # 1) Custom/community models: model_id.yaml + model_id.(ckpt/pth/...) are the "source of truth"
+        bundle = self._resolve_model_bundle(model_id)
+        checkpoint_path = bundle.get("checkpoint_path")
+        config_path = bundle.get("config_path")
+        family = ((bundle.get("download") or {}).get("family") or "").lower()
+
+        # 1) Custom/community models with a resolved config+weights pair use the direct-load path.
         if self._has_local_yaml(model_id):
             return model_id
 
-        # 2) Registry-derived expected local filename (URL basename)
+        # 2) Manifest-resolved filenames are authoritative for standard audio-separator loading.
+        # Demucs package loading starts from the YAML bag/config file rather than a single weight file.
+        if config_path and family == "demucs":
+            return Path(config_path).name
+        if checkpoint_path:
+            return Path(checkpoint_path).name
+        if config_path:
+            return Path(config_path).name
+
+        # 3) Registry-derived expected local filename (URL basename)
         expected_from_registry = self._get_expected_local_filename_from_registry(
             model_id
         )
@@ -161,7 +192,7 @@ class SimpleSeparator:
         ):
             return expected_from_registry
 
-        # 3) Legacy static mapping (kept as fallback for older installs / renamed files)
+        # 4) Legacy static mapping (kept as fallback for older installs / renamed files)
         if (
             model_id in self.MODEL_FILENAMES
             and (self.models_dir / self.MODEL_FILENAMES[model_id]).exists()
@@ -175,7 +206,7 @@ class SimpleSeparator:
         ):
             return self.MODEL_FILENAMES[normalized]
 
-        # 4) Direct file existence checks
+        # 5) Direct file existence checks
         for ext in [
             ".ckpt",
             ".chpt",
@@ -189,7 +220,7 @@ class SimpleSeparator:
             if (self.models_dir / f"{model_id}{ext}").exists():
                 return f"{model_id}{ext}"
 
-        # 5) Return as-is and let audio-separator handle it
+        # 6) Return as-is and let audio-separator handle it
         self.logger.warning(
             f"Model '{model_id}' not found locally via registry/mapping; using directly"
         )
@@ -215,11 +246,14 @@ class SimpleSeparator:
         if any(x in model_lower for x in ["mdx23c", "vr", "uvr", "_hp"]):
             return False
 
-        # Check for model_id.yaml and any known weight extension
-        yaml_path = self.models_dir / f"{model_id}.yaml"
-        if not yaml_path.exists():
+        bundle = self._resolve_model_bundle(model_id)
+        yaml_path = bundle.get("config_path")
+        if not yaml_path:
             return False
+        yaml_path = Path(yaml_path)
         weight_path = self._find_local_weight_file(model_id)
+        if not yaml_path.exists() or yaml_path.suffix.lower() not in {".yaml", ".yml"}:
+            return False
         return weight_path is not None
 
     def _get_expected_local_filename_from_registry(
@@ -241,11 +275,19 @@ class SimpleSeparator:
             )
 
             mm = ModelManager(models_dir=self.models_dir)
+            bundle = mm.get_model_file_bundle(model_id)
 
             # Prefer centralized logic (handles architectures that don't use checkpoint URLs)
             expected = mm.get_expected_local_filename(model_id)
             if expected:
                 return expected
+
+            checkpoint_path = bundle.get("checkpoint_path")
+            if checkpoint_path:
+                return Path(checkpoint_path).name
+            config_path = bundle.get("config_path")
+            if config_path:
+                return Path(config_path).name
 
             # Backward fallback: derive from registry links if present
             info = mm.get_model(model_id)
@@ -281,6 +323,10 @@ class SimpleSeparator:
         We prefer common Roformer checkpoint extensions. This allows community
         models to work even if they are not in audio-separator's internal list.
         """
+        bundle = self._resolve_model_bundle(model_id)
+        checkpoint_path = bundle.get("checkpoint_path")
+        if checkpoint_path and Path(checkpoint_path).exists():
+            return Path(checkpoint_path)
         for ext in [".ckpt", ".pth", ".pt", ".safetensors", ".onnx"]:
             p = self.models_dir / f"{model_id}{ext}"
             if p.exists():
@@ -417,12 +463,15 @@ class SimpleSeparator:
         - Ensure the config shape matches what audio-separator expects (CommonSeparator wants `training`).
         - Rely on audio-separator's internal RoformerLoader (via CommonSeparator) for best compatibility/quality.
         """
-        yaml_path = self.models_dir / f"{model_id}.yaml"
-        model_path = self._find_local_weight_file(model_id)
+        bundle = self._resolve_model_bundle(model_id)
+        yaml_path = bundle.get("config_path") or (self.models_dir / f"{model_id}.yaml")
+        yaml_path = Path(yaml_path)
+        model_path = bundle.get("checkpoint_path") or self._find_local_weight_file(model_id)
+        model_path = Path(model_path) if model_path is not None else None
 
-        if model_path is None:
+        if model_path is None or not yaml_path.exists():
             raise FileNotFoundError(
-                f"No local weight file found for model '{model_id}' in {self.models_dir}"
+                f"Missing local config/weight files for model '{model_id}' in {self.models_dir}"
             )
 
         self.logger.info(
@@ -601,6 +650,7 @@ class SimpleSeparator:
             )
 
         mm = ModelManager(models_dir=self.models_dir)
+        bundle = mm.get_model_file_bundle(model_id)
         preflight_raw = mm.ensure_model_ready(
             model_id,
             auto_repair_filenames=True,
@@ -633,6 +683,14 @@ class SimpleSeparator:
             msg += "No fallback model will be used. Please install/download the selected model."
 
             raise FileNotFoundError(msg)
+
+        resolved_anchor = bundle.get("checkpoint_path") or bundle.get("config_path")
+        resolved_anchor_path = Path(resolved_anchor) if resolved_anchor else None
+        model_file_dir = (
+            resolved_anchor_path.parent
+            if resolved_anchor_path is not None
+            else self.models_dir
+        )
 
         # Get actual model filename (now that naming is repaired/validated)
         model_filename = self.get_model_filename(model_id)
@@ -672,7 +730,7 @@ class SimpleSeparator:
         # Create separator instance (exactly like UVR5-UI)
         separator = Separator(
             log_level=logging.INFO,
-            model_file_dir=str(self.models_dir),
+            model_file_dir=str(model_file_dir),
             output_dir=str(output_path),
             output_format=output_format,
             use_autocast=self.use_autocast,
@@ -705,7 +763,7 @@ class SimpleSeparator:
                 from stemsep.audio.zfturbo_wrapper import RoformerSeparator
 
                 fallback = RoformerSeparator(
-                    models_dir=self.models_dir, device=self.device
+                    models_dir=self.models_dir, device=self.device, model_manager=mm
                 )
                 return fallback.separate(
                     audio_path=audio_path,
