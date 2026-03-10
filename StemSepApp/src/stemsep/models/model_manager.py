@@ -9,6 +9,19 @@ from typing import Any, Callable, Dict, List, Optional
 log = logging.getLogger("StemSep")
 
 
+def _merge_dicts(base: Dict[str, Any], overlay: Dict[str, Any]) -> Dict[str, Any]:
+    """Recursively merge nested registry overrides without dropping base metadata."""
+
+    merged = dict(base)
+    for key, value in overlay.items():
+        existing = merged.get(key)
+        if isinstance(existing, dict) and isinstance(value, dict):
+            merged[key] = _merge_dicts(existing, value)
+        else:
+            merged[key] = value
+    return merged
+
+
 @dataclass
 class ModelInfo:
     id: str
@@ -34,6 +47,17 @@ class ModelInfo:
     capabilities: Optional[Dict[str, Any]] = None
     artifacts: Optional[Dict[str, Any]] = None
     settings_semantics: Optional[Dict[str, Any]] = None
+    install: Optional[Dict[str, Any]] = None
+    quality_role: Optional[Any] = None
+    best_for: Optional[List[str]] = None
+    artifacts_risk: Optional[List[str]] = None
+    vram_profile: Optional[str] = None
+    chunk_overlap_policy: Optional[Dict[str, Any]] = None
+    workflow_groups: Optional[List[str]] = None
+    quality_axes: Optional[Dict[str, Any]] = None
+    workflow_roles: Optional[List[str]] = None
+    operating_profiles: Optional[Dict[str, Any]] = None
+    content_fit: Optional[List[str]] = None
 
     installed: bool = False
 
@@ -182,6 +206,72 @@ class ModelManager:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
+        registry_dir = self.assets_dir / "registry"
+        overrides_path = registry_dir / "guide_model_overrides.json"
+        if overrides_path.exists():
+            try:
+                with open(overrides_path, "r", encoding="utf-8") as f:
+                    overrides_data = json.load(f)
+                overrides = overrides_data.get("models") or {}
+                if isinstance(overrides, dict):
+                    for model in data.get("models", []):
+                        if not isinstance(model, dict):
+                            continue
+                        mid = str(model.get("id") or "").strip()
+                        overlay = overrides.get(mid)
+                        if isinstance(overlay, dict):
+                            merged = _merge_dicts(model, overlay)
+                            model.clear()
+                            model.update(merged)
+            except Exception as e:
+                log.warning("Failed to load guide overrides: %s", e)
+
+        guide_digest_path = registry_dir / "guide_digest.json"
+        if guide_digest_path.exists():
+            try:
+                with open(guide_digest_path, "r", encoding="utf-8") as f:
+                    digest_data = json.load(f)
+                digest_overrides = digest_data.get("model_overrides") or {}
+                if isinstance(digest_overrides, dict):
+                    for model in data.get("models", []):
+                        if not isinstance(model, dict):
+                            continue
+                        mid = str(model.get("id") or "").strip()
+                        overlay = digest_overrides.get(mid)
+                        if isinstance(overlay, dict):
+                            merged = _merge_dicts(model, overlay)
+                            model.clear()
+                            model.update(merged)
+            except Exception as e:
+                log.warning("Failed to load guide digest overrides: %s", e)
+
+        extra_models_path = registry_dir / "extra_models.json"
+        if extra_models_path.exists():
+            try:
+                with open(extra_models_path, "r", encoding="utf-8") as f:
+                    extra_data = json.load(f)
+                extra_models = extra_data.get("models") or []
+                if isinstance(extra_models, list):
+                    existing = {
+                        str(model.get("id") or "").strip(): model
+                        for model in data.get("models", [])
+                        if isinstance(model, dict)
+                    }
+                    for extra_model in extra_models:
+                        if not isinstance(extra_model, dict):
+                            continue
+                        mid = str(extra_model.get("id") or "").strip()
+                        if not mid:
+                            continue
+                        if mid in existing:
+                            merged = _merge_dicts(existing[mid], extra_model)
+                            existing[mid].clear()
+                            existing[mid].update(merged)
+                        else:
+                            data.setdefault("models", []).append(extra_model)
+            except Exception as e:
+                log.warning("Failed to load extra models: %s", e)
+
         models = data.get("models", [])
         out: Dict[str, ModelInfo] = {}
 
@@ -212,6 +302,17 @@ class ModelManager:
                     capabilities=m.get("capabilities"),
                     artifacts=m.get("artifacts"),
                     settings_semantics=m.get("settings_semantics"),
+                    install=m.get("install"),
+                    quality_role=m.get("quality_role"),
+                    best_for=m.get("best_for"),
+                    artifacts_risk=m.get("artifacts_risk"),
+                    vram_profile=m.get("vram_profile"),
+                    chunk_overlap_policy=m.get("chunk_overlap_policy"),
+                    workflow_groups=m.get("workflow_groups"),
+                    quality_axes=m.get("quality_axes"),
+                    workflow_roles=m.get("workflow_roles"),
+                    operating_profiles=m.get("operating_profiles"),
+                    content_fit=m.get("content_fit"),
                     installed=False,
                 )
             except Exception as e:
@@ -255,10 +356,23 @@ class ModelManager:
 
         artifact_ckpt = self._artifact_filename(model, "primary")
         artifact_cfg = self._artifact_filename(model, "config")
+        runtime_cfg = None
+        runtime_ckpt = None
+        runtime_required_files: List[str] = []
+        if model and isinstance(model.runtime, dict):
+            runtime_cfg = model.runtime.get("config_ref")
+            runtime_ckpt = model.runtime.get("checkpoint_ref")
+            runtime_required_files = [
+                str(item).strip()
+                for item in (model.runtime.get("required_files") or [])
+                if str(item).strip()
+            ]
 
         # Checkpoint requirement
         ok_ckpt = False
-        if artifact_ckpt:
+        if runtime_ckpt:
+            ok_ckpt = (self.models_dir / str(runtime_ckpt)).exists()
+        elif artifact_ckpt:
             ok_ckpt = (self.models_dir / artifact_ckpt).exists()
         elif isinstance(ckpt_url, str) and ckpt_url.strip():
             if ".onnx" in ckpt_url.lower():
@@ -269,8 +383,10 @@ class ModelManager:
 
         # Config requirement (only if registry declares a config link)
         ok_cfg = True
-        if isinstance(cfg_url, str) and cfg_url.strip():
+        if runtime_cfg or (isinstance(cfg_url, str) and cfg_url.strip()):
             cfg_candidates: List[Path] = []
+            if runtime_cfg:
+                cfg_candidates.append(self.models_dir / str(runtime_cfg))
             if artifact_cfg:
                 cfg_candidates.append(self.models_dir / artifact_cfg)
 
@@ -282,9 +398,17 @@ class ModelManager:
 
             ok_cfg = any(p.exists() for p in cfg_candidates)
 
+        if runtime_required_files:
+            required_ok = all((self.models_dir / item).exists() for item in runtime_required_files)
+            ok_ckpt = ok_ckpt and required_ok if runtime_ckpt else required_ok
+            ok_cfg = ok_cfg and required_ok
+
         # If registry provides any explicit requirements (links or artifact filenames), be strict.
         if (
-            artifact_ckpt
+            runtime_ckpt
+            or runtime_cfg
+            or runtime_required_files
+            or artifact_ckpt
             or artifact_cfg
             or (isinstance(ckpt_url, str) and ckpt_url.strip())
             or (isinstance(cfg_url, str) and cfg_url.strip())
@@ -308,6 +432,14 @@ class ModelManager:
         cfg_fn = self._artifact_filename(model, "config")
         if cfg_fn:
             candidates.append(self.models_dir / cfg_fn)
+        if model and isinstance(model.runtime, dict):
+            if model.runtime.get("checkpoint_ref"):
+                candidates.append(self.models_dir / str(model.runtime["checkpoint_ref"]))
+            if model.runtime.get("config_ref"):
+                candidates.append(self.models_dir / str(model.runtime["config_ref"]))
+            for item in model.runtime.get("required_files") or []:
+                if item:
+                    candidates.append(self.models_dir / str(item))
 
         # Try explicit filename from links
         if model and model.links:
@@ -521,6 +653,17 @@ class ModelManager:
             "capabilities": getattr(m, "capabilities", None),
             "artifacts": getattr(m, "artifacts", None),
             "settings_semantics": getattr(m, "settings_semantics", None),
+            "install": getattr(m, "install", None),
+            "quality_role": getattr(m, "quality_role", None),
+            "best_for": getattr(m, "best_for", None),
+            "artifacts_risk": getattr(m, "artifacts_risk", None),
+            "vram_profile": getattr(m, "vram_profile", None),
+            "chunk_overlap_policy": getattr(m, "chunk_overlap_policy", None),
+            "workflow_groups": getattr(m, "workflow_groups", None),
+            "quality_axes": getattr(m, "quality_axes", None),
+            "workflow_roles": getattr(m, "workflow_roles", None),
+            "operating_profiles": getattr(m, "operating_profiles", None),
+            "content_fit": getattr(m, "content_fit", None),
             "recommended_settings": m.recommended_settings
             if isinstance(m.recommended_settings, dict)
             else None,

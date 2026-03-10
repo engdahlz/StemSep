@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { X, Info, Settings2, Layers, Zap } from 'lucide-react'
 import { Button } from './ui/button'
 import { Card } from './ui/card'
 import { useStore } from '../stores/useStore'
-import { Preset } from '../presets'
+import { getRequiredModels, Preset } from '../presets'
 import type { SeparationConfig } from '../types/separation'
 import { EnsembleBuilder } from './EnsembleBuilder'
 import { PresetSelector } from './PresetSelector'
@@ -11,6 +11,98 @@ import { VRAMUsageMeter, estimateVRAMUsage } from './ui/vram-meter'
 import { TTAWarning, CPUOnlyWarning, LowVRAMWarning, EnsembleTip } from './ui/warning-tip'
 import { bestVolumeCompensation } from '../utils/volumeCompensation'
 import { useSystemRuntimeInfo } from '../hooks/useSystemRuntimeInfo'
+
+function buildPresetWorkflow(preset: Preset, outputFormat: 'wav' | 'mp3' | 'flac') {
+    if (preset.isRecipe && preset.recipe) {
+        return {
+            version: 1 as const,
+            id: preset.id,
+            name: preset.name,
+            kind: preset.recipe.type === 'pipeline' || preset.recipe.type === 'chained'
+                ? 'pipeline' as const
+                : preset.recipe.type === 'ensemble'
+                    ? 'ensemble' as const
+                    : 'single' as const,
+            surface: preset.recipe.surface || (
+                preset.recipe.target === 'restoration'
+                ? 'restoration' as const
+                : preset.recipe.target === 'drums' || preset.recipe.target === 'bass'
+                    ? 'special_stem' as const
+                    : 'workflow' as const
+            ),
+            family: preset.recipe.family,
+            description: preset.workflowSummary || preset.description,
+            stems: preset.stems,
+            steps: preset.recipe.steps as any[],
+            intermediateOutputs: preset.recipe.intermediate_outputs,
+            operatingProfile: preset.recipe.operating_profile,
+            fallbackPolicy: preset.recipe.fallback_policy ? {
+                mode: preset.recipe.fallback_policy.mode,
+                reason: preset.recipe.fallback_policy.reason,
+                runtimeOrder: preset.recipe.fallback_policy.runtime_order,
+                fallbackWorkflowId: preset.recipe.fallback_policy.fallback_workflow_id,
+                fallbackOperatingProfile: preset.recipe.fallback_policy.fallback_operating_profile,
+            } : undefined,
+            runtimePolicy: preset.recipe.runtime_policy ? {
+                required: preset.recipe.runtime_policy.required,
+                fallbacks: preset.recipe.runtime_policy.fallbacks,
+                allowManualModels: preset.recipe.runtime_policy.allow_manual_models,
+                preferredRuntime: preset.recipe.runtime_policy.preferred_runtime,
+            } : undefined,
+            exportPolicy: {
+                stems: preset.stems,
+                outputFormat,
+                intermediateOutputs: preset.recipe.export_policy?.intermediate_outputs || preset.recipe.intermediate_outputs,
+            },
+        }
+    }
+
+    if (preset.ensembleConfig) {
+        return {
+            version: 1 as const,
+            id: preset.id,
+            name: preset.name,
+            kind: 'ensemble' as const,
+            surface: 'ensemble' as const,
+            description: preset.description,
+            stems: preset.stems,
+            models: preset.ensembleConfig.models.map(model => ({
+                model_id: model.model_id,
+                weight: model.weight,
+                role: 'ensemble_partner' as const,
+            })),
+            blend: {
+                algorithm: preset.ensembleConfig.algorithm,
+                stemAlgorithms: preset.ensembleConfig.stemAlgorithms,
+                phaseFixEnabled: preset.ensembleConfig.phaseFixEnabled,
+                phaseFixParams: preset.ensembleConfig.phaseFixParams,
+            },
+            exportPolicy: {
+                stems: preset.stems,
+                outputFormat,
+            },
+        }
+    }
+
+    if (preset.modelId) {
+        return {
+            version: 1 as const,
+            id: preset.id,
+            name: preset.name,
+            kind: 'single' as const,
+            surface: 'single' as const,
+            description: preset.description,
+            stems: preset.stems,
+            models: [{ model_id: preset.modelId, role: 'primary' as const }],
+            exportPolicy: {
+                stems: preset.stems,
+                outputFormat,
+            },
+        }
+    }
+
+    return undefined
+}
 
 export type { SeparationConfig } from '../types/separation'
 
@@ -39,6 +131,9 @@ export default function SeparationConfigDialog({
     onNavigateToModels,
     onShowModelDetails
 }: SeparationConfigDialogProps) {
+    type SimpleGoalFilter = 'all' | 'instrumental' | 'vocals' | 'karaoke' | 'cleanup' | 'instruments'
+    type QualityIntentFilter = 'all' | 'fullness' | 'bleedless' | 'lead_back' | 'restoration' | 'special'
+
     const globalAdvancedSettings = useStore(state => state.settings.advancedSettings)
     const normalizeOverlap = (value: any) => {
         const n = typeof value === 'number' ? value : Number(value)
@@ -51,6 +146,8 @@ export default function SeparationConfigDialog({
     }
     const [mode, setMode] = useState<'simple' | 'advanced'>('simple')
     const [selectedPresetId, setSelectedPresetId] = useState<string>(initialPresetId || (presets.length > 0 ? presets[0].id : ''))
+    const [simpleGoalFilter, setSimpleGoalFilter] = useState<SimpleGoalFilter>('all')
+    const [qualityIntentFilter, setQualityIntentFilter] = useState<QualityIntentFilter>('all')
     const [selectedModelId, setSelectedModelId] = useState<string>('')
     const [device, setDevice] = useState<string>((globalAdvancedSettings?.device === 'cuda' ? 'cuda:0' : globalAdvancedSettings?.device) || 'auto')
     // Preview/playback is always WAV. Export format is chosen later in Results.
@@ -74,6 +171,9 @@ export default function SeparationConfigDialog({
     const [isEnsembleMode, setIsEnsembleMode] = useState(false)
     const [ensembleConfig, setEnsembleConfig] = useState<{ model_id: string; weight: number }[]>([])
     const [ensembleAlgorithm, setEnsembleAlgorithm] = useState<'average' | 'max_spec' | 'min_spec' | 'phase_fix' | 'frequency_split'>('average')
+    const [ensembleStemAlgorithms, setEnsembleStemAlgorithms] = useState<{ vocals?: 'average' | 'max_spec' | 'min_spec'; instrumental?: 'average' | 'max_spec' | 'min_spec' }>()
+    const [phaseFixEnabled, setPhaseFixEnabled] = useState(false)
+    const [phaseFixParams, setPhaseFixParams] = useState<{ enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }>()
     const { info: runtimeInfo } = useSystemRuntimeInfo()
     const gpuInfo = runtimeInfo?.gpu ?? null
 
@@ -83,6 +183,52 @@ export default function SeparationConfigDialog({
             setSelectedPresetId(initialPresetId)
         }
     }, [initialPresetId])
+
+    const inferSimpleGoal = (preset: Preset): Exclude<SimpleGoalFilter, 'all'> | undefined => {
+        if (preset.simpleGoal) return preset.simpleGoal
+        if (preset.category === 'vocals') return 'vocals'
+        if (preset.category === 'instrumental') return 'instrumental'
+        if (preset.category === 'instruments') return 'instruments'
+        if (preset.category === 'utility' && preset.tags?.includes('karaoke')) return 'karaoke'
+        if (preset.category === 'utility') return 'cleanup'
+        return undefined
+    }
+
+    const matchesQualityIntent = (preset: Preset, filter: QualityIntentFilter) => {
+        if (filter === 'all') return true
+        const haystack = [
+            preset.name,
+            preset.description,
+            preset.workflowSummary,
+            ...(preset.tags || []),
+            ...(preset.recommendedFor || []),
+        ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+
+        if (filter === 'fullness') return /fullness|body|warm|detail/.test(haystack)
+        if (filter === 'bleedless') return /bleed|clean|cleanup|debleed/.test(haystack)
+        if (filter === 'lead_back') return /karaoke|lead\/back|lead|backing|harmony|duet/.test(haystack)
+        if (filter === 'restoration') return /restoration|cleanup|dereverb|denoise|live/.test(haystack)
+        if (filter === 'special') return /drum|bass|guitar|special/.test(haystack)
+        return true
+    }
+
+    const filteredPresets = useMemo(() => {
+        return presets.filter((preset) => {
+            const goal = inferSimpleGoal(preset)
+            const goalMatch = simpleGoalFilter === 'all' || goal === simpleGoalFilter
+            const qualityMatch = matchesQualityIntent(preset, qualityIntentFilter)
+            return goalMatch && qualityMatch
+        })
+    }, [presets, simpleGoalFilter, qualityIntentFilter])
+
+    useEffect(() => {
+        if (!filteredPresets.some((preset) => preset.id === selectedPresetId)) {
+            setSelectedPresetId(filteredPresets[0]?.id || '')
+        }
+    }, [filteredPresets, selectedPresetId])
 
     // Update selected model when preset changes
     useEffect(() => {
@@ -106,6 +252,7 @@ export default function SeparationConfigDialog({
             // Presets are only meaningful in Simple mode. In Advanced mode, avoid carrying a stale
             // presetId (it can cause Results to show the preset label even when a custom modelId ran).
             presetId: mode === 'simple' ? selectedPresetId : undefined,
+            workflowId: mode === 'simple' ? selectedPresetId : undefined,
             modelId: isEnsembleMode ? undefined : selectedModelId,
             device,
             outputFormat,
@@ -119,8 +266,16 @@ export default function SeparationConfigDialog({
             advancedParams: mode === 'advanced' ? advancedParams : undefined,
             ensembleConfig: (mode === 'advanced' && isEnsembleMode) ? {
                 models: ensembleConfig,
-                algorithm: ensembleAlgorithm as any
-            } : undefined
+                algorithm: ensembleAlgorithm as any,
+                stemAlgorithms: ensembleStemAlgorithms,
+                phaseFixEnabled,
+                phaseFixParams: phaseFixParams ? {
+                    lowHz: phaseFixParams.lowHz,
+                    highHz: phaseFixParams.highHz,
+                    highFreqWeight: phaseFixParams.highFreqWeight,
+                } : undefined,
+            } : undefined,
+            workflow: undefined,
         }
 
         // Simple mode is locked to preset definitions.
@@ -128,9 +283,60 @@ export default function SeparationConfigDialog({
         // - Otherwise use the preset's modelId mapping (already reflected in selectedModelId).
         if (mode === 'simple') {
             const preset = presets.find(p => p.id === selectedPresetId)
+            config.workflow = preset ? buildPresetWorkflow(preset, outputFormat) : undefined
+            config.runtimePolicy = (preset?.isRecipe && preset.recipe?.runtime_policy) ? {
+                required: preset.recipe.runtime_policy.required,
+                fallbacks: preset.recipe.runtime_policy.fallbacks,
+                allowManualModels: preset.recipe.runtime_policy.allow_manual_models,
+                preferredRuntime: preset.recipe.runtime_policy.preferred_runtime,
+            } : undefined
+            config.exportPolicy = {
+                stems: preset?.stems,
+                outputFormat,
+            }
             if (preset?.ensembleConfig) {
                 config.ensembleConfig = preset.ensembleConfig
                 config.modelId = undefined
+            }
+        } else if (mode === 'advanced' && isEnsembleMode) {
+            config.workflow = {
+                version: 1,
+                name: 'Custom Ensemble',
+                kind: 'ensemble',
+                surface: 'ensemble',
+                stems: ['vocals', 'instrumental'],
+                models: ensembleConfig.map((model, index) => ({
+                    model_id: model.model_id,
+                    weight: model.weight,
+                    role: phaseFixEnabled && index === 1 ? 'phase_reference' : 'ensemble_partner',
+                })),
+                blend: {
+                    algorithm: ensembleAlgorithm as any,
+                    stemAlgorithms: ensembleStemAlgorithms,
+                    phaseFixEnabled,
+                    phaseFixParams: phaseFixParams ? {
+                        lowHz: phaseFixParams.lowHz,
+                        highHz: phaseFixParams.highHz,
+                        highFreqWeight: phaseFixParams.highFreqWeight,
+                    } : undefined,
+                    splitFreq: ensembleAlgorithm === 'frequency_split' ? splitFreq : undefined,
+                },
+                exportPolicy: {
+                    stems: ['vocals', 'instrumental'],
+                    outputFormat,
+                },
+            }
+        } else if (mode === 'advanced' && selectedModelId) {
+            config.workflow = {
+                version: 1,
+                kind: 'single',
+                surface: 'single',
+                models: [{ model_id: selectedModelId, role: 'primary' }],
+                stems: ['vocals', 'instrumental'],
+                exportPolicy: {
+                    stems: ['vocals', 'instrumental'],
+                    outputFormat,
+                },
             }
         }
 
@@ -138,9 +344,7 @@ export default function SeparationConfigDialog({
         onOpenChange(false)
     }
 
-    if (!open) return null
-
-    const selectedPreset = presets.find(p => p.id === selectedPresetId)
+    const selectedPreset = filteredPresets.find(p => p.id === selectedPresetId) || presets.find(p => p.id === selectedPresetId)
 
     const cudaGpus = Array.isArray(gpuInfo?.gpus)
         ? gpuInfo.gpus.filter((g: any) => g?.type === 'cuda')
@@ -159,27 +363,28 @@ export default function SeparationConfigDialog({
         }
     }, [hasCuda, device, primaryCudaDevice])
 
+    if (!open) return null
+
 
     // Check availability
     let isAvailable = true
     let missingModels: string[] = []
 
     if (mode === 'simple' && selectedPreset) {
-        if (selectedPreset.ensembleConfig) {
-            // Check all models in ensemble
-            selectedPreset.ensembleConfig.models.forEach(m => {
-                if (availability && availability[m.model_id]?.available === false) {
+        const requiredModels = getRequiredModels(selectedPreset)
+        if (requiredModels.length > 0) {
+            requiredModels.forEach(modelId => {
+                if (availability && availability[modelId]?.available === false) {
                     isAvailable = false
-                    missingModels.push(m.model_id)
+                    missingModels.push(modelId)
                 }
             })
         } else {
-            const modelId = selectedPreset.modelId || modelMap[selectedPreset.id]
-            if (modelId && availability && availability[modelId]?.available === false) {
+            const fallbackModelId = selectedPreset.modelId || modelMap[selectedPreset.id]
+            if (fallbackModelId && availability && availability[fallbackModelId]?.available === false) {
                 isAvailable = false
-                missingModels.push(modelId)
+                missingModels.push(fallbackModelId)
             }
-
         }
     } else if (mode === 'advanced' && !isEnsembleMode && selectedModelId) {
         if (availability && availability[selectedModelId]?.available === false) {
@@ -230,19 +435,88 @@ export default function SeparationConfigDialog({
                         <div className="space-y-6">
                             {/* Preset Selection - main choice */}
                             <div className="space-y-3">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium block">Quality Mode</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {([
+                                            ['all', 'All'],
+                                            ['instrumental', 'Instrumental'],
+                                            ['vocals', 'Vocals'],
+                                            ['karaoke', 'Karaoke'],
+                                            ['cleanup', 'Restoration'],
+                                            ['instruments', 'Special Stems'],
+                                        ] as Array<[SimpleGoalFilter, string]>).map(([value, label]) => (
+                                            <button
+                                                key={value}
+                                                type="button"
+                                                onClick={() => setSimpleGoalFilter(value)}
+                                                className={`rounded-full border px-3 py-1 text-xs transition-colors ${simpleGoalFilter === value ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-background/70 text-muted-foreground hover:text-foreground'}`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium block">Quality Goal</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {([
+                                            ['all', 'All'],
+                                            ['fullness', 'Max Fullness'],
+                                            ['bleedless', 'Min Bleed'],
+                                            ['lead_back', 'Lead/Back'],
+                                            ['restoration', 'Restoration'],
+                                            ['special', 'Special Stems'],
+                                        ] as Array<[QualityIntentFilter, string]>).map(([value, label]) => (
+                                            <button
+                                                key={value}
+                                                type="button"
+                                                onClick={() => setQualityIntentFilter(value)}
+                                                className={`rounded-full border px-3 py-1 text-xs transition-colors ${qualityIntentFilter === value ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-background/70 text-muted-foreground hover:text-foreground'}`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                                 <label className="text-sm font-medium block">Select Preset</label>
                                 <PresetSelector
                                     selectedPresetId={selectedPresetId}
                                     onSelectPreset={setSelectedPresetId}
-                                    presets={presets}
+                                    presets={filteredPresets}
                                     availability={availability}
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                    Showing {filteredPresets.length} preset{filteredPresets.length === 1 ? '' : 's'} for the current quality filters.
+                                </p>
                             </div>
 
                             {/* Selected preset info */}
                             {selectedPreset && (
                                 <div className="bg-secondary/30 p-4 rounded-lg space-y-2">
                                     <p className="text-sm text-muted-foreground">{selectedPreset.description}</p>
+                                    {selectedPreset.workflowSummary && (
+                                        <p className="text-sm text-foreground/80">
+                                            {selectedPreset.workflowSummary}
+                                        </p>
+                                    )}
+                                    <div className="flex gap-2 flex-wrap">
+                                        {selectedPreset.difficulty && (
+                                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-background/80">
+                                                {selectedPreset.difficulty}
+                                            </span>
+                                        )}
+                                        {selectedPreset.expectedRuntimeTier && (
+                                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-background/80">
+                                                Runtime: {selectedPreset.expectedRuntimeTier}
+                                            </span>
+                                        )}
+                                        {selectedPreset.expectedVramTier && (
+                                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-background/80">
+                                                VRAM: {selectedPreset.expectedVramTier}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-medium">Target Stems:</span>
                                         <div className="flex gap-1 flex-wrap">
@@ -262,6 +536,20 @@ export default function SeparationConfigDialog({
                                             </div>
                                         </div>
                                     )}
+
+                                    {selectedPreset.recommendedFor?.length ? (
+                                        <div className="mt-2 pt-2 border-t border-border/50">
+                                            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Best For</div>
+                                            <p className="text-sm text-foreground/80">{selectedPreset.recommendedFor.join(' • ')}</p>
+                                        </div>
+                                    ) : null}
+
+                                    {selectedPreset.contraindications?.length ? (
+                                        <div className="space-y-1">
+                                            <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Avoid When</div>
+                                            <p className="text-sm text-muted-foreground">{selectedPreset.contraindications.join(' • ')}</p>
+                                        </div>
+                                    ) : null}
 
                                     {!isAvailable && (
                                         <div className="flex flex-col gap-2 mt-2 bg-destructive/10 p-3 rounded border border-destructive/20">
@@ -321,9 +609,15 @@ export default function SeparationConfigDialog({
                                         models={models}
                                         config={ensembleConfig}
                                         algorithm={ensembleAlgorithm as any}
-                                        onChange={(cfg, alg) => {
+                                        phaseFixEnabled={phaseFixEnabled}
+                                        stemAlgorithms={ensembleStemAlgorithms}
+                                        phaseFixParams={phaseFixParams}
+                                        onChange={(cfg, alg, stemAlgorithms, nextPhaseParams, nextPhaseFixEnabled) => {
                                             setEnsembleConfig(cfg)
                                             setEnsembleAlgorithm(alg as any)
+                                            setEnsembleStemAlgorithms(stemAlgorithms)
+                                            setPhaseFixParams(nextPhaseParams)
+                                            setPhaseFixEnabled(nextPhaseFixEnabled ?? false)
                                         }}
                                     />
 

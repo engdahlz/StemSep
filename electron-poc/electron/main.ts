@@ -2938,6 +2938,9 @@ ipcMain.handle(
       phaseParams,
       postProcessingSteps,
       volumeCompensation,
+      workflow,
+      runtimePolicy,
+      exportPolicy,
     }: {
       inputFile: string;
       modelId: string;
@@ -2963,6 +2966,9 @@ ipcMain.handle(
       };
       postProcessingSteps?: any[];
       volumeCompensation?: { enabled: boolean; stage?: "export" | "blend" | "both"; dbPerExtraModel?: number };
+      workflow?: Record<string, any>;
+      runtimePolicy?: Record<string, any>;
+      exportPolicy?: Record<string, any>;
     },
   ) => {
     const requestId = randomUUID().slice(0, 8);
@@ -3028,6 +3034,9 @@ ipcMain.handle(
         post_processing_steps: postProcessingSteps,
         export_mixes: exportMixes,
         volume_compensation: volumeCompensation,
+        workflow,
+        runtime_policy: runtimePolicy,
+        export_policy: exportPolicy,
       };
 
       const onDone = (msg: any) => {
@@ -3589,6 +3598,9 @@ ipcMain.handle(
       phaseParams,
       postProcessingSteps,
       volumeCompensation,
+      workflow,
+      runtimePolicy,
+      exportPolicy,
     }: {
       inputFile: string;
       modelId: string;
@@ -3614,6 +3626,9 @@ ipcMain.handle(
       };
       postProcessingSteps?: any[];
       volumeCompensation?: { enabled: boolean; stage?: "export" | "blend" | "both"; dbPerExtraModel?: number };
+      workflow?: Record<string, any>;
+      runtimePolicy?: Record<string, any>;
+      exportPolicy?: Record<string, any>;
     },
   ) => {
     // Preflight should mirror the real run: normalize model id and stage non-WAV inputs to WAV.
@@ -3644,6 +3659,9 @@ ipcMain.handle(
         post_processing_steps: postProcessingSteps,
         export_mixes: exportMixes,
         volume_compensation: volumeCompensation,
+        workflow,
+        runtime_policy: runtimePolicy,
+        export_policy: exportPolicy,
       },
       30000,
     );

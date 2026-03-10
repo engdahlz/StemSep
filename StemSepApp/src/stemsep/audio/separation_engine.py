@@ -708,7 +708,25 @@ class SeparationEngine:
             use_zfturbo_engine = any(z in arch for z in zfturbo_archs)
 
             runtime = model_info.get("runtime") if isinstance(model_info, dict) else None
+            runtime_engine = runtime.get("engine") if isinstance(runtime, dict) else None
+            runtime_model_type = runtime.get("model_type") if isinstance(runtime, dict) else None
             variant = runtime.get("variant") if isinstance(runtime, dict) else None
+            if isinstance(runtime_engine, str) and runtime_engine.strip():
+                normalized_engine = runtime_engine.strip().lower()
+                if normalized_engine in [
+                    "msst_builtin",
+                    "custom_builtin_variant",
+                    "demucs_native",
+                    "native_stemsep",
+                ]:
+                    use_zfturbo_engine = normalized_engine not in [
+                        "msst_builtin",
+                        "custom_builtin_variant",
+                        "demucs_native",
+                    ]
+                    self.logger.info(
+                        f"runtime.engine={runtime_engine} model_type={runtime_model_type or 'unknown'} for {model_id}"
+                    )
             if isinstance(variant, str) and variant.strip():
                 use_zfturbo_engine = False
                 self.logger.info(

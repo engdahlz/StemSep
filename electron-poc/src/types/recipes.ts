@@ -50,6 +50,8 @@ export interface Recipe {
   name: string
   description?: string
   type: RecipeType
+  surface?: 'single' | 'ensemble' | 'workflow' | 'restoration' | 'special_stem'
+  family?: string
   target?: string
   quality_goal?: string
   difficulty?: RecipeDifficulty
@@ -63,13 +65,34 @@ export interface Recipe {
   workflow_summary?: string
   warning?: string
   source?: string
+  promotion_status?: 'curated' | 'supported_advanced'
+  qa_status?: 'verified' | 'pending' | 'experimental'
   vram_category?: 'low' | 'medium' | 'high'
+  operating_profile?: string
+  intermediate_outputs?: string[]
+  fallback_policy?: {
+    mode?: 'none' | 'runtime_fallback' | 'workflow_fallback' | 'profile_fallback'
+    reason?: string
+    runtime_order?: string[]
+    fallback_workflow_id?: string
+    fallback_operating_profile?: string
+  }
   defaults?: RecipeDefaults
 
   // Ensemble-only fields (may be present on other types as metadata)
   algorithm?: string
   algorithm_config?: Record<string, unknown>
   phase_fix_params?: RecipePhaseFixParams
+  runtime_policy?: {
+    required?: string[]
+    fallbacks?: string[]
+    allow_manual_models?: boolean
+    preferred_runtime?: string
+  }
+  export_policy?: {
+    stems?: string[]
+    output_format?: 'wav' | 'mp3' | 'flac'
+  }
 
   // Post-processing in recipes.json is a high-level name (not always a model dependency)
   post_processing?: string

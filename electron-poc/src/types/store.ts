@@ -47,7 +47,22 @@ export interface Model {
     allowed?: boolean | string[];
     preferred?: string;
     variant?: string;
+    engine?: 'native_stemsep' | 'msst_builtin' | 'demucs_native' | 'custom_builtin_variant' | string;
+    model_type?: string;
+    config_ref?: string;
+    checkpoint_ref?: string;
+    patch_profile?: string;
+    install_mode?: 'direct' | 'manual' | 'custom_runtime' | string;
+    required?: string[];
+    fallbacks?: string[];
+    hosts?: string[];
+    install_burden?: "low" | "medium" | "high" | string;
+    requires_patch?: boolean;
+    requires_manual_assets?: boolean;
+    required_files?: string[];
+    requires_custom_repo_file?: string[];
     blocking_reason?: string;
+    adapter?: string;
     requirements?: {
       manual_steps?: string[];
       python_packages?: string[];
@@ -57,6 +72,7 @@ export interface Model {
   phase_fix?: {
     is_valid_reference?: boolean;
     reference_model_id?: string;
+    references?: Record<string, string[]>;
     recommended_params?: {
       lowHz?: number;
       highHz?: number;
@@ -82,6 +98,8 @@ export interface Model {
     readiness?: "verified" | "experimental" | "manual" | "blocked";
     simple_allowed?: boolean;
     blocking_reason?: string;
+    curated?: boolean;
+    support_tier?: "curated" | "supported_advanced";
   };
   quality_profile?: {
     target_roles?: Array<
@@ -123,6 +141,45 @@ export interface Model {
     note: string;
     verified_at: string;
   }>;
+  install?: {
+    mode?: "direct" | "manual" | "custom_runtime";
+    notes?: string[];
+  };
+  quality_role?:
+    | "primary"
+    | "ensemble_partner"
+    | "phase_reference"
+    | "post_process"
+    | "special_stem"
+    | Array<
+        | "primary"
+        | "ensemble_partner"
+        | "phase_reference"
+        | "post_process"
+        | "special_stem"
+      >;
+  best_for?: string[];
+  artifacts_risk?: string[];
+  vram_profile?: "cpu_only" | "low_vram" | "mid_vram" | "high_vram" | string;
+  chunk_overlap_policy?: {
+    default_segment_size?: number | null;
+    default_overlap?: number | null;
+    notes?: string[];
+  };
+  workflow_groups?: string[];
+  quality_axes?: Record<string, number | string | null>;
+  workflow_roles?: string[];
+  operating_profiles?: Record<
+    string,
+    {
+      segment_size?: number | null;
+      overlap?: number | null;
+      batch_size?: number | null;
+      shifts?: number | null;
+      notes?: string[];
+    }
+  >;
+  content_fit?: string[];
 }
 
 export type Recipe = import("./recipes").Recipe;

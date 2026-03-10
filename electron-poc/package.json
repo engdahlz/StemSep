@@ -95,8 +95,6 @@
           "README.md",
           "LICENSE",
           "CHANGELOG.md",
-          "QUICKSTART.md",
-          "MANUAL.md",
           "requirements.txt",
           "pyproject.toml",
           "setup.py"

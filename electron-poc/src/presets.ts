@@ -33,13 +33,20 @@ export interface Preset {
   recommendedFor?: string[]
   contraindications?: string[]
   workflowSummary?: string
+  workflowFamily?: string
+  promotionStatus?: 'curated' | 'supported_advanced'
+  qaStatus?: 'verified' | 'pending' | 'experimental'
   modelId?: string // For single-model presets
   isRecipe?: boolean // For workflow recipes
   recipe?: {
     type: RecipeType
+    surface?: 'single' | 'ensemble' | 'workflow' | 'restoration' | 'special_stem'
     target?: string
     warning?: string
     source?: string
+    family?: string
+    promotion_status?: 'curated' | 'supported_advanced'
+    qa_status?: 'verified' | 'pending' | 'experimental'
     defaults?: RecipeDefaults
     difficulty?: RecipeDifficulty
     expectedVramTier?: RecipeVramTier
@@ -48,6 +55,26 @@ export interface Preset {
     recommendedFor?: string[]
     contraindications?: string[]
     workflowSummary?: string
+    runtime_policy?: {
+      required?: string[]
+      fallbacks?: string[]
+      allow_manual_models?: boolean
+      preferred_runtime?: string
+    }
+    export_policy?: {
+      stems?: string[]
+      output_format?: 'wav' | 'mp3' | 'flac'
+      intermediate_outputs?: string[]
+    }
+    operating_profile?: string
+    intermediate_outputs?: string[]
+    fallback_policy?: {
+      mode?: 'none' | 'runtime_fallback' | 'workflow_fallback' | 'profile_fallback'
+      reason?: string
+      runtime_order?: string[]
+      fallback_workflow_id?: string
+      fallback_operating_profile?: string
+    }
     requiredModels: string[]
     steps: RecipeStep[]
   }

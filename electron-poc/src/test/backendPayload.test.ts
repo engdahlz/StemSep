@@ -35,6 +35,27 @@ describe("backendPayload", () => {
         effectiveStems: ["instrumental", "vocals"],
         effectiveEnsembleConfig: undefined,
         effectivePostProcessingSteps: undefined,
+        effectiveWorkflow: {
+          version: 1,
+          id: "workflow_phase_fix_instrumental",
+          name: "Best Instrumental",
+          kind: "pipeline",
+          surface: "workflow",
+          stems: ["instrumental", "vocals"],
+          models: [
+            { model_id: "unwa-inst-v1e-plus", role: "primary" },
+            { model_id: "becruily-vocal", role: "phase_reference" },
+          ],
+          steps: [
+            { id: "separate", action: "separate", model_id: "unwa-inst-v1e-plus" },
+            {
+              id: "phase_fix",
+              action: "phase_fix",
+              source_model: "becruily-vocal",
+              apply_to: "instrumental",
+            },
+          ],
+        },
         effectiveGlobalPhaseParams: undefined,
         missingModels: [],
         canProceed: true,
@@ -55,5 +76,7 @@ describe("backendPayload", () => {
     expect(payload.overlap).toBeCloseTo(0.75)
     expect(payload.segmentSize).toBe(352800)
     expect(payload.outputFormat).toBe("wav")
+    expect(payload.workflow?.kind).toBe("pipeline")
+    expect(payload.workflow?.steps?.[1]?.action).toBe("phase_fix")
   })
 })

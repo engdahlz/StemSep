@@ -1,4 +1,12 @@
-import type { SeparationConfig } from "@/types/separation";
+import type {
+  SeparationConfig,
+  SeparationWorkflow,
+  WorkflowBlendConfig,
+  WorkflowModelRef,
+  WorkflowPhaseFixParams,
+  WorkflowStep,
+  WorkflowSurface,
+} from "@/types/separation";
 
 /**
  * Canonical separation plan resolver.
@@ -17,11 +25,7 @@ import type { SeparationConfig } from "@/types/separation";
  * This file intentionally does not import UI store; you pass in what you need.
  */
 
-export type PhaseFixParams = {
-  lowHz: number;
-  highHz: number;
-  highFreqWeight: number;
-};
+export type PhaseFixParams = WorkflowPhaseFixParams;
 
 export type GlobalPhaseParams = {
   enabled: boolean;
@@ -45,6 +49,24 @@ export type PresetLike = {
   name?: string;
   modelId?: string;
   stems?: string[];
+  description?: string;
+  simpleGoal?: string;
+  workflowSummary?: string;
+  difficulty?: string;
+  expectedRuntimeTier?: string;
+  expectedVramTier?: string;
+  recipe?: {
+    type?: string;
+    target?: string;
+    defaults?: {
+      overlap?: number;
+      segment_size?: number;
+      chunk_size?: number;
+      shifts?: number;
+      tta?: boolean;
+    };
+    steps?: any[];
+  };
   // Ensemble presets or "pipeline defined" presets
   ensembleConfig?: {
     models: { model_id: string; weight?: number }[];
@@ -120,6 +142,7 @@ export type SeparationPlan = {
    * Effective post-processing steps (from preset or config).
    */
   effectivePostProcessingSteps?: SeparationConfig["postProcessingSteps"];
+  effectiveWorkflow?: SeparationWorkflow;
 
   /**
    * Effective phase params to send as legacy global phase_params.
@@ -151,6 +174,342 @@ export type SeparationPlan = {
     usedGlobalPhaseParams?: boolean;
   };
 };
+
+function normalizeSurface(value: string | undefined): WorkflowSurface {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (
+    normalized === "single" ||
+    normalized === "ensemble" ||
+    normalized === "workflow" ||
+    normalized === "restoration" ||
+    normalized === "special_stem"
+  ) {
+    return normalized;
+  }
+  if (normalized === "karaoke" || normalized === "cleanup") {
+    return "workflow";
+  }
+  if (normalized === "drums" || normalized === "bass" || normalized === "guitar") {
+    return "special_stem";
+  }
+  return "workflow";
+}
+
+function recipeStepToWorkflowStep(step: Record<string, unknown>, index: number): WorkflowStep {
+  const output = step.output;
+  return {
+    id:
+      (typeof step.step_name === "string" && step.step_name) ||
+      (typeof step.name === "string" && step.name) ||
+      `step_${index + 1}`,
+    name:
+      (typeof step.step_name === "string" && step.step_name) ||
+      (typeof step.name === "string" && step.name) ||
+      `Step ${index + 1}`,
+    action:
+      typeof step.action === "string" && step.action.trim()
+        ? step.action
+        : typeof step.source_model === "string" && step.source_model
+          ? "phase_fix"
+          : "separate",
+    model_id:
+      typeof step.model_id === "string" && step.model_id.trim()
+        ? step.model_id
+        : undefined,
+    source_model:
+      typeof step.source_model === "string" && step.source_model.trim()
+        ? step.source_model
+        : undefined,
+    input_source:
+      (typeof step.input_source === "string" && step.input_source.trim()
+        ? step.input_source
+        : undefined) ||
+      (typeof step.input_from === "string" && step.input_from.trim()
+        ? step.input_from
+        : undefined),
+    output:
+      typeof output === "string" || Array.isArray(output)
+        ? (output as string | string[])
+        : undefined,
+    apply_to:
+      typeof step.apply_to === "string" && step.apply_to.trim()
+        ? step.apply_to
+        : undefined,
+    role:
+      typeof step.role === "string" && step.role.trim() ? step.role : undefined,
+    weight:
+      typeof step.weight === "number" && Number.isFinite(step.weight)
+        ? step.weight
+        : undefined,
+    optional: step.optional === true,
+    params: Object.fromEntries(
+      Object.entries(step).filter(([key, value]) => {
+        if (value == null) return false;
+        return ![
+          "step_name",
+          "name",
+          "action",
+          "model_id",
+          "source_model",
+          "input_source",
+          "input_from",
+          "output",
+          "apply_to",
+          "role",
+          "weight",
+          "optional",
+        ].includes(key);
+      }),
+    ),
+  };
+}
+
+function buildRecipeWorkflow(
+  preset: PresetLike,
+  config: SeparationConfig,
+): SeparationWorkflow | undefined {
+  const recipe = preset.recipe;
+  if (!recipe) return undefined;
+
+  const steps = Array.isArray(recipe.steps)
+    ? recipe.steps.map((step, index) =>
+        recipeStepToWorkflowStep((step || {}) as Record<string, unknown>, index),
+      )
+    : [];
+
+  const models = new Map<string, WorkflowModelRef>();
+  for (const step of steps) {
+    if (step.model_id) {
+      models.set(step.model_id, {
+        model_id: step.model_id,
+        weight: step.weight,
+        role: (step.role as WorkflowModelRef["role"]) || "primary",
+      });
+    }
+    if (step.source_model) {
+      models.set(step.source_model, {
+        model_id: step.source_model,
+        role: "phase_reference",
+        required: !step.optional,
+      });
+    }
+  }
+
+  const kind =
+    recipe.type === "pipeline" || recipe.type === "chained"
+      ? "pipeline"
+      : recipe.type === "ensemble"
+        ? "ensemble"
+        : "single";
+
+  const blend: WorkflowBlendConfig | undefined =
+    kind === "ensemble"
+      ? {
+          algorithm:
+            preset.ensembleConfig?.algorithm ||
+            (typeof (recipe as Record<string, unknown>).algorithm === "string"
+              ? ((recipe as Record<string, unknown>).algorithm as WorkflowBlendConfig["algorithm"])
+              : "average"),
+          stemAlgorithms: preset.ensembleConfig?.stemAlgorithms,
+          splitFreq:
+            typeof config.splitFreq === "number"
+              ? config.splitFreq
+              : typeof (recipe as Record<string, unknown>).algorithm_config === "object" &&
+                  (recipe as Record<string, unknown>).algorithm_config &&
+                  typeof ((recipe as Record<string, unknown>).algorithm_config as Record<string, unknown>).split_freq ===
+                    "number"
+                ? (((recipe as Record<string, unknown>).algorithm_config as Record<string, unknown>)
+                    .split_freq as number)
+                : undefined,
+          phaseFixEnabled: preset.ensembleConfig?.phaseFixEnabled,
+          phaseFixParams: preset.ensembleConfig?.phaseFixParams,
+        }
+      : undefined;
+
+  return {
+    version: 1,
+    id: preset.id,
+    name: preset.name,
+    kind,
+    family:
+      typeof (preset.recipe as any)?.family === "string"
+        ? (preset.recipe as any).family
+        : undefined,
+    surface: normalizeSurface(
+      preset.recipe?.target || preset.simpleGoal || config.mode,
+    ),
+    description: preset.workflowSummary || preset.description,
+    stems: config.stems || preset.stems,
+    models: Array.from(models.values()),
+    steps,
+    blend,
+    postprocess: config.postProcessingSteps,
+    intermediateOutputs: Array.isArray((preset.recipe as any)?.intermediate_outputs)
+      ? (preset.recipe as any).intermediate_outputs
+      : undefined,
+    fallbackPolicy:
+      typeof (preset.recipe as any)?.fallback_policy === "object" &&
+      (preset.recipe as any)?.fallback_policy
+        ? {
+            mode: (preset.recipe as any).fallback_policy.mode,
+            reason: (preset.recipe as any).fallback_policy.reason,
+            runtimeOrder: (preset.recipe as any).fallback_policy.runtime_order,
+            fallbackWorkflowId:
+              (preset.recipe as any).fallback_policy.fallback_workflow_id,
+            fallbackOperatingProfile:
+              (preset.recipe as any).fallback_policy.fallback_operating_profile,
+          }
+        : undefined,
+    operatingProfile:
+      typeof (preset.recipe as any)?.operating_profile === "string"
+        ? (preset.recipe as any).operating_profile
+        : undefined,
+    runtimePolicy:
+      config.runtimePolicy || (preset.recipe as any)?.runtime_policy
+        ? {
+            required:
+              config.runtimePolicy?.required ||
+              (preset.recipe as any)?.runtime_policy?.required,
+            fallbacks:
+              config.runtimePolicy?.fallbacks ||
+              (preset.recipe as any)?.runtime_policy?.fallbacks,
+            allowManualModels:
+              config.runtimePolicy?.allowManualModels ??
+              (preset.recipe as any)?.runtime_policy?.allow_manual_models,
+            preferredRuntime:
+              config.runtimePolicy?.preferredRuntime ||
+              (preset.recipe as any)?.runtime_policy?.preferred_runtime,
+          }
+        : undefined,
+    exportPolicy:
+      config.exportPolicy || (preset.recipe as any)?.export_policy
+        ? {
+            stems:
+              config.exportPolicy?.stems ||
+              (preset.recipe as any)?.export_policy?.stems ||
+              config.stems ||
+              preset.stems,
+            outputFormat:
+              config.exportPolicy?.outputFormat ||
+              (preset.recipe as any)?.export_policy?.output_format ||
+              config.outputFormat,
+            intermediateOutputs:
+              config.exportPolicy?.intermediateOutputs ||
+              (preset.recipe as any)?.export_policy?.intermediate_outputs ||
+              (preset.recipe as any)?.intermediate_outputs,
+          }
+        : undefined,
+  };
+}
+
+function buildEnsembleWorkflow(
+  args: {
+    id?: string;
+    name?: string;
+    description?: string;
+    surface?: string;
+    stems?: string[];
+    ensembleConfig: NonNullable<SeparationConfig["ensembleConfig"]>;
+    postprocess?: SeparationConfig["postProcessingSteps"];
+    runtimePolicy?: SeparationConfig["runtimePolicy"];
+    exportPolicy?: SeparationConfig["exportPolicy"];
+    splitFreq?: number;
+    outputFormat?: SeparationConfig["outputFormat"];
+  },
+): SeparationWorkflow {
+  const {
+    id,
+    name,
+    description,
+    surface,
+    stems,
+    ensembleConfig,
+    postprocess,
+    runtimePolicy,
+    exportPolicy,
+    splitFreq,
+    outputFormat,
+  } = args;
+
+  return {
+    version: 1,
+    id,
+    name,
+    kind: "ensemble",
+    surface: normalizeSurface(surface),
+    description,
+    stems,
+    models: ensembleConfig.models.map((model, index) => ({
+      model_id: model.model_id,
+      weight: model.weight,
+      role:
+        ensembleConfig.phaseFixEnabled && index === 1
+          ? "phase_reference"
+          : "ensemble_partner",
+      required: true,
+    })),
+    blend: {
+      algorithm: ensembleConfig.algorithm,
+      stemAlgorithms: ensembleConfig.stemAlgorithms,
+      splitFreq,
+      phaseFixEnabled: ensembleConfig.phaseFixEnabled,
+      phaseFixParams: ensembleConfig.phaseFixParams,
+    },
+    postprocess,
+    runtimePolicy,
+    exportPolicy: exportPolicy || {
+      stems,
+      outputFormat,
+    },
+  };
+}
+
+function buildSingleWorkflow(args: {
+  id?: string;
+  name?: string;
+  description?: string;
+  surface?: string;
+  modelId: string;
+  stems?: string[];
+  postprocess?: SeparationConfig["postProcessingSteps"];
+  runtimePolicy?: SeparationConfig["runtimePolicy"];
+  exportPolicy?: SeparationConfig["exportPolicy"];
+  outputFormat?: SeparationConfig["outputFormat"];
+}): SeparationWorkflow {
+  return {
+    version: 1,
+    id: args.id,
+    name: args.name,
+    kind: "single",
+    surface: normalizeSurface(args.surface),
+    description: args.description,
+    stems: args.stems,
+    models: [{ model_id: args.modelId, role: "primary", required: true }],
+    postprocess: args.postprocess,
+    runtimePolicy: args.runtimePolicy,
+    exportPolicy: args.exportPolicy || {
+      stems: args.stems,
+      outputFormat: args.outputFormat,
+    },
+  };
+}
+
+function referencedWorkflowModelIds(
+  workflow: SeparationWorkflow | undefined,
+): string[] {
+  if (!workflow) return [];
+  const ids = new Set<string>();
+  for (const model of workflow.models || []) {
+    if (model?.model_id) ids.add(model.model_id);
+  }
+  for (const step of workflow.steps || []) {
+    if (step?.model_id) ids.add(step.model_id);
+    if (step?.source_model) ids.add(step.source_model);
+  }
+  return Array.from(ids);
+}
 
 function findPreset(
   presets: PresetLike[] | undefined,
@@ -214,6 +573,7 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
   let effectiveEnsembleConfig: SeparationConfig["ensembleConfig"] | undefined =
     config.ensembleConfig;
   let effectivePostProcessingSteps = config.postProcessingSteps;
+  let effectiveWorkflow = config.workflow;
 
   const preset =
     config.mode === "simple" ? findPreset(presets, config.presetId) : undefined;
@@ -222,7 +582,7 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
   // Simple mode is preset-authoritative: ignore any UI-provided overrides.
   // The caller should pass only presetId in Simple mode, but we defensively clamp here.
   if (config.mode === "simple") {
-    effectiveModelId = "htdemucs";
+    effectiveModelId = config.workflowId || "htdemucs";
     effectiveEnsembleConfig = undefined;
     effectivePostProcessingSteps = undefined;
     // Stems in Simple mode come from preset unless explicitly supported later.
@@ -232,6 +592,13 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
 
   // --- Step 2: Apply Simple preset selection rules (if any) ---
   if (config.mode === "simple" && preset) {
+    const presetWorkflow = buildRecipeWorkflow(preset, config);
+    if (presetWorkflow) {
+      effectiveWorkflow = presetWorkflow;
+      effectiveModelId = presetWorkflow.id || preset.id;
+      effectiveStems = presetWorkflow.stems || effectiveStems;
+    }
+
     // If preset defines an ensemble config, that is authoritative (pipeline defined)
     if (preset.ensembleConfig && preset.ensembleConfig.models?.length > 0) {
       effectiveModelId = "ensemble";
@@ -239,6 +606,19 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
         ...preset.ensembleConfig,
       } as any;
       effectiveStems = getDefaultEnsembleStems(config.stems || preset.stems);
+      effectiveWorkflow = buildEnsembleWorkflow({
+        id: preset.id,
+        name: preset.name,
+        description: preset.workflowSummary || preset.description,
+        surface: preset.simpleGoal || preset.recipe?.target || "ensemble",
+        stems: effectiveStems,
+        ensembleConfig: effectiveEnsembleConfig!,
+        postprocess: effectivePostProcessingSteps,
+        runtimePolicy: config.runtimePolicy,
+        exportPolicy: config.exportPolicy,
+        splitFreq: config.splitFreq,
+        outputFormat: config.outputFormat,
+      });
     } else {
       // Single model preset
       const mappedModelId = preset.modelId || modelMap[preset.id];
@@ -249,15 +629,35 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
       if (!config.stems && Array.isArray(preset.stems)) {
         effectiveStems = preset.stems;
       }
+      if (!effectiveWorkflow && mappedModelId) {
+        effectiveWorkflow = buildSingleWorkflow({
+          id: preset.id,
+          name: preset.name,
+          description: preset.description,
+          surface: preset.simpleGoal || "single",
+          modelId: mappedModelId,
+          stems: effectiveStems,
+          postprocess: effectivePostProcessingSteps,
+          runtimePolicy: config.runtimePolicy,
+          exportPolicy: config.exportPolicy,
+          outputFormat: config.outputFormat,
+        });
+      }
     }
 
     // Post-processing pipeline from preset (if the preset defines it)
-    if (
-      Array.isArray(preset.postProcessingSteps) &&
-      preset.postProcessingSteps.length > 0
-    ) {
-      effectivePostProcessingSteps = preset.postProcessingSteps;
+  if (
+    Array.isArray(preset.postProcessingSteps) &&
+    preset.postProcessingSteps.length > 0
+  ) {
+    effectivePostProcessingSteps = preset.postProcessingSteps;
+    if (effectiveWorkflow) {
+      effectiveWorkflow = {
+        ...effectiveWorkflow,
+        postprocess: preset.postProcessingSteps,
+      };
     }
+  }
   }
 
   // --- Step 3: If config contains a custom ensemble, it takes priority (Advanced only) ---
@@ -270,6 +670,61 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
     effectiveModelId = "ensemble";
     effectiveEnsembleConfig = config.ensembleConfig;
     effectiveStems = getDefaultEnsembleStems(config.stems);
+    effectiveWorkflow = buildEnsembleWorkflow({
+      id: config.workflowId,
+      name: config.workflow?.name || "Custom Ensemble",
+      description: config.workflow?.description,
+      surface: config.workflow?.surface || "ensemble",
+      stems: effectiveStems,
+      ensembleConfig: config.ensembleConfig,
+      postprocess: effectivePostProcessingSteps,
+      runtimePolicy: config.runtimePolicy,
+      exportPolicy: config.exportPolicy,
+      splitFreq: config.splitFreq,
+      outputFormat: config.outputFormat,
+    });
+  }
+
+  if (!effectiveWorkflow && config.workflow) {
+    effectiveWorkflow = config.workflow;
+    effectiveModelId =
+      config.workflowId ||
+      config.workflow.id ||
+      config.modelId ||
+      (config.workflow.kind === "ensemble" ? "ensemble" : "pipeline");
+    effectiveStems = config.workflow.stems || effectiveStems;
+  }
+
+  if (!effectiveWorkflow && config.mode !== "simple" && effectiveModelId) {
+    effectiveWorkflow = buildSingleWorkflow({
+      id: config.workflowId,
+      name: config.workflow?.name,
+      description: config.workflow?.description,
+      surface: config.workflow?.surface || "single",
+      modelId: effectiveModelId,
+      stems: effectiveStems,
+      postprocess: effectivePostProcessingSteps,
+      runtimePolicy: config.runtimePolicy,
+      exportPolicy: config.exportPolicy,
+      outputFormat: config.outputFormat,
+    });
+  }
+
+  if (effectiveWorkflow) {
+    effectiveWorkflow = {
+      ...effectiveWorkflow,
+      stems: effectiveWorkflow.stems || effectiveStems,
+      postprocess:
+        effectiveWorkflow.postprocess || effectivePostProcessingSteps,
+      runtimePolicy:
+        effectiveWorkflow.runtimePolicy || config.runtimePolicy,
+      exportPolicy:
+        effectiveWorkflow.exportPolicy ||
+        config.exportPolicy || {
+          stems: effectiveWorkflow.stems || effectiveStems,
+          outputFormat: config.outputFormat,
+        },
+    };
   }
 
   // --- Step 4: Determine phase behavior ---
@@ -302,7 +757,12 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
     }
   };
 
-  if (
+  const workflowModelIds = referencedWorkflowModelIds(effectiveWorkflow);
+  if (workflowModelIds.length > 0) {
+    for (const workflowModelId of workflowModelIds) {
+      validateModelId(workflowModelId);
+    }
+  } else if (
     effectiveEnsembleConfig &&
     Array.isArray(effectiveEnsembleConfig.models) &&
     effectiveEnsembleConfig.models.length > 0
@@ -352,6 +812,7 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
     effectiveStems,
     effectiveEnsembleConfig,
     effectivePostProcessingSteps,
+    effectiveWorkflow,
     effectiveGlobalPhaseParams,
     missingModels,
     canProceed,

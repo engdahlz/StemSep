@@ -3,7 +3,7 @@ import { Check, ChevronsUpDown, Sparkles, DownloadCloud } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "./ui/button"
-import { Preset } from "../presets"
+import { getRequiredModels, Preset } from "../presets"
 import { Badge } from "./ui/badge"
 
 interface PresetSelectorProps {
@@ -29,10 +29,9 @@ export function PresetSelector({
     // Check if preset models are installed
     const isInstalled = (preset: Preset) => {
         if (!availability) return true
-        if (preset.ensembleConfig) {
-            return preset.ensembleConfig.models.every(m => availability[m.model_id]?.available !== false)
-        }
-        return preset.modelId ? availability[preset.modelId]?.available !== false : true
+        const required = getRequiredModels(preset)
+        if (required.length === 0) return true
+        return required.every(id => availability[id]?.available !== false)
     }
 
     // Close dropdown when clicking outside
@@ -65,6 +64,11 @@ export function PresetSelector({
                             {selectedPreset?.isRecipe && (
                                 <Badge variant="outline" className="text-[10px] h-4 px-1 bg-yellow-500/10 text-yellow-500 border-yellow-500/20 flex gap-1">
                                     <Sparkles className="w-2 h-2" /> Smart
+                                </Badge>
+                            )}
+                            {selectedPreset?.promotionStatus === 'supported_advanced' && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 bg-slate-900/6 text-slate-600 border-slate-300/40">
+                                    Advanced
                                 </Badge>
                             )}
                             {!selectedPreset?.isRecipe && selectedPreset?.ensembleConfig && (
@@ -117,7 +121,7 @@ export function PresetSelector({
                                         </div>
                                     </div>
                                     <span className="text-xs text-muted-foreground line-clamp-1">
-                                        {preset.description}
+                                        {[preset.workflowFamily, preset.description].filter(Boolean).join(" | ")}
                                     </span>
                                 </div>
                             </div>

@@ -136,12 +136,17 @@ export function recipeToPreset(recipe: Recipe): Preset {
     name: recipe.name,
     description: recipe.description || '',
     stems,
-    recommended: recipe.simple_surface === true || (typeof recipe.guide_rank === 'number' && recipe.guide_rank <= 2),
+    recommended:
+      recipe.promotion_status !== 'supported_advanced' &&
+      (recipe.simple_surface === true || (typeof recipe.guide_rank === 'number' && recipe.guide_rank <= 2)),
     category: recipeCategory(recipe),
     qualityLevel: recipeQuality(recipe),
     estimatedVram: recipeEstimatedVram(recipe),
     tags: Array.from(new Set(baseTags)),
-    simpleVisible: recipe.simple_surface === true,
+    simpleVisible:
+      recipe.simple_surface === true &&
+      recipe.promotion_status !== 'supported_advanced' &&
+      recipe.qa_status !== 'pending',
     simpleGoal,
     guideRank: recipe.guide_rank,
     difficulty: recipe.difficulty,
@@ -150,14 +155,21 @@ export function recipeToPreset(recipe: Recipe): Preset {
     recommendedFor: recipe.recommended_for,
     contraindications: recipe.contraindications,
     workflowSummary: recipe.workflow_summary,
+    workflowFamily: recipe.family,
+    promotionStatus: recipe.promotion_status,
+    qaStatus: recipe.qa_status,
     // Important: execute as a recipe by passing the recipe id as modelId.
     modelId: recipe.id,
     isRecipe: true,
     recipe: {
       type: recipe.type,
+      surface: recipe.surface,
+      family: recipe.family,
       target: recipe.target,
       warning: recipe.warning,
       source: recipe.source,
+      promotion_status: recipe.promotion_status,
+      qa_status: recipe.qa_status,
       defaults: recipe.defaults,
       difficulty: recipe.difficulty,
       expectedVramTier: recipe.expected_vram_tier,
@@ -166,6 +178,11 @@ export function recipeToPreset(recipe: Recipe): Preset {
       recommendedFor: recipe.recommended_for,
       contraindications: recipe.contraindications,
       workflowSummary: recipe.workflow_summary,
+      runtime_policy: recipe.runtime_policy,
+      export_policy: recipe.export_policy,
+      operating_profile: recipe.operating_profile,
+      intermediate_outputs: recipe.intermediate_outputs,
+      fallback_policy: recipe.fallback_policy,
       requiredModels,
       steps: recipe.steps || [],
     },

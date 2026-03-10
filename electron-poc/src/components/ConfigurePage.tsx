@@ -1904,8 +1904,8 @@ export function ConfigurePage({
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <div className="rounded-full border border-white/40 bg-white/28 px-4 py-2 text-[12px] text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
             {mode === "simple"
-              ? "Choose a preset, tweak speed, then start."
-              : "Tune models and machine limits before starting."}
+              ? "Choose a preset, tweak speed, then save this configuration."
+              : "Tune models and machine limits, then save this configuration."}
           </div>
           <div className="flex gap-3">
           <Button
@@ -1928,7 +1928,7 @@ export function ConfigurePage({
             className="stemsep-config-action relative overflow-hidden rounded-[38px] border border-white/75 bg-white/84 px-6 py-3 text-[18px] font-normal tracking-[-0.45px] text-[#23324c] shadow-[0_18px_36px_rgba(141,150,179,0.2)] transition-all duration-300 hover:scale-[1.02] hover:bg-white disabled:border-white/45 disabled:bg-white/45 disabled:text-slate-400 disabled:shadow-none"
           >
             <Zap className="w-4 h-4 mr-2" />
-            Start Separation
+            Save Configuration
           </Button>
         </div>
         </div>

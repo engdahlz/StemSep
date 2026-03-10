@@ -7,14 +7,36 @@
         "Strong phase reference for cleanup-oriented workflows."
       ],
       "quality_profile": {
-        "target_roles": ["vocals", "instrumental"],
+        "target_roles": [
+          "vocals",
+          "instrumental"
+        ],
         "quality_tier": "ultra",
         "deterministic_priority": 1
       },
       "hardware_tiers": [
-        { "tier": "cpu_only", "max_vram_gb": 0, "recommended_segment_size": 112455, "recommended_overlap": 2, "notes": "CPU-safe fallback." },
-        { "tier": "mid_vram", "min_vram_gb": 6, "max_vram_gb": 9.99, "recommended_segment_size": 352800, "recommended_overlap": 4, "notes": "Best quality/performance balance." },
-        { "tier": "high_vram", "min_vram_gb": 10, "recommended_segment_size": 485100, "recommended_overlap": 8, "notes": "Max context for premium quality." }
+        {
+          "tier": "cpu_only",
+          "max_vram_gb": 0,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2,
+          "notes": "CPU-safe fallback."
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4,
+          "notes": "Best quality/performance balance."
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 10,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8,
+          "notes": "Max context for premium quality."
+        }
       ],
       "recommended_settings": {
         "segment_size": 352800,
@@ -27,13 +49,91 @@
         "recommended_params": {
           "lowHz": 500,
           "highHz": 5000,
-          "highFreqWeight": 2.0
+          "highFreqWeight": 2
+        },
+        "references": {
+          "vocals": [
+            "mel-band-roformer-kim",
+            "becruily-vocal"
+          ],
+          "instrumental": [
+            "becruily-vocal",
+            "mel-band-roformer-kim"
+          ]
         }
       },
       "status": {
         "readiness": "verified",
         "simple_allowed": true
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator",
+          "uvr"
+        ],
+        "install_burden": "low"
+      },
+      "quality_role": [
+        "primary",
+        "phase_reference"
+      ],
+      "quality_axes": {
+        "fullness": 7,
+        "bleedless": 10,
+        "noise_risk": 2,
+        "harmony_capture": 7,
+        "bgv_retention": 7,
+        "mud_risk": 2,
+        "specialization": "bleedless cleanup"
+      },
+      "workflow_roles": [
+        "cleanup_reference",
+        "phase_reference",
+        "lead_back_splitter"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1,
+          "notes": [
+            "Best default for most guide-style runs."
+          ]
+        },
+        "max_sdr": {
+          "segment_size": 705600,
+          "overlap": 4,
+          "shifts": 1,
+          "notes": [
+            "Higher context for stronger objective separation."
+          ]
+        },
+        "max_bleedless": {
+          "segment_size": 441000,
+          "overlap": 4,
+          "shifts": 1,
+          "notes": [
+            "Use when residual backing bleed matters more than fullness."
+          ]
+        }
+      },
+      "content_fit": [
+        "busy_mix",
+        "duets",
+        "mono_vocals",
+        "cleanup_reference"
+      ],
+      "best_for": [
+        "bleedless vocals",
+        "instrumental cleanup reference",
+        "lead/back refinement"
+      ],
+      "workflow_groups": [
+        "vocals",
+        "instrumental",
+        "karaoke"
+      ]
     },
     "mel-band-roformer-kim": {
       "guide_rank": 2,
@@ -42,14 +142,33 @@
         "Useful when ViperX sounds too thin."
       ],
       "quality_profile": {
-        "target_roles": ["vocals"],
+        "target_roles": [
+          "vocals"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 3
       },
       "hardware_tiers": [
-        { "tier": "low_vram", "min_vram_gb": 4, "max_vram_gb": 5.99, "recommended_segment_size": 112455, "recommended_overlap": 2 },
-        { "tier": "mid_vram", "min_vram_gb": 6, "max_vram_gb": 9.99, "recommended_segment_size": 352800, "recommended_overlap": 4 },
-        { "tier": "high_vram", "min_vram_gb": 10, "recommended_segment_size": 485100, "recommended_overlap": 8 }
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 10,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8
+        }
       ],
       "recommended_settings": {
         "segment_size": 352800,
@@ -61,13 +180,78 @@
         "recommended_params": {
           "lowHz": 420,
           "highHz": 4200,
-          "highFreqWeight": 2.0
+          "highFreqWeight": 2
+        },
+        "references": {
+          "vocals": [
+            "bs-roformer-viperx-1297",
+            "becruily-vocal"
+          ],
+          "instrumental": [
+            "unwa-inst-v1e-plus",
+            "gabox-resurrection"
+          ]
         }
       },
       "status": {
         "readiness": "verified",
         "simple_allowed": true
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator",
+          "uvr"
+        ],
+        "install_burden": "low"
+      },
+      "quality_role": [
+        "primary",
+        "phase_reference"
+      ],
+      "quality_axes": {
+        "fullness": 9,
+        "bleedless": 7,
+        "noise_risk": 3,
+        "harmony_capture": 8,
+        "bgv_retention": 8,
+        "mud_risk": 3,
+        "specialization": "fullness rescue"
+      },
+      "workflow_roles": [
+        "fullness_source",
+        "phase_reference"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_fullness": {
+          "segment_size": 1102500,
+          "overlap": 4,
+          "shifts": 1,
+          "notes": [
+            "Guide-style body-first setting; slower and heavier."
+          ]
+        },
+        "max_sdr": {
+          "segment_size": 705600,
+          "overlap": 4,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "thin_vocals",
+        "harmonies",
+        "duets"
+      ],
+      "best_for": [
+        "fuller vocals",
+        "phase-fix companion",
+        "harmony recovery"
+      ]
     },
     "becruily-vocal": {
       "guide_rank": 3,
@@ -75,13 +259,27 @@
         "Clean vocal model used as phase reference in instrumental workflows."
       ],
       "quality_profile": {
-        "target_roles": ["vocals"],
+        "target_roles": [
+          "vocals"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 4
       },
       "hardware_tiers": [
-        { "tier": "low_vram", "min_vram_gb": 4, "max_vram_gb": 5.99, "recommended_segment_size": 112455, "recommended_overlap": 2 },
-        { "tier": "mid_vram", "min_vram_gb": 6, "max_vram_gb": 9.99, "recommended_segment_size": 352800, "recommended_overlap": 4 }
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
       ],
       "phase_fix": {
         "is_valid_reference": true,
@@ -89,14 +287,56 @@
         "recommended_params": {
           "lowHz": 500,
           "highHz": 5000,
-          "highFreqWeight": 2.0
+          "highFreqWeight": 2
+        },
+        "references": {
+          "vocals": [
+            "bs-roformer-viperx-1297"
+          ],
+          "instrumental": [
+            "unwa-inst-v1e-plus",
+            "unwa-hyperace"
+          ]
         }
       },
       "status": {
         "readiness": "verified",
         "simple_allowed": false,
         "blocking_reason": "Advanced companion model for phase-fix workflows."
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator",
+          "uvr"
+        ],
+        "install_burden": "low"
+      },
+      "quality_role": [
+        "phase_reference",
+        "ensemble_partner"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 9,
+        "noise_risk": 2,
+        "harmony_capture": 7,
+        "bgv_retention": 6,
+        "mud_risk": 2,
+        "specialization": "clean phase source"
+      },
+      "workflow_roles": [
+        "cleanup_reference",
+        "phase_reference"
+      ],
+      "content_fit": [
+        "cleanup_reference",
+        "instrumental_phase_fix"
+      ],
+      "best_for": [
+        "phase-fix source",
+        "clean vocal reference"
+      ]
     },
     "unwa-big-beta-5e": {
       "guide_rank": 4,
@@ -104,13 +344,26 @@
         "High-fullness vocal option with more bleed than the cleanest models."
       ],
       "quality_profile": {
-        "target_roles": ["vocals"],
+        "target_roles": [
+          "vocals"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 5
       },
       "hardware_tiers": [
-        { "tier": "mid_vram", "min_vram_gb": 6, "max_vram_gb": 9.99, "recommended_segment_size": 352800, "recommended_overlap": 4 },
-        { "tier": "high_vram", "min_vram_gb": 10, "recommended_segment_size": 485100, "recommended_overlap": 8 }
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 10,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8
+        }
       ],
       "recommended_settings": {
         "segment_size": 352800,
@@ -120,7 +373,52 @@
         "readiness": "verified",
         "simple_allowed": false,
         "blocking_reason": "Use via curated workflow rather than as a Simple-mode single model."
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "medium"
+      },
+      "quality_role": [
+        "primary",
+        "ensemble_partner"
+      ],
+      "quality_axes": {
+        "fullness": 10,
+        "bleedless": 6,
+        "noise_risk": 5,
+        "harmony_capture": 9,
+        "bgv_retention": 9,
+        "mud_risk": 4,
+        "specialization": "full vocal body"
+      },
+      "workflow_roles": [
+        "fullness_source"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_fullness": {
+          "segment_size": 1102500,
+          "overlap": 4,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "thin_vocals",
+        "harmonies",
+        "bgv"
+      ],
+      "best_for": [
+        "vocal body",
+        "breath detail",
+        "backing vocal retention"
+      ]
     },
     "unwa-inst-v1e-plus": {
       "guide_rank": 1,
@@ -128,14 +426,33 @@
         "Top instrumental fullness model. Best when paired with phase-fix cleanup."
       ],
       "quality_profile": {
-        "target_roles": ["instrumental"],
+        "target_roles": [
+          "instrumental"
+        ],
         "quality_tier": "ultra",
         "deterministic_priority": 1
       },
       "hardware_tiers": [
-        { "tier": "low_vram", "min_vram_gb": 4, "max_vram_gb": 5.99, "recommended_segment_size": 112455, "recommended_overlap": 2 },
-        { "tier": "mid_vram", "min_vram_gb": 6, "max_vram_gb": 9.99, "recommended_segment_size": 352800, "recommended_overlap": 4 },
-        { "tier": "high_vram", "min_vram_gb": 10, "recommended_segment_size": 485100, "recommended_overlap": 8 }
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 10,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8
+        }
       ],
       "recommended_settings": {
         "segment_size": 352800,
@@ -144,7 +461,68 @@
       "status": {
         "readiness": "verified",
         "simple_allowed": true
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "medium"
+      },
+      "quality_role": [
+        "primary",
+        "ensemble_partner"
+      ],
+      "quality_axes": {
+        "fullness": 10,
+        "bleedless": 6,
+        "noise_risk": 5,
+        "harmony_capture": 5,
+        "bgv_retention": 4,
+        "mud_risk": 4,
+        "specialization": "instrumental fullness"
+      },
+      "workflow_roles": [
+        "fullness_source"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_fullness": {
+          "segment_size": 1102500,
+          "overlap": 4,
+          "shifts": 1,
+          "notes": [
+            "Guide-preferred body setting."
+          ]
+        },
+        "max_sdr": {
+          "segment_size": 705600,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_bleedless": {
+          "segment_size": 441000,
+          "overlap": 4,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "busy_mix",
+        "full_band",
+        "instrumental_mastering"
+      ],
+      "best_for": [
+        "full instrumentals",
+        "body-first backing tracks"
+      ],
+      "workflow_groups": [
+        "instrumental",
+        "workflow"
+      ]
     },
     "becruily-inst": {
       "guide_rank": 2,
@@ -152,13 +530,27 @@
         "Clean instrumental reference used to tame noisy/fullness-oriented outputs."
       ],
       "quality_profile": {
-        "target_roles": ["instrumental"],
+        "target_roles": [
+          "instrumental"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 2
       },
       "hardware_tiers": [
-        { "tier": "low_vram", "min_vram_gb": 4, "max_vram_gb": 5.99, "recommended_segment_size": 112455, "recommended_overlap": 2 },
-        { "tier": "mid_vram", "min_vram_gb": 6, "max_vram_gb": 9.99, "recommended_segment_size": 352800, "recommended_overlap": 4 }
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
       ],
       "recommended_settings": {
         "segment_size": 352800,
@@ -168,7 +560,39 @@
         "readiness": "verified",
         "simple_allowed": false,
         "blocking_reason": "Companion model for multi-model workflows."
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
+      },
+      "quality_role": [
+        "ensemble_partner",
+        "phase_reference"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 9,
+        "noise_risk": 2,
+        "harmony_capture": 4,
+        "bgv_retention": 4,
+        "mud_risk": 2,
+        "specialization": "instrumental cleanup"
+      },
+      "workflow_roles": [
+        "cleanup_reference",
+        "phase_reference"
+      ],
+      "content_fit": [
+        "cleanup_reference",
+        "low_artifact"
+      ],
+      "best_for": [
+        "cleaning noisy instrumental outputs",
+        "phase-fix cleanup"
+      ]
     },
     "unwa-hyperace": {
       "guide_rank": 1,
@@ -176,13 +600,26 @@
         "Top instrumental detail model when HyperACE runtime is healthy."
       ],
       "quality_profile": {
-        "target_roles": ["instrumental"],
+        "target_roles": [
+          "instrumental"
+        ],
         "quality_tier": "ultra",
         "deterministic_priority": 2
       },
       "hardware_tiers": [
-        { "tier": "mid_vram", "min_vram_gb": 8, "max_vram_gb": 11.99, "recommended_segment_size": 352800, "recommended_overlap": 4 },
-        { "tier": "high_vram", "min_vram_gb": 12, "recommended_segment_size": 485100, "recommended_overlap": 8 }
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 8,
+          "max_vram_gb": 11.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 12,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8
+        }
       ],
       "recommended_settings": {
         "segment_size": 352800,
@@ -191,7 +628,39 @@
       "status": {
         "readiness": "verified",
         "simple_allowed": true
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "medium"
+      },
+      "quality_role": [
+        "primary",
+        "ensemble_partner"
+      ],
+      "quality_axes": {
+        "fullness": 9,
+        "bleedless": 7,
+        "noise_risk": 4,
+        "harmony_capture": 5,
+        "bgv_retention": 4,
+        "mud_risk": 3,
+        "specialization": "high-detail instrumental"
+      },
+      "workflow_roles": [
+        "fullness_source",
+        "high_band_source"
+      ],
+      "content_fit": [
+        "busy_mix",
+        "dense_arrangement"
+      ],
+      "best_for": [
+        "detail-heavy instrumental extraction",
+        "hybrid top-end recovery"
+      ]
     },
     "unwa-inst-fno": {
       "guide_rank": 3,
@@ -199,18 +668,73 @@
         "Excellent precision but runtime-sensitive because it depends on neuralop FNO1d."
       ],
       "quality_profile": {
-        "target_roles": ["instrumental"],
+        "target_roles": [
+          "instrumental"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 8
       },
       "hardware_tiers": [
-        { "tier": "high_vram", "min_vram_gb": 8, "recommended_segment_size": 352800, "recommended_overlap": 4 }
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 8,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
       ],
       "status": {
         "readiness": "experimental",
         "simple_allowed": false,
         "blocking_reason": "Requires verified neuralop/FNO1d runtime."
-      }
+      },
+      "runtime": {
+        "variant": "fno",
+        "required": [
+          "cuda",
+          "python",
+          "torch",
+          "neuralop"
+        ],
+        "fallbacks": [],
+        "hosts": [
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "requires_patch": true,
+        "requires_custom_repo_file": [
+          "neuralop FNO1d runtime"
+        ]
+      },
+      "install": {
+        "mode": "custom_runtime",
+        "notes": [
+          "Requires verified neuralop/FNO1d environment before workflow use."
+        ]
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "cleanup_reference",
+        "high_band_source"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 9,
+        "noise_risk": 3,
+        "harmony_capture": 4,
+        "bgv_retention": 3,
+        "mud_risk": 2,
+        "specialization": "precision cleanup"
+      },
+      "content_fit": [
+        "precision_cleanup",
+        "expert_only"
+      ],
+      "best_for": [
+        "precision instrumental cleanup",
+        "expert FNO workflows"
+      ]
     },
     "scnet-large": {
       "guide_rank": 1,
@@ -218,12 +742,21 @@
         "Best low-end definition and bass-focused separation."
       ],
       "quality_profile": {
-        "target_roles": ["bass", "instrumental"],
+        "target_roles": [
+          "bass",
+          "instrumental"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 1
       },
       "hardware_tiers": [
-        { "tier": "high_vram", "min_vram_gb": 12, "recommended_segment_size": 352800, "recommended_overlap": 4, "notes": "Heavy VRAM footprint." }
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 12,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4,
+          "notes": "Heavy VRAM footprint."
+        }
       ],
       "recommended_settings": {
         "segment_size": 352800,
@@ -232,7 +765,56 @@
       "status": {
         "readiness": "verified",
         "simple_allowed": true
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
+      },
+      "quality_role": [
+        "primary",
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "low_band_source"
+      ],
+      "quality_axes": {
+        "fullness": 9,
+        "bleedless": 7,
+        "noise_risk": 3,
+        "harmony_capture": 3,
+        "bgv_retention": 2,
+        "mud_risk": 2,
+        "specialization": "low-end definition"
+      },
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_fullness": {
+          "segment_size": 705600,
+          "overlap": 4,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "bass_heavy",
+        "hybrid_crossover",
+        "dense_low_end"
+      ],
+      "best_for": [
+        "bass extraction",
+        "low-band hybrid splits"
+      ],
+      "workflow_groups": [
+        "bass",
+        "instrumental",
+        "special stems"
+      ]
     },
     "mdx23c-drumsep-5stem": {
       "guide_rank": 1,
@@ -240,14 +822,33 @@
         "Best local drum split for kick/snare/toms/hat/cymbals."
       ],
       "quality_profile": {
-        "target_roles": ["drums", "multi_stem"],
+        "target_roles": [
+          "drums",
+          "multi_stem"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 1
       },
       "hardware_tiers": [
-        { "tier": "cpu_only", "max_vram_gb": 0, "recommended_segment_size": 112455, "recommended_overlap": 2 },
-        { "tier": "low_vram", "min_vram_gb": 4, "max_vram_gb": 5.99, "recommended_segment_size": 112455, "recommended_overlap": 2 },
-        { "tier": "mid_vram", "min_vram_gb": 6, "recommended_segment_size": 352800, "recommended_overlap": 4 }
+        {
+          "tier": "cpu_only",
+          "max_vram_gb": 0,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
       ],
       "recommended_settings": {
         "segment_size": 112455,
@@ -256,7 +857,40 @@
       "status": {
         "readiness": "verified",
         "simple_allowed": true
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
+      },
+      "quality_role": [
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "special_stem"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 8,
+        "noise_risk": 2,
+        "harmony_capture": 1,
+        "bgv_retention": 1,
+        "mud_risk": 2,
+        "specialization": "drum split"
+      },
+      "content_fit": [
+        "drums",
+        "multistem_drums"
+      ],
+      "best_for": [
+        "kick/snare/toms/hat/cymbals splits"
+      ],
+      "workflow_groups": [
+        "drums",
+        "special stems"
+      ]
     },
     "anvuew-karaoke": {
       "guide_rank": 1,
@@ -264,13 +898,26 @@
         "Guide-recommended fusion partner for premium karaoke workflows."
       ],
       "quality_profile": {
-        "target_roles": ["karaoke"],
+        "target_roles": [
+          "karaoke"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 1
       },
       "hardware_tiers": [
-        { "tier": "mid_vram", "min_vram_gb": 8, "max_vram_gb": 11.99, "recommended_segment_size": 352800, "recommended_overlap": 2 },
-        { "tier": "high_vram", "min_vram_gb": 12, "recommended_segment_size": 485100, "recommended_overlap": 4 }
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 8,
+          "max_vram_gb": 11.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 12,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 4
+        }
       ],
       "recommended_settings": {
         "segment_size": 352800,
@@ -280,7 +927,47 @@
         "readiness": "verified",
         "simple_allowed": false,
         "blocking_reason": "Expose through curated karaoke workflows."
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium",
+        "requires_custom_repo_file": [
+          "bs_roformer.py"
+        ]
+      },
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "karaoke_base",
+        "lead_back_splitter"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 9,
+        "noise_risk": 3,
+        "harmony_capture": 8,
+        "bgv_retention": 8,
+        "mud_risk": 2,
+        "specialization": "karaoke base"
+      },
+      "content_fit": [
+        "karaoke",
+        "lead_back",
+        "harmonies"
+      ],
+      "best_for": [
+        "karaoke base pass",
+        "lead/backing separation"
+      ],
+      "workflow_groups": [
+        "karaoke",
+        "workflow"
+      ]
     },
     "bs-roformer-karaoke-becruily": {
       "guide_rank": 2,
@@ -288,13 +975,26 @@
         "Strong karaoke base model for lead/back separation."
       ],
       "quality_profile": {
-        "target_roles": ["karaoke"],
+        "target_roles": [
+          "karaoke"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 2
       },
       "hardware_tiers": [
-        { "tier": "mid_vram", "min_vram_gb": 8, "max_vram_gb": 11.99, "recommended_segment_size": 352800, "recommended_overlap": 2 },
-        { "tier": "high_vram", "min_vram_gb": 12, "recommended_segment_size": 485100, "recommended_overlap": 4 }
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 8,
+          "max_vram_gb": 11.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 12,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 4
+        }
       ],
       "recommended_settings": {
         "segment_size": 352800,
@@ -304,7 +1004,39 @@
         "readiness": "verified",
         "simple_allowed": false,
         "blocking_reason": "Expose through curated karaoke workflows."
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
+      },
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "karaoke_base",
+        "lead_back_splitter"
+      ],
+      "quality_axes": {
+        "fullness": 7,
+        "bleedless": 9,
+        "noise_risk": 2,
+        "harmony_capture": 7,
+        "bgv_retention": 7,
+        "mud_risk": 2,
+        "specialization": "karaoke cleanup"
+      },
+      "content_fit": [
+        "karaoke",
+        "lead_back"
+      ],
+      "best_for": [
+        "clean backing tracks",
+        "lead/back pair workflows"
+      ]
     },
     "anvuew-dereverb-room": {
       "guide_rank": 1,
@@ -312,19 +1044,66 @@
         "Preferred dereverb step in live and restoration chains."
       ],
       "quality_profile": {
-        "target_roles": ["restoration"],
+        "target_roles": [
+          "restoration"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 1
       },
       "hardware_tiers": [
-        { "tier": "mid_vram", "min_vram_gb": 8, "max_vram_gb": 11.99, "recommended_segment_size": 352800, "recommended_overlap": 4 },
-        { "tier": "high_vram", "min_vram_gb": 12, "recommended_segment_size": 485100, "recommended_overlap": 8 }
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 8,
+          "max_vram_gb": 11.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 12,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8
+        }
       ],
       "status": {
         "readiness": "verified",
         "simple_allowed": false,
         "blocking_reason": "Expose through restoration workflows."
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "restoration_step"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 7,
+        "noise_risk": 3,
+        "harmony_capture": 4,
+        "bgv_retention": 4,
+        "mud_risk": 2,
+        "specialization": "room dereverb"
+      },
+      "content_fit": [
+        "live_recording",
+        "reverb_heavy",
+        "restoration"
+      ],
+      "best_for": [
+        "room removal",
+        "live vocal cleanup"
+      ],
+      "workflow_groups": [
+        "restoration"
+      ]
     },
     "aufr33-denoise-aggressive": {
       "guide_rank": 2,
@@ -332,19 +1111,63 @@
         "Closest shipped option to crowd/live restoration cleanup."
       ],
       "quality_profile": {
-        "target_roles": ["restoration"],
+        "target_roles": [
+          "restoration"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 2
       },
       "hardware_tiers": [
-        { "tier": "low_vram", "min_vram_gb": 4, "max_vram_gb": 5.99, "recommended_segment_size": 112455, "recommended_overlap": 2 },
-        { "tier": "mid_vram", "min_vram_gb": 6, "recommended_segment_size": 352800, "recommended_overlap": 4 }
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
       ],
       "status": {
         "readiness": "verified",
         "simple_allowed": false,
         "blocking_reason": "Expose through restoration workflows."
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "restoration_step"
+      ],
+      "quality_axes": {
+        "fullness": 5,
+        "bleedless": 8,
+        "noise_risk": 4,
+        "harmony_capture": 3,
+        "bgv_retention": 3,
+        "mud_risk": 3,
+        "specialization": "aggressive denoise"
+      },
+      "content_fit": [
+        "restoration",
+        "live_recording",
+        "noise_heavy"
+      ],
+      "best_for": [
+        "post-dereverb denoise",
+        "live/crowd cleanup"
+      ]
     },
     "gabox-denoise-debleed": {
       "guide_rank": 1,
@@ -352,19 +1175,63 @@
         "Recommended final debled step for premium instrumental chains."
       ],
       "quality_profile": {
-        "target_roles": ["restoration", "instrumental"],
+        "target_roles": [
+          "restoration",
+          "instrumental"
+        ],
         "quality_tier": "quality",
         "deterministic_priority": 1
       },
       "hardware_tiers": [
-        { "tier": "low_vram", "min_vram_gb": 4, "max_vram_gb": 5.99, "recommended_segment_size": 112455, "recommended_overlap": 2 },
-        { "tier": "mid_vram", "min_vram_gb": 6, "recommended_segment_size": 352800, "recommended_overlap": 4 }
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
       ],
       "status": {
         "readiness": "verified",
         "simple_allowed": false,
         "blocking_reason": "Expose through curated cleanup workflows."
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "restoration_step"
+      ],
+      "quality_axes": {
+        "fullness": 5,
+        "bleedless": 9,
+        "noise_risk": 2,
+        "harmony_capture": 2,
+        "bgv_retention": 2,
+        "mud_risk": 2,
+        "specialization": "debleed cleanup"
+      },
+      "content_fit": [
+        "instrumental_bleed",
+        "restoration"
+      ],
+      "best_for": [
+        "removing residual vocal bleed",
+        "final cleanup pass"
+      ]
     },
     "mdx23c-instvoc-hq": {
       "guide_rank": 1,
@@ -372,14 +1239,33 @@
         "Fast preview/general-purpose fallback for low VRAM and CPU."
       ],
       "quality_profile": {
-        "target_roles": ["vocals", "instrumental"],
+        "target_roles": [
+          "vocals",
+          "instrumental"
+        ],
         "quality_tier": "fast",
         "deterministic_priority": 1
       },
       "hardware_tiers": [
-        { "tier": "cpu_only", "max_vram_gb": 0, "recommended_segment_size": 112455, "recommended_overlap": 2 },
-        { "tier": "low_vram", "min_vram_gb": 2, "max_vram_gb": 5.99, "recommended_segment_size": 112455, "recommended_overlap": 2 },
-        { "tier": "mid_vram", "min_vram_gb": 6, "recommended_segment_size": 352800, "recommended_overlap": 4 }
+        {
+          "tier": "cpu_only",
+          "max_vram_gb": 0,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 2,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
       ],
       "recommended_settings": {
         "segment_size": 112455,
@@ -388,7 +1274,39 @@
       "status": {
         "readiness": "verified",
         "simple_allowed": true
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
+      },
+      "quality_role": [
+        "primary"
+      ],
+      "workflow_roles": [
+        "fullness_source"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 6,
+        "noise_risk": 2,
+        "harmony_capture": 4,
+        "bgv_retention": 4,
+        "mud_risk": 2,
+        "specialization": "preview baseline"
+      },
+      "content_fit": [
+        "low_vram",
+        "preview",
+        "cpu_only"
+      ],
+      "best_for": [
+        "preview runs",
+        "CPU fallback",
+        "quick compare baseline"
+      ]
     },
     "gabox-inst-fv7b": {
       "guide_rank": 4,
@@ -396,19 +1314,355 @@
         "Guide-cited bleedless instrumental option."
       ],
       "quality_profile": {
-        "target_roles": ["instrumental"],
+        "target_roles": [
+          "instrumental"
+        ],
         "quality_tier": "balanced",
         "deterministic_priority": 7
       },
       "hardware_tiers": [
-        { "tier": "low_vram", "min_vram_gb": 4, "max_vram_gb": 5.99, "recommended_segment_size": 112455, "recommended_overlap": 2 },
-        { "tier": "mid_vram", "min_vram_gb": 6, "recommended_segment_size": 352800, "recommended_overlap": 4 }
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
       ],
       "status": {
         "readiness": "verified",
         "simple_allowed": false,
         "blocking_reason": "Use as an advanced or fallback workflow ingredient."
-      }
+      },
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "cleanup_reference"
+      ],
+      "quality_axes": {
+        "fullness": 7,
+        "bleedless": 8,
+        "noise_risk": 2,
+        "harmony_capture": 3,
+        "bgv_retention": 3,
+        "mud_risk": 2,
+        "specialization": "bleedless instrumental"
+      },
+      "content_fit": [
+        "instrumental_bleed",
+        "low_artifact"
+      ],
+      "best_for": [
+        "bleedless instrumental companion",
+        "cleanup in ensembles"
+      ]
+    },
+    "mel-band-karaoke-becruily": {
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
+      },
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "karaoke_base"
+      ],
+      "quality_axes": {
+        "fullness": 7,
+        "bleedless": 8,
+        "noise_risk": 3,
+        "harmony_capture": 8,
+        "bgv_retention": 8,
+        "mud_risk": 3,
+        "specialization": "backing-vocal retention"
+      },
+      "content_fit": [
+        "karaoke",
+        "bgv",
+        "harmonies"
+      ],
+      "best_for": [
+        "karaoke with stronger harmony retention"
+      ]
+    },
+    "mel-band-karaoke-aufr33": {
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
+      },
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "lead_back_splitter"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 8,
+        "noise_risk": 3,
+        "harmony_capture": 8,
+        "bgv_retention": 8,
+        "mud_risk": 2,
+        "specialization": "harmony-focused karaoke split"
+      },
+      "content_fit": [
+        "karaoke",
+        "harmonies",
+        "duets"
+      ],
+      "best_for": [
+        "duets",
+        "backing vocal emphasis"
+      ]
+    },
+    "viperx-karaoke-1297": {
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
+      },
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "lead_back_splitter"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 9,
+        "noise_risk": 2,
+        "harmony_capture": 6,
+        "bgv_retention": 6,
+        "mud_risk": 2,
+        "specialization": "bleedless lead/back split"
+      },
+      "content_fit": [
+        "karaoke",
+        "lead_back"
+      ],
+      "best_for": [
+        "lead/back cleanup",
+        "bleedless karaoke refinement"
+      ]
+    },
+    "anvuew-dereverb-mono": {
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "restoration_step"
+      ],
+      "content_fit": [
+        "mono_vocals",
+        "restoration"
+      ],
+      "best_for": [
+        "mono dereverb rescue",
+        "spoken or center-panned vocals"
+      ]
+    },
+    "lew-apollo-universal": {
+      "guide_rank": 3,
+      "guide_notes": [
+        "Apollo universal is useful when you need MSST-era hybrid coverage, but should stay in advanced workflows."
+      ],
+      "runtime": {
+        "hosts": [
+          "msst",
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "requires_patch": true,
+        "requires_custom_repo_file": [
+          "Apollo runtime bridge"
+        ]
+      },
+      "install": {
+        "mode": "custom_runtime",
+        "notes": [
+          "Treat as technically supported but not curated for simple mode."
+        ]
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": false,
+        "blocking_reason": "Apollo currently requires an external/custom runtime path."
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "high_band_source",
+        "special_stem"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 7,
+        "noise_risk": 4,
+        "harmony_capture": 6,
+        "bgv_retention": 5,
+        "mud_risk": 3,
+        "specialization": "experimental hybrid partner"
+      },
+      "content_fit": [
+        "hybrid_crossover",
+        "experimental"
+      ],
+      "best_for": [
+        "advanced hybrid workflows",
+        "MSST-only experiments"
+      ],
+      "workflow_groups": [
+        "instrumental",
+        "special stems"
+      ]
+    },
+    "lew-apollo-vocal": {
+      "guide_rank": 3,
+      "guide_notes": [
+        "Apollo vocal helps on difficult harmony/backing cases when custom runtime support is available."
+      ],
+      "runtime": {
+        "hosts": [
+          "msst",
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "requires_patch": true,
+        "requires_custom_repo_file": [
+          "Apollo runtime bridge"
+        ]
+      },
+      "install": {
+        "mode": "custom_runtime"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": false,
+        "blocking_reason": "Apollo vocal needs a custom runtime and should stay advanced-only."
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "lead_back_splitter"
+      ],
+      "content_fit": [
+        "harmonies",
+        "bgv",
+        "duets"
+      ],
+      "best_for": [
+        "harmony-heavy vocal rescue",
+        "difficult backing vocal cases"
+      ]
+    },
+    "bandit-plus": {
+      "guide_rank": 4,
+      "guide_notes": [
+        "BandIt is technically valuable for hybrid experiments, but runtime support is still higher-friction than the core curated stack."
+      ],
+      "runtime": {
+        "hosts": [
+          "msst",
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "requires_patch": true,
+        "requires_custom_repo_file": [
+          "BandIt runtime bridge"
+        ]
+      },
+      "install": {
+        "mode": "custom_runtime"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": false,
+        "blocking_reason": "BandIt remains a custom-runtime advanced model."
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "high_band_source"
+      ],
+      "content_fit": [
+        "hybrid_crossover",
+        "experimental"
+      ],
+      "best_for": [
+        "hybrid experiments",
+        "high-band comparison passes"
+      ]
+    },
+    "becruily-guitar": {
+      "runtime": {
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
+      },
+      "quality_role": [
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "special_stem"
+      ],
+      "quality_axes": {
+        "fullness": 7,
+        "bleedless": 8,
+        "noise_risk": 3,
+        "harmony_capture": 2,
+        "bgv_retention": 1,
+        "mud_risk": 2,
+        "specialization": "guitar isolation"
+      },
+      "content_fit": [
+        "special_stems",
+        "guitar"
+      ],
+      "best_for": [
+        "guitar extraction",
+        "special-stem workflows"
+      ],
+      "workflow_groups": [
+        "special stems"
+      ]
     }
   }
 }

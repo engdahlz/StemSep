@@ -56,7 +56,7 @@ describe('Volume Compensation UI config wiring', () => {
       />
     )
 
-    await user.click(screen.getByRole('button', { name: /start separation/i }))
+    await user.click(screen.getByRole('button', { name: /save configuration/i }))
 
     expect(confirmed).not.toBeNull()
     expect((confirmed as any)?.volumeCompensation).toBeUndefined()
@@ -99,7 +99,7 @@ describe('Volume Compensation UI config wiring', () => {
     // Toggle VC ON
     await user.click(screen.getByText(/enable vc/i))
 
-    await user.click(screen.getByRole('button', { name: /start separation/i }))
+    await user.click(screen.getByRole('button', { name: /save configuration/i }))
 
     expect(confirmed).not.toBeNull()
     expect((confirmed as any)?.volumeCompensation).toEqual({

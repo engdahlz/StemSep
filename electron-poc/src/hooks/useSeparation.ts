@@ -12,6 +12,7 @@ import {
 } from "@/lib/separation/backendPayload";
 
 const MISSING_MODELS_EVENT = "stemsep:missing-models";
+const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
 
 export const useSeparation = () => {
   const queue = useStore((state) => state.separation.queue);
@@ -78,7 +79,21 @@ export const useSeparation = () => {
       // Ideally we should ref the latest queue or use an index.
       // But for now we stick to the existing logic which iterates the queue captured at start.
 
-      for (const item of queue) {
+      const queueIds = useStore.getState().separation.queue.map((item) => item.id)
+      for (const itemId of queueIds) {
+        while (useStore.getState().separation.isPaused) {
+          await sleep(200)
+        }
+
+        const item = useStore
+          .getState()
+          .separation.queue.find((entry) => entry.id === itemId)
+
+        if (!item) {
+          processedCount++
+          continue
+        }
+
         // Check if item is already completed (e.g. from previous run)
         if (item.status === "completed") {
           processedCount++;

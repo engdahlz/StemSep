@@ -2,11 +2,35 @@ export interface PreflightRequiredModel {
   id: string
   name?: string | null
   installed?: boolean
+  curated?: boolean | null
+  support_tier?: string | null
   guide_rank?: number | null
   readiness?: string | null
   simple_allowed?: boolean | null
   blocking_reason?: string | null
+  runtime_engine?: string | null
+  runtime_model_type?: string | null
+  runtime_adapter?: string | null
   runtime_variant?: string | null
+  runtime_required?: string[]
+  runtime_fallbacks?: string[]
+  runtime_hosts?: string[]
+  runtime_config_ref?: string | null
+  runtime_checkpoint_ref?: string | null
+  runtime_patch_profile?: string | null
+  install_burden?: string | null
+  requires_manual_assets?: boolean
+  required_files?: string[]
+  requires_patch?: boolean
+  requires_custom_repo_file?: string[]
+  workflow_roles?: string[]
+  best_for?: string[]
+  artifacts_risk?: string[] | null
+  vram_profile?: string | null
+  chunk_overlap_policy?: Record<string, unknown> | null
+  quality_axes?: Record<string, unknown> | null
+  content_fit?: string[]
+  operating_profiles?: Record<string, unknown> | null
   quality_tier?: string | null
   target_roles?: string[]
   vram_required?: number | null
@@ -15,6 +39,7 @@ export interface PreflightRequiredModel {
 export interface SeparationPreflightPlan {
   workflow_name?: string | null
   workflow_type?: string | null
+  workflow_family?: string | null
   quality_goal?: string | null
   difficulty?: string | null
   simple_surface?: boolean
@@ -31,6 +56,12 @@ export interface SeparationPreflightPlan {
   resolved_device?: string | null
   resolved_overlap?: number | null
   resolved_segment_size?: number | null
+  runtime_adapter?: string | null
+  missing_runtime_assets?: string[]
+  unsupported_patch_profile?: string[]
+  phase_fix_compatibility?: string | null
+  crossover_validation?: string | null
+  recommended_operating_profile?: string | null
   fallback_reason?: string | null
   should_use_simple?: boolean
   should_use_advanced?: boolean

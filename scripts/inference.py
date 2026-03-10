@@ -154,6 +154,95 @@ def _normalize_config(config: dict) -> dict:
         if dst_key not in config and src_key in config:
             config[dst_key] = config[src_key]
 
+    workflow = config.get("workflow")
+    if isinstance(workflow, dict):
+        if "runtime_policy" not in config and isinstance(
+            workflow.get("runtimePolicy"), dict
+        ):
+            config["runtime_policy"] = workflow.get("runtimePolicy")
+        if "export_policy" not in config and isinstance(
+            workflow.get("exportPolicy"), dict
+        ):
+            config["export_policy"] = workflow.get("exportPolicy")
+        if not config.get("stems") and isinstance(workflow.get("stems"), list):
+            config["stems"] = workflow.get("stems")
+        if not config.get("post_processing_steps") and isinstance(
+            workflow.get("postprocess"), list
+        ):
+            config["post_processing_steps"] = workflow.get("postprocess")
+
+        kind = str(workflow.get("kind") or "").strip().lower()
+        models = workflow.get("models")
+        steps = workflow.get("steps")
+        blend = workflow.get("blend") if isinstance(workflow.get("blend"), dict) else {}
+
+        if kind == "ensemble" and not config.get("ensemble_config") and isinstance(models, list):
+            ensemble_models = []
+            for model in models:
+                if not isinstance(model, dict):
+                    continue
+                model_id = model.get("model_id")
+                if not isinstance(model_id, str) or not model_id.strip():
+                    continue
+                entry = {"model_id": model_id}
+                weight = model.get("weight")
+                if isinstance(weight, (int, float)):
+                    entry["weight"] = float(weight)
+                ensemble_models.append(entry)
+            if ensemble_models:
+                config["ensemble_config"] = ensemble_models
+                config["model_id"] = "ensemble"
+                if isinstance(blend.get("algorithm"), str) and blend.get("algorithm").strip():
+                    config["ensemble_algorithm"] = blend.get("algorithm")
+                if isinstance(blend.get("stemAlgorithms"), dict):
+                    config["stem_algorithms"] = blend.get("stemAlgorithms")
+                if blend.get("phaseFixEnabled") is True:
+                    config["phase_fix_enabled"] = True
+                if isinstance(blend.get("phaseFixParams"), dict):
+                    config["phase_params"] = blend.get("phaseFixParams")
+                if config.get("split_freq") is None and blend.get("splitFreq") is not None:
+                    config["split_freq"] = blend.get("splitFreq")
+
+        if kind == "single" and not config.get("model_id") and isinstance(models, list):
+            for model in models:
+                if isinstance(model, dict) and isinstance(model.get("model_id"), str):
+                    config["model_id"] = model.get("model_id")
+                    break
+
+        if kind == "pipeline" and not config.get("pipeline_config") and isinstance(steps, list):
+            normalized_steps = []
+            for index, step in enumerate(steps):
+                if not isinstance(step, dict):
+                    continue
+                normalized = {
+                    "step_name": step.get("id")
+                    or step.get("name")
+                    or f"step_{index + 1}",
+                    "action": step.get("action") or "separate",
+                }
+                for key in (
+                    "model_id",
+                    "source_model",
+                    "input_source",
+                    "output",
+                    "apply_to",
+                    "weight",
+                    "optional",
+                ):
+                    if key in step and step.get(key) is not None:
+                        normalized[key] = step.get(key)
+
+                params = step.get("params")
+                if isinstance(params, dict):
+                    normalized.update(params)
+
+                normalized_steps.append(normalized)
+
+            if normalized_steps:
+                config["pipeline_config"] = normalized_steps
+                if not isinstance(config.get("model_id"), str) or not config.get("model_id"):
+                    config["model_id"] = workflow.get("id") or "pipeline"
+
     # 1) Normalize ensemble_config object -> list
     ensemble_cfg = config.get("ensemble_config")
     if isinstance(ensemble_cfg, dict):
@@ -585,6 +674,12 @@ async def main():
         # Prepare job kwargs
         stems = _normalize_stems(config.get("stems"))
         bit_depth = _normalize_bit_depth(config.get("bit_depth", "16"))
+        workflow = config.get("workflow") if isinstance(config.get("workflow"), dict) else None
+        pipeline_config = (
+            config.get("pipeline_config")
+            if isinstance(config.get("pipeline_config"), list)
+            else None
+        )
         job_kwargs = {
             "file_path": file_path,
             "model_id": model_id,
@@ -617,7 +712,28 @@ async def main():
 
         async def _run_once(attempt: int):
             # Create Job
-            job_id = separation_manager.create_job(**job_kwargs)
+            if pipeline_config and (
+                str((workflow or {}).get("kind") or "").strip().lower() == "pipeline"
+                or str(model_id or "").strip().lower() == "pipeline"
+            ):
+                job_id = separation_manager.create_pipeline_job(
+                    file_path=file_path,
+                    pipeline_config=pipeline_config,
+                    output_dir=output_dir,
+                    stems=stems,
+                    device=device_str,
+                    overlap=config.get("overlap"),
+                    segment_size=config.get("segment_size") or 0,
+                    tta=config.get("tta", False),
+                    output_format=config.get("output_format", "wav"),
+                    shifts=config.get("shifts", 1),
+                    bitrate=config.get("bitrate", "320k"),
+                    export_mixes=config.get("export_mixes"),
+                    normalize=config.get("normalize", False),
+                    bit_depth=bit_depth,
+                )
+            else:
+                job_id = separation_manager.create_job(**job_kwargs)
 
             # Setup callbacks
             job = separation_manager.get_job(job_id)

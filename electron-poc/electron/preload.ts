@@ -1,5 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
+type PreloadWorkflow = Record<string, any>
+type PreloadRuntimePolicy = Record<string, any>
+type PreloadExportPolicy = Record<string, any>
+
 contextBridge.exposeInMainWorld('electronAPI', {
   // Audio file operations
   openAudioFileDialog: () => ipcRenderer.invoke('open-audio-file-dialog'),
@@ -17,11 +21,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('youtube-progress', handler)
   },
 
-  separationPreflight: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }) =>
-    ipcRenderer.invoke('separation-preflight', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation }),
+  separationPreflight: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy) =>
+    ipcRenderer.invoke('separation-preflight', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, workflow, runtimePolicy, exportPolicy }),
 
-  separateAudio: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }) =>
-    ipcRenderer.invoke('separate-audio', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation }),
+  separateAudio: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy) =>
+    ipcRenderer.invoke('separate-audio', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, workflow, runtimePolicy, exportPolicy }),
   cancelSeparation: (jobId: string) => ipcRenderer.invoke('cancel-separation', jobId),
   saveJobOutput: (jobId: string) => ipcRenderer.invoke('save-job-output', jobId),
   discardJobOutput: (jobId: string) => ipcRenderer.invoke('discard-job-output', jobId),

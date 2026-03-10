@@ -43,6 +43,7 @@ export function ModelDetails({
         if (tech && typeof tech === "object") {
           setResolvedModel((prev) => ({
             ...prev,
+            ...tech,
             chunk_size: tech.chunk_size ?? prev.chunk_size,
             dim_f: tech.dim_f ?? prev.dim_f,
             dim_t: tech.dim_t ?? prev.dim_t,
@@ -61,6 +62,20 @@ export function ModelDetails({
   const metricSlots = getCardMetricSlots(resolvedModel);
   const metricsSource = formatMetricsSource(resolvedModel);
   const catalogStatus = formatCatalogStatus(resolvedModel.catalog_status);
+  const qualityRoles = Array.isArray(resolvedModel.quality_role)
+    ? resolvedModel.quality_role
+    : resolvedModel.quality_role
+      ? [resolvedModel.quality_role]
+      : [];
+  const workflowRoles = resolvedModel.workflow_roles || [];
+  const runtimeRequired = resolvedModel.runtime?.required || [];
+  const runtimeFallbacks = resolvedModel.runtime?.fallbacks || [];
+  const runtimeHosts = resolvedModel.runtime?.hosts || [];
+  const runtimeBurden = resolvedModel.runtime?.install_burden;
+  const runtimeCustomFiles = resolvedModel.runtime?.requires_custom_repo_file || [];
+  const phaseFixReferences = resolvedModel.phase_fix?.references || {};
+  const qualityAxes = resolvedModel.quality_axes || {};
+  const operatingProfiles = resolvedModel.operating_profiles || {};
 
   const chunkSizeDisplay =
     resolvedModel.chunk_size ||
@@ -128,6 +143,26 @@ export function ModelDetails({
             {metricsSource && (
               <Badge variant="outline" className="bg-secondary/50">
                 {metricsSource}
+              </Badge>
+            )}
+            {qualityRoles.map((role) => (
+              <Badge key={role} variant="outline" className="bg-secondary/50">
+                {String(role).replace(/[_-]+/g, " ")}
+              </Badge>
+            ))}
+            {resolvedModel.install?.mode && (
+              <Badge variant="outline" className="bg-secondary/50">
+                Install: {resolvedModel.install.mode}
+              </Badge>
+            )}
+            {resolvedModel.status?.curated && (
+              <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/20 text-emerald-700">
+                Curated
+              </Badge>
+            )}
+            {resolvedModel.status?.support_tier === "supported_advanced" && (
+              <Badge variant="outline" className="bg-slate-900/6">
+                Supported Advanced
               </Badge>
             )}
             {phaseFixValid && (
@@ -273,12 +308,100 @@ export function ModelDetails({
               Technical Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+              {runtimeRequired.length > 0 && (
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Runtime Required</span>
+                  <span className="font-medium text-foreground/90 text-right">
+                    {runtimeRequired.join(", ")}
+                  </span>
+                </div>
+              )}
+              {resolvedModel.runtime?.engine && (
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Runtime Engine</span>
+                  <span className="font-medium text-foreground/90 text-right">
+                    {resolvedModel.runtime.engine}
+                  </span>
+                </div>
+              )}
+              {resolvedModel.runtime?.model_type && (
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Model Type</span>
+                  <span className="font-medium text-foreground/90 text-right">
+                    {resolvedModel.runtime.model_type}
+                  </span>
+                </div>
+              )}
+              {resolvedModel.runtime?.patch_profile && (
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Patch Profile</span>
+                  <span className="font-medium text-foreground/90 text-right">
+                    {resolvedModel.runtime.patch_profile}
+                  </span>
+                </div>
+              )}
+              {runtimeFallbacks.length > 0 && (
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Runtime Fallbacks</span>
+                  <span className="font-medium text-foreground/90 text-right">
+                    {runtimeFallbacks.join(", ")}
+                  </span>
+                </div>
+              )}
+              {runtimeHosts.length > 0 && (
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Best Hosts</span>
+                  <span className="font-medium text-foreground/90 text-right">
+                    {runtimeHosts.join(", ")}
+                  </span>
+                </div>
+              )}
+              {runtimeBurden && (
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Install Burden</span>
+                  <span className="font-medium text-foreground/90">
+                    {runtimeBurden}
+                  </span>
+                </div>
+              )}
+              {resolvedModel.runtime?.requires_manual_assets && (
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Manual Assets</span>
+                  <span className="font-medium text-foreground/90">
+                    Required
+                  </span>
+                </div>
+              )}
+              {resolvedModel.runtime?.requires_patch && (
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Repo Patch</span>
+                  <span className="font-medium text-foreground/90">
+                    Required
+                  </span>
+                </div>
+              )}
+              {resolvedModel.vram_profile && (
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">VRAM Profile</span>
+                  <span className="font-medium text-foreground/90">
+                    {resolvedModel.vram_profile}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between py-1 border-b border-border/30">
                 <span className="text-muted-foreground">Chunk Size</span>
                 <span className="tabular-nums font-medium text-foreground/90">
                   {chunkSizeDisplay}
                 </span>
               </div>
+              {resolvedModel.chunk_overlap_policy?.default_overlap && (
+                <div className="flex justify-between py-1 border-b border-border/30">
+                  <span className="text-muted-foreground">Default Overlap</span>
+                  <span className="tabular-nums font-medium text-foreground/90">
+                    {resolvedModel.chunk_overlap_policy.default_overlap}
+                  </span>
+                </div>
+              )}
               {resolvedModel.hop_length && (
                 <div className="flex justify-between py-1 border-b border-border/30">
                   <span className="text-muted-foreground">Hop Length</span>
@@ -313,6 +436,84 @@ export function ModelDetails({
               )}
             </div>
           </div>
+          {(workflowRoles.length > 0 ||
+            resolvedModel.content_fit?.length ||
+            Object.keys(qualityAxes).length > 0 ||
+            runtimeCustomFiles.length > 0) && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Guide Fit
+              </h3>
+              <div className="space-y-2 text-sm text-foreground/90">
+                {workflowRoles.length > 0 && (
+                  <p>Workflow roles: {workflowRoles.join(", ")}</p>
+                )}
+                {resolvedModel.content_fit?.length ? (
+                  <p>Content fit: {resolvedModel.content_fit.join(", ")}</p>
+                ) : null}
+                {runtimeCustomFiles.length > 0 && (
+                  <p>Custom files: {runtimeCustomFiles.join(", ")}</p>
+                )}
+                {Object.keys(qualityAxes).length > 0 && (
+                  <p>
+                    Quality axes: {Object.entries(qualityAxes).map(([key, value]) => `${key}=${value}`).join(", ")}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          {Object.keys(phaseFixReferences).length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Phase Fix Pairings
+              </h3>
+              <div className="space-y-1 text-sm text-foreground/90">
+                {Object.entries(phaseFixReferences).map(([stem, models]) => (
+                  <p key={stem}>
+                    {stem}: {Array.isArray(models) ? models.join(", ") : String(models)}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+          {Object.keys(operatingProfiles).length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Operating Profiles
+              </h3>
+              <div className="space-y-2 text-sm text-foreground/90">
+                {Object.entries(operatingProfiles).map(([profile, config]) => (
+                  <p key={profile}>
+                    {profile}: seg {config?.segment_size ?? "-"}, overlap {config?.overlap ?? "-"}, shifts {config?.shifts ?? "-"}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+          {(resolvedModel.best_for?.length || resolvedModel.artifacts_risk?.length || resolvedModel.workflow_groups?.length) && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Workflow Fit
+              </h3>
+              <div className="space-y-2 text-sm text-foreground/90">
+                {resolvedModel.best_for?.length ? (
+                  <p>
+                    Best for: {resolvedModel.best_for.join(", ")}
+                  </p>
+                ) : null}
+                {resolvedModel.workflow_groups?.length ? (
+                  <p>
+                    Groups: {resolvedModel.workflow_groups.join(", ")}
+                  </p>
+                ) : null}
+                {resolvedModel.artifacts_risk?.length ? (
+                  <p>
+                    Risk flags: {resolvedModel.artifacts_risk.join(", ")}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}

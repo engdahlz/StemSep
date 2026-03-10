@@ -1,0 +1,226 @@
+{
+  "meta": {
+    "source_priority": [
+      "deton24_guide",
+      "zfturbo_msst_repo",
+      "local_registry"
+    ],
+    "guide_revision": "2026-03-10",
+    "notes": [
+      "Guide-derived product digest used to normalize recurring community recommendations into registry metadata.",
+      "Training guidance is intentionally excluded from this digest; it is inferencing and workflow focused."
+    ]
+  },
+  "guide_refresh": {
+    "script": "scripts/registry/refresh_guide_snapshot.ps1",
+    "outputs": [
+      "docs/vendor/deton24_guide/latest.txt",
+      "StemSepApp/assets/registry/guide_digest.json",
+      "reports/guide_refresh/candidates.json"
+    ]
+  },
+  "workflow_families": [
+    "Ultimate Instrumental",
+    "Ultimate Vocals",
+    "Karaoke Lead/Back",
+    "Karaoke to SATB/Harmony",
+    "Restoration",
+    "Bass Definition",
+    "Drum Extraction",
+    "Hybrid Crossover",
+    "Demucs Secondary Pass",
+    "Special Stem"
+  ],
+  "model_overrides": {
+    "unwa-inst-v1e-plus": {
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "mel_band_roformer",
+        "config_ref": "config_melbandroformer_inst.yaml",
+        "checkpoint_ref": "melband_roformer_inst_v1e_plus.ckpt",
+        "install_mode": "direct",
+        "required_files": [
+          "config_melbandroformer_inst.yaml",
+          "melband_roformer_inst_v1e_plus.ckpt"
+        ]
+      },
+      "status": {
+        "curated": true,
+        "support_tier": "curated"
+      }
+    },
+    "unwa-big-beta-5e": {
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "mel_band_roformer",
+        "config_ref": "big_beta5e.yaml",
+        "checkpoint_ref": "big_beta5e.ckpt",
+        "install_mode": "direct",
+        "required_files": [
+          "big_beta5e.yaml",
+          "big_beta5e.ckpt"
+        ]
+      },
+      "status": {
+        "curated": true,
+        "support_tier": "curated"
+      }
+    },
+    "bs-roformer-viperx-1297": {
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "bs_roformer",
+        "config_ref": "model_bs_roformer_ep_317_sdr_12.9755.yaml",
+        "checkpoint_ref": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+        "install_mode": "direct",
+        "required_files": [
+          "model_bs_roformer_ep_317_sdr_12.9755.yaml",
+          "model_bs_roformer_ep_317_sdr_12.9755.ckpt"
+        ]
+      },
+      "status": {
+        "curated": true,
+        "support_tier": "curated"
+      }
+    },
+    "mel-band-roformer-kim": {
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "mel_band_roformer",
+        "config_ref": "mel-band-roformer-kim.yaml",
+        "checkpoint_ref": "MelBandRoformer.ckpt",
+        "install_mode": "direct",
+        "required_files": [
+          "mel-band-roformer-kim.yaml",
+          "MelBandRoformer.ckpt"
+        ]
+      },
+      "status": {
+        "curated": true,
+        "support_tier": "curated"
+      }
+    },
+    "anvuew-karaoke": {
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "bs_roformer",
+        "config_ref": "model.yaml",
+        "checkpoint_ref": "karaoke_bs_roformer_anvuew.ckpt",
+        "install_mode": "direct",
+        "required_files": [
+          "model.yaml",
+          "karaoke_bs_roformer_anvuew.ckpt"
+        ]
+      },
+      "status": {
+        "curated": true,
+        "support_tier": "curated"
+      }
+    },
+    "bs-roformer-karaoke-becruily": {
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "bs_roformer",
+        "config_ref": "config_karaoke_frazer_becruily.yaml",
+        "checkpoint_ref": "bs_roformer_karaoke_frazer_becruily.ckpt",
+        "install_mode": "direct",
+        "required_files": [
+          "config_karaoke_frazer_becruily.yaml",
+          "bs_roformer_karaoke_frazer_becruily.ckpt"
+        ]
+      },
+      "status": {
+        "curated": true,
+        "support_tier": "curated"
+      }
+    },
+    "anvuew-dereverb-room": {
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "mel_band_roformer",
+        "config_ref": "dereverb_room_anvuew.yaml",
+        "checkpoint_ref": "dereverb_room_anvuew_sdr_13.7432.ckpt",
+        "install_mode": "direct",
+        "required_files": [
+          "dereverb_room_anvuew.yaml",
+          "dereverb_room_anvuew_sdr_13.7432.ckpt"
+        ]
+      },
+      "status": {
+        "curated": true,
+        "support_tier": "curated"
+      }
+    },
+    "aufr33-denoise-aggressive": {
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "mel_band_roformer",
+        "config_ref": "model_mel_band_roformer_denoise.yaml",
+        "checkpoint_ref": "denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt",
+        "install_mode": "direct",
+        "required_files": [
+          "model_mel_band_roformer_denoise.yaml",
+          "denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt"
+        ]
+      },
+      "status": {
+        "curated": true,
+        "support_tier": "curated"
+      }
+    },
+    "mdx23c-drumsep-5stem": {
+      "runtime": {
+        "engine": "native_stemsep",
+        "model_type": "mdx23c",
+        "config_ref": "config_mdx23c.yaml",
+        "checkpoint_ref": "drumsep_5stems_mdx23c_jarredou.ckpt",
+        "install_mode": "direct",
+        "required_files": [
+          "config_mdx23c.yaml",
+          "drumsep_5stems_mdx23c_jarredou.ckpt"
+        ]
+      },
+      "status": {
+        "curated": true,
+        "support_tier": "curated"
+      }
+    },
+    "scnet-large": {
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "scnet",
+        "config_ref": "config.yaml",
+        "checkpoint_ref": "SCNet-large_starrytong_fixed.ckpt",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "config.yaml",
+          "SCNet-large_starrytong_fixed.ckpt"
+        ]
+      },
+      "status": {
+        "curated": true,
+        "support_tier": "curated"
+      }
+    },
+    "unwa-hyperace-v2-inst": {
+      "runtime": {
+        "engine": "custom_builtin_variant",
+        "model_type": "bs_roformer",
+        "patch_profile": "hyperace_v2",
+        "config_ref": "config.yaml",
+        "checkpoint_ref": "bs_roformer_inst_hyperacev2.ckpt",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "config.yaml",
+          "bs_roformer_inst_hyperacev2.ckpt"
+        ]
+      },
+      "status": {
+        "curated": false,
+        "support_tier": "supported_advanced"
+      }
+    }
+  }
+}

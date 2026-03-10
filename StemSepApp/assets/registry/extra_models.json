@@ -1,0 +1,608 @@
+{
+  "models": [
+    {
+      "id": "htdemucs",
+      "name": "HTDemucs",
+      "architecture": "Demucs",
+      "version": "manual",
+      "category": "general",
+      "description": "Manual Demucs baseline for broad 4-stem separation and fallback workflows.",
+      "stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "sdr": 0,
+      "fullness": 0,
+      "bleedless": 0,
+      "vram_required": 8,
+      "speed": "standard",
+      "file_size": 0,
+      "recommended": false,
+      "runtime": {
+        "variant": "demucs",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "demucs_native",
+          "custom_script"
+        ],
+        "install_burden": "medium",
+        "engine": "demucs_native",
+        "model_type": "htdemucs",
+        "config_ref": "htdemucs.yaml",
+        "checkpoint_ref": "htdemucs.th",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "htdemucs.yaml",
+          "htdemucs.th"
+        ]
+      },
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Place the Demucs yaml/weights in the configured models directory.",
+          "Use this for workflows that need Demucs as a local fallback or reference."
+        ]
+      },
+      "quality_role": [
+        "primary",
+        "ensemble_partner"
+      ],
+      "best_for": [
+        "4-stem general",
+        "fallback separation",
+        "broad accompaniment recovery"
+      ],
+      "artifacts_risk": [
+        "transient smearing",
+        "crowded high-end blur"
+      ],
+      "vram_profile": "mid_vram",
+      "chunk_overlap_policy": {
+        "default_segment_size": 352800,
+        "default_overlap": 4,
+        "notes": [
+          "Use moderate overlap for stable Demucs exports."
+        ]
+      },
+      "workflow_groups": [
+        "4-stem general",
+        "instrumental"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 6,
+        "noise_risk": 3,
+        "harmony_capture": 6,
+        "bgv_retention": 5,
+        "mud_risk": 4,
+        "specialization": "broad 4-stem fallback"
+      },
+      "workflow_roles": [
+        "cleanup_reference",
+        "special_stem"
+      ],
+      "content_fit": [
+        "4-stem_general",
+        "secondary_pass",
+        "fallback"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_fullness": {
+          "segment_size": 485100,
+          "overlap": 8,
+          "shifts": 1
+        }
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Manual Demucs assets required before this runtime can be used."
+      }
+    },
+    {
+      "id": "htdemucs-ft",
+      "name": "HTDemucs FT",
+      "architecture": "Demucs",
+      "version": "manual",
+      "category": "general",
+      "description": "Fine-tuned Demucs variant for higher quality full-band separation when manually installed.",
+      "stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "sdr": 0,
+      "fullness": 0,
+      "bleedless": 0,
+      "vram_required": 10,
+      "speed": "slow",
+      "file_size": 0,
+      "recommended": false,
+      "runtime": {
+        "variant": "demucs",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "demucs_native",
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "engine": "demucs_native",
+        "model_type": "htdemucs",
+        "config_ref": "htdemucs-ft.yaml",
+        "checkpoint_ref": "htdemucs-ft.th",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "htdemucs-ft.yaml",
+          "htdemucs-ft.th"
+        ]
+      },
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Manual install required. Recommended for curated premium workflows, not simple mode."
+        ]
+      },
+      "quality_role": [
+        "primary",
+        "ensemble_partner"
+      ],
+      "best_for": [
+        "secondary Demucs pass",
+        "body recovery after a cleaner main model"
+      ],
+      "artifacts_risk": [
+        "slow runtime",
+        "heavy VRAM usage"
+      ],
+      "vram_profile": "high_vram",
+      "chunk_overlap_policy": {
+        "default_segment_size": 485100,
+        "default_overlap": 8,
+        "notes": [
+          "Higher overlap improves continuity but increases runtime."
+        ]
+      },
+      "workflow_groups": [
+        "4-stem general",
+        "workflow"
+      ],
+      "quality_axes": {
+        "fullness": 9,
+        "bleedless": 7,
+        "noise_risk": 3,
+        "harmony_capture": 6,
+        "bgv_retention": 5,
+        "mud_risk": 3,
+        "specialization": "secondary cleanup pass"
+      },
+      "workflow_roles": [
+        "cleanup_reference"
+      ],
+      "content_fit": [
+        "4-stem_general",
+        "secondary_pass",
+        "busy_mix"
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Manual Demucs assets required before this runtime can be used."
+      }
+    },
+    {
+      "id": "htdemucs-6s",
+      "name": "HTDemucs 6S",
+      "architecture": "Demucs",
+      "version": "manual",
+      "category": "special",
+      "description": "Manual 6-stem Demucs build for guitar/piano-aware special stem workflows.",
+      "stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other",
+        "guitar",
+        "piano"
+      ],
+      "sdr": 0,
+      "fullness": 0,
+      "bleedless": 0,
+      "vram_required": 12,
+      "speed": "slow",
+      "file_size": 0,
+      "recommended": false,
+      "runtime": {
+        "variant": "demucs",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "demucs_native",
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "engine": "demucs_native",
+        "model_type": "htdemucs_6s",
+        "config_ref": "htdemucs-6s.yaml",
+        "checkpoint_ref": "htdemucs-6s.th",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "htdemucs-6s.yaml",
+          "htdemucs-6s.th"
+        ]
+      },
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Manual install required for advanced special-stem workflows."
+        ]
+      },
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "best_for": [
+        "special stem extension",
+        "guitar/piano-aware passes"
+      ],
+      "artifacts_risk": [
+        "high VRAM usage",
+        "more diffuse separation on dense mixes"
+      ],
+      "vram_profile": "high_vram",
+      "chunk_overlap_policy": {
+        "default_segment_size": 352800,
+        "default_overlap": 4,
+        "notes": [
+          "Use only when special stems are required."
+        ]
+      },
+      "workflow_groups": [
+        "special stems",
+        "4-stem general"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 6,
+        "noise_risk": 4,
+        "harmony_capture": 4,
+        "bgv_retention": 3,
+        "mud_risk": 4,
+        "specialization": "special stem extension"
+      },
+      "workflow_roles": [
+        "special_stem"
+      ],
+      "content_fit": [
+        "special_stems",
+        "guitar",
+        "piano"
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Manual Demucs assets required before this runtime can be used."
+      }
+    },
+    {
+      "id": "apollo-restoration",
+      "name": "Apollo Restoration",
+      "architecture": "Apollo",
+      "version": "manual",
+      "category": "restoration",
+      "description": "Advanced Apollo restoration runtime for low-quality source cleanup and guide-backed harmony recovery experiments.",
+      "stems": [
+        "restored"
+      ],
+      "sdr": 0,
+      "fullness": 0,
+      "bleedless": 0,
+      "vram_required": 8,
+      "speed": "standard",
+      "file_size": 0,
+      "recommended": false,
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "apollo",
+        "variant": "apollo",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "msst_builtin"
+        ],
+        "config_ref": "apollo-restoration.yaml",
+        "checkpoint_ref": "apollo-restoration.ckpt",
+        "install_mode": "manual",
+        "install_burden": "high",
+        "requires_manual_assets": true,
+        "required_files": [
+          "apollo-restoration.yaml",
+          "apollo-restoration.ckpt"
+        ]
+      },
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Manual Apollo assets required until the runtime bundle is curated."
+        ]
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Advanced runtime only until Apollo assets are verified locally."
+      },
+      "quality_role": [
+        "post_process",
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "restoration_step",
+        "harmony_recovery"
+      ],
+      "best_for": [
+        "restoration",
+        "advanced vocal recovery"
+      ],
+      "artifacts_risk": [
+        "manual asset setup",
+        "experimental on dense mixes"
+      ],
+      "vram_profile": "mid_vram",
+      "workflow_groups": [
+        "restoration",
+        "special stems"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 6,
+        "noise_risk": 3,
+        "harmony_capture": 7,
+        "bgv_retention": 7,
+        "mud_risk": 3,
+        "specialization": "restoration and recovery"
+      },
+      "content_fit": [
+        "live_recording",
+        "harmonies",
+        "special_stems"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        }
+      }
+    },
+    {
+      "id": "bandit-dnr",
+      "name": "BandIt DnR",
+      "architecture": "BandIt",
+      "version": "manual",
+      "category": "restoration",
+      "description": "BandIt-plus style denoise/music/effects runtime for advanced cleanup and comparison workflows.",
+      "stems": [
+        "speech",
+        "music",
+        "effects"
+      ],
+      "sdr": 0,
+      "fullness": 0,
+      "bleedless": 0,
+      "vram_required": 8,
+      "speed": "standard",
+      "file_size": 0,
+      "recommended": false,
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "bandit",
+        "variant": "bandit",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "msst_builtin"
+        ],
+        "config_ref": "bandit-dnr.yaml",
+        "checkpoint_ref": "bandit-dnr.ckpt",
+        "install_mode": "manual",
+        "install_burden": "high",
+        "requires_manual_assets": true,
+        "required_files": [
+          "bandit-dnr.yaml",
+          "bandit-dnr.ckpt"
+        ]
+      },
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Manual BandIt config and checkpoint required."
+        ]
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "BandIt is available as an advanced MSST runtime only."
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "restoration_step"
+      ],
+      "best_for": [
+        "noise reduction",
+        "advanced cleanup"
+      ],
+      "artifacts_risk": [
+        "manual asset setup"
+      ],
+      "vram_profile": "mid_vram",
+      "workflow_groups": [
+        "restoration"
+      ],
+      "quality_axes": {
+        "fullness": 5,
+        "bleedless": 5,
+        "noise_risk": 2,
+        "harmony_capture": 4,
+        "bgv_retention": 4,
+        "mud_risk": 3,
+        "specialization": "denoise and source cleanup"
+      },
+      "content_fit": [
+        "live_recording",
+        "cleanup"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        }
+      }
+    },
+    {
+      "id": "scnet-masked-xl",
+      "name": "SCNet Masked XL",
+      "architecture": "SCNet",
+      "version": "manual",
+      "category": "general",
+      "description": "Advanced SCNet masked runtime for comparison and low-band crossover experiments.",
+      "stems": [
+        "vocals",
+        "instrumental"
+      ],
+      "sdr": 0,
+      "fullness": 0,
+      "bleedless": 0,
+      "vram_required": 12,
+      "speed": "slow",
+      "file_size": 0,
+      "recommended": false,
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "scnet_masked",
+        "variant": "scnet_masked",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "msst_builtin"
+        ],
+        "config_ref": "scnet-masked-xl.yaml",
+        "checkpoint_ref": "scnet-masked-xl.ckpt",
+        "install_mode": "manual",
+        "install_burden": "high",
+        "requires_manual_assets": true,
+        "required_files": [
+          "scnet-masked-xl.yaml",
+          "scnet-masked-xl.ckpt"
+        ]
+      },
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Manual SCNet masked assets required for advanced comparison workflows."
+        ]
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "SCNet masked XL is advanced-only until validated in local QA."
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "low_band_source",
+        "secondary_cleanup_pass"
+      ],
+      "best_for": [
+        "hybrid crossover",
+        "advanced comparison"
+      ],
+      "artifacts_risk": [
+        "slow runtime",
+        "high VRAM usage"
+      ],
+      "vram_profile": "high_vram",
+      "workflow_groups": [
+        "instrumental",
+        "workflow"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 7,
+        "noise_risk": 3,
+        "harmony_capture": 6,
+        "bgv_retention": 5,
+        "mud_risk": 3,
+        "specialization": "hybrid low band support"
+      },
+      "content_fit": [
+        "busy_mix",
+        "low_band"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        }
+      }
+    }
+  ]
+}

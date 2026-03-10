@@ -32,17 +32,40 @@
         {
           "action": "separate",
           "model_id": "unwa-inst-v1e-plus",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "action": "phase_fix",
           "source_model": "becruily-vocal",
           "lowHz": 500,
           "highHz": 5000,
-          "weight": 2.0,
+          "weight": 2,
           "apply_to": "instrumental"
         }
-      ]
+      ],
+      "family": "Ultimate Instrumental",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "raw_instrumental",
+        "phase_fixed_instrumental"
+      ],
+      "fallback_policy": {
+        "mode": "runtime_fallback",
+        "reason": "Fallback to Demucs if preferred guide pair is unavailable.",
+        "runtime_order": [
+          "msst_builtin",
+          "demucs_native"
+        ]
+      },
+      "export_policy": {
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "raw_instrumental",
+          "phase_fixed_instrumental"
+        ]
+      }
     },
     {
       "id": "recipe_vocal_denoise",
@@ -74,13 +97,26 @@
       "steps": [
         {
           "model_id": "unwa-big-beta-5e",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "model_id": "gabox-voc-fv4",
-          "weight": 1.0
+          "weight": 1
         }
-      ]
+      ],
+      "family": "Ultimate Vocals",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "vocal_blend"
+      ],
+      "export_policy": {
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "vocal_blend"
+        ]
+      }
     },
     {
       "id": "recipe_karaoke_fusion",
@@ -111,13 +147,26 @@
       "steps": [
         {
           "model_id": "bs-roformer-karaoke-becruily",
-          "weight": 1.0
+          "weight": 1
         },
         {
           "model_id": "anvuew-karaoke",
-          "weight": 1.0
+          "weight": 1
         }
-      ]
+      ],
+      "family": "Karaoke Lead/Back",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "karaoke_base"
+      ],
+      "export_policy": {
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "karaoke_base"
+        ]
+      }
     },
     {
       "id": "workflow_live_restoration",
@@ -155,7 +204,22 @@
           "model_id": "aufr33-denoise-aggressive",
           "input_source": "dereverb.vocals"
         }
-      ]
+      ],
+      "family": "Restoration",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "dereverb",
+        "cleanup"
+      ],
+      "export_policy": {
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "dereverb",
+          "cleanup"
+        ]
+      }
     },
     {
       "id": "recipe_drums_punchy",
@@ -184,10 +248,30 @@
       "steps": [
         {
           "model_id": "mdx23c-drumsep-5stem",
-          "weight": 1.0,
-          "output": ["kick", "snare", "toms", "hihat", "cymbals"]
+          "weight": 1,
+          "output": [
+            "kick",
+            "snare",
+            "toms",
+            "hihat",
+            "cymbals"
+          ]
         }
-      ]
+      ],
+      "family": "Drum Extraction",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "export_policy": {
+        "stems": [
+          "kick",
+          "snare",
+          "toms",
+          "hihat",
+          "cymbals"
+        ],
+        "output_format": "wav"
+      }
     },
     {
       "id": "recipe_bass_definition",
@@ -216,10 +300,30 @@
       "steps": [
         {
           "model_id": "scnet-large",
-          "weight": 1.0,
-          "output": ["bass", "other"]
+          "weight": 1,
+          "output": [
+            "bass",
+            "other"
+          ]
         }
-      ]
+      ],
+      "family": "Bass Definition",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "bass_focus"
+      ],
+      "export_policy": {
+        "stems": [
+          "bass",
+          "other"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "bass_focus"
+        ]
+      }
     },
     {
       "id": "recipe_fast_preview",
@@ -249,8 +353,11 @@
       "steps": [
         {
           "model_id": "mdx23c-instvoc-hq",
-          "weight": 1.0,
-          "output": ["vocals", "instrumental"]
+          "weight": 1,
+          "output": [
+            "vocals",
+            "instrumental"
+          ]
         }
       ]
     },
@@ -279,9 +386,18 @@
       },
       "algorithm": "max_spec",
       "steps": [
-        { "model_id": "unwa-inst-v1e", "weight": 1.0 },
-        { "model_id": "gabox-inst-fv7z", "weight": 1.0 },
-        { "model_id": "bs-roformer-viperx-1297", "weight": 1.0 }
+        {
+          "model_id": "unwa-inst-v1e",
+          "weight": 1
+        },
+        {
+          "model_id": "gabox-inst-fv7z",
+          "weight": 1
+        },
+        {
+          "model_id": "bs-roformer-viperx-1297",
+          "weight": 1
+        }
       ]
     },
     {
@@ -309,9 +425,18 @@
       },
       "algorithm": "max_spec",
       "steps": [
-        { "model_id": "unwa-inst-fno", "weight": 1.0 },
-        { "model_id": "becruily-inst", "weight": 1.0 },
-        { "model_id": "unwa-inst-v1e", "weight": 1.0 }
+        {
+          "model_id": "unwa-inst-fno",
+          "weight": 1
+        },
+        {
+          "model_id": "becruily-inst",
+          "weight": 1
+        },
+        {
+          "model_id": "unwa-inst-v1e",
+          "weight": 1
+        }
       ]
     },
     {
@@ -338,8 +463,14 @@
       },
       "algorithm": "phase_fix",
       "steps": [
-        { "model_id": "unwa-inst-v1e", "weight": 1.0 },
-        { "model_id": "mel-band-roformer-kim", "weight": 1.0 }
+        {
+          "model_id": "unwa-inst-v1e",
+          "weight": 1
+        },
+        {
+          "model_id": "mel-band-roformer-kim",
+          "weight": 1
+        }
       ]
     },
     {
@@ -366,8 +497,14 @@
       },
       "algorithm": "phase_fix",
       "steps": [
-        { "model_id": "gabox-resurrection", "weight": 1.0 },
-        { "model_id": "bs-roformer-viperx-1297", "weight": 1.0 }
+        {
+          "model_id": "gabox-resurrection",
+          "weight": 1
+        },
+        {
+          "model_id": "bs-roformer-viperx-1297",
+          "weight": 1
+        }
       ]
     },
     {
@@ -394,8 +531,14 @@
       },
       "algorithm": "max_spec",
       "steps": [
-        { "model_id": "unwa-big-beta-5e", "weight": 1.0 },
-        { "model_id": "becruily-vocal", "weight": 1.0 }
+        {
+          "model_id": "unwa-big-beta-5e",
+          "weight": 1
+        },
+        {
+          "model_id": "becruily-vocal",
+          "weight": 1
+        }
       ]
     },
     {
@@ -456,7 +599,7 @@
       "steps": [
         {
           "model_id": "bs-roformer-viperx-1297",
-          "weight": 1.0
+          "weight": 1
         }
       ]
     },
@@ -520,7 +663,7 @@
       "steps": [
         {
           "model_id": "bs-roformer-viperx-1297",
-          "weight": 1.0
+          "weight": 1
         }
       ]
     },
@@ -552,8 +695,899 @@
         "split_freq": 1000
       },
       "steps": [
-        { "model_id": "scnet-large", "weight": 1.0, "role": "low_band" },
-        { "model_id": "unwa-inst-v1e-plus", "weight": 1.0, "role": "high_band" }
+        {
+          "model_id": "scnet-large",
+          "weight": 1,
+          "role": "low_band"
+        },
+        {
+          "model_id": "unwa-inst-v1e-plus",
+          "weight": 1,
+          "role": "high_band"
+        }
+      ],
+      "family": "Hybrid Crossover",
+      "promotion_status": "supported_advanced",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "low_band",
+        "high_band",
+        "hybrid_output"
+      ],
+      "fallback_policy": {
+        "mode": "profile_fallback",
+        "reason": "Use balanced crossover settings when custom split is unstable.",
+        "fallback_operating_profile": "balanced"
+      },
+      "export_policy": {
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "low_band",
+          "high_band",
+          "hybrid_output"
+        ]
+      }
+    },
+    {
+      "id": "ultimate_instrumental_fullness_cleanup",
+      "name": "Ultimate Instrumental",
+      "description": "Guide-aligned flagship chain: fullness-first instrumental, then phase-fix and debleed cleanup.",
+      "type": "pipeline",
+      "surface": "workflow",
+      "target": "instrumental",
+      "quality_goal": "max_fullness_min_bleed",
+      "difficulty": "simple",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "instrumental",
+      "recommended_for": [
+        "Final-quality instrumentals",
+        "Body-first backing tracks with cleanup"
+      ],
+      "contraindications": [
+        "CPU-only preview runs",
+        "Systems missing the cleanup companion models"
+      ],
+      "workflow_summary": "Unwa V1e+ for body, Becruily Vocal for phase-fix reference, then Gabox DeBleed for final cleanup.",
+      "runtime_policy": {
+        "required": [
+          "python"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "preferred_runtime": "stemsep",
+        "allow_manual_models": false
+      },
+      "export_policy": {
+        "stems": [
+          "instrumental",
+          "vocals"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "fullness_pass",
+          "phase_fix_reference",
+          "debleed_cleanup"
+        ]
+      },
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "fullness",
+          "action": "separate",
+          "model_id": "unwa-inst-v1e-plus",
+          "output": [
+            "instrumental",
+            "vocals"
+          ]
+        },
+        {
+          "step_name": "phase_fix",
+          "action": "phase_fix",
+          "source_model": "becruily-vocal",
+          "input_source": "fullness.instrumental",
+          "apply_to": "instrumental",
+          "lowHz": 500,
+          "highHz": 5000,
+          "weight": 2,
+          "output": "instrumental"
+        },
+        {
+          "step_name": "cleanup",
+          "action": "debleed",
+          "model_id": "gabox-denoise-debleed",
+          "input_source": "phase_fix.instrumental",
+          "output": "instrumental_clean"
+        }
+      ],
+      "family": "Ultimate Instrumental",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "fullness_pass",
+        "phase_fix_reference",
+        "debleed_cleanup"
+      ],
+      "fallback_policy": {
+        "mode": "runtime_fallback",
+        "reason": "Fall back to Demucs cleanup when guide-specific models are missing.",
+        "runtime_order": [
+          "msst_builtin",
+          "demucs_native"
+        ]
+      }
+    },
+    {
+      "id": "ultimate_instrumental_hybrid_crossover",
+      "name": "Hybrid Instrumental Crossover",
+      "description": "Low-band SCNet plus high-band Roformer hybrid around the guide-favored 1 kHz region.",
+      "type": "ensemble",
+      "surface": "workflow",
+      "target": "instrumental",
+      "quality_goal": "hybrid_crossover",
+      "difficulty": "expert",
+      "expected_vram_tier": "high_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 2,
+      "recommended_for": [
+        "Dense mixes with weak low end",
+        "Advanced hybrid experiments"
+      ],
+      "contraindications": [
+        "Low VRAM GPUs",
+        "Users who want a one-click safe workflow"
+      ],
+      "workflow_summary": "SCNet supplies lows, Unwa HyperACE supplies highs, with crossover validation near 1000 Hz.",
+      "runtime_policy": {
+        "required": [
+          "python"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "preferred_runtime": "stemsep"
+      },
+      "export_policy": {
+        "stems": [
+          "instrumental",
+          "vocals"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "low_band",
+          "high_band",
+          "hybrid_instrumental"
+        ]
+      },
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "algorithm": "frequency_split",
+      "algorithm_config": {
+        "split_freq": 1000,
+        "crossfade_hz": 120,
+        "fade_policy": "equal_power"
+      },
+      "steps": [
+        {
+          "model_id": "scnet-large",
+          "weight": 1,
+          "role": "low_band_source",
+          "note": "Use below crossover for bass/body."
+        },
+        {
+          "model_id": "unwa-hyperace",
+          "weight": 1,
+          "role": "high_band_source",
+          "note": "Use above crossover for articulation/detail."
+        }
+      ],
+      "family": "Hybrid Crossover",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "low_band",
+        "high_band",
+        "hybrid_instrumental"
+      ],
+      "fallback_policy": {
+        "mode": "profile_fallback",
+        "reason": "Fallback to balanced crossover when custom split is unstable.",
+        "fallback_operating_profile": "balanced"
+      }
+    },
+    {
+      "id": "ultimate_vocals_bleedless_full",
+      "name": "Ultimate Vocals",
+      "description": "Guide-curated vocal chain that balances fullness and bleedless cleanup.",
+      "type": "ensemble",
+      "surface": "workflow",
+      "target": "vocals",
+      "quality_goal": "fullness_plus_bleedless",
+      "difficulty": "simple",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "vocals",
+      "recommended_for": [
+        "Production-ready acapellas",
+        "Vocals that sound thin with purely clean models"
+      ],
+      "contraindications": [
+        "Fast preview jobs"
+      ],
+      "workflow_summary": "Blend Unwa Big Beta 5e for body with ViperX for cleanliness, then optionally dereverb/denoise.",
+      "runtime_policy": {
+        "required": [
+          "python"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "preferred_runtime": "stemsep"
+      },
+      "export_policy": {
+        "stems": [
+          "vocals",
+          "instrumental"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "vocal_primary",
+          "vocal_cleanup",
+          "vocal_restoration"
+        ]
+      },
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "algorithm": "average",
+      "steps": [
+        {
+          "model_id": "unwa-big-beta-5e",
+          "weight": 1,
+          "role": "fullness_source"
+        },
+        {
+          "model_id": "bs-roformer-viperx-1297",
+          "weight": 1,
+          "role": "cleanup_reference"
+        }
+      ],
+      "family": "Ultimate Vocals",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "vocal_primary",
+        "vocal_cleanup",
+        "vocal_restoration"
+      ]
+    },
+    {
+      "id": "karaoke_lead_back_chain",
+      "name": "Karaoke Lead/Back",
+      "description": "Guide-style karaoke chain: create a strong karaoke base, then refine lead/back separation.",
+      "type": "pipeline",
+      "surface": "workflow",
+      "target": "karaoke",
+      "quality_goal": "lead_back",
+      "difficulty": "simple",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "karaoke",
+      "recommended_for": [
+        "Backing tracks",
+        "Lead/back vocal prep"
+      ],
+      "contraindications": [
+        "Very low VRAM preview runs"
+      ],
+      "workflow_summary": "Anvuew Karaoke builds the base backing track, then ViperX Karaoke and Mel-Band Karaoke refine the vocal split.",
+      "runtime_policy": {
+        "required": [
+          "python"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "preferred_runtime": "stemsep"
+      },
+      "export_policy": {
+        "stems": [
+          "lead",
+          "backing",
+          "instrumental"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "karaoke_base",
+          "lead_refine",
+          "backing_refine"
+        ]
+      },
+      "defaults": {
+        "overlap": 2,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "karaoke_base",
+          "model_id": "anvuew-karaoke",
+          "output": [
+            "instrumental",
+            "vocals"
+          ]
+        },
+        {
+          "step_name": "lead_back_refine",
+          "model_id": "viperx-karaoke-1297",
+          "input_source": "karaoke_base.vocals",
+          "output": [
+            "lead",
+            "backing"
+          ]
+        },
+        {
+          "step_name": "harmony_touchup",
+          "model_id": "mel-band-karaoke-becruily",
+          "input_source": "lead_back_refine.backing",
+          "output": "backing_harmony"
+        }
+      ],
+      "family": "Karaoke Lead/Back",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "karaoke_base",
+        "lead_refine",
+        "backing_refine"
+      ]
+    },
+    {
+      "id": "karaoke_harmony_recovery_chain",
+      "name": "Karaoke Harmony Recovery",
+      "description": "Karaoke-first chain biased toward harmonies, BGVs and duet material.",
+      "type": "pipeline",
+      "surface": "workflow",
+      "target": "karaoke",
+      "quality_goal": "harmony_recovery",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 2,
+      "recommended_for": [
+        "Harmony-heavy pop",
+        "Duets and backing vocal analysis"
+      ],
+      "contraindications": [
+        "Quick one-click karaoke export"
+      ],
+      "workflow_summary": "Start with Becruily Karaoke, then use Aufr33/Mel-Band and Apollo Vocal when available to retain backing harmonies.",
+      "runtime_policy": {
+        "required": [
+          "python"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "preferred_runtime": "stemsep",
+        "allow_manual_models": true
+      },
+      "export_policy": {
+        "stems": [
+          "lead",
+          "backing"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "karaoke_backing",
+          "harmony_recovery"
+        ]
+      },
+      "defaults": {
+        "overlap": 2,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "base",
+          "model_id": "bs-roformer-karaoke-becruily",
+          "output": [
+            "instrumental",
+            "vocals"
+          ]
+        },
+        {
+          "step_name": "harmony_split",
+          "model_id": "mel-band-karaoke-aufr33",
+          "input_source": "base.vocals",
+          "output": [
+            "lead",
+            "backing"
+          ]
+        },
+        {
+          "step_name": "apollo_harmony",
+          "model_id": "lew-apollo-vocal",
+          "input_source": "harmony_split.backing",
+          "optional": true,
+          "output": "backing_dense"
+        }
+      ],
+      "family": "Karaoke to SATB/Harmony",
+      "promotion_status": "supported_advanced",
+      "qa_status": "pending",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "karaoke_backing",
+        "harmony_recovery"
+      ]
+    },
+    {
+      "id": "restoration_dereverb_denoise",
+      "name": "Restoration Chain",
+      "description": "Guide-backed restoration sequence: dereverb first, denoise second.",
+      "type": "pipeline",
+      "surface": "restoration",
+      "target": "restoration",
+      "quality_goal": "restoration",
+      "difficulty": "simple",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "cleanup",
+      "recommended_for": [
+        "Live vocals",
+        "Noisy room recordings"
+      ],
+      "contraindications": [
+        "Clean studio stems that need ambience preserved"
+      ],
+      "workflow_summary": "Anvuew Room Dereverb first, then Aufr33 Aggressive Denoise.",
+      "runtime_policy": {
+        "required": [
+          "python"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "preferred_runtime": "stemsep"
+      },
+      "export_policy": {
+        "stems": [
+          "clean"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "dereverb",
+          "denoise"
+        ]
+      },
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "dereverb",
+          "model_id": "anvuew-dereverb-room",
+          "output": "dry"
+        },
+        {
+          "step_name": "denoise",
+          "model_id": "aufr33-denoise-aggressive",
+          "input_source": "dereverb.dry",
+          "output": "clean"
+        }
+      ],
+      "family": "Restoration",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "dereverb",
+        "denoise"
+      ]
+    },
+    {
+      "id": "restoration_sep_dereverb_denoise",
+      "name": "Separated Vocal Restoration",
+      "description": "Separate first, then run restoration on the vocal stem for harder material.",
+      "type": "pipeline",
+      "surface": "restoration",
+      "target": "vocals",
+      "quality_goal": "vocal_restoration",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 2,
+      "recommended_for": [
+        "Reverb-heavy live songs",
+        "Vocals needing restoration after extraction"
+      ],
+      "contraindications": [
+        "Already-clean studio acapellas"
+      ],
+      "workflow_summary": "Separate vocals with ViperX, dereverb the vocal stem, then denoise.",
+      "runtime_policy": {
+        "required": [
+          "python"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "preferred_runtime": "stemsep"
+      },
+      "export_policy": {
+        "stems": [
+          "vocals",
+          "instrumental"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "separated_vocals",
+          "dereverb",
+          "denoise"
+        ]
+      },
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "separate",
+          "model_id": "bs-roformer-viperx-1297",
+          "output": [
+            "vocals",
+            "instrumental"
+          ]
+        },
+        {
+          "step_name": "dereverb",
+          "model_id": "anvuew-dereverb-room",
+          "input_source": "separate.vocals",
+          "output": "vocals_dry"
+        },
+        {
+          "step_name": "denoise",
+          "model_id": "aufr33-denoise-aggressive",
+          "input_source": "dereverb.vocals_dry",
+          "output": "vocals_restored"
+        }
+      ],
+      "family": "Restoration",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "separated_vocals",
+        "dereverb",
+        "denoise"
+      ]
+    },
+    {
+      "id": "bass_hybrid_scnet_demucs",
+      "name": "Bass Definition Hybrid",
+      "description": "Bass-first hybrid using SCNet definition with Demucs support for sustain and glue.",
+      "type": "ensemble",
+      "surface": "special_stem",
+      "target": "bass",
+      "quality_goal": "bass_definition",
+      "difficulty": "advanced",
+      "expected_vram_tier": "high_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "instruments",
+      "recommended_for": [
+        "Bass-focused extraction",
+        "Low-end mastering references"
+      ],
+      "contraindications": [
+        "Systems without Demucs installed"
+      ],
+      "workflow_summary": "SCNet supplies precise low-end definition while HTDemucs FT restores sustain and natural decay.",
+      "runtime_policy": {
+        "required": [
+          "python"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "preferred_runtime": "stemsep",
+        "allow_manual_models": true
+      },
+      "export_policy": {
+        "stems": [
+          "bass",
+          "other"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "scnet_bass",
+          "demucs_decay_restore"
+        ]
+      },
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "algorithm": "max_spec",
+      "steps": [
+        {
+          "model_id": "scnet-large",
+          "weight": 1,
+          "role": "low_band_source"
+        },
+        {
+          "model_id": "htdemucs-ft",
+          "weight": 0.8,
+          "role": "ensemble_partner"
+        }
+      ],
+      "family": "Bass Definition",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "scnet_bass",
+        "demucs_decay_restore"
+      ]
+    },
+    {
+      "id": "drum_extraction_plus_cleanup",
+      "name": "Drum Extraction Plus Cleanup",
+      "description": "Guide-driven drum extraction with an optional cleanup pass for spill reduction.",
+      "type": "pipeline",
+      "surface": "special_stem",
+      "target": "drums",
+      "quality_goal": "drum_isolation",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "instruments",
+      "recommended_for": [
+        "Detailed drum practice stems",
+        "Drum transcription and sample extraction"
+      ],
+      "contraindications": [
+        "Users who only need a full instrumental"
+      ],
+      "workflow_summary": "Split drums with MDX23C DrumSep, then use Demucs or DeBleed if extra spill cleanup is needed.",
+      "runtime_policy": {
+        "required": [
+          "python"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "preferred_runtime": "stemsep",
+        "allow_manual_models": true
+      },
+      "export_policy": {
+        "stems": [
+          "kick",
+          "snare",
+          "toms",
+          "hihat",
+          "cymbals"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "drumsep_raw",
+          "drum_cleanup"
+        ]
+      },
+      "defaults": {
+        "overlap": 2,
+        "segment_size": 112455,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "drum_split",
+          "model_id": "mdx23c-drumsep-5stem",
+          "output": [
+            "kick",
+            "snare",
+            "toms",
+            "hihat",
+            "cymbals"
+          ]
+        },
+        {
+          "step_name": "spill_cleanup",
+          "model_id": "gabox-denoise-debleed",
+          "optional": true,
+          "input_source": "drum_split.cymbals",
+          "output": "cymbals_clean"
+        }
+      ],
+      "family": "Drum Extraction",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "drumsep_raw",
+        "drum_cleanup"
+      ]
+    },
+    {
+      "id": "demucs_secondary_cleanup_pass",
+      "name": "Demucs Secondary Pass",
+      "description": "Use Demucs as a secondary pass when the main workflow leaves gaps or awkward bleed.",
+      "type": "pipeline",
+      "surface": "workflow",
+      "target": "instrumental",
+      "quality_goal": "secondary_pass",
+      "difficulty": "advanced",
+      "expected_vram_tier": "high_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 3,
+      "recommended_for": [
+        "Body recovery after a cleaner model",
+        "Difficult crowded mixes"
+      ],
+      "contraindications": [
+        "Systems without Demucs installed"
+      ],
+      "workflow_summary": "Run a cleaner primary model first, then use HTDemucs FT as a recovery or comparison pass.",
+      "runtime_policy": {
+        "required": [
+          "python"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "preferred_runtime": "stemsep",
+        "allow_manual_models": true
+      },
+      "export_policy": {
+        "stems": [
+          "instrumental",
+          "vocals"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "primary_pass",
+          "demucs_secondary"
+        ]
+      },
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "primary",
+          "model_id": "bs-roformer-viperx-1297",
+          "output": [
+            "vocals",
+            "instrumental"
+          ]
+        },
+        {
+          "step_name": "demucs_recovery",
+          "model_id": "htdemucs-ft",
+          "optional": true,
+          "input_source": "primary.instrumental",
+          "output": "instrumental_demucs"
+        }
+      ],
+      "family": "Demucs Secondary Pass",
+      "promotion_status": "supported_advanced",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "primary_pass",
+        "demucs_secondary"
+      ]
+    },
+    {
+      "id": "special_stem_guitar_chain",
+      "name": "Special Stem Guitar",
+      "description": "Special-stem chain for guitar-focused extraction with optional Demucs extension.",
+      "type": "pipeline",
+      "surface": "special_stem",
+      "target": "special_stem",
+      "quality_goal": "guitar_extraction",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 2,
+      "simple_surface": true,
+      "simple_goal": "instruments",
+      "recommended_for": [
+        "Guitar practice stems",
+        "Special stem experiments"
+      ],
+      "contraindications": [
+        "General-purpose vocal/instrumental exports"
+      ],
+      "workflow_summary": "Start with Becruily Guitar, then use HTDemucs 6S when special-stem extension is installed.",
+      "runtime_policy": {
+        "required": [
+          "python"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "preferred_runtime": "stemsep",
+        "allow_manual_models": true
+      },
+      "export_policy": {
+        "stems": [
+          "guitar",
+          "other"
+        ],
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "guitar_primary",
+          "special_stem_extension"
+        ]
+      },
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "guitar",
+          "model_id": "becruily-guitar",
+          "output": [
+            "guitar",
+            "other"
+          ]
+        },
+        {
+          "step_name": "special_extend",
+          "model_id": "htdemucs-6s",
+          "optional": true,
+          "input_source": "guitar.other",
+          "output": [
+            "guitar",
+            "piano",
+            "other"
+          ]
+        }
+      ],
+      "family": "Special Stem",
+      "promotion_status": "supported_advanced",
+      "qa_status": "pending",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "guitar_primary",
+        "special_stem_extension"
       ]
     }
   ]

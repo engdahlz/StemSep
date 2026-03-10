@@ -289,17 +289,6 @@ try {
       "print('ONNXRUNTIME NOTE: CUDAExecutionProvider not present (install onnxruntime-gpu and ensure it overrides CPU binaries).') if 'CUDAExecutionProvider' not in providers else None"
 
     Exec -FilePath $venvPython -Arguments @("-c", $torchCheck) -WorkingDirectory $script:BackendDir
-
-    # Optional: run the repo's check_cuda.py for an explicit torch CUDA report
-    $checkCudaScript = Join-Path $repoRoot "check_cuda.py"
-    if (Test-Path $checkCudaScript) {
-      try {
-        Exec -FilePath $venvPython -Arguments @($checkCudaScript) -WorkingDirectory $repoRoot
-      } catch {
-        Write-Log "check_cuda.py failed (continuing): $($_.Exception.Message)" "WARN"
-      }
-    }
-
     Exec -FilePath $venvPython -Arguments @("-c", $onnxCheck) -WorkingDirectory $script:BackendDir
 
     Exec -FilePath $venvPython -Arguments @(

@@ -50,8 +50,7 @@ def test_bandit_forward_shape_inference_wrapper():
         repo_root
         / "docs"
         / "vendor"
-        / "ZFTurbo Repo"
-        / "Music-Source-Separation-Training-main"
+        / "msst_reference"
         / "configs"
         / "config_dnr_bandit_bsrnn_multi_mus64.yaml"
     )

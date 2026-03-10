@@ -299,13 +299,14 @@ export default function SeparatePage({
     separationStartTime,
   ]);
 
-  // Stored separation config from ConfigurePage (prepared for future use)
-  const [_storedConfig, setStoredConfig] = useState<SeparationConfig | null>(
-    null,
-  );
+  // Prepared run created in ConfigurePage. This should stay idle until the user
+  // explicitly presses the primary CTA on the home screen.
+  const [preparedSeparation, setPreparedSeparation] =
+    useState<PendingSeparationConfig | null>(null);
 
-  // Handle pending separation config from ConfigurePage
-  // Use a ref to prevent double-execution when queue updates
+  // Handle pending separation config from ConfigurePage.
+  // We store it locally instead of auto-starting so the entry flow becomes:
+  // add audio -> configure -> explicit start.
   const processingPendingConfigRef = useRef(false);
   const heroIcons = useMemo(() => {
     const orbitIcons = [Music2, Headphones, Mic2, Radio, Disc3, Upload];
@@ -384,19 +385,15 @@ export default function SeparatePage({
         return;
       }
 
-      // Store the config for reference
-      setStoredConfig(config);
+      // Store the prepared run locally for the primary CTA.
+      setPreparedSeparation({ config, file });
 
-      // Clear the pending config FIRST to prevent re-triggering
+      // Clear the app-level handoff after we have copied it locally.
       onClearPendingConfig();
-
-      // Auto-start separation with a small delay to let queue update
-      toast.info("Starting separation...");
-      setTimeout(() => {
-        startSeparationWithFilePath(config, file.path);
-        // Reset the guard after starting (allow future configs)
-        processingPendingConfigRef.current = false;
-      }, 200);
+      toast.success(
+        "Configuration ready. Press Start Separation when you are ready.",
+      );
+      processingPendingConfigRef.current = false;
     }
   }, [pendingSeparationConfig, onClearPendingConfig, addToQueueStore]);
   // NOTE: Removed 'queue' from dependencies to prevent double-execution
@@ -520,6 +517,74 @@ export default function SeparatePage({
       toast.error("Failed to select files");
     }
   };
+
+  const leadQueueItem = useMemo(() => {
+    return (
+      queue.find(
+        (item) =>
+          item.status === "pending" ||
+          item.status === "queued" ||
+          item.status === "failed",
+      ) ||
+      queue.find((item) => item.status !== "completed") ||
+      queue[0] ||
+      null
+    );
+  }, [queue]);
+
+  const hasPreparedConfig =
+    !!preparedSeparation &&
+    !!preparedSeparation.file?.path &&
+    queue.some((item) => item.file === preparedSeparation.file.path);
+
+  const handlePrimaryAction = useCallback(async () => {
+    if (isProcessing) return;
+
+    if (queue.length === 0) {
+      await handleFileSelect();
+      return;
+    }
+
+    if (hasPreparedConfig && preparedSeparation) {
+      await startSeparationWithFilePath(
+        preparedSeparation.config,
+        preparedSeparation.file.path,
+      );
+      setPreparedSeparation(null);
+      return;
+    }
+
+    const item = leadQueueItem;
+    if (!item) return;
+    const fileName = item.file.split(/[\\/]/).pop() || "Unknown";
+    onNavigateToConfigure?.(fileName, item.file, selectedPreset);
+  }, [
+    hasPreparedConfig,
+    isProcessing,
+    leadQueueItem,
+    onNavigateToConfigure,
+    preparedSeparation,
+    queue.length,
+    selectedPreset,
+  ]);
+
+  const primaryActionLabel = isProcessing
+    ? "Processing"
+    : queue.length === 0
+      ? "Add Audio"
+      : hasPreparedConfig
+        ? "Start Separation"
+        : "Configure";
+
+  const queueStatusText = isDragging
+    ? "Drop files to start a new separation"
+    : queue.length > 0
+      ? isProcessing
+        ? `Processing ${queue.filter((item) => item.status === "completed").length}/${queue.length}${progressMessage ? ` · ${progressMessage}` : ""}${processingTimingText ? ` · ${processingTimingText}` : ""}`
+        : hasPreparedConfig
+          ? "Configuration ready · press Start Separation"
+          : `Queue ready · ${queue.length} file${queue.length > 1 ? "s" : ""} pending · configuration required`
+      : "Add a track to begin";
 
   const addToQueue = useCallback(
     async (paths: string[]) => {
@@ -834,7 +899,7 @@ export default function SeparatePage({
             <button
               type="button"
               onClick={() => {
-                handleFileSelect();
+                void handlePrimaryAction();
               }}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -854,19 +919,13 @@ export default function SeparatePage({
               }`}
             >
               <span className="relative z-20 leading-[1.4] drop-shadow-lg">
-                Separate
+                {primaryActionLabel}
               </span>
             </button>
           </div>
 
           <div className="mt-4 min-h-5 text-center text-[13px] tracking-[-0.2px] text-white/58 drop-shadow">
-            {isDragging
-              ? "Drop files to start a new separation"
-              : queue.length > 0
-                ? isProcessing
-                  ? `Processing ${queue.filter((item) => item.status === "completed").length}/${queue.length}${progressMessage ? ` · ${progressMessage}` : ""}${processingTimingText ? ` · ${processingTimingText}` : ""}`
-                  : `Queue ready · ${queue.length} file${queue.length > 1 ? "s" : ""} pending`
-                : ""}
+            {queueStatusText}
           </div>
 
           {queue.length > 0 && (
@@ -875,14 +934,25 @@ export default function SeparatePage({
                 <button
                   type="button"
                   onClick={() => {
-                    const item = queue[0];
+                    void handleFileSelect();
+                  }}
+                  className="rounded-[18px] border border-white/20 bg-white/12 px-4 py-2 text-[13px] tracking-[-0.2px] text-white/82 backdrop-blur-md transition-all hover:bg-white/18"
+                >
+                  Add Audio
+                </button>
+              )}
+              {!isProcessing && hasPreparedConfig && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const item = leadQueueItem;
                     if (!item) return;
                     const fileName = item.file.split(/[\\/]/).pop() || "Unknown";
                     onNavigateToConfigure?.(fileName, item.file, selectedPreset);
                   }}
                   className="rounded-[18px] border border-white/20 bg-white/12 px-4 py-2 text-[13px] tracking-[-0.2px] text-white/82 backdrop-blur-md transition-all hover:bg-white/18"
                 >
-                  Configure
+                  Edit Config
                 </button>
               )}
               {isProcessing && (

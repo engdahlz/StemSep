@@ -1,6 +1,9 @@
 /// <reference types="vite/client" />
 
 type VolumeCompensation = import('./types/separation').VolumeCompensation
+type SeparationWorkflow = import('./types/separation').SeparationWorkflow
+type WorkflowRuntimePolicy = import('./types/separation').WorkflowRuntimePolicy
+type WorkflowExportPolicy = import('./types/separation').WorkflowExportPolicy
 type Recipe = import('./types/recipes').Recipe
 type SourceAudioProfile = import('./types/media').SourceAudioProfile
 type StagingDecision = import('./types/media').StagingDecision
@@ -81,7 +84,10 @@ interface ElectronAPI {
         splitFreq?: number,
         phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number },
         postProcessingSteps?: any[],
-        volumeCompensation?: VolumeCompensation
+        volumeCompensation?: VolumeCompensation,
+        workflow?: SeparationWorkflow,
+        runtimePolicy?: WorkflowRuntimePolicy,
+        exportPolicy?: WorkflowExportPolicy
     ) => Promise<any & { sourceAudioProfile?: SourceAudioProfile; stagingDecision?: StagingDecision }>
     separateAudio: (
         inputFile: string,
@@ -101,7 +107,10 @@ interface ElectronAPI {
         splitFreq?: number,
         phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number },
         postProcessingSteps?: any[],
-        volumeCompensation?: VolumeCompensation
+        volumeCompensation?: VolumeCompensation,
+        workflow?: SeparationWorkflow,
+        runtimePolicy?: WorkflowRuntimePolicy,
+        exportPolicy?: WorkflowExportPolicy
     ) => Promise<{
         success: boolean
         outputFiles: Record<string, string>

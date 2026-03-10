@@ -173,6 +173,33 @@ fn merge_json_value(base: &mut Value, overlay: &Value) {
     }
 }
 
+fn append_or_merge_registry_models(models_json: &mut Value, overlay_json: &Value) {
+    let Some(models) = models_json.get_mut("models").and_then(|v| v.as_array_mut()) else {
+        return;
+    };
+
+    let overlay_models = overlay_json
+        .get("models")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    for overlay_model in overlay_models {
+        let Some(id) = overlay_model.get("id").and_then(|v| v.as_str()) else {
+            continue;
+        };
+
+        if let Some(existing) = models
+            .iter_mut()
+            .find(|model| model.get("id").and_then(|v| v.as_str()) == Some(id))
+        {
+            merge_json_value(existing, &overlay_model);
+        } else {
+            models.push(overlay_model);
+        }
+    }
+}
+
 fn load_models_with_guide_overrides(cfg: &BackendConfig) -> Result<Value> {
     let mut models_json = read_json_file(&cfg.assets_dir.join("models.json.bak"))?;
     let overrides_path = cfg
@@ -180,10 +207,7 @@ fn load_models_with_guide_overrides(cfg: &BackendConfig) -> Result<Value> {
         .join("registry")
         .join("guide_model_overrides.json");
 
-    let overrides_json = match read_json_file(&overrides_path) {
-        Ok(v) => v,
-        Err(_) => return Ok(models_json),
-    };
+    let overrides_json = read_json_file(&overrides_path).unwrap_or(Value::Null);
 
     let Some(models) = models_json.get_mut("models").and_then(|v| v.as_array_mut()) else {
         return Ok(models_json);
@@ -204,7 +228,140 @@ fn load_models_with_guide_overrides(cfg: &BackendConfig) -> Result<Value> {
         }
     }
 
+    let guide_digest_path = cfg.assets_dir.join("registry").join("guide_digest.json");
+    if let Ok(guide_digest_json) = read_json_file(&guide_digest_path) {
+        if let Some(digest_overrides) = guide_digest_json
+            .get("model_overrides")
+            .and_then(|v| v.as_object())
+        {
+            for model in models.iter_mut() {
+                let Some(id) = model.get("id").and_then(|v| v.as_str()) else {
+                    continue;
+                };
+                if let Some(overlay) = digest_overrides.get(id) {
+                    merge_json_value(model, overlay);
+                }
+            }
+        }
+    }
+
+    let extra_models_path = cfg.assets_dir.join("registry").join("extra_models.json");
+    if let Ok(extra_models_json) = read_json_file(&extra_models_path) {
+        append_or_merge_registry_models(&mut models_json, &extra_models_json);
+    }
+
     Ok(models_json)
+}
+
+fn detect_runtime_adapter(model_obj: &Value) -> Option<String> {
+    let engine = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("engine"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let variant = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("variant"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    match engine.as_deref() {
+        Some("msst_builtin") => Some("msst_builtin".to_string()),
+        Some("demucs_native") => Some("demucs_native".to_string()),
+        Some("custom_builtin_variant") => Some("custom_builtin_variant".to_string()),
+        Some("native_stemsep") => Some("native_stemsep".to_string()),
+        Some(other) => Some(other.to_string()),
+        None => match variant.as_deref() {
+            Some("demucs") => Some("demucs_native".to_string()),
+            Some("fno") => Some("custom_builtin_variant".to_string()),
+            Some(_) => Some("native_stemsep".to_string()),
+            None => None,
+        },
+    }
+}
+
+fn push_missing_runtime_asset(models_dir: &Path, missing: &mut Vec<String>, filename: &str) {
+    let trimmed = filename.trim();
+    if trimmed.is_empty() || trimmed.contains(".MISSING") {
+        return;
+    }
+    if !models_dir.join(trimmed).exists() && !missing.iter().any(|m| m == trimmed) {
+        missing.push(trimmed.to_string());
+    }
+}
+
+fn collect_missing_runtime_assets(models_dir: &Path, model_id: &str, model_obj: &Value) -> Vec<String> {
+    let mut missing: Vec<String> = Vec::new();
+
+    if let Some(filename) = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("config_ref"))
+        .and_then(|v| v.as_str())
+    {
+        push_missing_runtime_asset(models_dir, &mut missing, filename);
+    }
+    if let Some(filename) = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("checkpoint_ref"))
+        .and_then(|v| v.as_str())
+    {
+        push_missing_runtime_asset(models_dir, &mut missing, filename);
+    }
+    if let Some(files) = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("required_files"))
+        .and_then(|v| v.as_array())
+    {
+        for file in files.iter().filter_map(|v| v.as_str()) {
+            push_missing_runtime_asset(models_dir, &mut missing, file);
+        }
+    }
+
+    if missing.is_empty() {
+        let _ = model_id;
+        if let Some(artifacts) = model_obj.get("artifacts").and_then(|v| v.as_object()) {
+            if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
+                if let Some(filename) = primary.get("filename").and_then(|v| v.as_str()) {
+                    push_missing_runtime_asset(models_dir, &mut missing, filename);
+                }
+            }
+            if let Some(config) = artifacts.get("config").and_then(|v| v.as_object()) {
+                if let Some(filename) = config.get("filename").and_then(|v| v.as_str()) {
+                    push_missing_runtime_asset(models_dir, &mut missing, filename);
+                }
+            }
+        }
+    }
+
+    missing
+}
+
+fn collect_workflow_model_ids(workflow: &Value) -> Vec<String> {
+    let mut ids: Vec<String> = Vec::new();
+
+    let mut push_id = |candidate: Option<&str>| {
+        if let Some(id) = candidate {
+            let trimmed = id.trim();
+            if !trimmed.is_empty() && !ids.iter().any(|existing| existing == trimmed) {
+                ids.push(trimmed.to_string());
+            }
+        }
+    };
+
+    if let Some(models) = workflow.get("models").and_then(|v| v.as_array()) {
+        for model in models {
+            push_id(model.get("model_id").and_then(|v| v.as_str()));
+        }
+    }
+
+    if let Some(steps) = workflow.get("steps").and_then(|v| v.as_array()) {
+        for step in steps {
+            push_id(step.get("model_id").and_then(|v| v.as_str()));
+            push_id(step.get("source_model").and_then(|v| v.as_str()));
+        }
+    }
+
+    ids
 }
 
 fn load_model_id_aliases(cfg: &BackendConfig) -> Value {
@@ -247,7 +404,7 @@ fn lookup_model_artifact_filenames(
     model_id: &str,
 ) -> Result<(Option<String>, Option<String>)> {
     let model_id = resolve_model_id_alias(cfg, model_id);
-    let models_json = read_json_file(&cfg.assets_dir.join("models.json.bak"))?;
+    let models_json = load_models_with_guide_overrides(cfg)?;
     let models = models_json
         .get("models")
         .and_then(|v| v.as_array())
@@ -298,7 +455,7 @@ fn lookup_model_links(
     model_id: &str,
 ) -> Result<(Option<String>, Option<String>)> {
     let model_id = resolve_model_id_alias(cfg, model_id);
-    let models_json = read_json_file(&cfg.assets_dir.join("models.json.bak"))?;
+    let models_json = load_models_with_guide_overrides(cfg)?;
     let models = models_json
         .get("models")
         .and_then(|v| v.as_array())
@@ -701,7 +858,7 @@ impl DownloadManager {
 }
 
 fn remove_model_files(cfg: &BackendConfig, model_id: &str) -> Result<usize> {
-    let models_json = read_json_file(&cfg.assets_dir.join("models.json.bak"))?;
+    let models_json = load_models_with_guide_overrides(cfg)?;
     let models = models_json
         .get("models")
         .and_then(|v| v.as_array())
@@ -795,6 +952,22 @@ fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -
     // Config is optional for some models (e.g. standard ones), but checkpoint is mandatory.
     let mut artifact_ckpt_ok = false;
     let mut artifact_cfg_ok = false;
+    let runtime_ckpt = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("checkpoint_ref"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let runtime_cfg = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("config_ref"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let runtime_required_files = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("required_files"))
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
     if let Some(artifacts) = model_obj.get("artifacts").and_then(|v| v.as_object()) {
         if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
             if let Some(fname) = primary.get("filename").and_then(|v| v.as_str()) {
@@ -818,8 +991,13 @@ fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -
         let ok_ckpt;
         let mut ok_cfg = true;
 
-        let ckpt_link = links.get("checkpoint").and_then(|v| v.as_str()).unwrap_or("");
-        if artifact_ckpt_ok {
+        let ckpt_link = links
+            .get("checkpoint")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if let Some(runtime_ckpt) = runtime_ckpt.as_deref() {
+            ok_ckpt = models_dir.join(runtime_ckpt).exists();
+        } else if artifact_ckpt_ok {
             ok_ckpt = true;
         } else if !ckpt_link.trim().is_empty() {
             ok_ckpt = if ckpt_link.to_lowercase().contains(".onnx") {
@@ -835,7 +1013,7 @@ fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -
         }
 
         let cfg_link = links.get("config").and_then(|v| v.as_str()).unwrap_or("");
-        if !cfg_link.trim().is_empty() {
+        if runtime_cfg.is_some() || !cfg_link.trim().is_empty() {
             // Prefer stable per-model config filenames to avoid collisions like "config.yaml".
             // Still accept historical basename installs.
             let alias_yaml = models_dir.join(format!("{model_id}.yaml"));
@@ -843,7 +1021,23 @@ fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -
             let base_ok = url_basename(cfg_link)
                 .map(|base| models_dir.join(base).exists())
                 .unwrap_or(false);
-            ok_cfg = artifact_cfg_ok || alias_yaml.exists() || alias_yml.exists() || base_ok;
+            ok_cfg = artifact_cfg_ok
+                || runtime_cfg
+                    .as_deref()
+                    .map(|cfg| models_dir.join(cfg).exists())
+                    .unwrap_or(false)
+                || alias_yaml.exists()
+                || alias_yml.exists()
+                || base_ok;
+        }
+
+        if !runtime_required_files.is_empty()
+            && !runtime_required_files
+                .iter()
+                .filter_map(|v| v.as_str())
+                .all(|file| models_dir.join(file).exists())
+        {
+            return false;
         }
 
         if ok_ckpt && ok_cfg {
@@ -856,19 +1050,22 @@ fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -
     }
 
     // If model has no declared links but has explicit artifact naming, accept that as installed.
+    if runtime_required_files
+        .iter()
+        .filter_map(|v| v.as_str())
+        .all(|file| models_dir.join(file).exists())
+        && !runtime_required_files.is_empty()
+    {
+        return true;
+    }
+
     if artifact_ckpt_ok {
         return true;
     }
 
     // Fallback heuristic for models without explicit links or custom models.
     // MUST find at least one checkpoint-like file.
-    for ext in [
-        ".ckpt",
-        ".pth",
-        ".pt",
-        ".onnx",
-        ".safetensors",
-    ] {
+    for ext in [".ckpt", ".pth", ".pt", ".onnx", ".safetensors"] {
         if models_dir.join(format!("{model_id}{ext}")).exists() {
             return true;
         }
@@ -916,11 +1113,11 @@ fn detect_gpus() -> Value {
     let nvidia_smi = locate_nvidia_smi();
     let output = match &nvidia_smi {
         Some(cmd) => Command::new(cmd)
-        .args([
-            "--query-gpu=name,memory.total",
-            "--format=csv,noheader,nounits",
-        ])
-        .output(),
+            .args([
+                "--query-gpu=name,memory.total",
+                "--format=csv,noheader,nounits",
+            ])
+            .output(),
         None => Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
             "nvidia-smi not found",
@@ -1187,7 +1384,11 @@ fn parse_output_items(extra: &Map<String, Value>) -> Vec<(String, String)> {
     vec![]
 }
 
-fn collect_model_candidate_paths(model_obj: &Value, models_dir: &Path, model_id: &str) -> Vec<PathBuf> {
+fn collect_model_candidate_paths(
+    model_obj: &Value,
+    models_dir: &Path,
+    model_id: &str,
+) -> Vec<PathBuf> {
     let mut candidates: Vec<PathBuf> = Vec::new();
     if let Some(artifacts) = model_obj.get("artifacts").and_then(|v| v.as_object()) {
         if let Some(primary) = artifacts.get("primary").and_then(|v| v.as_object()) {
@@ -1216,7 +1417,15 @@ fn collect_model_candidate_paths(model_obj: &Value, models_dir: &Path, model_id:
             }
         }
     }
-    for ext in [".ckpt", ".pth", ".pt", ".onnx", ".safetensors", ".yaml", ".yml"] {
+    for ext in [
+        ".ckpt",
+        ".pth",
+        ".pt",
+        ".onnx",
+        ".safetensors",
+        ".yaml",
+        ".yml",
+    ] {
         candidates.push(models_dir.join(format!("{model_id}{ext}")));
     }
     candidates.sort();
@@ -1241,7 +1450,10 @@ fn build_quality_manifest(
             .or_else(|| extra.get("modelIds"))
             .or_else(|| extra.get("models")),
     );
-    let config = extra.get("config").cloned().unwrap_or(Value::Object(Map::new()));
+    let config = extra
+        .get("config")
+        .cloned()
+        .unwrap_or(Value::Object(Map::new()));
     let metrics = extra.get("metrics").cloned().unwrap_or(Value::Null);
     let output_items = parse_output_items(extra);
 
@@ -1255,7 +1467,7 @@ fn build_quality_manifest(
         Some(serde_json::json!({ "model_count": model_ids.len() })),
     );
 
-    let models_json = read_json_file(&cfg.assets_dir.join("models.json.bak")).unwrap_or(Value::Null);
+    let models_json = load_models_with_guide_overrides(cfg).unwrap_or(Value::Null);
     let registry_models = models_json
         .get("models")
         .and_then(|v| v.as_array())
@@ -1355,23 +1567,33 @@ fn build_quality_manifest(
 
     let created_at = now_ts_seconds();
     let mut manifest_obj = Map::new();
-    manifest_obj.insert("manifest_version".to_string(), Value::String("1.0".to_string()));
+    manifest_obj.insert(
+        "manifest_version".to_string(),
+        Value::String("1.0".to_string()),
+    );
     manifest_obj.insert("created_at".to_string(), Value::from(created_at));
     manifest_obj.insert(
         "name".to_string(),
         name.map(Value::String).unwrap_or(Value::Null),
     );
-    manifest_obj.insert("model_ids".to_string(), Value::Array(model_ids.into_iter().map(Value::String).collect()));
+    manifest_obj.insert(
+        "model_ids".to_string(),
+        Value::Array(model_ids.into_iter().map(Value::String).collect()),
+    );
     manifest_obj.insert("models".to_string(), Value::Array(model_rows));
     manifest_obj.insert("config".to_string(), config);
     manifest_obj.insert("config_hash".to_string(), Value::String(config_hash));
     manifest_obj.insert("outputs".to_string(), Value::Array(output_rows));
-    manifest_obj.insert("output_hashes".to_string(), Value::Object(output_hashes_obj));
+    manifest_obj.insert(
+        "output_hashes".to_string(),
+        Value::Object(output_hashes_obj),
+    );
     manifest_obj.insert("metrics".to_string(), metrics);
 
     let mut deterministic_obj = manifest_obj.clone();
     deterministic_obj.remove("created_at");
-    let manifest_hash = sha256_hex_bytes(canonical_json_string(&Value::Object(deterministic_obj))?.as_bytes());
+    let manifest_hash =
+        sha256_hex_bytes(canonical_json_string(&Value::Object(deterministic_obj))?.as_bytes());
     manifest_obj.insert("manifest_hash".to_string(), Value::String(manifest_hash));
 
     send_quality_progress(stdout, "finalize", 95.0, "Finalizing manifest", None);
@@ -1380,7 +1602,8 @@ fn build_quality_manifest(
 
 fn load_manifest_from_value(value: &Value) -> Result<Value> {
     if let Some(path) = value.as_str() {
-        return read_json_file(&PathBuf::from(path)).with_context(|| format!("read manifest path {path}"));
+        return read_json_file(&PathBuf::from(path))
+            .with_context(|| format!("read manifest path {path}"));
     }
     if value.is_object() {
         return Ok(value.clone());
@@ -1408,7 +1631,10 @@ fn parse_manifest_input(
     {
         return load_manifest_from_value(v);
     }
-    if let Some(v) = extra.get(&key_manifest).or_else(|| extra.get(&key_manifest_camel)) {
+    if let Some(v) = extra
+        .get(&key_manifest)
+        .or_else(|| extra.get(&key_manifest_camel))
+    {
         return load_manifest_from_value(v);
     }
     if let Some(Value::Object(spec)) = extra.get(prefix) {
@@ -1424,8 +1650,14 @@ fn parse_manifest_input(
 fn compare_quality_manifests(baseline: &Value, candidate: &Value) -> Value {
     let mut differences: Vec<Value> = Vec::new();
 
-    let b_cfg = baseline.get("config_hash").and_then(|v| v.as_str()).unwrap_or("");
-    let c_cfg = candidate.get("config_hash").and_then(|v| v.as_str()).unwrap_or("");
+    let b_cfg = baseline
+        .get("config_hash")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let c_cfg = candidate
+        .get("config_hash")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     if b_cfg != c_cfg {
         differences.push(serde_json::json!({
             "type": "config_hash",
@@ -1449,7 +1681,11 @@ fn compare_quality_manifests(baseline: &Value, candidate: &Value) -> Value {
         .iter()
         .filter_map(|m| {
             let id = m.get("id").and_then(|v| v.as_str())?;
-            let hash = m.get("sha256").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let hash = m
+                .get("sha256")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
             Some((id.to_string(), hash))
         })
         .collect();
@@ -1457,12 +1693,20 @@ fn compare_quality_manifests(baseline: &Value, candidate: &Value) -> Value {
         .iter()
         .filter_map(|m| {
             let id = m.get("id").and_then(|v| v.as_str())?;
-            let hash = m.get("sha256").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let hash = m
+                .get("sha256")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
             Some((id.to_string(), hash))
         })
         .collect();
 
-    let mut all_model_ids: Vec<String> = b_model_map.keys().chain(c_model_map.keys()).cloned().collect();
+    let mut all_model_ids: Vec<String> = b_model_map
+        .keys()
+        .chain(c_model_map.keys())
+        .cloned()
+        .collect();
     all_model_ids.sort();
     all_model_ids.dedup();
     for id in all_model_ids {
@@ -1488,11 +1732,7 @@ fn compare_quality_manifests(baseline: &Value, candidate: &Value) -> Value {
         .and_then(|v| v.as_object())
         .cloned()
         .unwrap_or_default();
-    let mut labels: Vec<String> = b_outputs
-        .keys()
-        .chain(c_outputs.keys())
-        .cloned()
-        .collect();
+    let mut labels: Vec<String> = b_outputs.keys().chain(c_outputs.keys()).cloned().collect();
     labels.sort();
     labels.dedup();
     let mut output_mismatch = 0usize;
@@ -1511,8 +1751,16 @@ fn compare_quality_manifests(baseline: &Value, candidate: &Value) -> Value {
     }
 
     let mut metrics_delta = Map::new();
-    let b_metrics = baseline.get("metrics").and_then(|v| v.as_object()).cloned().unwrap_or_default();
-    let c_metrics = candidate.get("metrics").and_then(|v| v.as_object()).cloned().unwrap_or_default();
+    let b_metrics = baseline
+        .get("metrics")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    let c_metrics = candidate
+        .get("metrics")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
     let mut metric_keys: Vec<String> = b_metrics.keys().chain(c_metrics.keys()).cloned().collect();
     metric_keys.sort();
     metric_keys.dedup();
@@ -1679,10 +1927,7 @@ fn send_err(
     write_json_line_locked(stdout, &resp)
 }
 
-fn resolve_youtube_native(
-    url: &str,
-    stdout: &Arc<Mutex<io::Stdout>>,
-) -> Result<Value> {
+fn resolve_youtube_native(url: &str, stdout: &Arc<Mutex<io::Stdout>>) -> Result<Value> {
     if url.trim().is_empty() {
         return Err(anyhow!("url is required"));
     }
@@ -2694,9 +2939,8 @@ fn main() -> Result<()> {
 
     // Emit a bridge_ready event immediately so the Electron main process can
     // treat this as a drop-in replacement (even while separation is stubbed).
-    let models_path = cfg.assets_dir.join("models.json.bak");
     let recipes_path = cfg.assets_dir.join("recipes.json");
-    let models_count = read_json_file(&models_path)
+    let models_count = load_models_with_guide_overrides(&cfg)
         .ok()
         .and_then(|v| v.get("models").and_then(|m| m.as_array()).map(|a| a.len()))
         .unwrap_or(0);
@@ -2930,13 +3174,7 @@ fn main() -> Result<()> {
                     None,
                 );
                 let candidate = parse_manifest_input(&cfg, &req.extra, &stdout, "candidate")?;
-                send_quality_progress(
-                    &stdout,
-                    "compare",
-                    70.0,
-                    "Comparing manifests",
-                    None,
-                );
+                send_quality_progress(&stdout, "compare", 70.0, "Comparing manifests", None);
                 let comparison = compare_quality_manifests(&baseline, &candidate);
                 send_event(
                     &stdout,
@@ -3078,7 +3316,8 @@ fn main() -> Result<()> {
                         })?;
 
                         let (artifact_ckpt, _artifact_cfg) =
-                            lookup_model_artifact_filenames(&cfg, &model_id).unwrap_or((None, None));
+                            lookup_model_artifact_filenames(&cfg, &model_id)
+                                .unwrap_or((None, None));
                         let ckpt_dest = if ckpt_url.to_lowercase().contains(".onnx") {
                             cfg.models_dir.join(format!("{model_id}.onnx"))
                         } else if let Some(fname) = &artifact_ckpt {
@@ -3207,14 +3446,22 @@ fn main() -> Result<()> {
 
                 // Flexible numeric parsing for overlap and segment_size (handle strings from UI)
                 let overlap_req = req.extra.get("overlap").and_then(|v| {
-                    if let Some(f) = v.as_f64() { Some(f) }
-                    else if let Some(s) = v.as_str() { s.parse::<f64>().ok() }
-                    else { None }
+                    if let Some(f) = v.as_f64() {
+                        Some(f)
+                    } else if let Some(s) = v.as_str() {
+                        s.parse::<f64>().ok()
+                    } else {
+                        None
+                    }
                 });
                 let segment_size_req = req.extra.get("segment_size").and_then(|v| {
-                    if let Some(i) = v.as_i64() { Some(i) }
-                    else if let Some(s) = v.as_str() { s.parse::<i64>().ok() }
-                    else { None }
+                    if let Some(i) = v.as_i64() {
+                        Some(i)
+                    } else if let Some(s) = v.as_str() {
+                        s.parse::<i64>().ok()
+                    } else {
+                        None
+                    }
                 });
 
                 let batch_size_req = req.extra.get("batch_size").and_then(|v| v.as_i64());
@@ -3238,7 +3485,11 @@ fn main() -> Result<()> {
 
                 // Ensemble/phase-fix fields are passed through in `resolved` so the UI has a single place
                 // to read final values.
-                let ensemble_cfg_val = req.extra.get("ensemble_config").or_else(|| req.extra.get("ensembleConfig"));
+                let ensemble_cfg_val = req
+                    .extra
+                    .get("ensemble_config")
+                    .or_else(|| req.extra.get("ensembleConfig"));
+                let workflow_val = req.extra.get("workflow").cloned().unwrap_or(Value::Null);
 
                 let (ensemble_algorithm, phase_fix_enabled, phase_fix_params) =
                     match ensemble_cfg_val {
@@ -3326,7 +3577,26 @@ fn main() -> Result<()> {
                 let mut recipe_type: Option<String> = None;
                 let mut recipe_plan: Option<Value> = None;
                 let mut recipe_meta: Option<Value> = None;
-                if let Some(id) = model_id {
+                if workflow_val.is_object() {
+                    recipe_type = workflow_val
+                        .get("kind")
+                        .and_then(|v| v.as_str())
+                        .map(|kind| kind.to_string());
+                    recipe_plan = Some(workflow_val.clone());
+                    recipe_meta = Some(workflow_val.clone());
+                    requested_model_ids.extend(collect_workflow_model_ids(&workflow_val));
+                    resolved_model_id = workflow_val
+                        .get("id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .or_else(|| model_id.map(|s| s.to_string()))
+                        .or_else(|| {
+                            workflow_val
+                                .get("kind")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string())
+                        });
+                } else if let Some(id) = model_id {
                     if let Some(recipe) = recipes_json
                         .get("recipes")
                         .and_then(|v| v.as_array())
@@ -3426,6 +3696,7 @@ fn main() -> Result<()> {
                             plan.insert("defaults".to_string(), defaults.clone());
                         }
                         for key in [
+                            "family",
                             "quality_goal",
                             "difficulty",
                             "expected_vram_tier",
@@ -3452,7 +3723,13 @@ fn main() -> Result<()> {
                     }
                 }
 
-                if let Some(Value::Object(o)) = ensemble_cfg_val {
+                if workflow_val.is_object() {
+                    if requested_model_ids.is_empty() {
+                        warnings.push(
+                            "Workflow payload did not reference any concrete models".to_string(),
+                        );
+                    }
+                } else if let Some(Value::Object(o)) = ensemble_cfg_val {
                     // Expected shape from UI: { models: [{model_id, weight?}, ...], algorithm, ... }
                     if let Some(Value::Array(models)) = o.get("models") {
                         for m in models {
@@ -3516,10 +3793,77 @@ fn main() -> Result<()> {
                     }
                 }
 
+                let mut phase_fix_compatibility: Option<String> = None;
+                let mut crossover_validation: Option<String> = None;
+
+                let workflow_algorithm = workflow_val
+                    .get("blend")
+                    .and_then(|v| v.get("algorithm"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .or_else(|| {
+                        ensemble_cfg_val
+                            .and_then(|v| v.get("algorithm"))
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string())
+                    });
+                let split_freq = workflow_val
+                    .get("blend")
+                    .and_then(|v| v.get("splitFreq"))
+                    .and_then(|v| v.as_i64())
+                    .or_else(|| {
+                        ensemble_cfg_val
+                            .and_then(|v| v.get("split_freq"))
+                            .and_then(|v| v.as_i64())
+                    })
+                    .or_else(|| req.extra.get("split_freq").and_then(|v| v.as_i64()))
+                    .or_else(|| req.extra.get("splitFreq").and_then(|v| v.as_i64()));
+
+                if workflow_algorithm.as_deref() == Some("frequency_split") {
+                    if requested_model_ids.len() < 2 {
+                        errors.push(
+                            "Frequency-split workflows need at least two concrete models"
+                                .to_string(),
+                        );
+                    }
+                    if let Some(freq) = split_freq {
+                        if !(600..=1400).contains(&freq) {
+                            warnings.push(format!(
+                                "Crossover frequency {freq} Hz is outside the guide-backed safe range of 600-1400 Hz"
+                            ));
+                            crossover_validation =
+                                Some(format!("outside safe range ({freq} Hz)"));
+                        } else {
+                            crossover_validation = Some(format!("validated at {freq} Hz"));
+                        }
+                    } else {
+                        warnings.push(
+                            "Frequency-split workflow did not specify a crossover frequency"
+                                .to_string(),
+                        );
+                        crossover_validation = Some("missing crossover frequency".to_string());
+                    }
+                }
+                if phase_fix_enabled && requested_model_ids.len() < 2 {
+                    warnings.push(
+                        "Phase-fix is enabled but fewer than two referenced models were resolved"
+                            .to_string(),
+                    );
+                    phase_fix_compatibility =
+                        Some("needs at least two concrete models".to_string());
+                } else if phase_fix_enabled {
+                    phase_fix_compatibility = Some("reference pair resolved".to_string());
+                }
+
                 // For each referenced model_id, check if any expected local file exists.
                 // This mirrors Python's ability to load checkpoints/configs (ckpt/pth/yaml/onnx/etc).
                 let mut needs_fno_dependency = false;
                 let mut required_models_out: Vec<Value> = Vec::new();
+                let mut models_requiring_cuda: Vec<String> = Vec::new();
+                let mut missing_runtime_assets: Vec<String> = Vec::new();
+                let mut unsupported_patch_profiles: Vec<String> = Vec::new();
+                let mut recommended_operating_profile: Option<String> = None;
+                let mut runtime_adapter: Option<String> = None;
                 for mid in &requested_model_ids {
                     let model_obj = models_json
                         .get("models")
@@ -3569,11 +3913,176 @@ fn main() -> Result<()> {
                                 .and_then(|v| v.as_str())
                                 .map(|s| s.to_string())
                         });
+                    let install_mode = model_obj
+                        .get("install")
+                        .and_then(|v| v.get("mode"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    let curated = model_obj
+                        .get("status")
+                        .and_then(|v| v.get("curated"))
+                        .and_then(|v| v.as_bool());
+                    let support_tier = model_obj
+                        .get("status")
+                        .and_then(|v| v.get("support_tier"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    let runtime_engine = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("engine"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    let runtime_model_type = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("model_type"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    let runtime_adapter_for_model = detect_runtime_adapter(&model_obj);
+                    let runtime_config_ref = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("config_ref"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    let runtime_checkpoint_ref = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("checkpoint_ref"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    let runtime_patch_profile = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("patch_profile"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    let requires_manual_assets = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("requires_manual_assets"))
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false);
+                    let required_files = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("required_files"))
+                        .and_then(|v| v.as_array())
+                        .cloned()
+                        .unwrap_or_default();
+                    let runtime_required = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("required"))
+                        .and_then(|v| v.as_array())
+                        .cloned()
+                        .unwrap_or_default();
+                    let runtime_fallbacks = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("fallbacks"))
+                        .and_then(|v| v.as_array())
+                        .cloned()
+                        .unwrap_or_default();
+                    let runtime_hosts = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("hosts"))
+                        .and_then(|v| v.as_array())
+                        .cloned()
+                        .unwrap_or_default();
+                    let install_burden = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("install_burden"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    let requires_patch = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("requires_patch"))
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false);
+                    let requires_custom_repo_file = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("requires_custom_repo_file"))
+                        .and_then(|v| v.as_array())
+                        .cloned()
+                        .unwrap_or_default();
+                    if runtime_required
+                        .iter()
+                        .any(|value| value.as_str() == Some("cuda"))
+                    {
+                        models_requiring_cuda.push(mid.clone());
+                    }
+                    let missing_assets_for_model =
+                        collect_missing_runtime_assets(&cfg.models_dir, mid, &model_obj);
+                    if !missing_assets_for_model.is_empty() {
+                        for asset in &missing_assets_for_model {
+                            missing_runtime_assets.push(format!("{mid}: {asset}"));
+                        }
+                    }
+                    if runtime_adapter.is_none() {
+                        runtime_adapter = runtime_adapter_for_model.clone();
+                    }
+                    if runtime_adapter_for_model.is_none() {
+                        runtime_blocks.push(format!(
+                            "{mid} does not expose an internal runtime adapter profile yet"
+                        ));
+                    }
+                    if recommended_operating_profile.is_none() {
+                        recommended_operating_profile = model_obj
+                            .get("operating_profiles")
+                            .and_then(|v| v.as_object())
+                            .and_then(|profiles| {
+                                if profiles.contains_key("balanced") {
+                                    Some("balanced".to_string())
+                                } else {
+                                    profiles.keys().next().map(|key| key.to_string())
+                                }
+                            });
+                    }
+                    if runtime_patch_profile.is_some()
+                        && runtime_adapter_for_model.as_deref() != Some("custom_builtin_variant")
+                    {
+                        unsupported_patch_profiles.push(format!(
+                            "{mid}: {}",
+                            runtime_patch_profile.clone().unwrap_or_default()
+                        ));
+                    }
 
                     if matches!(readiness.as_deref(), Some("blocked") | Some("manual")) {
                         runtime_blocks.push(format!(
                             "{mid} is marked as {}",
                             readiness.clone().unwrap_or_else(|| "blocked".to_string())
+                        ));
+                    }
+                    if matches!(install_mode.as_deref(), Some("manual")) {
+                        runtime_blocks.push(format!(
+                            "{mid} requires manual installation before it can run"
+                        ));
+                    }
+                    if matches!(install_mode.as_deref(), Some("custom_runtime")) {
+                        runtime_blocks.push(format!(
+                            "{mid} requires a custom runtime or external dependency"
+                        ));
+                    }
+                    if requires_patch {
+                        runtime_blocks.push(format!(
+                            "{mid} requires a repo/runtime patch before it can run safely"
+                        ));
+                    }
+                    if !missing_assets_for_model.is_empty() {
+                        runtime_blocks.push(format!(
+                            "{mid} is missing runtime assets required by the selected adapter"
+                        ));
+                    }
+                    if matches!(install_burden.as_deref(), Some("high")) {
+                        recommended_adjustments.push(format!(
+                            "{mid}: high setup burden, keep this workflow in Advanced mode unless the runtime is already verified"
+                        ));
+                    }
+                    if !runtime_hosts.is_empty()
+                        && runtime_hosts
+                            .iter()
+                            .all(|value| matches!(value.as_str(), Some("msst" | "custom_script")))
+                    {
+                        recommended_adjustments.push(format!(
+                            "{mid}: best supported through {}",
+                            runtime_hosts
+                                .iter()
+                                .filter_map(|value| value.as_str())
+                                .collect::<Vec<_>>()
+                                .join(", ")
                         ));
                     }
                     if simple_allowed == Some(false) {
@@ -3586,15 +4095,41 @@ fn main() -> Result<()> {
                         "id": mid,
                         "name": model_obj.get("name").cloned().unwrap_or(Value::Null),
                         "installed": exists,
+                        "curated": curated,
+                        "support_tier": support_tier,
                         "guide_rank": model_obj.get("guide_rank").cloned().unwrap_or(Value::Null),
                         "readiness": readiness,
                         "simple_allowed": simple_allowed,
                         "blocking_reason": blocking_reason,
+                        "install_mode": install_mode,
+                        "runtime_engine": runtime_engine,
+                        "runtime_model_type": runtime_model_type,
+                        "runtime_adapter": runtime_adapter_for_model,
                         "runtime_variant": model_obj
                             .get("runtime")
                             .and_then(|v| v.get("variant"))
                             .cloned()
                             .unwrap_or(Value::Null),
+                        "runtime_config_ref": runtime_config_ref,
+                        "runtime_checkpoint_ref": runtime_checkpoint_ref,
+                        "runtime_patch_profile": runtime_patch_profile,
+                        "runtime_required": Value::Array(runtime_required),
+                        "runtime_fallbacks": Value::Array(runtime_fallbacks),
+                        "runtime_hosts": Value::Array(runtime_hosts),
+                        "install_burden": install_burden,
+                        "requires_manual_assets": requires_manual_assets,
+                        "required_files": Value::Array(required_files),
+                        "requires_patch": requires_patch,
+                        "requires_custom_repo_file": Value::Array(requires_custom_repo_file),
+                        "quality_role": model_obj.get("quality_role").cloned().unwrap_or(Value::Null),
+                        "workflow_roles": model_obj.get("workflow_roles").cloned().unwrap_or(Value::Array(vec![])),
+                        "best_for": model_obj.get("best_for").cloned().unwrap_or(Value::Array(vec![])),
+                        "artifacts_risk": model_obj.get("artifacts_risk").cloned().unwrap_or(Value::Null),
+                        "vram_profile": model_obj.get("vram_profile").cloned().unwrap_or(Value::Null),
+                        "chunk_overlap_policy": model_obj.get("chunk_overlap_policy").cloned().unwrap_or(Value::Null),
+                        "quality_axes": model_obj.get("quality_axes").cloned().unwrap_or(Value::Null),
+                        "content_fit": model_obj.get("content_fit").cloned().unwrap_or(Value::Array(vec![])),
+                        "operating_profiles": model_obj.get("operating_profiles").cloned().unwrap_or(Value::Null),
                         "quality_tier": model_obj
                             .get("quality_profile")
                             .and_then(|v| v.get("quality_tier"))
@@ -3618,6 +4153,18 @@ fn main() -> Result<()> {
                             .collect::<Vec<_>>()
                             .join(", "),
                         cfg.models_dir.display()
+                    ));
+                }
+                if !missing_runtime_assets.is_empty() {
+                    errors.push(format!(
+                        "Missing runtime asset(s): {}",
+                        missing_runtime_assets.join(", ")
+                    ));
+                }
+                if !unsupported_patch_profiles.is_empty() {
+                    errors.push(format!(
+                        "Unsupported patch profile(s): {}",
+                        unsupported_patch_profiles.join(", ")
                     ));
                 }
 
@@ -3654,6 +4201,13 @@ fn main() -> Result<()> {
                 if resolved_device.starts_with("cuda") && gpus.is_empty() {
                     errors.push("CUDA device requested but no GPUs were detected".to_string());
                     runtime_blocks.push("CUDA requested with no detected GPU".to_string());
+                }
+                if !resolved_device.starts_with("cuda") {
+                    for model_id in &models_requiring_cuda {
+                        runtime_blocks.push(format!(
+                            "{model_id} requires CUDA but the resolved device is {resolved_device}"
+                        ));
+                    }
                 }
 
                 // Apply defaults similar to Python bridge.
@@ -3756,8 +4310,24 @@ fn main() -> Result<()> {
                 let plan = serde_json::json!({
                     "workflow_name": workflow_name,
                     "workflow_type": recipe_type.clone().unwrap_or_else(|| {
-                        if ensemble_cfg_val.is_some() { "ensemble".to_string() } else { "single".to_string() }
+                        if workflow_val.is_object() {
+                            workflow_val
+                                .get("kind")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("workflow")
+                                .to_string()
+                        } else if ensemble_cfg_val.is_some() {
+                            "ensemble".to_string()
+                        } else {
+                            "single".to_string()
+                        }
                     }),
+                    "workflow": if workflow_val.is_object() { workflow_val.clone() } else { recipe_plan.clone().unwrap_or(Value::Null) },
+                    "workflow_family": recipe_meta
+                        .as_ref()
+                        .and_then(|v| v.get("family"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
                     "quality_goal": recipe_meta
                         .as_ref()
                         .and_then(|v| v.get("quality_goal"))
@@ -3794,6 +4364,12 @@ fn main() -> Result<()> {
                     "resolved_device": resolved_device.clone(),
                     "resolved_overlap": resolved_overlap,
                     "resolved_segment_size": resolved_segment_size,
+                    "runtime_adapter": runtime_adapter,
+                    "missing_runtime_assets": missing_runtime_assets,
+                    "unsupported_patch_profile": unsupported_patch_profiles,
+                    "phase_fix_compatibility": phase_fix_compatibility,
+                    "crossover_validation": crossover_validation,
+                    "recommended_operating_profile": recommended_operating_profile,
                     "fallback_reason": fallback_reason,
                     "should_use_simple": should_use_simple,
                     "should_use_advanced": should_use_advanced
@@ -3809,6 +4385,7 @@ fn main() -> Result<()> {
                     "resolved": {
                         "model_id": if model_id_resolved.is_empty() { Value::Null } else { Value::String(model_id_resolved) },
                         "recipe": recipe_plan.unwrap_or(Value::Null),
+                        "workflow": if workflow_val.is_object() { workflow_val.clone() } else { Value::Null },
                         "stems": stems_val,
                         "device": resolved_device,
                         "overlap": resolved_overlap,
@@ -3821,7 +4398,9 @@ fn main() -> Result<()> {
                         "ensemble_algorithm": ensemble_algorithm,
                         "ensemble_config": ensemble_cfg_val.cloned().unwrap_or(Value::Null),
                         "phase_fix_enabled": phase_fix_enabled,
-                        "phase_fix_params": phase_fix_params
+                        "phase_fix_params": phase_fix_params,
+                        "runtime_policy": req.extra.get("runtime_policy").cloned().or_else(|| req.extra.get("runtimePolicy").cloned()).unwrap_or(Value::Null),
+                        "export_policy": req.extra.get("export_policy").cloned().or_else(|| req.extra.get("exportPolicy").cloned()).unwrap_or(Value::Null)
                     },
                     "memory": Value::Null
                 });
@@ -4023,7 +4602,7 @@ fn main() -> Result<()> {
                     continue;
                 }
                 let model_id = model_id.unwrap();
-                let models_json = read_json_file(&cfg.assets_dir.join("models.json.bak"))?;
+                let models_json = load_models_with_guide_overrides(&cfg)?;
                 let models = models_json
                     .get("models")
                     .and_then(|v| v.as_array())
@@ -4049,7 +4628,19 @@ fn main() -> Result<()> {
                             "catalog_status": m.get("catalog_status").cloned().unwrap_or(Value::Null),
                             "metrics_status": m.get("metrics_status").cloned().unwrap_or(Value::Null),
                             "metrics_evidence": m.get("metrics_evidence").cloned().unwrap_or(Value::Null),
-                            "links": m.get("links").cloned().unwrap_or(Value::Null)
+                            "links": m.get("links").cloned().unwrap_or(Value::Null),
+                            "runtime": m.get("runtime").cloned().unwrap_or(Value::Null),
+                            "install": m.get("install").cloned().unwrap_or(Value::Null),
+                            "quality_role": m.get("quality_role").cloned().unwrap_or(Value::Null),
+                            "workflow_roles": m.get("workflow_roles").cloned().unwrap_or(Value::Array(vec![])),
+                            "best_for": m.get("best_for").cloned().unwrap_or(Value::Array(vec![])),
+                            "artifacts_risk": m.get("artifacts_risk").cloned().unwrap_or(Value::Null),
+                            "vram_profile": m.get("vram_profile").cloned().unwrap_or(Value::Null),
+                            "chunk_overlap_policy": m.get("chunk_overlap_policy").cloned().unwrap_or(Value::Null),
+                            "workflow_groups": m.get("workflow_groups").cloned().unwrap_or(Value::Array(vec![])),
+                            "quality_axes": m.get("quality_axes").cloned().unwrap_or(Value::Null),
+                            "content_fit": m.get("content_fit").cloned().unwrap_or(Value::Array(vec![])),
+                            "operating_profiles": m.get("operating_profiles").cloned().unwrap_or(Value::Null)
                         }),
                     )?;
                 } else {

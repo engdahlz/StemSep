@@ -59,6 +59,48 @@ const getModelIcon = (model: Model) => {
   return AudioLines;
 };
 
+const roleBadgeMap: Record<string, string> = {
+  primary: "Fullness",
+  ensemble_partner: "Blend",
+  phase_reference: "Reference",
+  post_process: "Restoration",
+  special_stem: "Special",
+  fullness_source: "Fullness",
+  cleanup_reference: "Bleedless",
+  karaoke_base: "Karaoke",
+  lead_back_splitter: "Lead/Back",
+  restoration_step: "Restoration",
+  low_band_source: "Low Band",
+  high_band_source: "High Band",
+}
+
+function getModelBadges(model: Model): string[] {
+  const badges = new Set<string>()
+  const roles = Array.isArray(model.quality_role)
+    ? model.quality_role
+    : model.quality_role
+      ? [model.quality_role]
+      : []
+  for (const role of roles) {
+    const label = roleBadgeMap[String(role)]
+    if (label) badges.add(label)
+  }
+  if (model.workflow_groups?.some((group) => String(group).toLowerCase().includes("karaoke"))) {
+    badges.add("Karaoke")
+  }
+  if (model.workflow_groups?.some((group) => String(group).toLowerCase().includes("drum"))) {
+    badges.add("Drumsep")
+  }
+  if (model.content_fit?.some((fit) => String(fit).toLowerCase().includes("harmon"))) {
+    badges.add("Harmonies")
+  }
+  if (model.install?.mode === "manual") badges.add("Manual")
+  if (model.status?.curated) badges.add("Curated")
+  if (model.status?.support_tier === "supported_advanced") badges.add("Advanced")
+  if (model.status?.readiness === "experimental") badges.add("Experimental")
+  return Array.from(badges).slice(0, 4)
+}
+
 const getAction = (
   model: Model,
   onDownload: (id: string) => void,
@@ -127,6 +169,7 @@ export function ModelCard({
     onDetails,
   );
   const ActionIcon = action.icon;
+  const badges = getModelBadges(model)
 
   return (
     <div
@@ -164,6 +207,14 @@ export function ModelCard({
           </p>
 
           <div className="mb-3 flex flex-wrap gap-1.5">
+            {badges.map((badge) => (
+              <span
+                key={badge}
+                className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] tracking-[-0.1px] text-amber-700"
+              >
+                {badge}
+              </span>
+            ))}
             {stems.map((stem) => (
               <span
                 key={stem}
@@ -189,6 +240,11 @@ export function ModelCard({
             <span className="rounded-md bg-violet-100 px-2 py-0.5 text-[11px] text-violet-600">
               {architecture}
             </span>
+            {model.runtime?.engine && (
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">
+                {normalizeLabel(model.runtime.engine)}
+              </span>
+            )}
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {speed}

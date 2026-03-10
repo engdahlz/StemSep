@@ -46,13 +46,11 @@ _backend_smoke_out/
 output_golden_smoke/
 saved_output/
 test_output/
+Audio/
+Screenshots/
+reports/
 
 New Files/
-
-# Reports
-# Do not blanket-ignore reports (some are source-of-truth, e.g. mirror manifests).
-# If you have large/generated outputs, add targeted patterns here instead.
-reports/guide_sync/
 
 # Electron dev logs (generated)
 dev-electron.log
@@ -127,10 +125,13 @@ Desktop.ini
 !docs/vendor/**/*.ogg
 !docs/vendor/**/*.opus
 
-# Exclude heavy binary artifacts inside vendor subfolders (keep curated text/PDF only)
-docs/vendor/deton24_guide/*.xlsx
-docs/vendor/deton24_guide/*.docx
-docs/vendor/deton24_guide/*.mp3
+docs/vendor/**/*.docx
+docs/vendor/**/*.xlsx
+docs/vendor/**/*.mp3
+docs/vendor/**/*.jpg
+docs/vendor/**/*.png
+docs/vendor/**/*.ico
+docs/vendor/**/__pycache__/
 
 # Local artifact backup folders (moved out of source-of-truth paths)
 StemSepApp/assets/_backups/

@@ -1,4 +1,4 @@
-import type { SeparationConfig } from '@/types/separation'
+import type { SeparationConfig, SeparationWorkflow } from '@/types/separation'
 import type { SeparationPlan } from '@/lib/separation/resolveSeparationPlan'
 import type { VolumeCompensation } from '@/types/separation'
 
@@ -23,6 +23,9 @@ export interface SeparationBackendPayload {
     : never
   postProcessingSteps?: SeparationConfig['postProcessingSteps']
   volumeCompensation?: VolumeCompensation
+  workflow?: SeparationWorkflow
+  runtimePolicy?: SeparationConfig['runtimePolicy']
+  exportPolicy?: SeparationConfig['exportPolicy']
 }
 
 export function toBackendOverlap(value: unknown): number | undefined {
@@ -69,6 +72,9 @@ export function buildSeparationBackendPayload(args: {
     phaseParams: plan.effectiveGlobalPhaseParams,
     postProcessingSteps: plan.effectivePostProcessingSteps,
     volumeCompensation: config.volumeCompensation,
+    workflow: plan.effectiveWorkflow,
+    runtimePolicy: config.runtimePolicy,
+    exportPolicy: config.exportPolicy,
   }
 }
 
@@ -95,6 +101,9 @@ export function executeSeparationPreflight(
     payload.phaseParams,
     payload.postProcessingSteps,
     payload.volumeCompensation,
+    payload.workflow,
+    payload.runtimePolicy,
+    payload.exportPolicy,
   )
 }
 
@@ -121,5 +130,8 @@ export function executeSeparation(
     payload.phaseParams,
     payload.postProcessingSteps,
     payload.volumeCompensation,
+    payload.workflow,
+    payload.runtimePolicy,
+    payload.exportPolicy,
   )
 }

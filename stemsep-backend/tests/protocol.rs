@@ -553,7 +553,10 @@ fn quality_compare_detects_output_hash_mismatch() {
         .expect("write quality_compare");
     stdin.flush().ok();
     let cmp_resp = read_response_for_id(&mut reader, 602, 800);
-    assert_eq!(cmp_resp.get("success").and_then(|v| v.as_bool()), Some(true));
+    assert_eq!(
+        cmp_resp.get("success").and_then(|v| v.as_bool()),
+        Some(true)
+    );
     let comparison = cmp_resp
         .get("data")
         .and_then(|d| d.get("comparison"))
@@ -636,10 +639,22 @@ fn separation_preflight_returns_report_on_errors() {
     assert!(data.get("errors").and_then(|v| v.as_array()).is_some());
     assert!(data.get("warnings").and_then(|v| v.as_array()).is_some());
     assert!(data.get("resolved").and_then(|v| v.as_object()).is_some());
-    let plan = data.get("plan").and_then(|v| v.as_object()).expect("plan object");
-    assert!(plan.get("required_models").and_then(|v| v.as_array()).is_some());
-    assert!(plan.get("runtime_blocks").and_then(|v| v.as_array()).is_some());
-    assert!(plan.get("recommended_adjustments").and_then(|v| v.as_array()).is_some());
+    let plan = data
+        .get("plan")
+        .and_then(|v| v.as_object())
+        .expect("plan object");
+    assert!(plan
+        .get("required_models")
+        .and_then(|v| v.as_array())
+        .is_some());
+    assert!(plan
+        .get("runtime_blocks")
+        .and_then(|v| v.as_array())
+        .is_some());
+    assert!(plan
+        .get("recommended_adjustments")
+        .and_then(|v| v.as_array())
+        .is_some());
 }
 
 #[test]
@@ -773,6 +788,127 @@ fn separation_preflight_resolves_recipe_step_models() {
         .and_then(|v| v.as_array())
         .map(|arr| !arr.is_empty())
         .unwrap_or(false));
+}
+
+#[test]
+fn separation_preflight_reads_workflow_dependencies() {
+    let mut child = spawn_backend();
+
+    let stdin = child.stdin.as_mut().expect("stdin");
+    let stdout = child.stdout.take().expect("stdout");
+    let mut reader = BufReader::new(stdout);
+
+    let _ = read_json_line(&mut reader);
+
+    let req = serde_json::json!({
+        "command": "separation_preflight",
+        "id": 9,
+        "file_path": "C:/this/does/not/exist.wav",
+        "model_id": "pipeline",
+        "device": "cpu",
+        "workflow": {
+            "version": 1,
+            "id": "custom-workflow",
+            "kind": "pipeline",
+            "surface": "workflow",
+            "models": [
+                {"model_id": "missing-workflow-model", "role": "primary"},
+                {"model_id": "missing-reference-model", "role": "phase_reference"}
+            ],
+            "steps": [
+                {"id": "base", "action": "separate", "model_id": "missing-workflow-model"},
+                {"id": "phase", "action": "phase_fix", "source_model": "missing-reference-model", "apply_to": "instrumental"}
+            ]
+        }
+    });
+    stdin
+        .write_all(format!("{}\n", req).as_bytes())
+        .expect("write separation_preflight workflow");
+    stdin.flush().ok();
+
+    let resp = read_json_line(&mut reader);
+    assert_eq!(resp.get("id").and_then(|v| v.as_i64()), Some(9));
+    assert_eq!(resp.get("success").and_then(|v| v.as_bool()), Some(true));
+
+    let data = resp.get("data").expect("data");
+    let missing = data
+        .get("missing_models")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let missing_strs: Vec<&str> = missing.iter().filter_map(|v| v.as_str()).collect();
+    assert!(missing_strs.contains(&"missing-workflow-model"));
+    assert!(missing_strs.contains(&"missing-reference-model"));
+
+    let resolved_workflow = data
+        .get("resolved")
+        .and_then(|v| v.get("workflow"))
+        .expect("resolved.workflow");
+    assert_eq!(
+        resolved_workflow.get("id").and_then(|v| v.as_str()),
+        Some("custom-workflow")
+    );
+
+    let plan = data
+        .get("plan")
+        .and_then(|v| v.as_object())
+        .expect("plan object");
+    assert_eq!(
+        plan.get("workflow_type").and_then(|v| v.as_str()),
+        Some("pipeline")
+    );
+}
+
+#[test]
+fn separation_preflight_exposes_runtime_adapter_metadata() {
+    let mut child = spawn_backend();
+
+    let stdin = child.stdin.as_mut().expect("stdin");
+    let stdout = child.stdout.take().expect("stdout");
+    let mut reader = BufReader::new(stdout);
+
+    let _ = read_json_line(&mut reader);
+
+    let req = serde_json::json!({
+        "command": "separation_preflight",
+        "id": 10,
+        "file_path": "C:/this/does/not/exist.wav",
+        "model_id": "ultimate_instrumental_fullness_cleanup",
+        "device": "cpu"
+    });
+    stdin
+        .write_all(format!("{}\n", req).as_bytes())
+        .expect("write separation_preflight runtime metadata");
+    stdin.flush().ok();
+
+    let resp = read_json_line(&mut reader);
+    assert_eq!(resp.get("id").and_then(|v| v.as_i64()), Some(10));
+    assert_eq!(resp.get("success").and_then(|v| v.as_bool()), Some(true));
+
+    let data = resp.get("data").expect("data");
+    let plan = data
+        .get("plan")
+        .and_then(|v| v.as_object())
+        .expect("plan object");
+    assert_eq!(
+        plan.get("workflow_family").and_then(|v| v.as_str()),
+        Some("Ultimate Instrumental")
+    );
+    assert!(plan.get("runtime_adapter").is_some());
+    assert!(plan.get("missing_runtime_assets").is_some());
+    assert!(plan.get("recommended_operating_profile").is_some());
+
+    let required_models = plan
+        .get("required_models")
+        .and_then(|v| v.as_array())
+        .expect("required_models");
+    assert!(
+        required_models.iter().any(|model| {
+            model.get("runtime_engine").and_then(|v| v.as_str()) == Some("msst_builtin")
+                || model.get("runtime_adapter").and_then(|v| v.as_str()).is_some()
+        }),
+        "expected required models to expose runtime metadata"
+    );
 }
 
 #[test]

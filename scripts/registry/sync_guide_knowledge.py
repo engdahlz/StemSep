@@ -35,9 +35,9 @@ DEFAULT_DOC_ID = "1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs"
 DEFAULT_EXPORT_URL = (
     f"https://docs.google.com/document/d/{DEFAULT_DOC_ID}/export?format=txt"
 )
-DEFAULT_LOCAL_SNAPSHOT = REPO_ROOT / "docs" / "separation_guide" / "deton24_guide.txt"
+DEFAULT_LOCAL_SNAPSHOT = REPO_ROOT / "docs" / "vendor" / "deton24_guide" / "latest.txt"
 DEFAULT_REGISTRY = REPO_ROOT / "StemSepApp" / "assets" / "registry" / "models.v2.source.json"
-DEFAULT_ALIAS_DOC = REPO_ROOT / "docs" / "separation_guide" / "stemsep_model_id_mapping.md"
+DEFAULT_ALIAS_DOC = REPO_ROOT / "docs" / "guide" / "model_id_mapping.md"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "reports" / "guide_sync" / "latest"
 
 # Broad but conservative model-like token matcher:
