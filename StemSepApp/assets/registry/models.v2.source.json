@@ -1756,19 +1756,19 @@
       "tags": [],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bandit-plus.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bandit-plus.yaml",
-        "homepage": null
+        "checkpoint": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.3/model_bandit_plus_dnr_sdr_11.47.chpt",
+        "config": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.3/config_dnr_bandit_bsrnn_multi_mus64.yaml",
+        "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v.1.0.3"
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "bandit_plus.ckpt",
+          "filename": "model_bandit_plus_dnr_sdr_11.47.chpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "hparams.yaml",
+          "filename": "config_dnr_bandit_bsrnn_multi_mus64.yaml",
           "sha256": null
         },
         "additional": []
@@ -1894,7 +1894,8 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v.1.0.3"
     },
     {
       "id": "becruily-guitar",
@@ -3594,14 +3595,14 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/duality-v2-unwa.ckpt",
+        "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/melband_roformer_instvox_duality_v2.ckpt",
         "config": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/config_melbandroformer_instvoc_duality.yaml",
-        "homepage": null
+        "homepage": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality"
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "melband_roformer_instvoc_duality_v2.ckpt",
+          "filename": "melband_roformer_instvox_duality_v2.ckpt",
           "sha256": null
         },
         "config": {
@@ -3732,7 +3733,8 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "homepage": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality"
     },
     {
       "id": "gabox-denoise-debleed",
@@ -6061,9 +6063,9 @@
       "tags": [],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx-net-hq4.onnx",
+        "checkpoint": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/mdx-net/UVR-MDX-NET-Inst_HQ_4.onnx",
         "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml",
-        "homepage": null
+        "homepage": "https://huggingface.co/Eddycrack864/audio-separator-models"
       },
       "artifacts": {
         "primary": {
@@ -6206,7 +6208,8 @@
       },
       "sdr": 0.0,
       "fullness": null,
-      "bleedless": null
+      "bleedless": null,
+      "homepage": "https://huggingface.co/Eddycrack864/audio-separator-models"
     },
     {
       "id": "mdx-net-hq5",
@@ -6217,9 +6220,9 @@
       "tags": [],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx-net-hq5.onnx",
+        "checkpoint": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/mdx-net/UVR-MDX-NET-Inst_HQ_5.onnx",
         "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml",
-        "homepage": null
+        "homepage": "https://huggingface.co/Eddycrack864/audio-separator-models"
       },
       "artifacts": {
         "primary": {
@@ -6362,7 +6365,8 @@
       },
       "sdr": 0.0,
       "fullness": null,
-      "bleedless": null
+      "bleedless": null,
+      "homepage": "https://huggingface.co/Eddycrack864/audio-separator-models"
     },
     {
       "id": "mdx23c-d1581",
@@ -6833,9 +6837,9 @@
       "tags": [],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx23c-instvoc-hq.ckpt",
-        "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml",
-        "homepage": null
+        "checkpoint": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/mdx23c/MDX23C-8KFFT-InstVoc_HQ.ckpt",
+        "config": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/mdx23c/model_2_stem_full_band_8k.yaml",
+        "homepage": "https://huggingface.co/Eddycrack864/audio-separator-models"
       },
       "artifacts": {
         "primary": {
@@ -6978,7 +6982,8 @@
       },
       "sdr": 0.0,
       "fullness": null,
-      "bleedless": null
+      "bleedless": null,
+      "homepage": "https://huggingface.co/Eddycrack864/audio-separator-models"
     },
     {
       "id": "mel-band-crowd",
@@ -7765,19 +7770,19 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/neo-instvfx.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/neo-instvfx.yaml",
-        "homepage": "https://huggingface.co/neo/instvfx-roformer"
+        "checkpoint": "https://huggingface.co/natanworkspace/melband_roformer/resolve/main/Neo_InstVFX.ckpt",
+        "config": "https://huggingface.co/natanworkspace/melband_roformer/resolve/main/config_neo_inst.yaml",
+        "homepage": "https://huggingface.co/natanworkspace/melband_roformer"
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "model.ckpt",
+          "filename": "Neo_InstVFX.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "config.yaml",
+          "filename": "config_neo_inst.yaml",
           "sha256": null
         },
         "additional": []
@@ -7906,7 +7911,8 @@
         "evidence_url": "https://huggingface.co/neo/instvfx-roformer",
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "homepage": "https://huggingface.co/natanworkspace/melband_roformer"
     },
     {
       "id": "scnet-large",
@@ -8068,9 +8074,9 @@
       "tags": [],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/scnet-musdb18.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/scnet-musdb18.yaml",
-        "homepage": null
+        "checkpoint": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.6/scnet_checkpoint_musdb18.ckpt",
+        "config": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.6/config_musdb18_scnet.yaml",
+        "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v.1.0.6"
       },
       "artifacts": {
         "primary": {
@@ -8080,7 +8086,7 @@
         },
         "config": {
           "kind": "config",
-          "filename": "scnet.yaml",
+          "filename": "config_musdb18_scnet.yaml",
           "sha256": null
         },
         "additional": []
@@ -8206,7 +8212,8 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v.1.0.6"
     },
     {
       "id": "small-karaoke-gaboxauf",
@@ -8292,19 +8299,19 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/sucial-dereverb-fused.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/sucial-dereverb-fused.yaml",
-        "homepage": null
+        "checkpoint": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/dereverb_echo_mbr_fused_0.5_v2_0.25_big_0.25_super.ckpt",
+        "config": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/config_dereverb_echo_mbr_v2.yaml",
+        "homepage": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer"
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "fused_dereverb_echo.ckpt",
+          "filename": "dereverb_echo_mbr_fused_0.5_v2_0.25_big_0.25_super.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "fused_dereverb_echo.yaml",
+          "filename": "config_dereverb_echo_mbr_v2.yaml",
           "sha256": null
         },
         "additional": []
@@ -8431,7 +8438,8 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "homepage": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer"
     },
     {
       "id": "sucial-male-female",
