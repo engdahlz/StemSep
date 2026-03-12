@@ -313,17 +313,21 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/amane-full-scratch.ckpt",
-        "config": null,
-        "homepage": null
+        "checkpoint": "https://huggingface.co/Aname-Tommy/Mel_Band_Roformer_Full_Scratch/resolve/main/model_vocals.ckpt",
+        "config": "https://huggingface.co/Aname-Tommy/Mel_Band_Roformer_Full_Scratch/resolve/main/config_vocals.yaml",
+        "homepage": "https://huggingface.co/Aname-Tommy/Mel_Band_Roformer_Full_Scratch"
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "amane-full-scratch.ckpt",
+          "filename": "model_vocals.ckpt",
           "sha256": null
         },
-        "config": null,
+        "config": {
+          "kind": "config",
+          "sha256": null,
+          "filename": "config_vocals.yaml"
+        },
         "additional": []
       },
       "metrics": {
@@ -450,7 +454,8 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "homepage": "https://huggingface.co/Aname-Tommy/Mel_Band_Roformer_Full_Scratch"
     },
     {
       "id": "amane-inst-fullness",
@@ -463,19 +468,17 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/amane-inst-fullness.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/amane-inst-fullness.yaml",
-        "homepage": "https://huggingface.co/Eddycrack864/audio-separator-models"
+        "homepage": "https://huggingface.co/Aname-Tommy"
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "mel_band_roformer_instrumental_fullness_v1.ckpt",
+          "filename": "amane-inst-fullness.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "config_mel_band_roformer_instrumental_fullness_v1.yaml",
+          "filename": "amane-inst-fullness.yaml",
           "sha256": null
         },
         "additional": []
@@ -512,7 +515,13 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "amane-inst-fullness.ckpt",
+          "amane-inst-fullness.yaml"
+        ]
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -538,7 +547,11 @@
           "expects": [],
           "provides": []
         },
-        "manual_steps": []
+        "manual_steps": [
+          "No public direct-download checkpoint for this instrumental fullness model is currently verified.",
+          "Use Aname-Tommy upstream references and install the checkpoint and YAML manually if you have access to the original release.",
+          "Place the files under msst/amane-inst-fullness/ inside the configured model root."
+        ]
       },
       "phase_fix": {
         "is_valid_reference": null,
@@ -601,6 +614,15 @@
         "evidence_url": "https://huggingface.co/Eddycrack864/audio-separator-models",
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
+      },
+      "homepage": "https://huggingface.co/Aname-Tommy",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "No public direct-download checkpoint for this instrumental fullness model is currently verified.",
+          "Use Aname-Tommy upstream references and install the checkpoint and YAML manually if you have access to the original release.",
+          "Place the files under msst/amane-inst-fullness/ inside the configured model root."
+        ]
       }
     },
     {
@@ -1299,19 +1321,19 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/anvuew-vocals.yaml",
-        "homepage": null
+        "checkpoint": "https://huggingface.co/anvuew/BS-RoFormer/resolve/main/bs_roformer_anvuew_sdr_12.45.ckpt",
+        "config": "https://huggingface.co/anvuew/BS-RoFormer/resolve/main/config.yaml",
+        "homepage": "https://huggingface.co/anvuew/BS-RoFormer"
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
+          "filename": "bs_roformer_anvuew_sdr_12.45.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "config_dereverb-echo_128_4_4_mel_band_roformer.yaml",
+          "filename": "config.yaml",
           "sha256": null
         },
         "additional": []
@@ -1437,7 +1459,8 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "homepage": "https://huggingface.co/anvuew/BS-RoFormer"
     },
     {
       "id": "aufr33-denoise-aggressive",
@@ -2517,19 +2540,19 @@
       "tags": [],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-4-stems.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-4-stems.yaml",
-        "homepage": "https://huggingface.co/zijianhuang/bs-roformer-4stems"
+        "checkpoint": "https://huggingface.co/Aname-Tommy/BS-Roformers/resolve/main/v2.ckpt",
+        "config": "https://huggingface.co/Aname-Tommy/BS-Roformers/resolve/main/config_v2.yaml",
+        "homepage": "https://huggingface.co/Aname-Tommy/BS-Roformers"
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "model.ckpt",
+          "filename": "v2.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "config.yaml",
+          "filename": "config_v2.yaml",
           "sha256": null
         },
         "additional": []
@@ -2663,7 +2686,8 @@
         "evidence_url": "https://huggingface.co/zijianhuang/bs-roformer-4stems",
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "homepage": "https://huggingface.co/Aname-Tommy/BS-Roformers"
     },
     {
       "id": "bs-roformer-karaoke-becruily",
@@ -3287,8 +3311,6 @@
       "tags": [],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/drypd-side-extraction.pth",
-        "config": null,
         "homepage": "https://huggingface.co/drypd/scnet-side-extraction"
       },
       "artifacts": {
@@ -3332,7 +3354,12 @@
           "stemsep-legacy"
         ],
         "preferred": "stemsep-legacy",
-        "blocking_reason": null
+        "blocking_reason": null,
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "model.pth"
+        ]
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -3359,8 +3386,9 @@
           "provides": []
         },
         "manual_steps": [
-          "Legacy registry entry is missing a valid checkpoint URL. This model is kept as a placeholder; fill in links.checkpoint (and optionally links.config/homepage) before enabling execution.",
-          "This model is currently a manual-only placeholder because its checkpoint URL is not verified in the registry. To enable it, provide a verified direct-download URL in links.checkpoint (and links.config if required) and ensure artifacts.primary.filename matches the actual downloaded filename. Until then, this model MUST be blocked from execution in UI/backend (strict-spec)."
+          "The upstream Hugging Face repository currently requires authentication and does not expose a public direct-download link.",
+          "Use the drypd/scnet-side-extraction upstream page and install the checkpoint manually if you have access.",
+          "Place the file under scnet/drypd-side-extraction/ inside the configured model root."
         ]
       },
       "phase_fix": {
@@ -3401,7 +3429,7 @@
         }
       },
       "guide_revision": "2026-03-04",
-      "catalog_status": "candidate",
+      "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
       "sdr": 0.0,
@@ -3424,6 +3452,15 @@
         "evidence_url": "https://huggingface.co/drypd/scnet-side-extraction",
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
+      },
+      "homepage": "https://huggingface.co/drypd/scnet-side-extraction",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "The upstream Hugging Face repository currently requires authentication and does not expose a public direct-download link.",
+          "Use the drypd/scnet-side-extraction upstream page and install the checkpoint manually if you have access.",
+          "Place the file under scnet/drypd-side-extraction/ inside the configured model root."
+        ]
       }
     },
     {
@@ -9736,19 +9773,19 @@
         "instrumental"
       ],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-fno.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-fno.yaml",
-        "homepage": null
+        "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/bs_roformer_fno.ckpt",
+        "config": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/bsrofo_fno.yaml",
+        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO"
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "unwa-inst-fno.ckpt",
+          "filename": "bs_roformer_fno.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "unwa-inst-fno.yaml",
+          "filename": "bsrofo_fno.yaml",
           "sha256": null
         },
         "additional": []
@@ -9882,7 +9919,8 @@
       },
       "sdr": 17.6,
       "fullness": 32.03,
-      "bleedless": 42.87
+      "bleedless": 42.87,
+      "homepage": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO"
     },
     {
       "id": "unwa-inst-v1e",
