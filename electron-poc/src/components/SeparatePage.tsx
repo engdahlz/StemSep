@@ -48,7 +48,6 @@ interface SeparatePageProps {
     filePath: string,
     presetId?: string,
   ) => void;
-  onNavigateToResults?: () => void;
   pendingSeparationConfig?: PendingSeparationConfig | null;
   onClearPendingConfig?: () => void;
 }
@@ -56,12 +55,12 @@ interface SeparatePageProps {
 export default function SeparatePage({
   onNavigateToModels,
   onNavigateToConfigure,
-  onNavigateToResults,
   pendingSeparationConfig,
   onClearPendingConfig,
 }: SeparatePageProps) {
   // --- State ---
   const [isDragging, setIsDragging] = useState(false);
+  const [isOrbitDragActive, setIsOrbitDragActive] = useState(false);
 
   // Missing models dialog (for single-file runs started from this page)
   const [missingDialogOpen, setMissingDialogOpen] = useState(false);
@@ -308,6 +307,7 @@ export default function SeparatePage({
   // We store it locally instead of auto-starting so the entry flow becomes:
   // add audio -> configure -> explicit start.
   const processingPendingConfigRef = useRef(false);
+  const dragDepthRef = useRef(0);
   const heroIcons = useMemo(() => {
     const orbitIcons = [Music2, Headphones, Mic2, Radio, Disc3, Upload];
     const circles = [80, 120, 160];
@@ -571,7 +571,7 @@ export default function SeparatePage({
   const primaryActionLabel = isProcessing
     ? "Processing"
     : queue.length === 0
-      ? "Add Audio"
+      ? "Upload Audio"
       : hasPreparedConfig
         ? "Start Separation"
         : "Configure";
@@ -584,7 +584,20 @@ export default function SeparatePage({
         : hasPreparedConfig
           ? "Configuration ready · press Start Separation"
           : `Queue ready · ${queue.length} file${queue.length > 1 ? "s" : ""} pending · configuration required`
-      : "Add a track to begin";
+      : "Upload audio to begin";
+
+  const handleClearQueuedFile = useCallback(() => {
+    const targetPath = preparedSeparation?.file?.path || leadQueueItem?.file;
+    if (!targetPath) return;
+
+    queue
+      .filter((item) => item.file === targetPath)
+      .forEach((item) => removeFromQueue(item.id));
+
+    setPreparedSeparation((current) =>
+      current?.file?.path === targetPath ? null : current,
+    );
+  }, [leadQueueItem?.file, preparedSeparation?.file?.path, queue, removeFromQueue]);
 
   const addToQueue = useCallback(
     async (paths: string[]) => {
@@ -609,22 +622,49 @@ export default function SeparatePage({
     [addToQueueStore, selectedPreset, queue, removeFromQueue],
   );
 
+  const supportedAudioExtensions = useMemo(
+    () => new Set(["wav", "flac", "mp3", "m4a", "aac", "ogg", "opus", "aif", "aiff", "wma"]),
+    [],
+  );
+
+  const filterAudioPaths = useCallback(
+    (paths: string[]) =>
+      paths.filter((path) => {
+        const match = path.toLowerCase().match(/\.([a-z0-9]+)$/);
+        return !!match && supportedAudioExtensions.has(match[1]);
+      }),
+    [supportedAudioExtensions],
+  );
+
   const handleCardDrop = useCallback(
     async (e: React.DragEvent) => {
       e.preventDefault();
+      e.stopPropagation();
+      dragDepthRef.current = 0;
       setIsDragging(false);
+      setIsOrbitDragActive(false);
 
       const files = Array.from(e.dataTransfer.files);
-      const paths = files.map((f: any) => f.path || f.name);
+      const droppedPaths = files.map((f: any) => f.path || f.name);
+      const audioPaths = filterAudioPaths(droppedPaths);
 
-      if (paths.length > 0) {
-        await addToQueue(paths);
+      if (audioPaths.length === 0) {
+        toast.error("Only audio files can be dropped here");
+        return;
+      }
+
+      if (audioPaths.length !== droppedPaths.length) {
+        toast.warning("Some dropped files were ignored because they are not audio");
+      }
+
+      if (audioPaths.length > 0) {
+        await addToQueue(audioPaths);
         // Navigate to configure page with first file
-        const fileName = paths[0].split(/[\\/]/).pop() || "Unknown";
-        onNavigateToConfigure?.(fileName, paths[0], selectedPreset);
+        const fileName = audioPaths[0].split(/[\\/]/).pop() || "Unknown";
+        onNavigateToConfigure?.(fileName, audioPaths[0], selectedPreset);
       }
     },
-    [addToQueue, selectedPreset, onNavigateToConfigure],
+    [addToQueue, filterAudioPaths, onNavigateToConfigure, selectedPreset],
   );
 
   // Start separation for a single file with the given config
@@ -870,19 +910,82 @@ export default function SeparatePage({
   const handleWindowDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     if (e.dataTransfer?.types.includes("Files")) {
+      dragDepthRef.current += 1;
       setIsDragging(true);
     }
+  }, []);
+
+  const handleWindowDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer?.types.includes("Files")) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleWindowDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    if (!e.dataTransfer?.types.includes("Files")) return;
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) {
+      setIsDragging(false);
+      setIsOrbitDragActive(false);
+    }
+  }, []);
+
+  const handleWindowDropReset = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragDepthRef.current = 0;
+    setIsDragging(false);
+    setIsOrbitDragActive(false);
+  }, []);
+
+  const handleOrbitDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer?.types.includes("Files")) {
+      setIsDragging(true);
+      setIsOrbitDragActive(true);
+    }
+  }, []);
+
+  const handleOrbitDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const nextTarget = e.relatedTarget;
+    if (nextTarget instanceof Node && e.currentTarget.contains(nextTarget)) {
+      return;
+    }
+    setIsOrbitDragActive(false);
   }, []);
 
   return (
     <div
       className="relative h-full overflow-hidden text-white selection:bg-white/20"
       onDragEnter={handleWindowDragEnter}
+      onDragOver={handleWindowDragOver}
+      onDragLeave={handleWindowDragLeave}
+      onDrop={handleWindowDropReset}
     >
       <div className="absolute inset-0 flex items-end justify-center px-6 pb-[18%]">
         <div className="flex flex-col items-center">
-          <div className="group relative">
-            <div className="stemsep-orbit-shell pointer-events-none absolute left-1/2 top-1/2 z-10 h-[360px] w-[360px] -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div
+            className="group relative"
+            onDragOver={handleOrbitDragOver}
+            onDragLeave={handleOrbitDragLeave}
+            onDrop={handleCardDrop}
+          >
+            <div
+              className={`stemsep-orbit-shell pointer-events-none absolute left-1/2 top-1/2 z-10 h-[360px] w-[360px] -translate-x-1/2 -translate-y-1/2 ${
+                isOrbitDragActive
+                  ? "opacity-100"
+                  : "opacity-0 group-hover:opacity-100"
+              }`}
+              style={
+                {
+                  "--stemsep-orbit-scale": isOrbitDragActive ? 1.12 : 1,
+                } as CSSProperties
+              }
+            >
               <div className="stemsep-orbit-rotor relative h-full w-full">
                 {heroIcons.map(({ key, Icon, style }) => (
                   <div
@@ -901,21 +1004,10 @@ export default function SeparatePage({
               onClick={() => {
                 void handlePrimaryAction();
               }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(true);
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(false);
-              }}
-              onDrop={handleCardDrop}
-              className={`stemsep-home-button relative z-20 flex flex-row items-center justify-center gap-0.5 overflow-visible rounded-[38px] border px-[22px] py-3 text-center text-[20px] font-normal tracking-[-0.7px] text-white transition-all duration-300 ${
-                isDragging
-                  ? "scale-105 border-white/50 bg-white/30 shadow-2xl shadow-black/30"
-                  : "border-white/30 bg-white/20 shadow-xl shadow-black/20 hover:scale-105 hover:border-white/50 hover:bg-white/30 hover:shadow-2xl hover:shadow-black/30 active:scale-95"
+              className={`stemsep-home-button relative z-20 flex flex-row items-center justify-center gap-0.5 overflow-visible rounded-[36px] border px-[20px] py-2.5 text-center text-[18px] font-normal tracking-[-0.6px] text-white transition-all duration-300 ${
+                isOrbitDragActive || isDragging
+                  ? "stemsep-home-button-drag-active border-white/50 bg-white/30 shadow-2xl shadow-black/30"
+                  : "border-white/30 bg-white/20 shadow-xl shadow-black/20 hover:border-white/50 hover:bg-white/30 hover:shadow-2xl hover:shadow-black/30"
               }`}
             >
               <span className="relative z-20 leading-[1.4] drop-shadow-lg">
@@ -924,23 +1016,23 @@ export default function SeparatePage({
             </button>
           </div>
 
-          <div className="mt-4 min-h-5 text-center text-[13px] tracking-[-0.2px] text-white/58 drop-shadow">
-            {queueStatusText}
+          <div className="mt-[168px] min-h-5 text-center text-[13px] tracking-[-0.2px] text-white/58 drop-shadow">
+            <div className="flex items-center justify-center gap-2">
+              <span>{queueStatusText}</span>
+              {queue.length > 0 && !isProcessing && (
+                <button
+                  type="button"
+                  onClick={handleClearQueuedFile}
+                  className="text-white/62 transition-colors hover:text-white/90 hover:underline"
+                >
+                  clear
+                </button>
+              )}
+            </div>
           </div>
 
           {queue.length > 0 && (
             <div className="mt-4 flex items-center gap-2">
-              {!isProcessing && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    void handleFileSelect();
-                  }}
-                  className="rounded-[18px] border border-white/20 bg-white/12 px-4 py-2 text-[13px] tracking-[-0.2px] text-white/82 backdrop-blur-md transition-all hover:bg-white/18"
-                >
-                  Add Audio
-                </button>
-              )}
               {!isProcessing && hasPreparedConfig && (
                 <button
                   type="button"
@@ -964,13 +1056,6 @@ export default function SeparatePage({
                   Cancel
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => onNavigateToResults?.()}
-                className="rounded-[18px] border border-white/20 bg-white/12 px-4 py-2 text-[13px] tracking-[-0.2px] text-white/82 backdrop-blur-md transition-all hover:bg-white/18"
-              >
-                Result Studio
-              </button>
             </div>
           )}
         </div>

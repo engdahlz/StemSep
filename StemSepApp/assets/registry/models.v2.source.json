@@ -1149,8 +1149,8 @@
       "stems": [],
       "links": {
         "checkpoint": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/anvuew-karaoke.yaml",
-        "homepage": null
+        "config": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.yaml",
+        "homepage": "https://huggingface.co/anvuew/karaoke_bs_roformer"
       },
       "artifacts": {
         "primary": {
@@ -1160,7 +1160,7 @@
         },
         "config": {
           "kind": "config",
-          "filename": "model.yaml",
+          "filename": "karaoke_bs_roformer_anvuew.yaml",
           "sha256": null
         },
         "additional": []
@@ -2367,8 +2367,8 @@
       "tags": [],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-1053.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-1053.yaml",
+        "checkpoint": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_937_sdr_10.5309.ckpt",
+        "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_bs_roformer_ep_937_sdr_10.5309.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -3127,9 +3127,9 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-viperx-1297.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/bs-roformer-viperx-1297.yaml",
-        "homepage": null
+        "checkpoint": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+        "config": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+        "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md"
       },
       "artifacts": {
         "primary": {
@@ -4775,8 +4775,8 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv4.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv4.yaml",
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -4926,19 +4926,19 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv5.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv5.yaml",
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_fv5.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
         "homepage": null
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "voc_gaboxFv1.ckpt",
+          "filename": "voc_fv5.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "config_voc_gaboxFv1.yaml",
+          "filename": "voc_gabox.yaml",
           "sha256": null
         },
         "additional": []
@@ -5078,7 +5078,7 @@
       "stems": [],
       "links": {
         "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_fv6.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-fv6.yaml",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -5089,7 +5089,7 @@
         },
         "config": {
           "kind": "config",
-          "filename": "config_voc_gaboxFv1.yaml",
+          "filename": "voc_gabox.yaml",
           "sha256": null
         },
         "additional": []
@@ -5604,19 +5604,19 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/gabox-voc-gabox2.yaml",
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox2.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
         "homepage": null
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "voc_gabox.ckpt",
+          "filename": "voc_gabox2.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "config_voc_gabox.yaml",
+          "filename": "voc_gabox.yaml",
           "sha256": null
         },
         "additional": []
@@ -5758,7 +5758,7 @@
       "stems": [],
       "links": {
         "checkpoint": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/apollo_model.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/lew-apollo-universal.yaml",
+        "config": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/config_apollo_vocal.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -5769,7 +5769,7 @@
         },
         "config": {
           "kind": "config",
-          "filename": "apollo_model.yaml",
+          "filename": "config_apollo_vocal.yaml",
           "sha256": null
         },
         "additional": []
@@ -5911,19 +5911,19 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/lew-apollo-vocal.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/lew-apollo-vocal.yaml",
+        "checkpoint": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/apollo_model_v2.ckpt",
+        "config": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/config_apollo_vocal.yaml",
         "homepage": null
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "apollo_vocal_msst.ckpt",
+          "filename": "apollo_model_v2.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "config.yaml",
+          "filename": "config_apollo_vocal.yaml",
           "sha256": null
         },
         "additional": []
@@ -6684,19 +6684,19 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mdx23c-drumsep-6stem.ckpt",
-        "config": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/config_drumsep_mdx23c.yaml",
+        "checkpoint": "https://github.com/jarredou/models/releases/download/aufr33-jarredou_MDX23C_DrumSep_model_v0.1/aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.ckpt",
+        "config": "https://github.com/jarredou/models/releases/download/aufr33-jarredou_MDX23C_DrumSep_model_v0.1/aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.yaml",
         "homepage": null
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "MDX23C-DrumSep-aufr33-jarredou.ckpt",
+          "filename": "aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "config_drumsep_mdx23c.yaml",
+          "filename": "aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.yaml",
           "sha256": null
         },
         "additional": []
@@ -7309,8 +7309,8 @@
       "stems": [],
       "links": {
         "checkpoint": "https://huggingface.co/becruily/mel-band-roformer-karaoke/resolve/main/mel_band_roformer_karaoke_becruily.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/mel-band-karaoke-becruily.yaml",
-        "homepage": null
+        "config": "https://huggingface.co/becruily/mel-band-roformer-karaoke/resolve/main/config_karaoke_becruily.yaml",
+        "homepage": "https://huggingface.co/becruily/mel-band-roformer-karaoke"
       },
       "artifacts": {
         "primary": {
@@ -7320,7 +7320,7 @@
         },
         "config": {
           "kind": "config",
-          "filename": "config_mel_band_roformer_karaoke.yaml",
+          "filename": "config_karaoke_becruily.yaml",
           "sha256": null
         },
         "additional": []
@@ -7919,9 +7919,9 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/scnet-large.ckpt",
-        "config": "https://raw.githubusercontent.com/starrytong/SCNet/main/conf/config.yaml",
-        "homepage": null
+        "checkpoint": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.9/SCNet-large_starrytong_fixed.ckpt",
+        "config": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.9/config_musdb18_scnet_large_starrytong.yaml",
+        "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md"
       },
       "artifacts": {
         "primary": {
@@ -7931,7 +7931,7 @@
         },
         "config": {
           "kind": "config",
-          "filename": "config.yaml",
+          "filename": "config_musdb18_scnet_large_starrytong.yaml",
           "sha256": null
         },
         "additional": []
@@ -10047,14 +10047,14 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-inst-v1e-plus.ckpt",
+        "checkpoint": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/inst_v1e_plus.ckpt",
         "config": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/config_melbandroformer_inst.yaml",
-        "homepage": null
+        "homepage": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst"
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "melband_roformer_inst_v1e_plus.ckpt",
+          "filename": "inst_v1e_plus.ckpt",
           "sha256": null
         },
         "config": {
@@ -10356,19 +10356,19 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft2_bleedless.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-kim-ft2.yaml",
+        "checkpoint": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft2.ckpt",
+        "config": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft.yaml",
         "homepage": null
       },
       "artifacts": {
         "primary": {
           "kind": "checkpoint",
-          "filename": "kimmel_unwa_ft2_bleedless.ckpt",
+          "filename": "kimmel_unwa_ft2.ckpt",
           "sha256": null
         },
         "config": {
           "kind": "config",
-          "filename": "config_kimmel_unwa_ft2_bleedless.yaml",
+          "filename": "config_kimmel_unwa_ft.yaml",
           "sha256": null
         },
         "additional": []
@@ -10508,7 +10508,7 @@
       "stems": [],
       "links": {
         "checkpoint": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft2_bleedless.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-kim-ft2-bleedless.yaml",
+        "config": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -10519,7 +10519,7 @@
         },
         "config": {
           "kind": "config",
-          "filename": "config_kimmel_unwa_ft2_bleedless.yaml",
+          "filename": "config_kimmel_unwa_ft.yaml",
           "sha256": null
         },
         "additional": []
@@ -10961,7 +10961,7 @@
       "stems": [],
       "links": {
         "checkpoint": "https://huggingface.co/pcunwa/BS-Roformer-Revive/resolve/main/bs_roformer_revive2.ckpt",
-        "config": "https://github.com/engdahlz/stemsep-models/releases/download/models-v2-2026-01-01/unwa-revive-2.yaml",
+        "config": "https://huggingface.co/pcunwa/BS-Roformer-Revive/resolve/main/config.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -10972,7 +10972,7 @@
         },
         "config": {
           "kind": "config",
-          "filename": "model.yaml",
+          "filename": "config.yaml",
           "sha256": null
         },
         "additional": []

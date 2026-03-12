@@ -104,18 +104,18 @@ def main() -> int:
     # Ensure the backend uses the repo venv (avoids issues with system Python versions).
     child_env = os.environ.copy()
     if "STEMSEP_PYTHON" not in child_env:
-        # Prefer the current interpreter (this script is typically run from the desired venv).
-        if sys.executable:
+        # Prefer project-local virtualenvs over whichever Python launched this helper.
+        # This avoids accidentally routing the backend through a system/conda interpreter
+        # that lacks the repo's inference dependencies.
+        preferred_pythons = [
+            _repo_root() / ".venv" / "Scripts" / "python.exe",
+            _repo_root() / "StemSepApp" / ".venv" / "Scripts" / "python.exe",
+        ]
+        picked = next((path for path in preferred_pythons if path.exists()), None)
+        if picked is not None:
+            child_env["STEMSEP_PYTHON"] = str(picked)
+        elif sys.executable:
             child_env["STEMSEP_PYTHON"] = sys.executable
-        else:
-            # Fallbacks for older setups.
-            venv_python = _repo_root() / ".venv" / "Scripts" / "python.exe"
-            if venv_python.exists():
-                child_env["STEMSEP_PYTHON"] = str(venv_python)
-            else:
-                venv_python = _repo_root() / "StemSepApp" / ".venv" / "Scripts" / "python.exe"
-                if venv_python.exists():
-                    child_env["STEMSEP_PYTHON"] = str(venv_python)
 
     proc = subprocess.Popen(
         cmd,

@@ -1,8 +1,6 @@
 import { useMemo } from "react";
 import { AlertTriangle, Download, X } from "lucide-react";
 
-import { Progress } from "../ui/progress";
-
 export type MissingModelReason = "not_installed";
 
 export type MissingModel = {
@@ -192,10 +190,18 @@ export function MissingModelsDialog(props: MissingModelsDialogProps) {
                               {Math.round(progress)}%
                             </span>
                           </div>
-                          <Progress
-                            value={progress}
-                            className="h-1.5 bg-slate-900/8"
-                          />
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-900/8">
+                            <div
+                              className={`h-full rounded-full transition-[width] duration-300 ease-out ${
+                                model?.downloadError
+                                  ? "bg-rose-400/90"
+                                  : isPaused
+                                    ? "bg-amber-400/90"
+                                    : "bg-[linear-gradient(90deg,rgba(120,145,199,0.95),rgba(96,118,176,0.95),rgba(80,97,154,0.98))]"
+                              }`}
+                              style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                            />
+                          </div>
                           {model?.downloadError && (
                             <div className="text-[12px] text-rose-700/88">
                               {model.downloadError}

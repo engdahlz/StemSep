@@ -37,11 +37,11 @@
         "engine": "msst_builtin",
         "model_type": "mel_band_roformer",
         "config_ref": "config_melbandroformer_inst.yaml",
-        "checkpoint_ref": "melband_roformer_inst_v1e_plus.ckpt",
+        "checkpoint_ref": "inst_v1e_plus.ckpt",
         "install_mode": "direct",
         "required_files": [
           "config_melbandroformer_inst.yaml",
-          "melband_roformer_inst_v1e_plus.ckpt"
+          "inst_v1e_plus.ckpt"
         ]
       },
       "status": {
@@ -104,11 +104,11 @@
       "runtime": {
         "engine": "msst_builtin",
         "model_type": "bs_roformer",
-        "config_ref": "model.yaml",
+        "config_ref": "karaoke_bs_roformer_anvuew.yaml",
         "checkpoint_ref": "karaoke_bs_roformer_anvuew.ckpt",
         "install_mode": "direct",
         "required_files": [
-          "model.yaml",
+          "karaoke_bs_roformer_anvuew.yaml",
           "karaoke_bs_roformer_anvuew.ckpt"
         ]
       },
@@ -189,12 +189,12 @@
       "runtime": {
         "engine": "msst_builtin",
         "model_type": "scnet",
-        "config_ref": "config.yaml",
+        "config_ref": "config_musdb18_scnet_large_starrytong.yaml",
         "checkpoint_ref": "SCNet-large_starrytong_fixed.ckpt",
-        "install_mode": "manual",
-        "requires_manual_assets": true,
+        "install_mode": "direct",
+        "requires_manual_assets": false,
         "required_files": [
-          "config.yaml",
+          "config_musdb18_scnet_large_starrytong.yaml",
           "SCNet-large_starrytong_fixed.ckpt"
         ]
       },

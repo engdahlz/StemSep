@@ -70,6 +70,10 @@ export function SimplePresetPicker({
 
   const recommended = useMemo(() => filtered.filter(presetIsRecommendedForSimple).slice(0, 6), [filtered])
   const others = useMemo(() => filtered.filter(p => !presetIsRecommendedForSimple(p)), [filtered])
+  const selectedPreset = useMemo(
+    () => presets.find((preset) => preset.id === selectedPresetId) || null,
+    [presets, selectedPresetId],
+  )
 
   return (
     <div className="space-y-4">
@@ -165,6 +169,22 @@ export function SimplePresetPicker({
           >
             Reset
           </button>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.15rem] border border-white/55 bg-white/42 px-4 py-3">
+          <div className="min-w-0">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+              Selected Preset
+            </div>
+            <div className="mt-1 truncate text-[15px] tracking-[-0.02em] text-slate-800">
+              {selectedPreset?.name || "None selected"}
+            </div>
+          </div>
+          {selectedPreset && (
+            <div className="rounded-full border border-emerald-300/55 bg-emerald-50/80 px-3 py-1 text-[12px] text-emerald-700">
+              Active
+            </div>
+          )}
         </div>
       </div>
 

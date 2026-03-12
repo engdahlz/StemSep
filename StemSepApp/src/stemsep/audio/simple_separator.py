@@ -50,7 +50,7 @@ class SimpleSeparator:
     # Model filename mappings (our model_id -> audio-separator filename)
     MODEL_FILENAMES = {
         # Unwa Roformer models
-        "unwa-inst-v1e-plus": "melband_roformer_inst_v1e_plus.ckpt",
+        "unwa-inst-v1e-plus": "inst_v1e_plus.ckpt",
         "unwa-inst-v1e": "melband_roformer_inst_v1e.ckpt",
         "unwa-inst-v1": "melband_roformer_inst_v1.ckpt",
         "unwa-inst-v1-plus": "melband_roformer_inst_v1_plus.ckpt",

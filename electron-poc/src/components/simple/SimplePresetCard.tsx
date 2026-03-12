@@ -192,6 +192,34 @@ export function SimplePresetCard({
         <RatingMeter label="Quality" value={quality} />
         <RatingMeter label="Speed" value={speed} />
       </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3">
+        {selected ? (
+          <div className="rounded-full border border-emerald-300/55 bg-emerald-50/82 px-3 py-1.5 text-[12px] text-emerald-700">
+            Selected
+          </div>
+        ) : (
+          <div className="text-[12px] text-slate-500">
+            Click to make this the active preset
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            onSelect()
+          }}
+          className={cn(
+            'rounded-full border px-4 py-2 text-[13px] tracking-[-0.2px] transition-all',
+            selected
+              ? 'border-white/70 bg-white/80 text-slate-700'
+              : 'border-white/65 bg-white/68 text-slate-700 hover:bg-white/84 hover:text-slate-900'
+          )}
+        >
+          {selected ? 'Selected preset' : 'Choose preset'}
+        </button>
+      </div>
     </div>
   )
 }

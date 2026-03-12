@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Layers, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, Layers, Search } from "lucide-react";
 
 import { logger } from "../utils/logger";
 import { Model, useStore } from "../stores/useStore";
@@ -61,6 +61,8 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
   const [sortOpen, setSortOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [detailsModel, setDetailsModel] = useState<Model | null>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadModels = async () => {
@@ -97,6 +99,19 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
     }, 50);
     return () => window.clearTimeout(timer);
   }, [models, preSelectedModel]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setShowBackToTop(container.scrollTop > 420);
+    };
+
+    handleScroll();
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const architectures = useMemo(() => {
     const values = Array.from(
@@ -191,8 +206,12 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
     }
   };
 
+  const handleBackToTop = () => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
-    <PageShell>
+    <PageShell contentRef={scrollContainerRef}>
       <div className="relative z-10 mx-auto min-h-full w-full max-w-[900px] px-6 pb-12 pt-20">
         <div className="mb-8">
           <h1 className="text-[32px] font-normal tracking-[-1.2px] text-white">
@@ -338,6 +357,20 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
           onRemove={handleRemove}
         />
       )}
+
+      <button
+        type="button"
+        onClick={handleBackToTop}
+        aria-label="Back to top"
+        className={`fixed bottom-8 right-8 z-40 flex items-center gap-2 rounded-full border border-white/18 bg-white/12 px-4 py-2 text-[13px] tracking-[-0.2px] text-white/82 shadow-xl shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/18 hover:text-white ${
+          showBackToTop
+            ? "pointer-events-auto translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-4 opacity-0"
+        }`}
+      >
+        <ChevronUp className="h-3.5 w-3.5" />
+        <span>Back to top</span>
+      </button>
     </PageShell>
   );
 }

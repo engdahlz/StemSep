@@ -281,6 +281,8 @@ export function ConfigurePage({
   const [advancedParamsDirty, setAdvancedParamsDirty] = useState(false);
 
   const [missingDialogOpen, setMissingDialogOpen] = useState(false);
+  const [pendingPresetMissingPromptId, setPendingPresetMissingPromptId] =
+    useState<string | null>(null);
   const [backendPreflight, setBackendPreflight] =
     useState<SeparationPreflightReport | null>(null);
   const [isPreflightLoading, setIsPreflightLoading] = useState(false);
@@ -493,15 +495,22 @@ export function ConfigurePage({
   }, [ensembleConfig]);
 
   useEffect(() => {
-    if (missingModels.length > 0) {
-      setMissingDialogOpen(true);
-    } else {
+    if (missingModels.length === 0) {
       setMissingDialogOpen(false);
     }
   }, [missingModels.length]);
 
-  // Check if separation can proceed (no missing dependencies)
-  const canStartSeparation = separationPlan.canProceed;
+  useEffect(() => {
+    if (mode !== "simple" || !pendingPresetMissingPromptId) return;
+    if (selectedPresetId !== pendingPresetMissingPromptId) return;
+
+    if (missingModels.length > 0) {
+      setMissingDialogOpen(true);
+    }
+
+    setPendingPresetMissingPromptId(null);
+  }, [missingModels.length, mode, pendingPresetMissingPromptId, selectedPresetId]);
+
   const plannedModelIds = useMemo(() => {
     const ids = new Set<string>();
 
@@ -853,7 +862,18 @@ export function ConfigurePage({
       }
     }
 
+    if (missingModels.length > 0) {
+      setMissingDialogOpen(true);
+      toast.error("Install the required model before saving this configuration.");
+      return;
+    }
+
     onConfirm(effectiveConfig);
+  };
+
+  const handleSelectPreset = (presetId: string) => {
+    setSelectedPresetId(presetId);
+    setPendingPresetMissingPromptId(presetId);
   };
 
   useEffect(() => {
@@ -998,7 +1018,7 @@ export function ConfigurePage({
               <SimplePresetPicker
                 presets={presets}
                 selectedPresetId={selectedPresetId}
-                onSelectPreset={setSelectedPresetId}
+                onSelectPreset={handleSelectPreset}
                 availability={availability}
               />
 
@@ -1918,7 +1938,6 @@ export function ConfigurePage({
           <Button
             onClick={handleConfirm}
             disabled={
-              !canStartSeparation ||
               (!selectedPresetId && mode === "simple") ||
               (mode === "advanced" && !isEnsembleMode && !selectedModelId) ||
               (mode === "advanced" &&

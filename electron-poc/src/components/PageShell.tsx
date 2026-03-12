@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 
 import { cn } from "../lib/utils";
 
@@ -7,6 +7,7 @@ type PageShellProps = {
   className?: string;
   contentClassName?: string;
   scroll?: boolean;
+  contentRef?: Ref<HTMLDivElement>;
 };
 
 export function PageShell({
@@ -14,6 +15,7 @@ export function PageShell({
   className,
   contentClassName,
   scroll = true,
+  contentRef,
 }: PageShellProps) {
   return (
     <div
@@ -24,9 +26,10 @@ export function PageShell({
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-xl" />
       <div
+        ref={contentRef}
         className={cn(
           "relative z-10 min-h-0 flex-1 scroll-smooth",
-          scroll && "overflow-y-auto",
+          scroll && "stemsep-page-scroll overflow-y-auto",
           contentClassName,
         )}
       >

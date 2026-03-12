@@ -215,7 +215,6 @@ function App() {
           <SeparatePage
             onNavigateToModels={handleNavigateToModels}
             onNavigateToConfigure={handleNavigateToConfigure}
-            onNavigateToResults={() => setCurrentPage("results")}
             pendingSeparationConfig={pendingSeparationConfig}
             onClearPendingConfig={() => setPendingSeparationConfig(null)}
           />
@@ -291,7 +290,7 @@ function App() {
           />
           {currentPage !== "configure" && (
             <div className="pointer-events-none fixed left-0 right-0 top-5 z-30 flex justify-center">
-              <h1 className="text-[28px] font-normal tracking-[-1px] text-white drop-shadow-lg">
+              <h1 className="stemsep-app-title text-[29px] tracking-[-1.1px] text-white">
                 StemSep
               </h1>
             </div>
