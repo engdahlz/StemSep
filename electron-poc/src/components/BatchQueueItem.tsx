@@ -31,8 +31,8 @@ const getPhaseLabel = (phase: ProcessingPhase): string => {
 }
 
 // Helper to safely get filename
-const getFileName = (path: string) => {
-    return path.replace(/^.*[\/]/, '')
+const getFileName = (path: string, displayName?: string) => {
+    return displayName || path.replace(/^.*[\/]/, '')
 }
 
 interface BatchQueueItemProps {
@@ -101,7 +101,7 @@ export const BatchQueueItem = memo(({ item, onRemove, onPreview }: BatchQueueIte
             <div className="flex-1 min-w-0 grid gap-1">
                 <div className="flex items-center justify-between">
                     <span className="text-sm font-medium truncate text-foreground" title={item.file}>
-                        {getFileName(item.file)}
+                        {getFileName(item.file, item.displayName)}
                     </span>
 
                     {/* Progress Badge with ETR */}

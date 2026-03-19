@@ -270,6 +270,12 @@ try {
     "import psutil, yaml, aiohttp; print('OK imports:', 'psutil', psutil.__version__, 'yaml', getattr(yaml,'__version__','?'), 'aiohttp', aiohttp.__version__)"
   ) -WorkingDirectory $script:BackendDir
 
+  Write-Log "Verifying FNO runtime support (neuralop.models.FNO1d)..."
+  Exec -FilePath $venvPython -Arguments @(
+    "-c",
+    "from neuralop.models import FNO1d; print('OK neuralop FNO1d import')"
+  ) -WorkingDirectory $script:BackendDir
+
   # CUDA readiness checks (best-effort; do not fail setup)
   Write-Log "Checking CUDA readiness (best-effort)..."
   try {

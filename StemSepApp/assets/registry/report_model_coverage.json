@@ -1,0 +1,2418 @@
+{
+  "generated_at": "2026-03-17T17:11:46.228897Z",
+  "registry": "C:\\Users\\engdahlz\\StemSep\\StemSepApp\\assets\\registry\\models.v2.source.json",
+  "reports": [
+    "C:\\Users\\engdahlz\\StemSep\\Modellista för ljudseparation.docx",
+    "C:\\Users\\engdahlz\\StemSep\\deep-research-report.md"
+  ],
+  "counts": {
+    "blocked_non_public": 11,
+    "direct": 136,
+    "manual_import": 56
+  },
+  "rows": [
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer 1297 (Viperx)",
+      "display_name": "BS-Roformer 1297 (Viperx)",
+      "model_ids": [
+        "bs-roformer-viperx-1297"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer 1296 (Viperx)",
+      "display_name": "BS-Roformer 1296 (Viperx)",
+      "model_ids": [
+        "bs-roformer-viperx-1296"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_368_sdr_12.9628.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer Resurrection Inst (Unwa)",
+      "display_name": "BS-Roformer Resurrection Inst (Unwa)",
+      "model_ids": [
+        "gabox-resurrection"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer Revive (Unwa)",
+      "display_name": "BS-Roformer Revive (Unwa)",
+      "model_ids": [
+        "unwa-revive-2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/BS-Roformer-Revive",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer Revive (Unwa)",
+      "display_name": "BS-Roformer Revive (Unwa)",
+      "model_ids": [
+        "unwa-revive-3e"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/BS-Roformer-Revive",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer HyperACE v2 Inst (Unwa)",
+      "display_name": "BS-Roformer HyperACE v2 Inst (Unwa)",
+      "model_ids": [
+        "unwa-hyperace-v2-inst"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer HyperACE v2 Voc (Unwa)",
+      "display_name": "BS-Roformer HyperACE v2 Voc (Unwa)",
+      "model_ids": [
+        "unwa-hyperace-v2-voc"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer Inst-FNO (Unwa)",
+      "display_name": "BS-Roformer Inst-FNO (Unwa)",
+      "model_ids": [
+        "unwa-inst-fno"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer Large Inst (Unwa)",
+      "display_name": "BS-Roformer Large Inst (Unwa)",
+      "model_ids": [
+        "bs-roformer-large-inst"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/BS-Roformer-Large-Inst",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-EXP-SiameseRoformer (Unwa)",
+      "display_name": "BS-EXP-SiameseRoformer (Unwa)",
+      "model_ids": [
+        "unwa-bs-exp-siamese-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/BS-EXP-SiameseRoformer",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer Inst-EXP-Value-Residual",
+      "display_name": "BS-Roformer Inst-EXP-Value-Residual",
+      "model_ids": [
+        "bs-roformer-inst-exp-value-residual"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/BS-Roformer-Inst-EXP-Value-Residual",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer SW (6 stems) (ZFTurbo/jarredou)",
+      "display_name": "BS-Roformer SW (6 stems) (ZFTurbo/jarredou)",
+      "model_ids": [
+        "bs-roformer-4-stems"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/jarredou/BS-ROFO-SW-Fixed",
+      "status_text": "Hugging Face (jarredou)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer splifft / FP16 (undef13)",
+      "display_name": "BS-Roformer splifft / FP16 (undef13)",
+      "model_ids": [
+        "unwa-bs-exp-siamese-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Omnämnd som existerande Colab/modell, men ingen specifik nerladdnings-URL är bifogad källmaterialet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer splifft / FP16 (undef13)",
+      "display_name": "BS-Roformer splifft / FP16 (undef13)",
+      "model_ids": [
+        "gabox-last-bs-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Omnämnd som existerande Colab/modell, men ingen specifik nerladdnings-URL är bifogad källmaterialet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer splifft / FP16 (undef13)",
+      "display_name": "BS-Roformer splifft / FP16 (undef13)",
+      "model_ids": [
+        "bs-roformer-viperx-1297"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Omnämnd som existerande Colab/modell, men ingen specifik nerladdnings-URL är bifogad källmaterialet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer splifft / FP16 (undef13)",
+      "display_name": "BS-Roformer splifft / FP16 (undef13)",
+      "model_ids": [
+        "bs-roformer-viperx-1296"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Omnämnd som existerande Colab/modell, men ingen specifik nerladdnings-URL är bifogad källmaterialet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer splifft / FP16 (undef13)",
+      "display_name": "BS-Roformer splifft / FP16 (undef13)",
+      "model_ids": [
+        "bs-roformer-large-inst"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Omnämnd som existerande Colab/modell, men ingen specifik nerladdnings-URL är bifogad källmaterialet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer splifft / FP16 (undef13)",
+      "display_name": "BS-Roformer splifft / FP16 (undef13)",
+      "model_ids": [
+        "bs-roformer-karaoke-becruily"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Omnämnd som existerande Colab/modell, men ingen specifik nerladdnings-URL är bifogad källmaterialet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer splifft / FP16 (undef13)",
+      "display_name": "BS-Roformer splifft / FP16 (undef13)",
+      "model_ids": [
+        "bs-roformer-inst-exp-value-residual"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Omnämnd som existerande Colab/modell, men ingen specifik nerladdnings-URL är bifogad källmaterialet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer splifft / FP16 (undef13)",
+      "display_name": "BS-Roformer splifft / FP16 (undef13)",
+      "model_ids": [
+        "bs-roformer-4-stems"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Omnämnd som existerande Colab/modell, men ingen specifik nerladdnings-URL är bifogad källmaterialet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer splifft / FP16 (undef13)",
+      "display_name": "BS-Roformer splifft / FP16 (undef13)",
+      "model_ids": [
+        "bs-roformer-1053"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Omnämnd som existerande Colab/modell, men ingen specifik nerladdnings-URL är bifogad källmaterialet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer splifft / FP16 (undef13)",
+      "display_name": "BS-Roformer splifft / FP16 (undef13)",
+      "model_ids": [
+        "anvuew-karaoke"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Omnämnd som existerande Colab/modell, men ingen specifik nerladdnings-URL är bifogad källmaterialet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS-Roformer splifft / FP16 (undef13)",
+      "display_name": "BS-Roformer splifft / FP16 (undef13)",
+      "model_ids": [
+        "anvuew-bs-roformer-mag"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Omnämnd som existerande Colab/modell, men ingen specifik nerladdnings-URL är bifogad källmaterialet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS_RoFormer_mag (Anvuew)",
+      "display_name": "BS_RoFormer_mag (Anvuew)",
+      "model_ids": [
+        "anvuew-bs-roformer-mag"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew",
+      "status_text": "Hugging Face (anvuew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer MUSDB18HQ (ZFTurbo)",
+      "display_name": "BS Roformer MUSDB18HQ (ZFTurbo)",
+      "model_ids": [
+        "drypd-side-extraction"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.12",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.12 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2025.07 / MVSep Team",
+      "display_name": "BS Roformer 2025.07 / MVSep Team",
+      "model_ids": [
+        "unwa-bs-exp-siamese-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Modellen är helt exklusiv för webbtjänsten MVSEP och dess backend-infrastruktur)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2025.07 / MVSep Team",
+      "display_name": "BS Roformer 2025.07 / MVSep Team",
+      "model_ids": [
+        "gabox-last-bs-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Modellen är helt exklusiv för webbtjänsten MVSEP och dess backend-infrastruktur)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2025.07 / MVSep Team",
+      "display_name": "BS Roformer 2025.07 / MVSep Team",
+      "model_ids": [
+        "bs-roformer-viperx-1297"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Modellen är helt exklusiv för webbtjänsten MVSEP och dess backend-infrastruktur)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2025.07 / MVSep Team",
+      "display_name": "BS Roformer 2025.07 / MVSep Team",
+      "model_ids": [
+        "bs-roformer-viperx-1296"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Modellen är helt exklusiv för webbtjänsten MVSEP och dess backend-infrastruktur)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2025.07 / MVSep Team",
+      "display_name": "BS Roformer 2025.07 / MVSep Team",
+      "model_ids": [
+        "bs-roformer-large-inst"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Modellen är helt exklusiv för webbtjänsten MVSEP och dess backend-infrastruktur)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2025.07 / MVSep Team",
+      "display_name": "BS Roformer 2025.07 / MVSep Team",
+      "model_ids": [
+        "bs-roformer-karaoke-becruily"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Modellen är helt exklusiv för webbtjänsten MVSEP och dess backend-infrastruktur)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2025.07 / MVSep Team",
+      "display_name": "BS Roformer 2025.07 / MVSep Team",
+      "model_ids": [
+        "bs-roformer-inst-exp-value-residual"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Modellen är helt exklusiv för webbtjänsten MVSEP och dess backend-infrastruktur)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2025.07 / MVSep Team",
+      "display_name": "BS Roformer 2025.07 / MVSep Team",
+      "model_ids": [
+        "bs-roformer-4-stems"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Modellen är helt exklusiv för webbtjänsten MVSEP och dess backend-infrastruktur)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2025.07 / MVSep Team",
+      "display_name": "BS Roformer 2025.07 / MVSep Team",
+      "model_ids": [
+        "bs-roformer-1053"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Modellen är helt exklusiv för webbtjänsten MVSEP och dess backend-infrastruktur)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2025.07 / MVSep Team",
+      "display_name": "BS Roformer 2025.07 / MVSep Team",
+      "model_ids": [
+        "anvuew-karaoke"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Modellen är helt exklusiv för webbtjänsten MVSEP och dess backend-infrastruktur)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2025.07 / MVSep Team",
+      "display_name": "BS Roformer 2025.07 / MVSep Team",
+      "model_ids": [
+        "anvuew-bs-roformer-mag"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Modellen är helt exklusiv för webbtjänsten MVSEP och dess backend-infrastruktur)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.08 (MVSep)",
+      "display_name": "BS Roformer 2024.08 (MVSep)",
+      "model_ids": [
+        "unwa-bs-exp-siamese-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.08 (MVSep)",
+      "display_name": "BS Roformer 2024.08 (MVSep)",
+      "model_ids": [
+        "gabox-last-bs-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.08 (MVSep)",
+      "display_name": "BS Roformer 2024.08 (MVSep)",
+      "model_ids": [
+        "bs-roformer-viperx-1297"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.08 (MVSep)",
+      "display_name": "BS Roformer 2024.08 (MVSep)",
+      "model_ids": [
+        "bs-roformer-viperx-1296"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.08 (MVSep)",
+      "display_name": "BS Roformer 2024.08 (MVSep)",
+      "model_ids": [
+        "bs-roformer-large-inst"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.08 (MVSep)",
+      "display_name": "BS Roformer 2024.08 (MVSep)",
+      "model_ids": [
+        "bs-roformer-karaoke-becruily"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.08 (MVSep)",
+      "display_name": "BS Roformer 2024.08 (MVSep)",
+      "model_ids": [
+        "bs-roformer-inst-exp-value-residual"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.08 (MVSep)",
+      "display_name": "BS Roformer 2024.08 (MVSep)",
+      "model_ids": [
+        "bs-roformer-4-stems"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.08 (MVSep)",
+      "display_name": "BS Roformer 2024.08 (MVSep)",
+      "model_ids": [
+        "bs-roformer-1053"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.08 (MVSep)",
+      "display_name": "BS Roformer 2024.08 (MVSep)",
+      "model_ids": [
+        "anvuew-karaoke"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.08 (MVSep)",
+      "display_name": "BS Roformer 2024.08 (MVSep)",
+      "model_ids": [
+        "anvuew-bs-roformer-mag"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.04 (MVSep)",
+      "display_name": "BS Roformer 2024.04 (MVSep)",
+      "model_ids": [
+        "unwa-bs-exp-siamese-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.04 (MVSep)",
+      "display_name": "BS Roformer 2024.04 (MVSep)",
+      "model_ids": [
+        "gabox-last-bs-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.04 (MVSep)",
+      "display_name": "BS Roformer 2024.04 (MVSep)",
+      "model_ids": [
+        "bs-roformer-viperx-1297"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.04 (MVSep)",
+      "display_name": "BS Roformer 2024.04 (MVSep)",
+      "model_ids": [
+        "bs-roformer-viperx-1296"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.04 (MVSep)",
+      "display_name": "BS Roformer 2024.04 (MVSep)",
+      "model_ids": [
+        "bs-roformer-large-inst"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.04 (MVSep)",
+      "display_name": "BS Roformer 2024.04 (MVSep)",
+      "model_ids": [
+        "bs-roformer-karaoke-becruily"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.04 (MVSep)",
+      "display_name": "BS Roformer 2024.04 (MVSep)",
+      "model_ids": [
+        "bs-roformer-inst-exp-value-residual"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.04 (MVSep)",
+      "display_name": "BS Roformer 2024.04 (MVSep)",
+      "model_ids": [
+        "bs-roformer-4-stems"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.04 (MVSep)",
+      "display_name": "BS Roformer 2024.04 (MVSep)",
+      "model_ids": [
+        "bs-roformer-1053"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.04 (MVSep)",
+      "display_name": "BS Roformer 2024.04 (MVSep)",
+      "model_ids": [
+        "anvuew-karaoke"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.04 (MVSep)",
+      "display_name": "BS Roformer 2024.04 (MVSep)",
+      "model_ids": [
+        "anvuew-bs-roformer-mag"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.02 (MVSep)",
+      "display_name": "BS Roformer 2024.02 (MVSep)",
+      "model_ids": [
+        "unwa-bs-exp-siamese-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.02 (MVSep)",
+      "display_name": "BS Roformer 2024.02 (MVSep)",
+      "model_ids": [
+        "gabox-last-bs-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.02 (MVSep)",
+      "display_name": "BS Roformer 2024.02 (MVSep)",
+      "model_ids": [
+        "bs-roformer-viperx-1297"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.02 (MVSep)",
+      "display_name": "BS Roformer 2024.02 (MVSep)",
+      "model_ids": [
+        "bs-roformer-viperx-1296"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.02 (MVSep)",
+      "display_name": "BS Roformer 2024.02 (MVSep)",
+      "model_ids": [
+        "bs-roformer-large-inst"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.02 (MVSep)",
+      "display_name": "BS Roformer 2024.02 (MVSep)",
+      "model_ids": [
+        "bs-roformer-karaoke-becruily"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.02 (MVSep)",
+      "display_name": "BS Roformer 2024.02 (MVSep)",
+      "model_ids": [
+        "bs-roformer-inst-exp-value-residual"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.02 (MVSep)",
+      "display_name": "BS Roformer 2024.02 (MVSep)",
+      "model_ids": [
+        "bs-roformer-4-stems"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.02 (MVSep)",
+      "display_name": "BS Roformer 2024.02 (MVSep)",
+      "model_ids": [
+        "bs-roformer-1053"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.02 (MVSep)",
+      "display_name": "BS Roformer 2024.02 (MVSep)",
+      "model_ids": [
+        "anvuew-karaoke"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Roformer 2024.02 (MVSep)",
+      "display_name": "BS Roformer 2024.02 (MVSep)",
+      "model_ids": [
+        "anvuew-bs-roformer-mag"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "xlancelab MSR Models (9 stems)",
+      "display_name": "xlancelab MSR Models (9 stems)",
+      "model_ids": [
+        "xlancelab-msr-9stems"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/ModistAndrew/xlance-msr",
+      "status_text": "GitHub (ModistAndrew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "MVSep SATB Choir (Dry Paint Dealer Undr / ZFTurbo)",
+      "display_name": "MVSep SATB Choir (Dry Paint Dealer Undr / ZFTurbo)",
+      "model_ids": [],
+      "coverage_status": "blocked_non_public",
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "MVSep Choir",
+      "display_name": "MVSep Choir",
+      "model_ids": [],
+      "coverage_status": "blocked_non_public",
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Mamba2 (ZFTurbo)",
+      "display_name": "BS Mamba2 (ZFTurbo)",
+      "model_ids": [
+        "bs-mamba2"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.19",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.19 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "BS Conformer Medium (ZFTurbo)",
+      "display_name": "BS Conformer Medium (ZFTurbo)",
+      "model_ids": [
+        "bs-conformer-medium"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.18",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.18 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "Phantom Center/Similarity Extraction (Dry Paint Dealer Undr)",
+      "display_name": "Phantom Center/Similarity Extraction (Dry Paint Dealer Undr)",
+      "model_ids": [
+        "gilliaan-monostereo-dual-beta2"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Refererade som lokala nedladdningar via Discord/Google Drive vars länk ej bifogats)."
+    },
+    {
+      "report": "docx",
+      "source_name": "Modellnamn / Skapare",
+      "display_name": "Modellnamn / Skapare",
+      "model_ids": [],
+      "coverage_status": "blocked_non_public",
+      "url": null,
+      "status_text": "Nedladdningslänk / Status"
+    },
+    {
+      "report": "docx",
+      "source_name": "Kim Mel-Band-Roformer (KimberleyJSN)",
+      "display_name": "Kim Mel-Band-Roformer (KimberleyJSN)",
+      "model_ids": [
+        "mel-band-roformer-kim"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "Kim-Mel-Band-Roformer-FT (Unwa)",
+      "display_name": "Kim-Mel-Band-Roformer-FT (Unwa)",
+      "model_ids": [
+        "mel-band-roformer-kim"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "Big Beta 6X Vocals (Unwa)",
+      "display_name": "Big Beta 6X Vocals (Unwa)",
+      "model_ids": [
+        "unwa-big-beta-6x"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta6.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "Big Beta 7 Vocals (Unwa)",
+      "display_name": "Big Beta 7 Vocals (Unwa)",
+      "model_ids": [
+        "unwa-big-beta-7"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Refererad som en existerande Colab i dokumentet, men källkoden saknar en publik länk till själva viktfilen)."
+    },
+    {
+      "report": "docx",
+      "source_name": "Big Beta 5e / Beta 4 (Unwa)",
+      "display_name": "Big Beta 5e / Beta 4 (Unwa)",
+      "model_ids": [
+        "unwa-big-beta-5e"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta5e.ckpt)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Duality v1 & v2 (Unwa)",
+      "display_name": "Duality v1 (Unwa)",
+      "model_ids": [
+        "duality-v1-unwa"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Duality v1 & v2 (Unwa)",
+      "display_name": "Duality v2 (Unwa)",
+      "model_ids": [
+        "duality-v2-unwa"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "display_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "model_ids": [
+        "viperx-karaoke-1297"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "display_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "model_ids": [
+        "unwa-inst-v2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "display_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "model_ids": [
+        "unwa-inst-v1e-plus"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "display_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "model_ids": [
+        "unwa-inst-v1e"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "display_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "model_ids": [
+        "unwa-hyperace-v2-inst"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "display_name": "Mel-Band-Roformer-Inst v1e+ / v2 (Unwa)",
+      "model_ids": [
+        "mel-band-roformer-kim"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst",
+      "status_text": "Hugging Face (pcunwa)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv7 (Gabox)",
+      "display_name": "voc_fv7 (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv7beta3"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://huggingface.co/GaboxR67)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv7 (Gabox)",
+      "display_name": "voc_fv7 (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv7beta2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://huggingface.co/GaboxR67)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv7 (Gabox)",
+      "display_name": "voc_fv7 (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv7"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://huggingface.co/GaboxR67)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv6, voc_fv5, voc_fv4, voc_gabox (Gabox)",
+      "display_name": "voc_fv6 (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv6"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/melbandroformers/vocals/voc_fv6.ckpt",
+      "status_text": "Ladda ner.ckpt (fv6)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv6, voc_fv5, voc_fv4, voc_gabox (Gabox)",
+      "display_name": "voc_fv5 (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv5"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/melbandroformers/vocals/voc_fv6.ckpt",
+      "status_text": "Ladda ner.ckpt (fv6)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv6, voc_fv5, voc_fv4, voc_gabox (Gabox)",
+      "display_name": "voc_fv4 (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv4"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/melbandroformers/vocals/voc_fv6.ckpt",
+      "status_text": "Ladda ner.ckpt (fv6)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv6, voc_fv5, voc_fv4, voc_gabox (Gabox)",
+      "display_name": "voc_gabox (Gabox)",
+      "model_ids": [
+        "gabox-voc-gabox2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/melbandroformers/vocals/voc_fv6.ckpt",
+      "status_text": "Ladda ner.ckpt (fv6)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv6, voc_fv5, voc_fv4, voc_gabox (Gabox)",
+      "display_name": "voc_gabox (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv7beta3"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/melbandroformers/vocals/voc_fv6.ckpt",
+      "status_text": "Ladda ner.ckpt (fv6)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv6, voc_fv5, voc_fv4, voc_gabox (Gabox)",
+      "display_name": "voc_gabox (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv7beta2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/melbandroformers/vocals/voc_fv6.ckpt",
+      "status_text": "Ladda ner.ckpt (fv6)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv6, voc_fv5, voc_fv4, voc_gabox (Gabox)",
+      "display_name": "voc_gabox (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv7"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/melbandroformers/vocals/voc_fv6.ckpt",
+      "status_text": "Ladda ner.ckpt (fv6)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv6, voc_fv5, voc_fv4, voc_gabox (Gabox)",
+      "display_name": "voc_gabox (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv6"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/melbandroformers/vocals/voc_fv6.ckpt",
+      "status_text": "Ladda ner.ckpt (fv6)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv6, voc_fv5, voc_fv4, voc_gabox (Gabox)",
+      "display_name": "voc_gabox (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv5"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/melbandroformers/vocals/voc_fv6.ckpt",
+      "status_text": "Ladda ner.ckpt (fv6)"
+    },
+    {
+      "report": "docx",
+      "source_name": "voc_fv6, voc_fv5, voc_fv4, voc_gabox (Gabox)",
+      "display_name": "voc_gabox (Gabox)",
+      "model_ids": [
+        "gabox-voc-fv4"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/melbandroformers/vocals/voc_fv6.ckpt",
+      "status_text": "Ladda ner.ckpt (fv6)"
+    },
+    {
+      "report": "docx",
+      "source_name": "inst_gaboxFlowersV10 (Gabox)",
+      "display_name": "inst_gaboxFlowersV10 (Gabox)",
+      "model_ids": [
+        "gabox-inst-v7n"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67",
+      "status_text": "( https://huggingface.co/GaboxR67 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "inst_gaboxFlowersV10 (Gabox)",
+      "display_name": "inst_gaboxFlowersV10 (Gabox)",
+      "model_ids": [
+        "gabox-inst-v6n"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67",
+      "status_text": "( https://huggingface.co/GaboxR67 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "inst_gaboxFlowersV10 (Gabox)",
+      "display_name": "inst_gaboxFlowersV10 (Gabox)",
+      "model_ids": [
+        "gabox-inst-v6"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67",
+      "status_text": "( https://huggingface.co/GaboxR67 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "inst_gaboxFlowersV10 (Gabox)",
+      "display_name": "inst_gaboxFlowersV10 (Gabox)",
+      "model_ids": [
+        "gabox-inst-fv8b"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67",
+      "status_text": "( https://huggingface.co/GaboxR67 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "inst_gaboxFlowersV10 (Gabox)",
+      "display_name": "inst_gaboxFlowersV10 (Gabox)",
+      "model_ids": [
+        "gabox-inst-fv7z"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67",
+      "status_text": "( https://huggingface.co/GaboxR67 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "inst_gaboxFlowersV10 (Gabox)",
+      "display_name": "inst_gaboxFlowersV10 (Gabox)",
+      "model_ids": [
+        "gabox-inst-fv7b"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67",
+      "status_text": "( https://huggingface.co/GaboxR67 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "inst_gaboxFlowersV10 (Gabox)",
+      "display_name": "inst_gaboxFlowersV10 (Gabox)",
+      "model_ids": [
+        "gabox-inst-fv4-noise"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67",
+      "status_text": "( https://huggingface.co/GaboxR67 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "INSTV6 / INSTV6N / INSTV7N (Gabox)",
+      "display_name": "INSTV6 / INSTV6N / INSTV7N (Gabox)",
+      "model_ids": [
+        "gabox-inst-v6"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67",
+      "status_text": "( https://huggingface.co/GaboxR67 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "INSTV6 / INSTV6N / INSTV7N (Gabox)",
+      "display_name": "INSTV6 / INSTV6N / INSTV7N (Gabox)",
+      "model_ids": [
+        "gabox-inst-v6n"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67",
+      "status_text": "( https://huggingface.co/GaboxR67 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "INSTV6 / INSTV6N / INSTV7N (Gabox)",
+      "display_name": "INSTV6 / INSTV6N / INSTV7N (Gabox)",
+      "model_ids": [
+        "gabox-inst-v7n"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67",
+      "status_text": "( https://huggingface.co/GaboxR67 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "denoisedebleed (Gabox)",
+      "display_name": "denoisedebleed (Gabox)",
+      "model_ids": [
+        "gabox-denoise-debleed"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/denoisedebleed.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "Deux (Becruily)",
+      "display_name": "Deux (Becruily)",
+      "model_ids": [
+        "becruily-deux"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/becruily/mel-band-roformer-deux",
+      "status_text": "Hugging Face (becruily)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Mel-Band-Roformer-Karaoke (Becruily / Frazer)",
+      "display_name": "Mel-Band-Roformer-Karaoke (Becruily / Frazer)",
+      "model_ids": [
+        "viperx-karaoke-1297"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/becruily/mel-band-roformer-karaoke",
+      "status_text": "Hugging Face (becruily)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Mel-Band-Roformer-Karaoke (Becruily / Frazer)",
+      "display_name": "Mel-Band-Roformer-Karaoke (Becruily / Frazer)",
+      "model_ids": [
+        "mel-band-karaoke-becruily"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/becruily/mel-band-roformer-karaoke",
+      "status_text": "Hugging Face (becruily)"
+    },
+    {
+      "report": "docx",
+      "source_name": "small_karaoke_gaboxauf (Gabox / Aufr33)",
+      "display_name": "small_karaoke_gaboxauf (Gabox / Aufr33)",
+      "model_ids": [
+        "small-karaoke-gaboxauf"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Distribuerades privat i communityn och saknar en permanent HF-länk i dokumentet)."
+    },
+    {
+      "report": "docx",
+      "source_name": "last_bs_roformer (Gabox)",
+      "display_name": "last_bs_roformer (Gabox)",
+      "model_ids": [
+        "gabox-last-bs-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Experimentell status)."
+    },
+    {
+      "report": "docx",
+      "source_name": "FullnessVocalModel / kapm (Aname-Tommy)",
+      "display_name": "FullnessVocalModel / kapm (Aname-Tommy)",
+      "model_ids": [
+        "amane-kapm-vocal"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/Aname-Tommy/MelBandRoformers/blob/main/FullnessVocalModel.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "FullnessVocalModel / kapm (Aname-Tommy)",
+      "display_name": "FullnessVocalModel / kapm (Aname-Tommy)",
+      "model_ids": [
+        "amane-full-scratch"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/Aname-Tommy/MelBandRoformers/blob/main/FullnessVocalModel.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "MelBandRoformerSYHFTV3Epsilon (SYH99999)",
+      "display_name": "MelBandRoformerSYHFTV3Epsilon (SYH99999)",
+      "model_ids": [
+        "melband-roformer-syhftv3epsilon"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/SYH99999/MelBandRoformerSYHFTV3Epsilon/resolve/main/MelBandRoformerSYHFTV3Epsilon.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "Neo_InstVFX (neoculture)",
+      "display_name": "Neo_InstVFX (neoculture)",
+      "model_ids": [
+        "neo-instvfx"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/neoculture",
+      "status_text": "Hugging Face (neoculture)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Rifforge / Metal Roformer (Mesk)",
+      "display_name": "Rifforge / Metal Roformer (Mesk)",
+      "model_ids": [
+        "mesk-rifforge"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://huggingface.co/meskvlla33)"
+    },
+    {
+      "report": "docx",
+      "source_name": "gilliaan_MonoStereo_Dual_Beta1 / 2",
+      "display_name": "gilliaan_MonoStereo_Dual_Beta1 / 2",
+      "model_ids": [
+        "gilliaan-monostereo-dual-beta2"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/gilliaaan/Mel-Band-Roformer-MonoStereo-Duality",
+      "status_text": "Hugging Face (gilliaaan)"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Mono (Anvuew)",
+      "display_name": "De-Reverb Mono (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-room"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Mono (Anvuew)",
+      "display_name": "De-Reverb Mono (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-mono"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Mono (Anvuew)",
+      "display_name": "De-Reverb Mono (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-bs-225050"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Room (Anvuew)",
+      "display_name": "De-Reverb Room (Anvuew)",
+      "model_ids": [
+        "sucial-dereverb-fused"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_room",
+      "status_text": "Hugging Face (anvuew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Room (Anvuew)",
+      "display_name": "De-Reverb Room (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-v2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_room",
+      "status_text": "Hugging Face (anvuew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Room (Anvuew)",
+      "display_name": "De-Reverb Room (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-room"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_room",
+      "status_text": "Hugging Face (anvuew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Room (Anvuew)",
+      "display_name": "De-Reverb Room (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-mono"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_room",
+      "status_text": "Hugging Face (anvuew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Room (Anvuew)",
+      "display_name": "De-Reverb Room (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-bs-225050"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_room",
+      "status_text": "Hugging Face (anvuew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Dereverb-Echo_Mel_Band_Roformer Fused (Sucial)",
+      "display_name": "Dereverb-Echo_Mel_Band_Roformer Fused (Sucial)",
+      "model_ids": [
+        "viperx-karaoke-1297"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Dereverb-Echo_Mel_Band_Roformer Fused (Sucial)",
+      "display_name": "Dereverb-Echo_Mel_Band_Roformer Fused (Sucial)",
+      "model_ids": [
+        "sucial-dereverb-fused"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Dereverb-Echo_Mel_Band_Roformer Fused (Sucial)",
+      "display_name": "Dereverb-Echo_Mel_Band_Roformer Fused (Sucial)",
+      "model_ids": [
+        "mel-band-roformer-kim"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer)"
+    },
+    {
+      "report": "docx",
+      "source_name": "MelBand Denoise (Aufr33 / jarredou)",
+      "display_name": "MelBand Denoise (Aufr33 / jarredou)",
+      "model_ids": [
+        "aufr33-denoise-std"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/blob/4d5196fd9289813c55a6bbfe6872e1bb46963c25/denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "MelBand Denoise (Aufr33 / jarredou)",
+      "display_name": "MelBand Denoise (Aufr33 / jarredou)",
+      "model_ids": [
+        "aufr33-denoise-aggressive"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/blob/4d5196fd9289813c55a6bbfe6872e1bb46963c25/denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "Modellnamn / Skapare",
+      "display_name": "Modellnamn / Skapare",
+      "model_ids": [],
+      "coverage_status": "blocked_non_public",
+      "url": null,
+      "status_text": "Nedladdningslänk / Status"
+    },
+    {
+      "report": "docx",
+      "source_name": "SCNet XL (ZFTurbo)",
+      "display_name": "SCNet XL (ZFTurbo)",
+      "model_ids": [
+        "scnet-tran"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.13",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.13 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "SCNet XL (ZFTurbo)",
+      "display_name": "SCNet XL (ZFTurbo)",
+      "model_ids": [
+        "scnet-masked-xl"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.13",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.13 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "SCNet Tran (ZFTurbo)",
+      "display_name": "SCNet Tran (ZFTurbo)",
+      "model_ids": [
+        "scnet-tran"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.14",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.14 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "SCNet XL IHF (ZFTurbo)",
+      "display_name": "SCNet XL IHF (ZFTurbo)",
+      "model_ids": [
+        "scnet-tran"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.15",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.15 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "SCNet XL IHF (ZFTurbo)",
+      "display_name": "SCNet XL IHF (ZFTurbo)",
+      "model_ids": [
+        "scnet-masked-xl"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.15",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.15 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "SCNet Masked Small (ZFTurbo)",
+      "display_name": "SCNet Masked Small (ZFTurbo)",
+      "model_ids": [
+        "scnet-tran"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.16",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.16 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "SCNet Masked Small (ZFTurbo)",
+      "display_name": "SCNet Masked Small (ZFTurbo)",
+      "model_ids": [
+        "scnet-masked-xl"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.16",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.16 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "SCNet Masked XL IHF (ZFTurbo)",
+      "display_name": "SCNet Masked XL IHF (ZFTurbo)",
+      "model_ids": [
+        "scnet-masked-xl"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.17",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.17 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "SCNet-large_starrytong",
+      "display_name": "SCNet-large_starrytong",
+      "model_ids": [
+        "scnet-large"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Inbakad kod i specifika Colabs, inga direktlänkar existerar i underlaget)."
+    },
+    {
+      "report": "docx",
+      "source_name": "SCNet Difference/Sides (Dry Paint Dealer Undr)",
+      "display_name": "SCNet Difference/Sides (Dry Paint Dealer Undr)",
+      "model_ids": [
+        "drypd-side-extraction"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://drive.google.com/drive/folders/1ZSUw6ZuhJusv7HE5eMa-MORKA0XbSEht?usp=sharing",
+      "status_text": "( https://drive.google.com/drive/folders/1ZSUw6ZuhJusv7HE5eMa-MORKA0XbSEht?usp=sharing )"
+    },
+    {
+      "report": "docx",
+      "source_name": "Modellnamn / Skapare",
+      "display_name": "Modellnamn / Skapare",
+      "model_ids": [],
+      "coverage_status": "blocked_non_public",
+      "url": null,
+      "status_text": "Nedladdningslänk / Status"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-MDX-NET Inst HQ_1 & HQ_2",
+      "display_name": "UVR-MDX-NET Inst HQ_1",
+      "model_ids": [
+        "mdxnet-inst-hq-3"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_1.onnx",
+      "status_text": "Ladda ner HQ_1 (.onnx) Ladda ner HQ_2 (.onnx)"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-MDX-NET Inst HQ_1 & HQ_2",
+      "display_name": "UVR-MDX-NET Inst HQ_1",
+      "model_ids": [
+        "mdxnet-inst-hq-2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_1.onnx",
+      "status_text": "Ladda ner HQ_1 (.onnx) Ladda ner HQ_2 (.onnx)"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-MDX-NET Inst HQ_1 & HQ_2",
+      "display_name": "HQ_2",
+      "model_ids": [
+        "mdxnet-inst-hq-2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_1.onnx",
+      "status_text": "Ladda ner HQ_1 (.onnx) Ladda ner HQ_2 (.onnx)"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-MDX-NET Inst HQ_3",
+      "display_name": "UVR-MDX-NET Inst HQ_3",
+      "model_ids": [
+        "mdxnet-inst-hq-3"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_3.onnx",
+      "status_text": "Ladda ner HQ_3 (.onnx)"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-MDX-NET Inst HQ_4",
+      "display_name": "UVR-MDX-NET Inst HQ_4",
+      "model_ids": [
+        "mdxnet-inst-hq-3"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_4.onnx",
+      "status_text": "Ladda ner HQ_4 (.onnx)"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-MDX-NET Inst HQ_4",
+      "display_name": "UVR-MDX-NET Inst HQ_4",
+      "model_ids": [
+        "mdxnet-inst-hq-2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_4.onnx",
+      "status_text": "Ladda ner HQ_4 (.onnx)"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-MDX-NET Inst HQ_5",
+      "display_name": "UVR-MDX-NET Inst HQ_5",
+      "model_ids": [
+        "mdxnet-inst-hq-3"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_5.onnx",
+      "status_text": "Ladda ner HQ_5 (.onnx)"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-MDX-NET Inst HQ_5",
+      "display_name": "UVR-MDX-NET Inst HQ_5",
+      "model_ids": [
+        "mdxnet-inst-hq-2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_5.onnx",
+      "status_text": "Ladda ner HQ_5 (.onnx)"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-MDX-NET Karaoke 2 (karokee_4band_v2_sn)",
+      "display_name": "UVR-MDX-NET Karaoke 2 (karokee_4band_v2_sn)",
+      "model_ids": [
+        "mdxnet-inst-hq-2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models)"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-DeNoise / DeNoise Lite",
+      "display_name": "UVR-DeNoise / DeNoise Lite",
+      "model_ids": [
+        "uvr-denoise"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-DeNoise.pth",
+      "status_text": "Ladda ner.pth"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-DeNoise / DeNoise Lite",
+      "display_name": "UVR-DeNoise / DeNoise Lite",
+      "model_ids": [
+        "uvr-denoise-lite"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-DeNoise.pth",
+      "status_text": "Ladda ner.pth"
+    },
+    {
+      "report": "docx",
+      "source_name": "MDX23C DrumSep (jarredou / Aufr33)",
+      "display_name": "MDX23C DrumSep (jarredou / Aufr33)",
+      "model_ids": [
+        "mdx23c-drumsep-6stem"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://github.com/jarredou/models/releases/tag/aufr33-jarredou_MDX23C_DrumSep_model_v0.1)"
+    },
+    {
+      "report": "docx",
+      "source_name": "MDX23C DrumSep (jarredou / Aufr33)",
+      "display_name": "MDX23C DrumSep (jarredou / Aufr33)",
+      "model_ids": [
+        "mdx23c-drumsep-5stem"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://github.com/jarredou/models/releases/tag/aufr33-jarredou_MDX23C_DrumSep_model_v0.1)"
+    },
+    {
+      "report": "docx",
+      "source_name": "MDX23C 8K FFT InstVoc HQ 2",
+      "display_name": "MDX23C 8K FFT InstVoc HQ 2",
+      "model_ids": [
+        "mdx23c-instvoc-hq-2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/deton24/Colab-for-new-MDX_UVR_models/releases/download/v1.0.0/MDX23C-8KFFT-InstVoc_HQ_2.ckpt",
+      "status_text": "Ladda ner.ckpt (deton24)"
+    },
+    {
+      "report": "docx",
+      "source_name": "MDX23C Similarity (wesleyr36)",
+      "display_name": "MDX23C Similarity (wesleyr36)",
+      "model_ids": [
+        "mdx23c-similarity"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.10",
+      "status_text": "( https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.10 )"
+    },
+    {
+      "report": "docx",
+      "source_name": "MDX-UVR Inst Main / Inst 3 / Kim Inst / Kim Vocal 1 & 2",
+      "display_name": "MDX-UVR Inst Main / Inst 3 / Kim Inst / Kim Vocal 1",
+      "model_ids": [
+        "mdxnet-inst-hq-3"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models",
+      "status_text": "( https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models )"
+    },
+    {
+      "report": "docx",
+      "source_name": "MDX-UVR Inst Main / Inst 3 / Kim Inst / Kim Vocal 1 & 2",
+      "display_name": "2",
+      "model_ids": [
+        "mdx23c-instvoc-hq-2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models",
+      "status_text": "( https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models )"
+    },
+    {
+      "report": "docx",
+      "source_name": "Modellnamn / Skapare",
+      "display_name": "Modellnamn / Skapare",
+      "model_ids": [],
+      "coverage_status": "blocked_non_public",
+      "url": null,
+      "status_text": "Nedladdningslänk / Status"
+    },
+    {
+      "report": "docx",
+      "source_name": "HTDemucs_ft (Demucs v4)",
+      "display_name": "HTDemucs_ft (Demucs v4)",
+      "model_ids": [
+        "htdemucs-ft"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://dl.fbaipublicfiles.com/demucs/mdx_final/0d19c1c6-0f06f20e.th",
+      "status_text": "Ladda ner.th (Meta)"
+    },
+    {
+      "report": "docx",
+      "source_name": "HTDemucs_6s (Demucs v4)",
+      "display_name": "HTDemucs_6s (Demucs v4)",
+      "model_ids": [
+        "htdemucs-6s"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/htdemucs_6s.yaml",
+      "status_text": "Ladda ner.yaml (Hämtar vikten automatiskt)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Demucs v3 (mdx / mdx_extra)",
+      "display_name": "Demucs v3 (mdx / mdx_extra)",
+      "model_ids": [
+        "demucs-v3-mdx"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://dl.fbaipublicfiles.com/demucs/mdx_final/6b9c2ca1-3fd82607.th",
+      "status_text": "Ladda ner.th (Meta)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Demucs v3 (mdx / mdx_extra)",
+      "display_name": "Demucs v3 (mdx / mdx_extra)",
+      "model_ids": [
+        "demucs-v3-mdx-extra"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://dl.fbaipublicfiles.com/demucs/mdx_final/6b9c2ca1-3fd82607.th",
+      "status_text": "Ladda ner.th (Meta)"
+    },
+    {
+      "report": "docx",
+      "source_name": "VR Arch 5_HP / 6_HP (Karaoke-UVR)",
+      "display_name": "VR Arch 5_HP / 6_HP (Karaoke-UVR)",
+      "model_ids": [
+        "vr-arch-5-hp"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models",
+      "status_text": "( https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models )"
+    },
+    {
+      "report": "docx",
+      "source_name": "VR Arch 5_HP / 6_HP (Karaoke-UVR)",
+      "display_name": "VR Arch 5_HP / 6_HP (Karaoke-UVR)",
+      "model_ids": [
+        "vr-arch-6-hp"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models",
+      "status_text": "( https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models )"
+    },
+    {
+      "report": "docx",
+      "source_name": "VR Arch 9_HP2-UVR (500m_1)",
+      "display_name": "VR Arch 9_HP2-UVR (500m_1)",
+      "model_ids": [
+        "vr-arch-9-hp2-uvr"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models",
+      "status_text": "( https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models )"
+    },
+    {
+      "report": "docx",
+      "source_name": "Modellnamn / Skapare",
+      "display_name": "Modellnamn / Skapare",
+      "model_ids": [],
+      "coverage_status": "blocked_non_public",
+      "url": null,
+      "status_text": "Nedladdningslänk / Status"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Mono (Anvuew)",
+      "display_name": "De-Reverb Mono (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-room"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Mono (Anvuew)",
+      "display_name": "De-Reverb Mono (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-mono"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Mono (Anvuew)",
+      "display_name": "De-Reverb Mono (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-bs-225050"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Room (Anvuew)",
+      "display_name": "De-Reverb Room (Anvuew)",
+      "model_ids": [
+        "sucial-dereverb-fused"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_room",
+      "status_text": "Hugging Face (anvuew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Room (Anvuew)",
+      "display_name": "De-Reverb Room (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-v2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_room",
+      "status_text": "Hugging Face (anvuew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Room (Anvuew)",
+      "display_name": "De-Reverb Room (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-room"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_room",
+      "status_text": "Hugging Face (anvuew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Room (Anvuew)",
+      "display_name": "De-Reverb Room (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-mono"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_room",
+      "status_text": "Hugging Face (anvuew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "De-Reverb Room (Anvuew)",
+      "display_name": "De-Reverb Room (Anvuew)",
+      "model_ids": [
+        "anvuew-dereverb-bs-225050"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/anvuew/dereverb_room",
+      "status_text": "Hugging Face (anvuew)"
+    },
+    {
+      "report": "docx",
+      "source_name": "Dereverb-Echo Fused (Sucial)",
+      "display_name": "Dereverb-Echo Fused (Sucial)",
+      "model_ids": [
+        "sucial-dereverb-fused"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer",
+      "status_text": "( https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer )"
+    },
+    {
+      "report": "docx",
+      "source_name": "UVR-De-Echo (FoxyJoy)",
+      "display_name": "UVR-De-Echo (FoxyJoy)",
+      "model_ids": [],
+      "coverage_status": "blocked_non_public",
+      "url": null,
+      "status_text": "5"
+    },
+    {
+      "report": "docx",
+      "source_name": "MelBand Denoise (Aufr33 / jarredou)",
+      "display_name": "MelBand Denoise (Aufr33 / jarredou)",
+      "model_ids": [
+        "aufr33-denoise-std"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/blob/4d5196fd9289813c55a6bbfe6872e1bb46963c25/denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "MelBand Denoise (Aufr33 / jarredou)",
+      "display_name": "MelBand Denoise (Aufr33 / jarredou)",
+      "model_ids": [
+        "aufr33-denoise-aggressive"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/blob/4d5196fd9289813c55a6bbfe6872e1bb46963c25/denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt",
+      "status_text": "Ladda ner.ckpt"
+    },
+    {
+      "report": "docx",
+      "source_name": "MedleyVox (Cyrus / jeonchangbin49)",
+      "display_name": "MedleyVox (Cyrus / jeonchangbin49)",
+      "model_ids": [
+        "medleyvox"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/jeonchangbin49/medleyvox",
+      "status_text": "GitHub (jeonchangbin49) / HF 37"
+    },
+    {
+      "report": "docx",
+      "source_name": "Apollo MP3 Enhancer (JusperLee)",
+      "display_name": "Apollo MP3 Enhancer (JusperLee)",
+      "model_ids": [
+        "lew-apollo-vocal"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer",
+      "status_text": "Hugging Face (jarredou)"
+    },
+    {
+      "report": "docx",
+      "source_name": "BandIt v2 (Speech, Music, SFX)",
+      "display_name": "BandIt v2 (Speech, Music, SFX)",
+      "model_ids": [
+        "bandit-dnr"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": null,
+      "status_text": "(https://github.com/ZFTurbo/Music-Source-Separation-Training)"
+    },
+    {
+      "report": "docx",
+      "source_name": "AudioSep (Audio-AGI)",
+      "display_name": "AudioSep (Audio-AGI)",
+      "model_ids": [
+        "audiosep"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://github.com/Audio-AGI/AudioSep",
+      "status_text": "GitHub (Audio-AGI)"
+    },
+    {
+      "report": "docx",
+      "source_name": "MVSep SATB Choir (Dry Paint Dealer Undr)",
+      "display_name": "MVSep SATB Choir (Dry Paint Dealer Undr)",
+      "model_ids": [],
+      "coverage_status": "blocked_non_public",
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Exklusiv för MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "MVSep Orkestrala & Nischmodeller",
+      "display_name": "MVSep Orkestrala",
+      "model_ids": [],
+      "coverage_status": "blocked_non_public",
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Alla dessa utgör en del av stängd backend-infrastruktur på MVSEP)."
+    },
+    {
+      "report": "docx",
+      "source_name": "MVSep Orkestrala & Nischmodeller",
+      "display_name": "Nischmodeller",
+      "model_ids": [],
+      "coverage_status": "blocked_non_public",
+      "url": null,
+      "status_text": "Går ej att ladda ner. (Alla dessa utgör en del av stängd backend-infrastruktur på MVSEP)."
+    },
+    {
+      "report": "deep_research_report",
+      "source_name": "UVR_MDXNET_Main.onnx",
+      "display_name": "UVR_MDXNET_Main.onnx",
+      "model_ids": [
+        "uvr-mdxnet-main"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDXNet/UVR_MDXNET_Main.onnx",
+      "status_text": "report table example"
+    },
+    {
+      "report": "deep_research_report",
+      "source_name": "UVR-MDX-NET-Inst_HQ_3.onnx",
+      "display_name": "UVR-MDX-NET-Inst_HQ_3.onnx",
+      "model_ids": [
+        "mdxnet-inst-hq-3"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDXNet/UVR-MDX-NET-Inst_HQ_3.onnx",
+      "status_text": "report table example"
+    },
+    {
+      "report": "deep_research_report",
+      "source_name": "UVR-DeNoise.pth",
+      "display_name": "UVR-DeNoise.pth",
+      "model_ids": [
+        "uvr-denoise"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/VR_Arch/UVR-DeNoise.pth",
+      "status_text": "report table example"
+    },
+    {
+      "report": "deep_research_report",
+      "source_name": "MDX23C-8KFFT-InstVoc_HQ_2.ckpt",
+      "display_name": "MDX23C-8KFFT-InstVoc_HQ_2.ckpt",
+      "model_ids": [
+        "mdx23c-instvoc-hq-2"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-8KFFT-InstVoc_HQ_2.ckpt",
+      "status_text": "report table example"
+    },
+    {
+      "report": "deep_research_report",
+      "source_name": "scnet_checkpoint_musdb18.ckpt",
+      "display_name": "scnet_checkpoint_musdb18.ckpt",
+      "model_ids": [
+        "drypd-side-extraction"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/scnet_checkpoint_musdb18.ckpt",
+      "status_text": "report table example"
+    },
+    {
+      "report": "deep_research_report",
+      "source_name": "apollo_edm_big_by_essid.ckpt",
+      "display_name": "apollo_edm_big_by_essid.ckpt",
+      "model_ids": [
+        "apollo-restoration"
+      ],
+      "coverage_status": "direct",
+      "availability": null,
+      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/Apollo/apollo_edm_big_by_essid.ckpt",
+      "status_text": "report table example"
+    },
+    {
+      "report": "deep_research_report",
+      "source_name": "gilliaan_MonoStereo_Dual_Beta2",
+      "display_name": "gilliaan_MonoStereo_Dual_Beta2",
+      "model_ids": [
+        "gilliaan-monostereo-dual-beta2"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/gilliaaan/Mel-Band-Roformer-MonoStereo-Duality/resolve/main/gilliaan_MonoStereo_Dual_Beta2.ckpt",
+      "status_text": "report table example"
+    },
+    {
+      "report": "deep_research_report",
+      "source_name": "becruily/mel-band-roformer-deux",
+      "display_name": "becruily/mel-band-roformer-deux",
+      "model_ids": [
+        "becruily-deux"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/becruily/mel-band-roformer-deux",
+      "status_text": "report repo example"
+    },
+    {
+      "report": "deep_research_report",
+      "source_name": "natanworkspace/melband_roformer",
+      "display_name": "natanworkspace/melband_roformer",
+      "model_ids": [
+        "natanworkspace-melband-roformer"
+      ],
+      "coverage_status": "manual_import",
+      "availability": null,
+      "url": "https://huggingface.co/natanworkspace/melband_roformer",
+      "status_text": "report repo example"
+    }
+  ]
+}

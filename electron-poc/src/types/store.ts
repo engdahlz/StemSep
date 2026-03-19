@@ -1,3 +1,55 @@
+export type ModelAvailabilityClass =
+  | "direct"
+  | "mirror_fallback"
+  | "manual_import"
+  | "blocked_non_public"
+  | "missing_research"
+  | string;
+
+export type ModelDownloadState =
+  | "idle"
+  | "queued"
+  | "preflighting"
+  | "downloading"
+  | "verifying"
+  | "paused"
+  | "manual_required"
+  | "installed"
+  | "failed";
+
+export interface ModelAvailability {
+  class?: ModelAvailabilityClass;
+  reason?: string;
+}
+
+export interface ModelDownloadSource {
+  role?: string;
+  url: string;
+  host?: string;
+  manual?: boolean;
+  channel?: "upstream" | "mirror" | string;
+  priority?: number;
+  auth?: "none" | "hf_token" | string;
+  verified?: boolean;
+}
+
+export interface ModelArtifactStatus {
+  kind: string;
+  filename: string;
+  relativePath: string;
+  required: boolean;
+  manual: boolean;
+  exists?: boolean;
+  verified?: boolean;
+  state?: ModelDownloadState | "missing" | "present" | string;
+  source?: string | null;
+  sourceHost?: string | null;
+  sourceChannel?: string | null;
+  sourceAuth?: string | null;
+  sizeBytes?: number | null;
+  sha256?: string | null;
+}
+
 export interface Model {
   id: string;
   name: string;
@@ -19,8 +71,18 @@ export interface Model {
   downloadSpeed?: number;
   downloadEta?: number;
   downloadError?: string;
+  downloadState?: ModelDownloadState;
+  downloadStage?: string;
+  downloadMessage?: string;
+  downloadCurrentFile?: string;
+  downloadCurrentRelativePath?: string;
+  downloadCurrentSource?: string;
+  downloadVerified?: boolean;
   recommended: boolean;
   is_custom?: boolean;
+  availability?: ModelAvailability;
+  artifactStatuses?: ModelArtifactStatus[];
+  manualInstructions?: string[];
   recommended_settings?: {
     overlap?: number;
     segment_size?: number;
@@ -91,7 +153,6 @@ export interface Model {
       sha256?: string;
     }>;
   };
-  guide_revision?: string | null;
   guide_rank?: number | null;
   guide_notes?: string[];
   status?: {
@@ -129,18 +190,11 @@ export interface Model {
     labels?: string[];
     values?: Array<number | string | null>;
     source?: string;
-    evidence_url?: string | null;
     evidence_note?: string | null;
     last_verified?: string;
   };
   catalog_status?: "verified" | "candidate" | "blocked" | "manual_only" | "online_only";
   metrics_status?: "verified" | "guide_curated" | "vendor_matched" | "missing_evidence";
-  metrics_evidence?: Array<{
-    source: string;
-    url?: string | null;
-    note: string;
-    verified_at: string;
-  }>;
   install?: {
     mode?: "direct" | "manual" | "custom_runtime";
     notes?: string[];
@@ -183,17 +237,13 @@ export interface Model {
   download?: {
     mode?: "direct" | "multi_artifact_direct" | "manual" | "unavailable" | string;
     install_mode?: "direct" | "manual" | "custom_runtime" | string;
+    strategy?: string;
     family?: string;
     artifact_count?: number;
     downloadable_artifact_count?: number;
     source_policy?: string;
     manual_instructions?: string[];
-    sources?: Array<{
-      role: string;
-      url: string;
-      host: string;
-      manual?: boolean;
-    }>;
+    sources?: ModelDownloadSource[];
     artifacts?: Array<{
       kind: string;
       filename: string;
@@ -201,15 +251,41 @@ export interface Model {
       required: boolean;
       manual: boolean;
       exists?: boolean;
+      verified?: boolean;
       source?: string | null;
       source_host?: string | null;
+      source_channel?: string | null;
+      source_auth?: string | null;
       sha256?: string | null;
+      size_bytes?: number | null;
+      sources?: Array<{
+        url: string;
+        channel?: "upstream" | "mirror" | string;
+        priority?: number;
+        auth?: "none" | "hf_token" | string;
+        verified?: boolean;
+      }>;
     }>;
   };
   installation?: {
     installed?: boolean;
     missing_artifacts?: string[];
     relative_paths?: string[];
+    artifacts?: Array<{
+      kind?: string;
+      filename?: string;
+      relative_path?: string;
+      required?: boolean;
+      exists?: boolean;
+      verified?: boolean;
+      state?: string;
+      source?: string | null;
+      source_host?: string | null;
+      source_channel?: string | null;
+      source_auth?: string | null;
+      size_bytes?: number | null;
+      sha256?: string | null;
+    }>;
   };
 }
 
@@ -217,12 +293,62 @@ export type Recipe = import("./recipes").Recipe;
 export type SourceAudioProfile = import("./media").SourceAudioProfile;
 export type StagingDecision = import("./media").StagingDecision;
 export type PlaybackMetadata = import("./media").PlaybackMetadata;
+export type SourceType = import("./remote").SourceType;
+export type RemoteSourceProvider = import("./remote").RemoteSourceProvider;
+export type IngestMode = import("./remote").IngestMode;
+export type PlaybackSurface = import("./remote").PlaybackSurface;
+export type CaptureQualityMode = import("./remote").CaptureQualityMode;
+
+export interface QueueSourceMeta {
+  provider?: RemoteSourceProvider;
+  providerTrackId?: string;
+  title?: string;
+  artist?: string;
+  album?: string;
+  channel?: string;
+  durationSec?: number;
+  artworkUrl?: string;
+  thumbnailUrl?: string;
+  canonicalUrl?: string;
+  qualityLabel?: string;
+  isLossless?: boolean;
+  downloadOrigin?: string;
+  ingestMode?: IngestMode;
+  playbackSurface?: PlaybackSurface;
+  qualityMode?: CaptureQualityMode;
+  verifiedLossless?: boolean;
+  captureDeviceId?: string;
+  captureSampleRate?: number;
+  captureChannels?: number;
+  captureStartAt?: string;
+  captureEndAt?: string;
+}
+
+export interface HistoryExportSummary {
+  status: "exported";
+  exportedAt: string;
+  exportDir: string;
+  format: "wav" | "flac" | "mp3";
+  exportedFiles: Record<string, string>;
+}
+
+export type ResultAvailabilityStatus =
+  | "preview_ready"
+  | "preview_only"
+  | "exported"
+  | "playback_issue"
+  | "missing_source"
+  | "failed";
 
 export interface HistoryItem {
   id: string;
   backendJobId?: string;
   date: string;
   inputFile: string;
+  displayName?: string;
+  sourceUrl?: string;
+  sourceType?: SourceType;
+  sourceMeta?: QueueSourceMeta;
   outputDir: string;
   modelId: string;
   modelName: string;
@@ -234,6 +360,7 @@ export interface HistoryItem {
   sourceAudioProfile?: SourceAudioProfile;
   stagingDecision?: StagingDecision;
   playback?: PlaybackMetadata;
+  exportSummary?: HistoryExportSummary;
   settings: {
     overlap?: number;
     segmentSize?: number;
@@ -257,6 +384,10 @@ export interface QueueItem {
   id: string;
   backendJobId?: string;
   file: string;
+  displayName?: string;
+  sourceUrl?: string;
+  sourceType?: SourceType;
+  sourceMeta?: QueueSourceMeta;
   status:
     | "pending"
     | "processing"
@@ -340,6 +471,14 @@ export interface ModelSlice {
   setDownloadProgress: (data: {
     modelId: string;
     progress: number;
+    stage?: string;
+    artifactIndex?: number;
+    artifactCount?: number;
+    currentFile?: string;
+    currentRelativePath?: string;
+    currentSource?: string;
+    verified?: boolean;
+    message?: string;
     speed?: number;
     eta?: number;
   }) => void;
@@ -348,6 +487,8 @@ export interface ModelSlice {
   pauseDownload: (modelId: string) => void;
   resumeDownload: (modelId: string) => void;
   setModelInstalled: (modelId: string, installed: boolean) => void;
+  upsertModel: (model: Model) => void;
+  mergeModel: (modelId: string, patch: Partial<Model>) => void;
 }
 
 export interface SeparationSlice {
@@ -378,6 +519,7 @@ export interface SettingsSlice {
   watchPath: string;
 
   addToHistory: (item: Omit<HistoryItem, "id" | "date">) => void;
+  updateHistoryItem: (id: string, patch: Partial<HistoryItem>) => void;
   removeFromHistory: (id: string) => void;
   toggleHistoryFavorite: (id: string) => void;
   clearHistory: () => void;

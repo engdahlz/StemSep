@@ -13,6 +13,11 @@ interface ExportDialogProps {
     onDefaultDirChange?: (dir: string) => void
     defaultExportFormat?: 'wav' | 'flac' | 'mp3'
     defaultExportBitrate?: string
+    onExportComplete?: (data: {
+        exportedFiles: Record<string, string>
+        exportDir: string
+        format: 'wav' | 'flac' | 'mp3'
+    }) => void
 }
 
 const FORMATS = [
@@ -46,7 +51,8 @@ export default function ExportDialog({
     defaultExportDir,
     onDefaultDirChange,
     defaultExportFormat,
-    defaultExportBitrate
+    defaultExportBitrate,
+    onExportComplete
 }: ExportDialogProps) {
     const [format, setFormat] = useState<'wav' | 'flac' | 'mp3'>(defaultExportFormat || 'wav')
     const [bitrate, setBitrate] = useState(defaultExportBitrate || '320k')
@@ -159,6 +165,12 @@ export default function ExportDialog({
             if (rememberPath && onDefaultDirChange) {
                 onDefaultDirChange(exportDir)
             }
+
+            onExportComplete?.({
+                exportedFiles: result.exported || {},
+                exportDir,
+                format,
+            })
 
             toast.success(`Exported ${selectedStems.size} file${selectedStems.size > 1 ? 's' : ''} as ${format.toUpperCase()}`)
             onClose()

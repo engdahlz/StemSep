@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   ChevronRight,
-  Clock,
   Headphones,
   Home,
   Library,
@@ -26,8 +25,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { id: "home", label: "Home", icon: Home },
   { id: "models", label: "Model Library", icon: Library },
-  { id: "history", label: "History", icon: Clock },
-  { id: "results", label: "Result Studio", icon: Headphones },
+  { id: "results", label: "Results", icon: Headphones },
 ];
 
 export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
@@ -105,7 +103,7 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
                 StemSep
               </h2>
               <p className="mt-2 max-w-[260px] text-[13px] leading-[1.45] text-slate-500">
-                Move between separation, models, history and results without
+                Move between separation, models and results without
                 leaving the current visual context.
               </p>
             </div>
@@ -150,9 +148,7 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
                           ? "Start new separation"
                           : item.id === "models"
                             ? "Browse installed and available models"
-                            : item.id === "history"
-                              ? "Inspect previous runs"
-                              : "Preview and export stems"}
+                            : "Browse past separations and preview stems"}
                       </div>
                     </div>
                     <ChevronRight

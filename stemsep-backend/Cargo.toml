@@ -18,3 +18,4 @@ reqwest = { version = "0.12", default-features = false, features = ["blocking", 
 sysinfo = "0.30"
 tract-onnx = { version = "0.21", optional = true }
 sha2 = "0.10"
+wasapi = "0.22"

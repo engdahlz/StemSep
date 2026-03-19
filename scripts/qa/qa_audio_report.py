@@ -224,7 +224,7 @@ def _si_sdr_db(ref, est) -> float:
     return float(sum(vals) / len(vals))
 
 
-def qa_report(original: str, instrumental: str, vocals: str) -> str:
+def qa_report_data(original: str, instrumental: str, vocals: str) -> Dict[str, Any]:
     import numpy as np  # type: ignore
 
     orig = _load_audio(original)
@@ -268,55 +268,108 @@ def qa_report(original: str, instrumental: str, vocals: str) -> str:
     r_rms = _rms(recon)
     e_rms = _rms(err)
 
-    report_lines = []
-    report_lines.append("# StemSep QA report")
-    report_lines.append("")
-    report_lines.append("## Inputs")
-    report_lines.append(f"- Original: {original}")
-    report_lines.append(f"- Instrumental: {instrumental}")
-    report_lines.append(f"- Vocals: {vocals}")
-    report_lines.append("")
-
-    report_lines.append("## Basic")
-    report_lines.append(f"- Sample rate used for analysis: {target_sr} Hz")
-    report_lines.append(f"- Channels (analysis-aligned): {channels}")
-    report_lines.append(f"- Duration compared: {dur_s:.2f} s")
-    report_lines.append("")
+    stems: Dict[str, Dict[str, Any]] = {}
 
     def stem_block(name: str, x: np.ndarray):
         peak = _peak(x)
         rms = _rms(x)
         clip_1 = int(np.sum(np.abs(x) > 1.0))
         clip_0999 = int(np.sum(np.abs(x) > 0.999))
-        report_lines.append(f"### {name}")
-        report_lines.append(f"- Peak abs: {peak:.6f}")
-        report_lines.append(f"- RMS: {rms:.6f} ({_db(rms):.2f} dBFS)")
-        report_lines.append(f"- Crest factor: {(peak / max(1e-12, rms)):.2f}")
-        report_lines.append(f"- Samples |x|>1.0: {clip_1}")
-        report_lines.append(f"- Samples |x|>0.999: {clip_0999}")
-        report_lines.append("")
+        stems[name] = {
+            "peak_abs": peak,
+            "rms": rms,
+            "rms_dbfs": _db(rms),
+            "crest_factor": peak / max(1e-12, rms),
+            "samples_abs_gt_1_0": clip_1,
+            "samples_abs_gt_0_999": clip_0999,
+        }
 
-    report_lines.append("## Stem stats")
     stem_block("Original", o)
     stem_block("Instrumental", i)
     stem_block("Vocals", v)
     stem_block("Recombined (inst+voc)", recon)
     stem_block("Recombine error (recon-original)", err)
 
-    report_lines.append("## Consistency checks")
-    report_lines.append(f"- Recombined vs original correlation: {_corr(recon, o):.6f}")
-    report_lines.append(f"- Error RMS: {e_rms:.8f} ({_db(e_rms):.2f} dBFS)")
-    report_lines.append(f"- SNR (original vs error): {_snr_db(o, err):.2f} dB")
-    report_lines.append(f"- SI-SDR (recombined vs original): {_si_sdr_db(o, recon):.2f} dB")
-    report_lines.append(f"- Gain delta (RMS recon/orig): {(_db(r_rms) - _db(o_rms)):.2f} dB")
+    consistency = {
+        "recombined_vs_original_correlation": _corr(recon, o),
+        "error_rms": e_rms,
+        "error_rms_dbfs": _db(e_rms),
+        "snr_db": _snr_db(o, err),
+        "si_sdr_db": _si_sdr_db(o, recon),
+        "gain_delta_db": _db(r_rms) - _db(o_rms),
+        "instrumental_vs_vocals_correlation": _corr(i, v),
+    }
 
-    # Stem cross-correlation can be a red flag if extremely high (not definitive)
-    report_lines.append(f"- Instrumental vs vocals correlation (heuristic): {_corr(i, v):.6f}")
+    return {
+        "schema_version": "1.0",
+        "mode": "recombine_consistency",
+        "inputs": {
+            "original": original,
+            "instrumental": instrumental,
+            "vocals": vocals,
+        },
+        "analysis": {
+            "sample_rate": target_sr,
+            "channels": channels,
+            "duration_seconds": dur_s,
+        },
+        "stems": stems,
+        "consistency": consistency,
+        "notes": [
+            "Recombined vs original should be close to 1.0 correlation for a clean split; small deviations are expected after phase-fix/denoise.",
+            "Non-zero recombine error is normal; large gain drift or heavy clipping is usually a quality concern.",
+        ],
+    }
+
+
+def qa_report(original: str, instrumental: str, vocals: str) -> str:
+    data = qa_report_data(original, instrumental, vocals)
+    report_lines = []
+    report_lines.append("# StemSep QA report")
+    report_lines.append("")
+    report_lines.append("## Inputs")
+    report_lines.append(f"- Original: {data['inputs']['original']}")
+    report_lines.append(f"- Instrumental: {data['inputs']['instrumental']}")
+    report_lines.append(f"- Vocals: {data['inputs']['vocals']}")
+    report_lines.append("")
+    report_lines.append("## Basic")
+    report_lines.append(f"- Sample rate used for analysis: {data['analysis']['sample_rate']} Hz")
+    report_lines.append(f"- Channels (analysis-aligned): {data['analysis']['channels']}")
+    report_lines.append(f"- Duration compared: {data['analysis']['duration_seconds']:.2f} s")
     report_lines.append("")
 
+    report_lines.append("## Stem stats")
+    for name, stats in data["stems"].items():
+        report_lines.append(f"### {name}")
+        report_lines.append(f"- Peak abs: {stats['peak_abs']:.6f}")
+        report_lines.append(f"- RMS: {stats['rms']:.6f} ({stats['rms_dbfs']:.2f} dBFS)")
+        report_lines.append(f"- Crest factor: {stats['crest_factor']:.2f}")
+        report_lines.append(f"- Samples |x|>1.0: {stats['samples_abs_gt_1_0']}")
+        report_lines.append(f"- Samples |x|>0.999: {stats['samples_abs_gt_0_999']}")
+        report_lines.append("")
+
+    consistency = data["consistency"]
+    report_lines.append("## Consistency checks")
+    report_lines.append(
+        f"- Recombined vs original correlation: {consistency['recombined_vs_original_correlation']:.6f}"
+    )
+    report_lines.append(
+        f"- Error RMS: {consistency['error_rms']:.8f} ({consistency['error_rms_dbfs']:.2f} dBFS)"
+    )
+    report_lines.append(f"- SNR (original vs error): {consistency['snr_db']:.2f} dB")
+    report_lines.append(
+        f"- SI-SDR (recombined vs original): {consistency['si_sdr_db']:.2f} dB"
+    )
+    report_lines.append(
+        f"- Gain delta (RMS recon/orig): {consistency['gain_delta_db']:.2f} dB"
+    )
+    report_lines.append(
+        f"- Instrumental vs vocals correlation (heuristic): {consistency['instrumental_vs_vocals_correlation']:.6f}"
+    )
+    report_lines.append("")
     report_lines.append("## Notes")
-    report_lines.append("- ‘Recombined vs original’ should be close to 1.0 correlation for a clean split; small deviations are expected after phase-fix/denoise.")
-    report_lines.append("- Non-zero recombine error is normal; large gain drift or heavy clipping is usually a quality concern.")
+    for note in data["notes"]:
+        report_lines.append(f"- {note}")
 
     return "\n".join(report_lines)
 
@@ -334,6 +387,7 @@ def main():
     p.add_argument("--job-id", help="job_id to resolve stems from backend log")
     p.add_argument("--recipe-id", default="golden_ultimate_inst", help="recipe_id to resolve stems")
     p.add_argument("--out", help="Write report to this markdown file")
+    p.add_argument("--json-out", help="Write report data to this JSON file")
     args = p.parse_args()
 
     instrumental = args.instrumental
@@ -353,6 +407,7 @@ def main():
         if not os.path.exists(path):
             raise SystemExit(f"File does not exist: {path}")
 
+    report_data = qa_report_data(args.original, instrumental, vocals)
     report = qa_report(args.original, instrumental, vocals)
 
     if args.out:
@@ -360,6 +415,12 @@ def main():
         with open(args.out, "w", encoding="utf-8") as f:
             f.write(report)
         print(f"Wrote report: {args.out}")
+    if args.json_out:
+        os.makedirs(os.path.dirname(os.path.abspath(args.json_out)), exist_ok=True)
+        with open(args.json_out, "w", encoding="utf-8") as f:
+            json.dump(report_data, f, indent=2)
+            f.write("\n")
+        print(f"Wrote JSON report: {args.json_out}")
 
     print("\n" + report)
 

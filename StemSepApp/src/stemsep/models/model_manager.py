@@ -37,6 +37,12 @@ class ModelInfo:
     bleedless: Optional[float] = None
     recommended_overlap: Optional[int] = None
     recommended_settings: Optional[Dict[str, Any]] = None
+    guide_rank: Optional[int] = None
+    guide_notes: Optional[List[str]] = None
+    status: Optional[Dict[str, Any]] = None
+    catalog_status: Optional[str] = None
+    metrics_status: Optional[str] = None
+    card_metrics: Optional[Dict[str, Any]] = None
 
     # === Strict-spec extensions (guide-as-spec) ===
     # These fields are additive/backwards compatible: older registries can omit them.
@@ -59,11 +65,15 @@ class ModelInfo:
     operating_profiles: Optional[Dict[str, Any]] = None
     content_fit: Optional[List[str]] = None
     download: Optional[Dict[str, Any]] = None
+    availability: Optional[Dict[str, Any]] = None
 
     installed: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         d = asdict(self)
+        if isinstance(self.status, dict):
+            d["readiness"] = self.status.get("readiness")
+            d["simple_allowed"] = self.status.get("simple_allowed")
         # keep compat with UI (some fields may be None)
         return d
 
@@ -207,72 +217,6 @@ class ModelManager:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        registry_dir = self.assets_dir / "registry"
-        overrides_path = registry_dir / "guide_model_overrides.json"
-        if overrides_path.exists():
-            try:
-                with open(overrides_path, "r", encoding="utf-8") as f:
-                    overrides_data = json.load(f)
-                overrides = overrides_data.get("models") or {}
-                if isinstance(overrides, dict):
-                    for model in data.get("models", []):
-                        if not isinstance(model, dict):
-                            continue
-                        mid = str(model.get("id") or "").strip()
-                        overlay = overrides.get(mid)
-                        if isinstance(overlay, dict):
-                            merged = _merge_dicts(model, overlay)
-                            model.clear()
-                            model.update(merged)
-            except Exception as e:
-                log.warning("Failed to load guide overrides: %s", e)
-
-        guide_digest_path = registry_dir / "guide_digest.json"
-        if guide_digest_path.exists():
-            try:
-                with open(guide_digest_path, "r", encoding="utf-8") as f:
-                    digest_data = json.load(f)
-                digest_overrides = digest_data.get("model_overrides") or {}
-                if isinstance(digest_overrides, dict):
-                    for model in data.get("models", []):
-                        if not isinstance(model, dict):
-                            continue
-                        mid = str(model.get("id") or "").strip()
-                        overlay = digest_overrides.get(mid)
-                        if isinstance(overlay, dict):
-                            merged = _merge_dicts(model, overlay)
-                            model.clear()
-                            model.update(merged)
-            except Exception as e:
-                log.warning("Failed to load guide digest overrides: %s", e)
-
-        extra_models_path = registry_dir / "extra_models.json"
-        if extra_models_path.exists():
-            try:
-                with open(extra_models_path, "r", encoding="utf-8") as f:
-                    extra_data = json.load(f)
-                extra_models = extra_data.get("models") or []
-                if isinstance(extra_models, list):
-                    existing = {
-                        str(model.get("id") or "").strip(): model
-                        for model in data.get("models", [])
-                        if isinstance(model, dict)
-                    }
-                    for extra_model in extra_models:
-                        if not isinstance(extra_model, dict):
-                            continue
-                        mid = str(extra_model.get("id") or "").strip()
-                        if not mid:
-                            continue
-                        if mid in existing:
-                            merged = _merge_dicts(existing[mid], extra_model)
-                            existing[mid].clear()
-                            existing[mid].update(merged)
-                        else:
-                            data.setdefault("models", []).append(extra_model)
-            except Exception as e:
-                log.warning("Failed to load extra models: %s", e)
-
         models = data.get("models", [])
         out: Dict[str, ModelInfo] = {}
 
@@ -295,6 +239,12 @@ class ModelManager:
                     bleedless=m.get("bleedless"),
                     recommended_overlap=m.get("recommended_overlap"),
                     recommended_settings=m.get("recommended_settings"),
+                    guide_rank=m.get("guide_rank"),
+                    guide_notes=m.get("guide_notes"),
+                    status=m.get("status"),
+                    catalog_status=m.get("catalog_status"),
+                    metrics_status=m.get("metrics_status"),
+                    card_metrics=m.get("card_metrics"),
                     # Strict-spec additions (optional in registry)
                     runtime=m.get("runtime"),
                     compatibility=m.get("compatibility"),
@@ -315,6 +265,7 @@ class ModelManager:
                     operating_profiles=m.get("operating_profiles"),
                     content_fit=m.get("content_fit"),
                     download=m.get("download"),
+                    availability=m.get("availability"),
                     installed=False,
                 )
             except Exception as e:
@@ -425,45 +376,70 @@ class ModelManager:
                 "install_mode": "unknown",
                 "artifact_count": 0,
                 "downloadable_artifact_count": 0,
+                "strategy": "blocked_non_public",
                 "source_policy": "unknown",
                 "sources": [],
                 "artifacts": [],
                 "manual_instructions": [],
+                "availability": {
+                    "class": "blocked_non_public",
+                    "reason": "Unknown model_id",
+                },
             }
 
         runtime = model.runtime if isinstance(model.runtime, dict) else {}
         install = model.install if isinstance(model.install, dict) else {}
         links = model.links if isinstance(model.links, dict) else {}
+        availability = model.availability if isinstance(model.availability, dict) else {}
         install_mode = (
             str(install.get("mode") or runtime.get("install_mode") or "direct")
             .strip()
             .lower()
         )
-        manual_registry = install_mode == "manual" or bool(
+        availability_class = str(availability.get("class") or "").strip().lower()
+        manual_registry = availability_class == "manual_import" or install_mode == "manual" or bool(
             runtime.get("requires_manual_assets")
         )
 
         sources: List[Dict[str, Any]] = []
         seen_sources = set()
 
-        def push_source(role: str, url: Optional[str], manual: bool) -> None:
+        def push_source(role: str, source_obj: Any, manual: bool) -> None:
+            if isinstance(source_obj, dict):
+                url = source_obj.get("url")
+                channel = source_obj.get("channel")
+                priority = source_obj.get("priority")
+                auth = source_obj.get("auth")
+                verified = source_obj.get("verified")
+                host = source_obj.get("host")
+            else:
+                url = source_obj
+                channel = None
+                priority = None
+                auth = None
+                verified = None
+                host = None
             if not isinstance(url, str):
                 return
             trimmed = url.strip()
             if not trimmed or trimmed in seen_sources:
                 return
             seen_sources.add(trimmed)
-            host = ""
-            try:
-                host = trimmed.split("://", 1)[-1].split("/", 1)[0].strip()
-            except Exception:
-                host = ""
+            if not host:
+                try:
+                    host = trimmed.split("://", 1)[-1].split("/", 1)[0].strip()
+                except Exception:
+                    host = ""
             sources.append(
                 {
                     "role": role,
                     "url": trimmed,
                     "host": host or "unknown",
                     "manual": manual,
+                    "channel": channel or ("mirror" if "github.com/engdahlz/stemsep-models" in trimmed else "upstream"),
+                    "priority": int(priority or (len(sources) + 1)),
+                    "auth": auth or "none",
+                    "verified": True if verified is None else bool(verified),
                 }
             )
 
@@ -472,11 +448,9 @@ class ModelManager:
         push_source("homepage", links.get("homepage"), True)
         if isinstance(model.download, dict):
             for source in model.download.get("sources") or []:
-                if not isinstance(source, dict):
-                    continue
                 push_source(
                     str(source.get("role") or "source"),
-                    source.get("url"),
+                    source,
                     bool(source.get("manual", True)),
                 )
 
@@ -486,12 +460,14 @@ class ModelManager:
         def push_artifact(
             kind: str,
             filename: Optional[str],
-            source: Optional[str],
+            selected_source: Optional[str],
             *,
             required: bool = True,
             manual: bool = False,
             sha256: Optional[str] = None,
+            size_bytes: Optional[int] = None,
             relative_path: Optional[str] = None,
+            artifact_sources: Optional[List[Dict[str, Any]]] = None,
         ) -> None:
             if not isinstance(filename, str):
                 return
@@ -509,7 +485,8 @@ class ModelManager:
             canonical = self.models_dir / Path(rel)
             legacy_candidates = self._legacy_artifact_paths(model_id, kind, trimmed)
             exists = canonical.exists() or any(path.exists() for path in legacy_candidates)
-            stale_legacy_mirror = self._is_stale_legacy_mirror_url(source)
+            chosen_source = selected_source.strip() if isinstance(selected_source, str) and selected_source.strip() else None
+            stale_legacy_mirror = self._is_stale_legacy_mirror_url(chosen_source)
             artifacts.append(
                 {
                     "kind": kind,
@@ -518,11 +495,13 @@ class ModelManager:
                     "required": required,
                     "manual": manual or stale_legacy_mirror,
                     "exists": exists,
-                    "source": source,
-                    "source_host": source.split("://", 1)[-1].split("/", 1)[0]
-                    if isinstance(source, str) and source.strip()
+                    "source": chosen_source,
+                    "source_host": chosen_source.split("://", 1)[-1].split("/", 1)[0]
+                    if chosen_source
                     else None,
+                    "sources": artifact_sources or ([] if chosen_source is None else [{"url": chosen_source}]),
                     "sha256": sha256,
+                    "size_bytes": size_bytes,
                 }
             )
 
@@ -530,14 +509,52 @@ class ModelManager:
             for item in model.download.get("artifacts") or []:
                 if not isinstance(item, dict):
                     continue
+                artifact_sources: List[Dict[str, Any]] = []
+                for source in item.get("sources") or []:
+                    if not isinstance(source, dict):
+                        continue
+                    source_url = str(source.get("url") or "").strip()
+                    if not source_url:
+                        continue
+                    artifact_sources.append(
+                        {
+                            "url": source_url,
+                            "channel": source.get("channel") or ("mirror" if "github.com/engdahlz/stemsep-models" in source_url else "upstream"),
+                            "priority": int(source.get("priority") or (len(artifact_sources) + 1)),
+                            "auth": source.get("auth") or "none",
+                            "verified": True if source.get("verified") is None else bool(source.get("verified")),
+                            "host": source.get("host")
+                            or source_url.split("://", 1)[-1].split("/", 1)[0],
+                        }
+                    )
+                legacy_source = str(item.get("source") or "").strip()
+                if legacy_source and not artifact_sources:
+                    artifact_sources.append(
+                        {
+                            "url": legacy_source,
+                            "channel": item.get("channel") or ("mirror" if "github.com/engdahlz/stemsep-models" in legacy_source else "upstream"),
+                            "priority": 1,
+                            "auth": item.get("auth") or "none",
+                            "verified": True if item.get("verified") is None else bool(item.get("verified")),
+                            "host": legacy_source.split("://", 1)[-1].split("/", 1)[0],
+                        }
+                    )
+                selected_source = None
+                if artifact_sources:
+                    selected_source = sorted(
+                        artifact_sources,
+                        key=lambda source: int(source.get("priority") or 0),
+                    )[0].get("url")
                 push_artifact(
                     str(item.get("kind") or "aux"),
                     item.get("filename"),
-                    item.get("source"),
+                    selected_source,
                     required=bool(item.get("required", True)),
-                    manual=bool(item.get("manual", manual_registry or not item.get("source"))),
+                    manual=bool(item.get("manual", manual_registry or not artifact_sources)),
                     sha256=item.get("sha256"),
+                    size_bytes=item.get("size_bytes"),
                     relative_path=item.get("relative_path"),
+                    artifact_sources=artifact_sources,
                 )
         else:
             artifact_ckpt = self._artifact_filename(model, "primary")
@@ -594,7 +611,9 @@ class ModelManager:
         downloadable_artifact_count = sum(
             1 for artifact in artifacts if not artifact["manual"] and artifact.get("source")
         )
-        if not artifacts:
+        if availability_class == "blocked_non_public":
+            mode = "unavailable"
+        elif not artifacts:
             mode = "unavailable"
         elif downloadable_artifact_count == 0:
             mode = "manual"
@@ -616,6 +635,9 @@ class ModelManager:
             "model_id": model_id,
             "family": self._model_family(model),
             "mode": mode,
+            "strategy": availability_class or (
+                "manual_import" if manual_registry else "direct"
+            ),
             "install_mode": install_mode,
             "artifact_count": len(artifacts),
             "downloadable_artifact_count": downloadable_artifact_count,
@@ -623,6 +645,10 @@ class ModelManager:
             "sources": sources,
             "artifacts": artifacts,
             "manual_instructions": manual_instructions,
+            "availability": {
+                "class": availability_class or ("manual_import" if manual_registry else "direct"),
+                "reason": availability.get("reason"),
+            },
         }
 
     def get_model_file_bundle(self, model_id: str) -> Dict[str, Any]:
@@ -661,6 +687,7 @@ class ModelManager:
         return {
             "model_id": model_id,
             "download": manifest,
+            "availability": manifest.get("availability"),
             "installation": {
                 "installed": installed,
                 "missing_artifacts": missing,
@@ -819,6 +846,18 @@ class ModelManager:
         bundle = self.get_model_file_bundle(model_id)
         checkpoint_path = bundle.get("checkpoint_path")
         config_path = bundle.get("config_path")
+        availability = bundle.get("availability") or {}
+        availability_class = str(availability.get("class") or "").strip().lower()
+        if availability_class == "blocked_non_public":
+            return {
+                "ok": False,
+                "model_id": model_id,
+                "installed": False,
+                "error": availability.get("reason")
+                or f"Model '{model_id}' is blocked and cannot be executed.",
+                "download": bundle.get("download"),
+                "installation": bundle.get("installation"),
+            }
 
         # Best-effort filename repair:
         # If registry stores files under URL basenames (common), create a local alias
@@ -884,10 +923,14 @@ class ModelManager:
             "expected_files": [str(p) for p in self._candidate_files(model_id, m)],
             "links": m.links or {},
             "download": bundle.get("download"),
+            "availability": availability,
             "installation": bundle.get("installation"),
         }
 
-        if not m.installed:
+        if availability_class == "manual_import" and not m.installed:
+            report["missing"] = True
+            report["error"] = availability.get("reason") or "Model requires manual import"
+        elif not m.installed:
             report["missing"] = True
             report["error"] = "Model not installed"
 
@@ -929,6 +972,7 @@ class ModelManager:
             "workflow_roles": getattr(m, "workflow_roles", None),
             "operating_profiles": getattr(m, "operating_profiles", None),
             "content_fit": getattr(m, "content_fit", None),
+            "availability": getattr(m, "availability", None),
             "recommended_settings": m.recommended_settings
             if isinstance(m.recommended_settings, dict)
             else None,

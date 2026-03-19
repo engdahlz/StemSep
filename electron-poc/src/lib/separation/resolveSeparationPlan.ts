@@ -7,6 +7,7 @@ import type {
   WorkflowStep,
   WorkflowSurface,
 } from "@/types/separation";
+import { modelRequiresFnoRuntime } from "@/lib/systemRuntime/modelRuntime";
 
 /**
  * Canonical separation plan resolver.
@@ -37,6 +38,17 @@ export type GlobalPhaseParams = {
 export type ModelLike = {
   id: string;
   installed?: boolean;
+  name?: string;
+  architecture?: string;
+  runtime?: {
+    variant?: string;
+    install_mode?: string;
+  };
+  status?: {
+    readiness?: "verified" | "experimental" | "manual" | "blocked";
+    simple_allowed?: boolean;
+    blocking_reason?: string;
+  };
   phase_fix?: {
     recommended_params?: Partial<PhaseFixParams>;
     is_valid_reference?: boolean;
@@ -66,6 +78,13 @@ export type PresetLike = {
       tta?: boolean;
     };
     steps?: any[];
+  };
+  advancedDefaults?: {
+    overlap?: number;
+    segment_size?: number;
+    chunk_size?: number;
+    shifts?: number;
+    tta?: boolean;
   };
   // Ensemble presets or "pipeline defined" presets
   ensembleConfig?: {
@@ -114,6 +133,9 @@ export type ResolveInputs = {
    * Applies only if no explicit pipeline phase fix is configured.
    */
   globalPhaseParams?: GlobalPhaseParams;
+  runtimeSupport?: {
+    fnoSupported?: boolean;
+  };
 };
 
 export type MissingModel = {
@@ -143,6 +165,12 @@ export type SeparationPlan = {
    */
   effectivePostProcessingSteps?: SeparationConfig["postProcessingSteps"];
   effectiveWorkflow?: SeparationWorkflow;
+  effectiveAdvancedParams?: {
+    overlap?: number;
+    segmentSize?: number;
+    shifts?: number;
+    tta?: boolean;
+  };
 
   /**
    * Effective phase params to send as legacy global phase_params.
@@ -155,6 +183,8 @@ export type SeparationPlan = {
    * Use this to block starting a separation and prompt for downloads.
    */
   missingModels: MissingModel[];
+  blockingIssues: string[];
+  warnings: string[];
 
   /**
    * Convenience flags for callers.
@@ -556,6 +586,41 @@ function hasExplicitPipelinePhaseFix(
   return false;
 }
 
+function getPresetAdvancedDefaults(preset?: PresetLike) {
+  const direct = preset?.advancedDefaults;
+  const recipeDefaults = preset?.recipe?.defaults;
+  return {
+    overlap:
+      typeof direct?.overlap === "number"
+        ? direct.overlap
+        : typeof recipeDefaults?.overlap === "number"
+          ? recipeDefaults.overlap
+          : undefined,
+    segmentSize:
+      typeof direct?.segment_size === "number"
+        ? direct.segment_size
+        : typeof direct?.chunk_size === "number"
+          ? direct.chunk_size
+          : typeof recipeDefaults?.segment_size === "number"
+            ? recipeDefaults.segment_size
+            : typeof recipeDefaults?.chunk_size === "number"
+              ? recipeDefaults.chunk_size
+              : undefined,
+    shifts:
+      typeof direct?.shifts === "number"
+        ? direct.shifts
+        : typeof recipeDefaults?.shifts === "number"
+          ? recipeDefaults.shifts
+          : undefined,
+    tta:
+      typeof direct?.tta === "boolean"
+        ? direct.tta
+        : typeof recipeDefaults?.tta === "boolean"
+          ? recipeDefaults.tta
+          : undefined,
+  };
+}
+
 export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
   const {
     config,
@@ -563,9 +628,12 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
     modelMap = {},
     models = [],
     globalPhaseParams,
+    runtimeSupport,
   } = inputs;
 
   const missingModels: MissingModel[] = [];
+  const blockingIssues: string[] = [];
+  const warnings: string[] = [];
 
   // --- Step 1: Start from config defaults ---
   let effectiveModelId = config.modelId || "htdemucs";
@@ -574,6 +642,15 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
     config.ensembleConfig;
   let effectivePostProcessingSteps = config.postProcessingSteps;
   let effectiveWorkflow = config.workflow;
+  let effectiveAdvancedParams =
+    config.mode === "advanced"
+      ? {
+          overlap: config.advancedParams?.overlap,
+          segmentSize: config.advancedParams?.segmentSize,
+          shifts: config.advancedParams?.shifts,
+          tta: config.advancedParams?.tta,
+        }
+      : undefined;
 
   const preset =
     config.mode === "simple" ? findPreset(presets, config.presetId) : undefined;
@@ -588,6 +665,7 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
     // Stems in Simple mode come from preset unless explicitly supported later.
     // We still allow a preset to define stems.
     effectiveStems = undefined;
+    effectiveAdvancedParams = getPresetAdvancedDefaults(preset);
   }
 
   // --- Step 2: Apply Simple preset selection rules (if any) ---
@@ -740,6 +818,14 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
     ? globalPhaseParams
     : undefined;
 
+  const pushBlocking = (message: string) => {
+    if (!blockingIssues.includes(message)) blockingIssues.push(message);
+  };
+
+  const pushWarning = (message: string) => {
+    if (!warnings.includes(message)) warnings.push(message);
+  };
+
   // --- Step 5: Validate dependencies (installed) ---
   // Model(s) to validate:
   // - if ensemble: validate each referenced model_id
@@ -758,6 +844,12 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
   };
 
   const workflowModelIds = referencedWorkflowModelIds(effectiveWorkflow);
+  const effectiveReferencedModelIds =
+    workflowModelIds.length > 0
+      ? workflowModelIds
+      : effectiveEnsembleConfig?.models?.map((entry) => entry.model_id).filter(Boolean) ||
+        (effectiveModelId && effectiveModelId !== "ensemble" ? [effectiveModelId] : []);
+
   if (workflowModelIds.length > 0) {
     for (const workflowModelId of workflowModelIds) {
       validateModelId(workflowModelId);
@@ -805,7 +897,57 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
     }
   }
 
-  const canProceed = missingModels.length === 0;
+  for (const modelId of effectiveReferencedModelIds) {
+    const model = findModel(models, modelId);
+    if (!model) continue;
+
+    if (config.mode === "simple" && model.status?.simple_allowed === false) {
+      pushBlocking(
+        `${model.name || model.id} is not allowed in Simple mode and must be run from Advanced mode.`,
+      );
+    } else if (model.status?.simple_allowed === false) {
+      pushWarning(
+        `${model.name || model.id} is marked as Advanced-only in the guide metadata.`,
+      );
+    }
+
+    if (model.status?.readiness === "blocked") {
+      const message =
+        model.status.blocking_reason ||
+        `${model.name || model.id} is blocked by the registry/runtime policy.`;
+      if (config.mode === "simple") pushBlocking(message);
+      else pushWarning(message);
+    }
+
+    if (model.status?.readiness === "manual") {
+      const message =
+        model.status.blocking_reason ||
+        `${model.name || model.id} requires manual setup before it can run cleanly.`;
+      if (config.mode === "simple") pushBlocking(message);
+      else pushWarning(message);
+    }
+
+    if (runtimeSupport?.fnoSupported === false && modelRequiresFnoRuntime(model)) {
+      const message = `${model.name || model.id} requires FNO/neuralop runtime support.`;
+      if (config.mode === "simple") pushBlocking(message);
+      else pushWarning(message);
+    }
+  }
+
+  if (effectiveWorkflow?.steps?.some((step) => step.action === "phase_fix")) {
+    const invalidPhaseReference = effectiveWorkflow.steps.find((step) => {
+      if (step.action !== "phase_fix" || !step.source_model) return false;
+      const referenceModel = findModel(models, step.source_model);
+      return referenceModel?.phase_fix?.is_valid_reference === false;
+    });
+    if (invalidPhaseReference?.source_model) {
+      const message = `${invalidPhaseReference.source_model} is not marked as a valid phase-fix reference in the registry.`;
+      if (config.mode === "simple") pushBlocking(message);
+      else pushWarning(message);
+    }
+  }
+
+  const canProceed = missingModels.length === 0 && blockingIssues.length === 0;
 
   return {
     effectiveModelId,
@@ -813,8 +955,11 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
     effectiveEnsembleConfig,
     effectivePostProcessingSteps,
     effectiveWorkflow,
+    effectiveAdvancedParams,
     effectiveGlobalPhaseParams,
     missingModels,
+    blockingIssues,
+    warnings,
     canProceed,
     isExplicitPipelinePhaseFix: explicitPipelinePhaseFix,
     debug: {

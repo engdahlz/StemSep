@@ -5,6 +5,7 @@ import type {
   SourceAudioProfile,
   StagingDecision,
 } from "@/types/media"
+import type { RemoteResolveProgressPayload } from "@/types/remote"
 
 type DownloadProgressPayload = {
   modelId: string
@@ -28,14 +29,6 @@ type DownloadSimplePayload = {
 }
 type DownloadErrorPayload = { modelId: string; error: string }
 type BackendErrorPayload = { error: string }
-type YouTubeProgressPayload = {
-  status: string
-  percent?: string
-  speed?: string
-  eta?: string
-  error?: string
-}
-
 type BrowserFileEntry = {
   path: string
   blob: Blob
@@ -51,6 +44,10 @@ type ShimModel = (typeof browserDemoModels)[number] & {
   downloadPaused?: boolean
   downloadProgress: number
   is_custom?: boolean
+  installation?: {
+    installed?: boolean
+    missing_artifacts?: string[]
+  }
 }
 
 const STORAGE_PREFIX = "stemsep-browser"
@@ -153,7 +150,7 @@ export function installBrowserElectronApi() {
   const bridgeReadyEmitter = createEmitter<{ capabilities: string[]; modelsCount: number; recipesCount: number }>()
   const qualityProgressEmitter = createEmitter<any>()
   const qualityCompleteEmitter = createEmitter<any>()
-  const youTubeProgressEmitter = createEmitter<YouTubeProgressPayload>()
+  const youTubeProgressEmitter = createEmitter<RemoteResolveProgressPayload>()
   const watchFileEmitter = createEmitter<string>()
 
   let shimModels: ShimModel[] = readJson<ShimModel[]>(MODELS_KEY, browserDemoModels.map((model) => ({
@@ -551,6 +548,24 @@ export function installBrowserElectronApi() {
     resumeDownload: async (modelId) => {
       return electronAPI.downloadModel(modelId)
     },
+    importModelFiles: async (modelId, files) => {
+      const installed = Array.isArray(files) && files.length > 0
+      shimModels = shimModels.map((model) =>
+        model.id === modelId
+          ? {
+              ...model,
+              installed,
+              installation: {
+                ...(model.installation || {}),
+                installed,
+                missing_artifacts: installed ? [] : model.installation?.missing_artifacts || [],
+              },
+            }
+          : model,
+      )
+      persistModels()
+      return { model_id: modelId, installation: { installed, missing_artifacts: [] } }
+    },
     removeModel: async (modelId) => {
       const isCustom = customModels.some((model) => model.id === modelId)
       if (isCustom) {
@@ -607,6 +622,9 @@ export function installBrowserElectronApi() {
     openFolder: async (folderPath) => {
       window.alert(`Browser mode cannot open native folders.\n\nTarget: ${folderPath}`)
     },
+    checkFileExists: async (filePath) => {
+      return fileStore.has(filePath)
+    },
     readAudioFile: async (filePath) => {
       const entry = getFileEntry(filePath)
       if (!entry) return { success: false as const, error: "File not found in browser preview." }
@@ -623,8 +641,105 @@ export function installBrowserElectronApi() {
         resolvedPath: entry.objectUrl,
       }
     },
+    resolvePlaybackStems: async (outputFiles) => ({
+      success: true,
+      stems: outputFiles,
+      issues: {},
+    }),
+    authRemoteSource: async (provider) => ({
+      success: false as const,
+      provider,
+      authenticated: false,
+      error: `${provider} auth is unavailable in browser preview mode.`,
+      hint: "Use the Electron desktop app for native remote-source support.",
+    }),
+    searchRemoteCatalog: async (provider) => ({
+      success: false as const,
+      provider,
+      authenticated: false,
+      error: `${provider} browsing is unavailable in browser preview mode.`,
+      hint: "Use the Electron desktop app for native remote-source support.",
+    }),
+    listRemoteCollection: async (provider) => ({
+      success: false as const,
+      provider,
+      authenticated: false,
+      error: `${provider} collection sync is unavailable in browser preview mode.`,
+      hint: "Use the Electron desktop app for native remote-source support.",
+    }),
+    resolveRemoteTrack: async (provider) => ({
+      success: false as const,
+      provider,
+      error: `${provider} import is unavailable in browser preview mode.`,
+      code: "BROWSER_PREVIEW_UNSUPPORTED",
+      hint: "Use the Electron desktop app for native remote-source support.",
+    }),
+    onRemoteResolveProgress: (callback) => youTubeProgressEmitter.subscribe(callback),
+    detectPlaybackDevices: async () => [],
+    getCaptureEnvironmentStatus: async () => ({
+      windowsSupported: false,
+      provider: "qobuz" as const,
+      authenticated: false,
+      selectedDeviceId: null,
+      selectedDeviceLabel: null,
+      selectedDeviceReady: false,
+      speakerSelectionAvailable: false,
+      message: "Hidden Qobuz capture is unavailable in browser preview mode.",
+    }),
+    setCaptureOutputDevice: async () => ({
+      success: false,
+      error: "Hidden Qobuz capture is unavailable in browser preview mode.",
+    }),
+    authLibraryProvider: async (provider) => ({
+      success: false as const,
+      provider,
+      authenticated: false,
+      error: `${provider} auth is unavailable in browser preview mode.`,
+      hint: "Use the Electron desktop app for native library browsing and capture.",
+    }),
+    getLibraryAuthStatus: async (provider) => ({
+      success: false as const,
+      provider,
+      authenticated: false,
+      error: `${provider} auth status is unavailable in browser preview mode.`,
+      hint: "Use the Electron desktop app for native library browsing and capture.",
+    }),
+    searchLibrary: async (provider) => ({
+      success: false as const,
+      provider,
+      authenticated: false,
+      error: `${provider} browsing is unavailable in browser preview mode.`,
+      hint: "Use the Electron desktop app for native library browsing and capture.",
+    }),
+    listLibraryCollection: async (provider) => ({
+      success: false as const,
+      provider,
+      authenticated: false,
+      error: `${provider} browsing is unavailable in browser preview mode.`,
+      hint: "Use the Electron desktop app for native library browsing and capture.",
+    }),
+    preparePlaybackCapture: async (provider) => ({
+      success: false as const,
+      provider,
+      error: `${provider} playback capture is unavailable in browser preview mode.`,
+      code: "BROWSER_PREVIEW_UNSUPPORTED",
+      hint: "Use the Electron desktop app for native library browsing and capture.",
+    }),
+    startPlaybackCapture: async (provider) => ({
+      success: false as const,
+      provider,
+      error: `${provider} playback capture is unavailable in browser preview mode.`,
+      code: "BROWSER_PREVIEW_UNSUPPORTED",
+      hint: "Use the Electron desktop app for native library browsing and capture.",
+    }),
+    cancelPlaybackCapture: async () => ({ success: true }),
+    onPlaybackCaptureProgress: (callback) => youTubeProgressEmitter.subscribe(callback as any),
     resolveYouTubeUrl: async () => {
-      youTubeProgressEmitter.emit({ status: "error", error: "YouTube import is unavailable in browser preview mode." })
+      youTubeProgressEmitter.emit({
+        provider: "youtube",
+        status: "error",
+        error: "YouTube import is unavailable in browser preview mode.",
+      })
       return {
         success: false as const,
         code: "BROWSER_PREVIEW_UNSUPPORTED",

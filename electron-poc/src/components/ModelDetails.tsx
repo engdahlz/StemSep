@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   X,
   Download,
+  Upload,
   Trash2,
   ExternalLink,
   Zap,
@@ -81,35 +82,55 @@ export function ModelDetails({
   const downloadSources = downloadInfo?.sources || [];
   const downloadArtifacts = downloadInfo?.artifacts || [];
   const manualInstructions = downloadInfo?.manual_instructions || [];
+  const canManualImport =
+    resolvedModel.availability?.class === "manual_import" ||
+    downloadInfo?.mode === "manual";
+
+  const handleImportFiles = async () => {
+    try {
+      const selected = await window.electronAPI?.openModelFileDialog?.();
+      if (!Array.isArray(selected) || selected.length === 0) return;
+      const files = selected.map((filePath: string) => ({ path: filePath }));
+      await window.electronAPI?.importModelFiles?.(resolvedModel.id, files, true);
+      const tech = await window.electronAPI?.getModelTech?.(resolvedModel.id);
+      const next = tech?.data || tech;
+      if (next && typeof next === "object") {
+        setResolvedModel((prev) => ({ ...prev, ...next, installed: !!next.installed }));
+      }
+    } catch (error) {
+      console.error("Failed to import model files", error);
+    }
+  };
 
   const chunkSizeDisplay =
     resolvedModel.chunk_size ||
     resolvedModel.recommended_settings?.segment_size ||
     "Auto";
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-[1px] p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(24,28,40,0.34)] backdrop-blur-md p-4 animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border bg-card shadow-2xl animate-in zoom-in-95 duration-200"
+        className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[2rem] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(248,249,252,0.94))] shadow-[0_34px_96px_rgba(0,0,0,0.22)] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
         <Button
-          variant="ghost"
+          variant="outline"
           size="icon"
-          className="absolute right-4 top-4 z-10"
+          className="absolute right-5 top-5 z-10 rounded-full border-white/70 bg-white/82 text-slate-600 shadow-[0_10px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm hover:bg-white hover:text-slate-900"
           onClick={onClose}
         >
           <X className="h-4 w-4" />
         </Button>
 
-        {/* Header */}
-        <div className="p-6 pb-4 border-b border-border/50 space-y-4">
+        <div className="space-y-5 border-b border-slate-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.82),rgba(241,244,249,0.88))] p-7 pb-5">
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold tracking-tight">
+            <h2 className="pr-12 text-[30px] font-medium tracking-[-1px] text-slate-950">
               {resolvedModel.name}
             </h2>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Badge variant="secondary" className="font-normal">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+              <Badge
+                variant="secondary"
+                className="rounded-full border border-white/80 bg-white/82 font-normal text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
+              >
                 {resolvedModel.id}
               </Badge>
               {resolvedModel.repo_id && (
@@ -117,7 +138,7 @@ export function ModelDetails({
                   href={`https://huggingface.co/${resolvedModel.repo_id}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                  className="flex items-center gap-1 transition-colors hover:text-slate-900"
                 >
                   {resolvedModel.repo_id} <ExternalLink className="h-3 w-3" />
                 </a>
@@ -128,52 +149,56 @@ export function ModelDetails({
           <div className="flex flex-wrap gap-2">
             <Badge
               variant="outline"
-              className="bg-primary/5 border-primary/20 text-primary"
+              className="rounded-full border-violet-200 bg-violet-50 text-violet-700"
             >
               <Zap className="mr-1 h-3 w-3" /> {resolvedModel.architecture}
             </Badge>
-            <Badge variant="outline" className="bg-secondary/50">
+            <Badge variant="outline" className="rounded-full border-slate-200 bg-white/75 text-slate-600">
               <Cpu className="mr-1 h-3 w-3" /> {resolvedModel.vram_required} GB
               VRAM
             </Badge>
-            <Badge variant="outline" className="bg-secondary/50">
+            <Badge variant="outline" className="rounded-full border-slate-200 bg-white/75 text-slate-600">
               <Layers className="mr-1 h-3 w-3" />{" "}
               {resolvedModel.stems.join(", ")}
             </Badge>
             {resolvedModel.catalog_status && (
-              <Badge variant="outline" className="bg-secondary/50">
+              <Badge variant="outline" className="rounded-full border-slate-200 bg-white/75 text-slate-600">
                 {catalogStatus}
               </Badge>
             )}
             {metricsSource && (
-              <Badge variant="outline" className="bg-secondary/50">
+              <Badge variant="outline" className="rounded-full border-slate-200 bg-white/75 text-slate-600">
                 {metricsSource}
               </Badge>
             )}
             {qualityRoles.map((role) => (
-              <Badge key={role} variant="outline" className="bg-secondary/50">
+              <Badge
+                key={role}
+                variant="outline"
+                className="rounded-full border-slate-200 bg-white/75 text-slate-600"
+              >
                 {String(role).replace(/[_-]+/g, " ")}
               </Badge>
             ))}
             {resolvedModel.install?.mode && (
-              <Badge variant="outline" className="bg-secondary/50">
+              <Badge variant="outline" className="rounded-full border-slate-200 bg-white/75 text-slate-600">
                 Install: {resolvedModel.install.mode}
               </Badge>
             )}
             {resolvedModel.status?.curated && (
-              <Badge variant="outline" className="bg-emerald-500/10 border-emerald-500/20 text-emerald-700">
+              <Badge variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-700">
                 Curated
               </Badge>
             )}
             {resolvedModel.status?.support_tier === "supported_advanced" && (
-              <Badge variant="outline" className="bg-slate-900/6">
+              <Badge variant="outline" className="rounded-full border-amber-200 bg-amber-50 text-amber-700">
                 Supported Advanced
               </Badge>
             )}
             {phaseFixValid && (
               <Badge
                 variant="outline"
-                className="bg-amber-500/10 border-amber-500/20 text-amber-600"
+                className="rounded-full border-amber-200 bg-amber-50 text-amber-700"
                 title={
                   phaseFixRef
                     ? `Reference: ${phaseFixRef}`
@@ -186,53 +211,51 @@ export function ModelDetails({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Runtime / Compatibility Notes */}
+        <div className="space-y-6 p-7">
           {phaseFixValid && (
-            <div className="space-y-3 rounded-lg border border-border/50 bg-secondary/20 p-4">
+            <div className="space-y-3 rounded-[1.4rem] border border-amber-100 bg-amber-50/60 p-5">
               {phaseFixValid && (
                 <div className="space-y-1">
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  <h3 className="text-sm font-medium uppercase tracking-wider text-amber-700/85">
                     Phase Fix Reference
                   </h3>
-                  <div className="text-sm text-foreground/90 space-y-1">
+                  <div className="space-y-1 text-sm text-slate-700">
                     {phaseFixRef && (
-                      <div className="flex justify-between py-1 border-b border-border/30">
-                        <span className="text-muted-foreground">
+                      <div className="flex justify-between border-b border-amber-100/80 py-1">
+                        <span className="text-slate-500">
                           Reference Model
                         </span>
-                        <span className="tabular-nums font-medium text-foreground/90">
+                        <span className="tabular-nums font-medium text-slate-900">
                           {phaseFixRef}
                         </span>
                       </div>
                     )}
                     {phaseFixParams && (
                       <>
-                        <div className="flex justify-between py-1 border-b border-border/30">
-                          <span className="text-muted-foreground">lowHz</span>
-                          <span className="tabular-nums font-medium text-foreground/90">
+                        <div className="flex justify-between border-b border-amber-100/80 py-1">
+                          <span className="text-slate-500">lowHz</span>
+                          <span className="tabular-nums font-medium text-slate-900">
                             {phaseFixParams.lowHz ?? "-"}
                           </span>
                         </div>
-                        <div className="flex justify-between py-1 border-b border-border/30">
-                          <span className="text-muted-foreground">highHz</span>
-                          <span className="tabular-nums font-medium text-foreground/90">
+                        <div className="flex justify-between border-b border-amber-100/80 py-1">
+                          <span className="text-slate-500">highHz</span>
+                          <span className="tabular-nums font-medium text-slate-900">
                             {phaseFixParams.highHz ?? "-"}
                           </span>
                         </div>
-                        <div className="flex justify-between py-1 border-b border-border/30">
-                          <span className="text-muted-foreground">
+                        <div className="flex justify-between border-b border-amber-100/80 py-1">
+                          <span className="text-slate-500">
                             highFreqWeight
                           </span>
-                          <span className="tabular-nums font-medium text-foreground/90">
+                          <span className="tabular-nums font-medium text-slate-900">
                             {phaseFixParams.highFreqWeight ?? "-"}
                           </span>
                         </div>
                       </>
                     )}
                     {!phaseFixRef && !phaseFixParams && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-slate-500">
                         This model has phase-fix metadata but no details were
                         provided.
                       </p>
@@ -242,57 +265,55 @@ export function ModelDetails({
               )}
             </div>
           )}
-          {/* Description */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+
+          <div className="space-y-2 rounded-[1.4rem] border border-slate-200/70 bg-white/68 p-5">
+            <h3 className="text-sm font-medium uppercase tracking-wider text-slate-500">
               Description
             </h3>
-            <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
               {resolvedModel.description || "No description available."}
             </p>
           </div>
 
-          {/* Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {metricSlots.map((slot) => (
               <div
                 key={slot.label}
-                className="p-4 rounded-lg bg-secondary/30 border border-border/50 text-center"
+                className="rounded-[1.2rem] border border-slate-200/70 bg-white/72 p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
               >
-                <div className="text-xs text-muted-foreground uppercase mb-1">
+                <div className="mb-1 text-xs uppercase text-slate-400">
                   {slot.label}
                 </div>
-                <div className="text-xl font-semibold tabular-nums">
+                <div className="text-xl font-semibold tabular-nums text-slate-900">
                   {formatCardMetricValue(slot.value)}
                 </div>
               </div>
             ))}
-            <div className="p-4 rounded-lg bg-secondary/30 border border-border/50 text-center">
-              <div className="text-xs text-muted-foreground uppercase mb-1">
+            <div className="rounded-[1.2rem] border border-slate-200/70 bg-white/72 p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+              <div className="mb-1 text-xs uppercase text-slate-400">
                 Speed
               </div>
-              <div className="text-xl font-bold capitalize">
+              <div className="text-xl font-bold capitalize text-slate-900">
                 {resolvedModel.speed || "-"}
               </div>
             </div>
           </div>
 
-          {/* Download Progress - Moved here for visibility */}
           {resolvedModel.downloading && (
-            <div className="space-y-2 bg-muted/50 p-4 rounded-lg border border-border/50 animate-in fade-in slide-in-from-top-2">
-              <div className="flex justify-between text-sm mb-1">
+            <div className="space-y-2 rounded-[1.35rem] border border-sky-100 bg-sky-50/80 p-4 animate-in fade-in slide-in-from-top-2">
+              <div className="mb-1 flex justify-between text-sm text-sky-800">
                 <span className="font-medium">Downloading...</span>
-                <span className="text-muted-foreground">
+                <span className="text-sky-700/80">
                   {Math.round(resolvedModel.downloadProgress || 0)}%
                 </span>
               </div>
-              <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-sky-100">
                 <div
-                  className="h-full bg-primary transition-all duration-300 ease-out"
+                  className="h-full bg-sky-500 transition-all duration-300 ease-out"
                   style={{ width: `${resolvedModel.downloadProgress || 0}%` }}
                 />
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground mt-2">
+              <div className="mt-2 flex justify-between text-xs text-sky-700/80">
                 <span>
                   {resolvedModel.downloadSpeed
                     ? `${(resolvedModel.downloadSpeed / 1024 / 1024).toFixed(1)} MB/s`
@@ -307,40 +328,39 @@ export function ModelDetails({
             </div>
           )}
 
-          {/* Technical Details */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+          <div className="space-y-2 rounded-[1.4rem] border border-slate-200/70 bg-white/68 p-5">
+            <h3 className="text-sm font-medium uppercase tracking-wider text-slate-500">
               Technical Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
               {runtimeRequired.length > 0 && (
-                <div className="flex justify-between py-1 border-b border-border/30">
-                  <span className="text-muted-foreground">Runtime Required</span>
-                  <span className="font-medium text-foreground/90 text-right">
+                <div className="flex justify-between border-b border-slate-200/70 py-1">
+                  <span className="text-slate-500">Runtime Required</span>
+                  <span className="text-right font-medium text-slate-900">
                     {runtimeRequired.join(", ")}
                   </span>
                 </div>
               )}
               {resolvedModel.runtime?.engine && (
-                <div className="flex justify-between py-1 border-b border-border/30">
-                  <span className="text-muted-foreground">Runtime Engine</span>
-                  <span className="font-medium text-foreground/90 text-right">
+                <div className="flex justify-between border-b border-slate-200/70 py-1">
+                  <span className="text-slate-500">Runtime Engine</span>
+                  <span className="text-right font-medium text-slate-900">
                     {resolvedModel.runtime.engine}
                   </span>
                 </div>
               )}
               {resolvedModel.runtime?.model_type && (
-                <div className="flex justify-between py-1 border-b border-border/30">
-                  <span className="text-muted-foreground">Model Type</span>
-                  <span className="font-medium text-foreground/90 text-right">
+                <div className="flex justify-between border-b border-slate-200/70 py-1">
+                  <span className="text-slate-500">Model Type</span>
+                  <span className="text-right font-medium text-slate-900">
                     {resolvedModel.runtime.model_type}
                   </span>
                 </div>
               )}
               {resolvedModel.runtime?.patch_profile && (
-                <div className="flex justify-between py-1 border-b border-border/30">
-                  <span className="text-muted-foreground">Patch Profile</span>
-                  <span className="font-medium text-foreground/90 text-right">
+                <div className="flex justify-between border-b border-slate-200/70 py-1">
+                  <span className="text-slate-500">Patch Profile</span>
+                  <span className="text-right font-medium text-slate-900">
                     {resolvedModel.runtime.patch_profile}
                   </span>
                 </div>
@@ -609,6 +629,12 @@ export function ModelDetails({
                         Missing: {installation.missing_artifacts.join(", ")}
                       </p>
                     ) : null}
+                    {canManualImport && (
+                      <Button variant="outline" size="sm" onClick={handleImportFiles} className="gap-2">
+                        <Upload className="h-3.5 w-3.5" />
+                        Import Files
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -668,8 +694,7 @@ export function ModelDetails({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-6 pt-0 flex justify-between gap-2">
+        <div className="flex justify-between gap-2 border-t border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.55),rgba(244,246,250,0.72))] p-7 pt-5">
           <div className="flex gap-2">
             {!resolvedModel.installed ? (
               <Button
@@ -683,7 +708,7 @@ export function ModelDetails({
                   }
                   onDownload?.(resolvedModel.id);
                 }}
-                className="gap-2"
+                className="gap-2 rounded-full"
                 disabled={resolvedModel.downloading || downloadInfo?.mode === "unavailable"}
                 variant={downloadInfo?.mode === "manual" ? "outline" : "default"}
               >
@@ -715,14 +740,14 @@ export function ModelDetails({
               <Button
                 variant="destructive"
                 onClick={() => onRemove?.(resolvedModel.id)}
-                className="gap-2"
+                className="gap-2 rounded-full"
               >
                 <Trash2 className="h-4 w-4" />
                 Remove Model
               </Button>
             )}
           </div>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} className="rounded-full border-slate-200 bg-white/82">
             Close
           </Button>
         </div>

@@ -9,6 +9,19 @@ type SourceAudioProfile = import('./types/media').SourceAudioProfile
 type StagingDecision = import('./types/media').StagingDecision
 type SeparationProgressEvent = import('./types/media').SeparationProgressEvent
 type ExportProgressEvent = import('./types/media').ExportProgressEvent
+type PlaybackMetadata = import('./types/media').PlaybackMetadata
+type RemoteLibraryProvider = import('./types/remote').RemoteLibraryProvider
+type ActiveLibraryProvider = import('./types/remote').ActiveLibraryProvider
+type RemoteCatalogItem = import('./types/remote').RemoteCatalogItem
+type RemoteAuthResult = import('./types/remote').RemoteAuthResult
+type RemoteCatalogResult = import('./types/remote').RemoteCatalogResult
+type RemoteResolveResult = import('./types/remote').RemoteResolveResult
+type RemoteResolveProgressPayload = import('./types/remote').RemoteResolveProgressPayload
+type PlaybackDevice = import('./types/remote').PlaybackDevice
+type CaptureEnvironmentStatus = import('./types/remote').CaptureEnvironmentStatus
+type PlaybackCapturePrepareResult = import('./types/remote').PlaybackCapturePrepareResult
+type PlaybackCaptureCompleteResult = import('./types/remote').PlaybackCaptureCompleteResult
+type PlaybackCaptureProgressPayload = import('./types/remote').PlaybackCaptureProgressPayload
 
 type MissingAudioCode = 'MISSING_CACHE_FILE' | 'STALE_SESSION' | 'MISSING_SOURCE_FILE'
 
@@ -86,6 +99,7 @@ interface ElectronAPI {
         phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number },
         postProcessingSteps?: any[],
         volumeCompensation?: VolumeCompensation,
+        pipelineConfig?: SeparationWorkflow['steps'],
         workflow?: SeparationWorkflow,
         runtimePolicy?: WorkflowRuntimePolicy,
         exportPolicy?: WorkflowExportPolicy
@@ -109,6 +123,7 @@ interface ElectronAPI {
         phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number },
         postProcessingSteps?: any[],
         volumeCompensation?: VolumeCompensation,
+        pipelineConfig?: SeparationWorkflow['steps'],
         workflow?: SeparationWorkflow,
         runtimePolicy?: WorkflowRuntimePolicy,
         exportPolicy?: WorkflowExportPolicy
@@ -148,6 +163,7 @@ interface ElectronAPI {
     getModelTech: (modelId: string) => Promise<any>
     resolveModelDownload: (modelId: string) => Promise<any>
     getModelInstallation: (modelId: string) => Promise<any>
+    importModelFiles: (modelId: string, files: Array<{ kind?: string; path: string }>, allowCopy?: boolean) => Promise<any>
     getRecipes: () => Promise<Recipe[]>
     qualityBaselineCreate: (payload: Record<string, any>) => Promise<any>
     qualityCompare: (payload: Record<string, any>) => Promise<any>
@@ -157,22 +173,81 @@ interface ElectronAPI {
     removeModel: (modelId: string) => Promise<any>
     importCustomModel: (filePath: string, modelName: string, architecture?: string) => Promise<any>
     openFolder: (folderPath: string) => Promise<void>
+    checkFileExists: (filePath: string) => Promise<boolean>
     readAudioFile: (filePath: string) => Promise<ReadAudioFileResult>
+    resolvePlaybackStems: (
+        outputFiles: Record<string, string>,
+        playback?: PlaybackMetadata
+    ) => Promise<{
+        success: boolean
+        stems: Record<string, string>
+        issues: Record<string, { code?: MissingAudioCode; hint?: string; originalPath?: string }>
+        error?: string
+    }>
+
+    authRemoteSource: (provider: RemoteLibraryProvider) => Promise<RemoteAuthResult>
+    searchRemoteCatalog: (provider: RemoteLibraryProvider, query: string) => Promise<RemoteCatalogResult>
+    listRemoteCollection: (
+        provider: RemoteLibraryProvider,
+        scope?: string
+    ) => Promise<RemoteCatalogResult>
+    resolveRemoteTrack: (
+        provider: RemoteLibraryProvider,
+        trackId: string,
+        variantId?: string
+    ) => Promise<RemoteResolveResult>
+    onRemoteResolveProgress: (
+        callback: (data: RemoteResolveProgressPayload) => void
+    ) => () => void
+    detectPlaybackDevices: () => Promise<PlaybackDevice[]>
+    getCaptureEnvironmentStatus: () => Promise<CaptureEnvironmentStatus>
+    setCaptureOutputDevice: (
+        deviceId: string
+    ) => Promise<{ success: boolean; error?: string; deviceId?: string; label?: string }>
+    authLibraryProvider: (provider: ActiveLibraryProvider) => Promise<RemoteAuthResult>
+    getLibraryAuthStatus: (provider: ActiveLibraryProvider) => Promise<RemoteAuthResult>
+    searchLibrary: (provider: ActiveLibraryProvider, query: string) => Promise<RemoteCatalogResult>
+    listLibraryCollection: (
+        provider: ActiveLibraryProvider,
+        scope?: string
+    ) => Promise<RemoteCatalogResult>
+    preparePlaybackCapture: (
+        provider: ActiveLibraryProvider,
+        trackId: string
+    ) => Promise<PlaybackCapturePrepareResult>
+    startPlaybackCapture: (
+        provider: ActiveLibraryProvider,
+        trackId: string,
+        deviceId: string
+    ) => Promise<PlaybackCaptureCompleteResult>
+    cancelPlaybackCapture: (captureId?: string) => Promise<{ success: boolean; error?: string }>
+    onPlaybackCaptureProgress: (
+        callback: (data: PlaybackCaptureProgressPayload) => void
+    ) => () => void
 
     // YouTube URL -> local temp audio file
     resolveYouTubeUrl: (url: string) => Promise<
-        | { success: true; file_path: string; title: string; source_url?: string }
+        | {
+            success: true
+            file_path: string
+            title: string
+            source_url?: string
+            channel?: string
+            duration_sec?: number
+            thumbnail_url?: string
+            canonical_url?: string
+          }
         | { success: false; code?: string; error: string; hint?: string }
     >
-    onYouTubeProgress: (callback: (data: { status: string; percent?: string; speed?: string; eta?: string; error?: string }) => void) => () => void
+    onYouTubeProgress: (callback: (data: RemoteResolveProgressPayload) => void) => () => void
     getGpuDevices: () => Promise<any>
     getSystemRuntimeInfo: () => Promise<SystemRuntimeInfo>
     getWorkflows: () => Promise<{ workflows: Record<string, any> }>
     checkPresetModels: (presetMappings: Record<string, string>) => Promise<Record<string, boolean>>
-    onDownloadProgress: (callback: (data: { modelId: string; progress: number; artifactIndex?: number; artifactCount?: number; currentFile?: string; currentRelativePath?: string; message?: string }) => void) => () => void
-    onDownloadComplete: (callback: (data: { modelId: string; artifactCount?: number }) => void) => () => void
+    onDownloadProgress: (callback: (data: { modelId: string; progress: number; stage?: string; artifactIndex?: number; artifactCount?: number; currentFile?: string; currentRelativePath?: string; currentSource?: string; verified?: boolean; message?: string }) => void) => () => void
+    onDownloadComplete: (callback: (data: { modelId: string; artifactCount?: number; stage?: string; verified?: boolean }) => void) => () => void
     onDownloadError: (callback: (data: { modelId: string; error: string }) => void) => () => void
-    onDownloadPaused: (callback: (data: { modelId: string; artifactIndex?: number; artifactCount?: number; currentFile?: string; currentRelativePath?: string; progress?: number }) => void) => () => void
+    onDownloadPaused: (callback: (data: { modelId: string; artifactIndex?: number; artifactCount?: number; currentFile?: string; currentRelativePath?: string; currentSource?: string; progress?: number; stage?: string; verified?: boolean }) => void) => () => void
     openDirectoryDialog: () => Promise<{ canceled: boolean; filePaths: string[] }>
     onBackendError: (callback: (data: { error: string }) => void) => () => void
     onBridgeReady: (callback: (data: { capabilities: string[]; modelsCount: number; recipesCount: number }) => void) => () => void

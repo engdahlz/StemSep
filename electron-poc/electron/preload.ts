@@ -13,20 +13,70 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openFolder: (folderPath: string) => ipcRenderer.invoke('open-folder', folderPath),
   checkFileExists: (filePath: string) => ipcRenderer.invoke('check-file-exists', filePath),
   readAudioFile: (filePath: string) => ipcRenderer.invoke('read-audio-file', filePath),
+  resolvePlaybackStems: (outputFiles: Record<string, string>, playback?: Record<string, any>) =>
+    ipcRenderer.invoke('resolve-playback-stems', { outputFiles, playback }),
+  resolveMediaUrl: (filePath: string) => {
+    if (/^(blob:|data:|https?:)/i.test(filePath)) return filePath
+    const normalized = String(filePath || '').replace(/\\/g, '/')
+    if (/^[A-Za-z]:\//.test(normalized)) {
+      return `media:///${encodeURI(normalized)}`
+    }
+    return `media://${encodeURI(normalized)}`
+  },
+
+  authRemoteSource: (provider: 'qobuz' | 'bandcamp') =>
+    ipcRenderer.invoke('auth-remote-source', { provider }),
+  searchRemoteCatalog: (provider: 'qobuz' | 'bandcamp', query: string) =>
+    ipcRenderer.invoke('search-remote-catalog', { provider, query }),
+  listRemoteCollection: (provider: 'qobuz' | 'bandcamp', scope?: string) =>
+    ipcRenderer.invoke('list-remote-collection', { provider, scope }),
+  resolveRemoteTrack: (provider: 'qobuz' | 'bandcamp', trackId: string, variantId?: string) =>
+    ipcRenderer.invoke('resolve-remote-track', { provider, trackId, variantId }),
+  onRemoteResolveProgress: (callback: (data: any) => void) => {
+    const handler = (_event: any, data: any) => callback(data)
+    ipcRenderer.on('remote-resolve-progress', handler)
+    return () => ipcRenderer.removeListener('remote-resolve-progress', handler)
+  },
+  detectPlaybackDevices: () => ipcRenderer.invoke('detect-playback-devices'),
+  getCaptureEnvironmentStatus: () => ipcRenderer.invoke('get-capture-environment-status'),
+  setCaptureOutputDevice: (deviceId: string) =>
+    ipcRenderer.invoke('set-capture-output-device', { deviceId }),
+  authLibraryProvider: (provider: 'spotify' | 'qobuz') =>
+    ipcRenderer.invoke('auth-library-provider', { provider }),
+  getLibraryAuthStatus: (provider: 'spotify' | 'qobuz') =>
+    ipcRenderer.invoke('get-library-auth-status', { provider }),
+  searchLibrary: (provider: 'spotify' | 'qobuz', query: string) =>
+    ipcRenderer.invoke('search-library', { provider, query }),
+  listLibraryCollection: (provider: 'spotify' | 'qobuz', scope?: string) =>
+    ipcRenderer.invoke('list-library-collection', { provider, scope }),
+  preparePlaybackCapture: (provider: 'spotify' | 'qobuz', trackId: string) =>
+    ipcRenderer.invoke('prepare-playback-capture', { provider, trackId }),
+  startPlaybackCapture: (
+    provider: 'spotify' | 'qobuz',
+    trackId: string,
+    deviceId: string,
+  ) => ipcRenderer.invoke('start-playback-capture', { provider, trackId, deviceId }),
+  cancelPlaybackCapture: (captureId?: string) =>
+    ipcRenderer.invoke('cancel-playback-capture', { captureId }),
+  onPlaybackCaptureProgress: (callback: (data: any) => void) => {
+    const handler = (_event: any, data: any) => callback(data)
+    ipcRenderer.on('playback-capture-progress', handler)
+    return () => ipcRenderer.removeListener('playback-capture-progress', handler)
+  },
 
   // YouTube URL -> local temp audio file
   resolveYouTubeUrl: (url: string) => ipcRenderer.invoke('resolve-youtube-url', { url }),
-  onYouTubeProgress: (callback: (data: { status: string, percent?: string, speed?: string, eta?: string, error?: string }) => void) => {
+  onYouTubeProgress: (callback: (data: any) => void) => {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('youtube-progress', handler)
     return () => ipcRenderer.removeListener('youtube-progress', handler)
   },
 
-  separationPreflight: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy) =>
-    ipcRenderer.invoke('separation-preflight', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, workflow, runtimePolicy, exportPolicy }),
+  separationPreflight: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, pipelineConfig?: any[], workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy) =>
+    ipcRenderer.invoke('separation-preflight', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, pipelineConfig, workflow, runtimePolicy, exportPolicy }),
 
-  separateAudio: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy) =>
-    ipcRenderer.invoke('separate-audio', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, workflow, runtimePolicy, exportPolicy }),
+  separateAudio: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, pipelineConfig?: any[], workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy) =>
+    ipcRenderer.invoke('separate-audio', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, pipelineConfig, workflow, runtimePolicy, exportPolicy }),
   cancelSeparation: (jobId: string) => ipcRenderer.invoke('cancel-separation', jobId),
   saveJobOutput: (jobId: string) => ipcRenderer.invoke('save-job-output', jobId),
   discardJobOutput: (jobId: string) => ipcRenderer.invoke('discard-job-output', jobId),
@@ -76,6 +126,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   downloadModel: (modelId: string) => ipcRenderer.invoke('download-model', modelId),
   pauseDownload: (modelId: string) => ipcRenderer.invoke('pause-download', modelId),
   resumeDownload: (modelId: string) => ipcRenderer.invoke('resume-download', modelId),
+  importModelFiles: (modelId: string, files: Array<{ kind?: string, path: string }>, allowCopy = true) =>
+    ipcRenderer.invoke('import-model-files', { modelId, files, allowCopy }),
   removeModel: (modelId: string) => ipcRenderer.invoke('remove-model', modelId),
   importCustomModel: (filePath: string, modelName: string, architecture?: string) =>
     ipcRenderer.invoke('import-custom-model', { filePath, modelName, architecture }),
@@ -86,12 +138,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getWorkflows: () => ipcRenderer.invoke('get-workflows'),
 
   // Model download progress
-  onDownloadProgress: (callback: (data: { modelId: string, progress: number, artifactIndex?: number, artifactCount?: number, currentFile?: string, currentRelativePath?: string, message?: string }) => void) => {
+  onDownloadProgress: (callback: (data: { modelId: string, progress: number, stage?: string, artifactIndex?: number, artifactCount?: number, currentFile?: string, currentRelativePath?: string, currentSource?: string, verified?: boolean, message?: string }) => void) => {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('download-progress', handler)
     return () => ipcRenderer.removeListener('download-progress', handler)
   },
-  onDownloadComplete: (callback: (data: { modelId: string, artifactCount?: number }) => void) => {
+  onDownloadComplete: (callback: (data: { modelId: string, artifactCount?: number, stage?: string, verified?: boolean }) => void) => {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('download-complete', handler)
     return () => ipcRenderer.removeListener('download-complete', handler)
@@ -101,7 +153,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('download-error', handler)
     return () => ipcRenderer.removeListener('download-error', handler)
   },
-  onDownloadPaused: (callback: (data: { modelId: string, artifactIndex?: number, artifactCount?: number, currentFile?: string, currentRelativePath?: string, progress?: number }) => void) => {
+  onDownloadPaused: (callback: (data: { modelId: string, artifactIndex?: number, artifactCount?: number, currentFile?: string, currentRelativePath?: string, currentSource?: string, progress?: number, stage?: string, verified?: boolean }) => void) => {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('download-paused', handler)
     return () => ipcRenderer.removeListener('download-paused', handler)

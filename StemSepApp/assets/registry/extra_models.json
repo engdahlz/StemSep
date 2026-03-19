@@ -819,6 +819,221 @@
           "shifts": 1
         }
       }
+    },
+    {
+      "id": "gilliaan-monostereo-dual-beta2",
+      "name": "Gilliaan MonoStereo Dual Beta2",
+      "architecture": "Mel-Roformer",
+      "type": "Phantom Center / Mono-Stereo Duality",
+      "description": "Guide-tracked phantom-center / mono-stereo duality candidate.",
+      "tags": ["phantom_center", "duality", "karaoke"],
+      "stems": ["instrumental", "vocals"],
+      "links": {
+        "checkpoint": "https://huggingface.co/gilliaaan/Mel-Band-Roformer-MonoStereo-Duality/blob/main/gilliaan_MonoStereo_Dual_Beta2.ckpt",
+        "config": "https://huggingface.co/gilliaaan/Mel-Band-Roformer-MonoStereo-Duality",
+        "homepage": "https://huggingface.co/gilliaaan/Mel-Band-Roformer-MonoStereo-Duality"
+      },
+      "runtime": {
+        "allowed": ["msst"],
+        "preferred": "msst",
+        "engine": "msst_builtin",
+        "model_type": "mel_band_roformer",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "Guide candidate tracked for phantom-center workflows; direct-download/runtime verification is still pending."
+      },
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Tracked from the live guide as a new phantom-center candidate.",
+          "Do not promote to Simple mode until checkpoint/config packaging and QA are verified."
+        ]
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Candidate is tracked but not yet QA-verified for local execution."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "guide_rank": 1,
+      "guide_notes": [
+        "Newer phantom-center guide candidate called out as better than Beta1."
+      ]
+    },
+    {
+      "id": "anvuew-bs-roformer-mag",
+      "name": "Anvuew BS-RoFormer Mag",
+      "architecture": "BS-Roformer",
+      "type": "Roformer - Vocals",
+      "description": "Guide-tracked vocal model specialized for magnitude-spectrum accuracy.",
+      "tags": ["vocals", "cleanup"],
+      "stems": ["vocals", "instrumental"],
+      "links": {
+        "checkpoint": "https://huggingface.co/anvuew/BS_RoFormer_mag",
+        "config": "https://huggingface.co/anvuew/BS_RoFormer_mag",
+        "homepage": "https://huggingface.co/anvuew/BS_RoFormer_mag"
+      },
+      "runtime": {
+        "allowed": ["msst"],
+        "preferred": "msst",
+        "engine": "msst_builtin",
+        "model_type": "bs_roformer",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "Guide candidate tracked for vocal-magnitude accuracy; checkpoint/config verification is still pending."
+      },
+      "install": {
+        "mode": "manual"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Candidate model is not yet promoted into a verified local runtime path."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "guide_rank": 1
+    },
+    {
+      "id": "unwa-bs-exp-siamese-roformer",
+      "name": "Unwa BS-EXP SiameseRoformer",
+      "architecture": "BS-Roformer",
+      "type": "Roformer - Vocals",
+      "description": "Guide-tracked SiameseRoformer vocal candidate.",
+      "tags": ["vocals", "backing_vocals"],
+      "stems": ["vocals", "instrumental"],
+      "links": {
+        "checkpoint": "https://huggingface.co/pcunwa/BS-EXP-SiameseRoformer",
+        "config": "https://huggingface.co/pcunwa/BS-EXP-SiameseRoformer",
+        "homepage": "https://huggingface.co/pcunwa/BS-EXP-SiameseRoformer"
+      },
+      "runtime": {
+        "allowed": ["msst"],
+        "preferred": "msst",
+        "engine": "custom_builtin_variant",
+        "model_type": "bs_roformer",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "SiameseRoformer candidate may require custom runtime support and has not been verified yet."
+      },
+      "install": {
+        "mode": "manual"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Candidate is tracked only for advanced/manual experimentation."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence"
+    },
+    {
+      "id": "gabox-last-bs-roformer",
+      "name": "Gabox Last BS-RoFormer",
+      "architecture": "BS-Roformer",
+      "type": "Backing Vocal Focus",
+      "description": "Guide-tracked experimental model focused on removing lead vocals while keeping BV.",
+      "tags": ["karaoke", "backing_vocals", "harmonies"],
+      "stems": ["instrumental", "vocals"],
+      "links": {
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/bsroformers/last_bs_roformer.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers",
+        "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers"
+      },
+      "runtime": {
+        "allowed": ["msst"],
+        "preferred": "msst",
+        "engine": "msst_builtin",
+        "model_type": "bs_roformer",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "Experimental guide candidate; not yet normalized into a verified local asset bundle."
+      },
+      "install": {
+        "mode": "manual"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Experimental backing-vocal candidate remains gated pending QA."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence"
+    },
+    {
+      "id": "mvsep-bagpipes-other",
+      "name": "MVSEP Bagpipes",
+      "architecture": "Other",
+      "type": "Special Stem",
+      "description": "Guide-tracked MVSEP bagpipes/other candidate.",
+      "tags": ["special_stem", "wind", "bagpipes"],
+      "stems": ["other"],
+      "links": {
+        "checkpoint": "https://mvsep.com",
+        "config": "https://mvsep.com",
+        "homepage": "https://mvsep.com"
+      },
+      "runtime": {
+        "allowed": ["msst"],
+        "preferred": "msst",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "MVSEP special-stem candidate has no verified local runtime package yet."
+      },
+      "install": {
+        "mode": "manual"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Online/special-stem candidate only; local packaging is still pending."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence"
+    },
+    {
+      "id": "mvsep-braam-other",
+      "name": "MVSEP Braam",
+      "architecture": "Other",
+      "type": "Special Stem",
+      "description": "Guide-tracked MVSEP braam/effect candidate.",
+      "tags": ["special_stem", "sfx", "braam"],
+      "stems": ["other"],
+      "links": {
+        "checkpoint": "https://mvsep.com",
+        "config": "https://mvsep.com",
+        "homepage": "https://mvsep.com"
+      },
+      "runtime": {
+        "allowed": ["msst"],
+        "preferred": "msst",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "MVSEP effect candidate has no verified local runtime package yet."
+      },
+      "install": {
+        "mode": "manual"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Online/special-stem candidate only; local packaging is still pending."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence"
     }
   ]
 }

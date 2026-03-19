@@ -113,6 +113,7 @@ function recipeSimpleGoal(recipe: Recipe): Preset['simpleGoal'] | undefined {
 export function recipeToPreset(recipe: Recipe): Preset {
   const requiredModels = getRecipeRequiredModels(recipe)
   const stems = recipeDisplayStems(recipe)
+  const surfaceBlocked = Array.isArray(recipe.surface_blockers) && recipe.surface_blockers.length > 0
 
   const defaults = recipe.defaults
   const advancedDefaults = defaults
@@ -130,6 +131,7 @@ export function recipeToPreset(recipe: Recipe): Preset {
   if (recipe.quality_goal) baseTags.push(recipe.quality_goal)
   if (recipe.difficulty) baseTags.push(recipe.difficulty)
   if (recipe.simple_surface) baseTags.push('simple-surface')
+  if (surfaceBlocked) baseTags.push('surface-blocked')
 
   return {
     id: recipe.id,
@@ -137,6 +139,7 @@ export function recipeToPreset(recipe: Recipe): Preset {
     description: recipe.description || '',
     stems,
     recommended:
+      !surfaceBlocked &&
       recipe.promotion_status !== 'supported_advanced' &&
       (recipe.simple_surface === true || (typeof recipe.guide_rank === 'number' && recipe.guide_rank <= 2)),
     category: recipeCategory(recipe),
@@ -145,6 +148,8 @@ export function recipeToPreset(recipe: Recipe): Preset {
     tags: Array.from(new Set(baseTags)),
     simpleVisible:
       recipe.simple_surface === true &&
+      !surfaceBlocked &&
+      recipe.surface_policy !== 'advanced_only' &&
       recipe.promotion_status !== 'supported_advanced' &&
       recipe.qa_status !== 'pending',
     simpleGoal,
@@ -168,8 +173,17 @@ export function recipeToPreset(recipe: Recipe): Preset {
       target: recipe.target,
       warning: recipe.warning,
       source: recipe.source,
+      surface_policy: recipe.surface_policy,
+      requires_verified_assets: recipe.requires_verified_assets,
+      requires_qa_pass: recipe.requires_qa_pass,
+      golden_set_id: recipe.golden_set_id,
+      audio_quality_thresholds: recipe.audio_quality_thresholds,
+      guide_topics: recipe.guide_topics,
+      quality_tradeoff: recipe.quality_tradeoff,
       promotion_status: recipe.promotion_status,
       qa_status: recipe.qa_status,
+      surface_blockers: recipe.surface_blockers,
+      required_model_statuses: recipe.required_model_statuses,
       defaults: recipe.defaults,
       difficulty: recipe.difficulty,
       expectedVramTier: recipe.expected_vram_tier,

@@ -1,4 +1,5 @@
 import type {
+  RecipeAudioQualityThresholds,
   RecipeDefaults,
   RecipeDifficulty,
   RecipeRuntimeTier,
@@ -45,8 +46,27 @@ export interface Preset {
     warning?: string
     source?: string
     family?: string
+    surface_policy?: 'verified_only' | 'advanced_only' | 'manual_review'
+    requires_verified_assets?: boolean
+    requires_qa_pass?: boolean
+    golden_set_id?: string
+    audio_quality_thresholds?: RecipeAudioQualityThresholds
+    guide_topics?: string[]
+    quality_tradeoff?: string
     promotion_status?: 'curated' | 'supported_advanced'
     qa_status?: 'verified' | 'pending' | 'experimental'
+    surface_blockers?: string[]
+    required_model_statuses?: Array<{
+      id: string
+      catalog_status?: string | null
+      metrics_status?: string | null
+      readiness?: string | null
+      simple_allowed?: boolean | null
+      blocked_reason?: string | null
+      runtime_adapter?: string | null
+      install_mode?: string | null
+      download_mode?: string | null
+    }>
     defaults?: RecipeDefaults
     difficulty?: RecipeDifficulty
     expectedVramTier?: RecipeVramTier

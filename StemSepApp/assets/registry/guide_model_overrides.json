@@ -1663,6 +1663,161 @@
       "workflow_groups": [
         "special stems"
       ]
+    },
+    "anvuew-dereverb-bs-225050": {
+      "guide_rank": 1,
+      "guide_notes": [
+        "Guide-highlighted BS-Roformer dereverb variant for restoration chains."
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": true,
+        "curated": true,
+        "support_tier": "supported_advanced"
+      },
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "bs_roformer",
+        "hosts": [
+          "msst"
+        ],
+        "install_burden": "low"
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "dereverb",
+        "restoration_finish"
+      ],
+      "content_fit": [
+        "speech",
+        "vocals",
+        "restoration"
+      ],
+      "best_for": [
+        "mono dereverb",
+        "restoration chains"
+      ]
+    },
+    "duality-v1-unwa": {
+      "guide_rank": 2,
+      "guide_notes": [
+        "Duality v1 is tracked as an advanced-only backing-vocal and karaoke splitter."
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Duality remains advanced-only until its local bundle and QA are verified."
+      },
+      "quality_role": [
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "duality",
+        "backing_vocal_splitter"
+      ]
+    },
+    "duality-v2-unwa": {
+      "guide_rank": 1,
+      "guide_notes": [
+        "Duality v2 is the preferred tracked duality workflow candidate but remains advanced-only."
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Duality v2 needs verified local QA before Simple promotion."
+      },
+      "quality_role": [
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "duality",
+        "backing_vocal_splitter",
+        "harmony_recovery"
+      ]
+    },
+    "sucial-male-female": {
+      "guide_rank": 1,
+      "guide_notes": [
+        "Guide-tracked duet/speaker split model for male/female isolation."
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Male/Female split remains advanced-only until assets and QA are verified."
+      },
+      "quality_role": [
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "speaker_split",
+        "duet_split"
+      ]
+    },
+    "unwa-hyperace-v2-inst": {
+      "guide_rank": 2,
+      "guide_notes": [
+        "Tracked HyperAce V2 instrumental variant for advanced-only instrumental comparisons."
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "HyperAce V2 remains advanced-only until its local runtime bundle and golden-set QA are verified."
+      },
+      "runtime": {
+        "engine": "custom_builtin_variant",
+        "model_type": "bs_roformer",
+        "patch_profile": "hyperace_v2",
+        "config_ref": "config.yaml",
+        "checkpoint_ref": "bs_roformer_inst_hyperacev2.ckpt",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "config.yaml",
+          "bs_roformer_inst_hyperacev2.ckpt"
+        ]
+      },
+      "quality_role": [
+        "primary"
+      ],
+      "workflow_roles": [
+        "instrumental",
+        "advanced_comparison"
+      ]
+    },
+    "mel-band-crowd": {
+      "guide_rank": 1,
+      "guide_notes": [
+        "Tracked as the crowd/ambience cleanup candidate for restoration workflows."
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Crowd cleanup remains advanced-only until golden-set QA is available."
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "crowd_cleanup",
+        "restoration"
+      ],
+      "content_fit": [
+        "live",
+        "crowd",
+        "ambience"
+      ]
     }
   }
 }

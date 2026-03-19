@@ -446,6 +446,84 @@ fn get_recipes_returns_array() {
 }
 
 #[test]
+fn get_recipes_blocks_unverified_advanced_workflows_from_simple_surface() {
+    let mut child = spawn_backend();
+
+    let stdin = child.stdin.as_mut().expect("stdin");
+    let stdout = child.stdout.take().expect("stdout");
+    let mut reader = BufReader::new(stdout);
+
+    let _ = read_json_line(&mut reader);
+
+    stdin
+        .write_all(b"{\"command\":\"get_recipes\",\"id\":31}\n")
+        .expect("write get_recipes");
+    stdin.flush().ok();
+
+    let resp = read_json_line(&mut reader);
+    assert_eq!(resp.get("id").and_then(|v| v.as_i64()), Some(31));
+    assert_eq!(resp.get("success").and_then(|v| v.as_bool()), Some(true));
+
+    let recipes = resp
+        .get("data")
+        .and_then(|v| v.as_array())
+        .expect("recipes array");
+    let recipe = recipes
+        .iter()
+        .find(|entry| {
+            entry.get("id").and_then(|v| v.as_str())
+                == Some("workflow_phantom_center_dual_beta2")
+        })
+        .expect("phantom-center workflow");
+
+    assert_eq!(
+        recipe.get("surface_policy").and_then(|v| v.as_str()),
+        Some("verified_only")
+    );
+    assert_eq!(
+        recipe.get("simple_surface").and_then(|v| v.as_bool()),
+        Some(false)
+    );
+    assert_eq!(
+        recipe.get("golden_set_id").and_then(|v| v.as_str()),
+        Some("golden_phantom_center_dual_v1")
+    );
+    assert_eq!(
+        recipe
+            .get("qa_policy_ready")
+            .and_then(|v| v.as_bool()),
+        Some(true)
+    );
+    assert!(
+        recipe
+            .get("audio_quality_thresholds")
+            .and_then(|v| v.get("min_correlation"))
+            .and_then(|v| v.as_f64())
+            .is_some(),
+        "expected QA-gated recipe to expose audio thresholds"
+    );
+    assert!(
+        recipe
+            .get("surface_blockers")
+            .and_then(|v| v.as_array())
+            .is_some_and(|items| !items.is_empty()),
+        "expected advanced-only workflow to expose surface blockers"
+    );
+    assert!(
+        recipe
+            .get("required_model_statuses")
+            .and_then(|v| v.as_array())
+            .is_some_and(|items| items.iter().all(|model| {
+                model.get("catalog_status").is_some()
+                    && model.get("metrics_status").is_some()
+                    && model.get("readiness").is_some()
+                    && model.get("simple_allowed").is_some()
+            })),
+        "expected required model statuses to expose gating metadata"
+    );
+}
+
+#[test]
 fn quality_baseline_manifest_hash_is_deterministic() {
     let mut child = spawn_backend();
     let stdin = child.stdin.as_mut().expect("stdin");
@@ -908,6 +986,58 @@ fn separation_preflight_exposes_runtime_adapter_metadata() {
                 || model.get("runtime_adapter").and_then(|v| v.as_str()).is_some()
         }),
         "expected required models to expose runtime metadata"
+    );
+}
+
+#[test]
+fn separation_preflight_exposes_recipe_audio_qa_policy() {
+    let mut child = spawn_backend();
+
+    let stdin = child.stdin.as_mut().expect("stdin");
+    let stdout = child.stdout.take().expect("stdout");
+    let mut reader = BufReader::new(stdout);
+
+    let _ = read_json_line(&mut reader);
+
+    let req = serde_json::json!({
+        "command": "separation_preflight",
+        "id": 11,
+        "file_path": "C:/this/does/not/exist.wav",
+        "model_id": "workflow_dereverb_precision_bs",
+        "device": "cpu"
+    });
+    stdin
+        .write_all(format!("{}\n", req).as_bytes())
+        .expect("write separation_preflight qa policy");
+    stdin.flush().ok();
+
+    let resp = read_json_line(&mut reader);
+    assert_eq!(resp.get("id").and_then(|v| v.as_i64()), Some(11));
+    assert_eq!(resp.get("success").and_then(|v| v.as_bool()), Some(true));
+
+    let plan = resp
+        .get("data")
+        .and_then(|v| v.get("plan"))
+        .and_then(|v| v.as_object())
+        .expect("plan object");
+    assert_eq!(
+        plan.get("requires_qa_pass").and_then(|v| v.as_bool()),
+        Some(true)
+    );
+    assert_eq!(
+        plan.get("golden_set_id").and_then(|v| v.as_str()),
+        Some("golden_dereverb_precision_v1")
+    );
+    assert_eq!(
+        plan.get("qa_policy_ready").and_then(|v| v.as_bool()),
+        Some(true)
+    );
+    assert!(
+        plan.get("audio_quality_thresholds")
+            .and_then(|v| v.get("min_correlation"))
+            .and_then(|v| v.as_f64())
+            .is_some(),
+        "expected preflight plan to expose audio QA thresholds"
     );
 }
 

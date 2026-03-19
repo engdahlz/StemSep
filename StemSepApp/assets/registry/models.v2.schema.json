@@ -75,6 +75,9 @@
         "crowd",
         "speech",
         "sfx",
+        "effects",
+        "music",
+        "restored",
         "target",
         "residual"
       ]
@@ -125,8 +128,24 @@
           "items": { "$ref": "#/$defs/stemName" }
         },
         "links": { "$ref": "#/$defs/links" },
+        "homepage": {
+          "description": "Legacy informational URL retained for compatibility; prefer links.homepage.",
+          "anyOf": [{ "$ref": "#/$defs/url" }, { "type": "null" }]
+        },
         "artifacts": { "$ref": "#/$defs/artifacts" },
         "metrics": { "$ref": "#/$defs/metrics" },
+        "sdr": {
+          "description": "Legacy top-level metric retained for compatibility with older tooling.",
+          "$ref": "#/$defs/numberOrNull"
+        },
+        "fullness": {
+          "description": "Legacy top-level metric retained for compatibility with older tooling.",
+          "$ref": "#/$defs/numberOrNull"
+        },
+        "bleedless": {
+          "description": "Legacy top-level metric retained for compatibility with older tooling.",
+          "$ref": "#/$defs/numberOrNull"
+        },
         "card_metrics": { "$ref": "#/$defs/cardMetrics" },
         "catalog_status": {
           "type": "string",
@@ -140,6 +159,14 @@
           "type": "array",
           "items": { "$ref": "#/$defs/metricsEvidence" }
         },
+        "guide_rank": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "guide_notes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
         "vram_required": {
           "description": "Approximate VRAM required in GB (rough guidance).",
           "$ref": "#/$defs/numberOrNull"
@@ -147,6 +174,12 @@
         "recommended_settings": { "$ref": "#/$defs/recommendedSettings" },
         "settings_semantics": { "$ref": "#/$defs/settingsSemantics" },
         "runtime": { "$ref": "#/$defs/runtime" },
+        "install": {
+          "description": "Legacy install metadata retained for compatibility while download manifests are normalized.",
+          "type": "object",
+          "additionalProperties": true
+        },
+        "status": { "$ref": "#/$defs/status" },
         "compatibility": { "$ref": "#/$defs/compatibility" },
         "requirements": { "$ref": "#/$defs/requirements" },
         "phase_fix": { "$ref": "#/$defs/phaseFix" },
@@ -166,7 +199,7 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": ["vocals", "instrumental", "karaoke", "restoration", "multi_stem"]
+                "enum": ["vocals", "instrumental", "karaoke", "restoration", "multi_stem", "bass", "drums"]
               }
             },
             "quality_tier": {
@@ -204,17 +237,64 @@
         "stability_notes": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
+        },
+        "quality_role": {
+          "anyOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            }
+          ]
+        },
+        "best_for": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "artifacts_risk": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "vram_profile": { "type": ["string", "null"] },
+        "chunk_overlap_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "workflow_groups": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "quality_axes": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "workflow_roles": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "operating_profiles": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "content_fit": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "download": {
+          "$ref": "#/$defs/download"
+        },
+        "availability": {
+          "$ref": "#/$defs/availability"
         }
       }
     },
     "links": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["checkpoint"],
       "properties": {
         "checkpoint": {
           "description": "Primary weights/checkpoint URL.",
-          "$ref": "#/$defs/url"
+          "anyOf": [{ "$ref": "#/$defs/url" }, { "type": "null" }]
         },
         "config": {
           "description": "Optional config URL (yaml/json).",
@@ -261,6 +341,123 @@
             { "type": "null" }
           ],
           "description": "Optional SHA-256 for integrity validation."
+        },
+        "size_bytes": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        }
+      }
+    },
+    "availability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class"],
+      "properties": {
+        "class": {
+          "type": "string",
+          "enum": [
+            "direct",
+            "mirror_fallback",
+            "manual_import",
+            "blocked_non_public"
+          ]
+        },
+        "reason": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "downloadSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": { "$ref": "#/$defs/url" },
+        "role": { "type": "string" },
+        "channel": {
+          "type": "string",
+          "enum": ["upstream", "mirror"]
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "auth": {
+          "type": "string",
+          "enum": ["none", "hf_token"]
+        },
+        "verified": { "type": "boolean" },
+        "host": { "type": "string" },
+        "manual": { "type": "boolean" }
+      }
+    },
+    "downloadArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "filename", "relative_path"],
+      "properties": {
+        "kind": { "type": "string" },
+        "filename": { "type": "string", "minLength": 1 },
+        "relative_path": { "type": "string", "minLength": 1 },
+        "required": { "type": "boolean" },
+        "manual": { "type": "boolean" },
+        "source": {
+          "anyOf": [{ "$ref": "#/$defs/url" }, { "type": "null" }]
+        },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/downloadSource" }
+        },
+        "sha256": {
+          "anyOf": [
+            { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+            { "type": "null" }
+          ]
+        },
+        "size_bytes": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "channel": { "type": "string" },
+        "auth": { "type": "string" },
+        "verified": { "type": "boolean" }
+      }
+    },
+    "download": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "direct",
+            "mirror_fallback",
+            "manual_import",
+            "blocked_non_public"
+          ]
+        },
+        "mode": { "type": "string" },
+        "install_mode": { "type": "string" },
+        "family": { "type": "string" },
+        "artifact_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "downloadable_artifact_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "manual_instructions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/downloadSource" }
+        },
+        "artifacts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/downloadArtifact" }
         }
       }
     },
@@ -407,6 +604,66 @@
         },
         "variant": {
           "anyOf": [{ "type": "string" }, { "type": "null" }]
+        },
+        "engine": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }]
+        },
+        "model_type": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }]
+        },
+        "install_mode": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }]
+        },
+        "hosts": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "install_burden": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }]
+        },
+        "required": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "fallbacks": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "required_files": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "requires_manual_assets": { "$ref": "#/$defs/boolOrNull" },
+        "requires_patch": { "$ref": "#/$defs/boolOrNull" },
+        "requires_custom_repo_file": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "checkpoint_ref": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }]
+        },
+        "config_ref": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }]
+        },
+        "patch_profile": {
+          "anyOf": [{ "type": "string" }, { "type": "null" }]
+        }
+      }
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "readiness": {
+          "type": ["string", "null"],
+          "enum": ["verified", "experimental", "manual", "blocked", null]
+        },
+        "simple_allowed": { "$ref": "#/$defs/boolOrNull" },
+        "blocking_reason": { "$ref": "#/$defs/stringOrNull" },
+        "curated": { "$ref": "#/$defs/boolOrNull" },
+        "support_tier": {
+          "type": ["string", "null"],
+          "enum": ["curated", "supported_advanced", null]
         }
       }
     },
@@ -498,6 +755,16 @@
         "recommended_usage": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
+        },
+        "reference_model_id": {
+          "anyOf": [{ "$ref": "#/$defs/modelId" }, { "type": "null" }]
+        },
+        "references": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/modelId" }
+          }
         }
       }
     },

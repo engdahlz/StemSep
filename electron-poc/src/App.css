@@ -115,6 +115,111 @@
   }
 }
 
+.stemsep-processing-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.stemsep-processing-shell::before {
+  content: "";
+  position: absolute;
+  inset: 18px 30px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 70%),
+    radial-gradient(circle at 50% 58%, rgba(255, 215, 168, 0.18), rgba(255, 215, 168, 0) 65%);
+  filter: blur(18px);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.stemsep-processing-rotor {
+  animation: stemsep-processing-spin 16s linear infinite;
+}
+
+.stemsep-processing-node {
+  transform:
+    translate(-50%, -50%)
+    translate(var(--stemsep-processing-x), var(--stemsep-processing-y));
+}
+
+.stemsep-processing-icon {
+  opacity: 0.92;
+  transform: rotate(var(--stemsep-processing-rotation));
+  animation: stemsep-processing-float 2.2s ease-in-out infinite;
+}
+
+.stemsep-processing-core {
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08)),
+    rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(10px);
+}
+
+.stemsep-processing-bar {
+  display: block;
+  width: 5px;
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98),
+    rgba(255, 223, 191, 0.88)
+  );
+  box-shadow:
+    0 0 14px rgba(255, 255, 255, 0.28),
+    0 6px 18px rgba(255, 206, 168, 0.22);
+  transform-origin: center bottom;
+  animation: stemsep-processing-eq 1.05s ease-in-out infinite;
+}
+
+@keyframes stemsep-processing-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes stemsep-processing-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1) rotate(var(--stemsep-processing-rotation));
+    opacity: 0.82;
+  }
+
+  50% {
+    transform: translateY(-4px) scale(1.12) rotate(var(--stemsep-processing-rotation));
+    opacity: 1;
+  }
+}
+
+@keyframes stemsep-processing-eq {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+    opacity: 0.82;
+  }
+
+  35% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+
+  68% {
+    transform: scaleY(0.62);
+    opacity: 0.9;
+  }
+}
+
 .stemsep-sidebar-backdrop {
   background:
     radial-gradient(circle at left, rgba(255, 255, 255, 0.18), transparent 32%),

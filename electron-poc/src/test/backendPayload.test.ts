@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest"
-import { buildSeparationBackendPayload, toBackendOverlap, toBackendSegmentSize } from "@/lib/separation/backendPayload"
+import { describe, expect, it, vi } from "vitest"
+import {
+  buildSeparationBackendPayload,
+  executeSeparation,
+  executeSeparationPreflight,
+  toBackendOverlap,
+  toBackendSegmentSize,
+} from "@/lib/separation/backendPayload"
 
 describe("backendPayload", () => {
   it("converts overlap divisor to backend ratio", () => {
@@ -35,6 +41,12 @@ describe("backendPayload", () => {
         effectiveStems: ["instrumental", "vocals"],
         effectiveEnsembleConfig: undefined,
         effectivePostProcessingSteps: undefined,
+        effectiveAdvancedParams: {
+          overlap: 4,
+          segmentSize: 352800,
+          shifts: 2,
+          tta: true,
+        },
         effectiveWorkflow: {
           version: 1,
           id: "workflow_phase_fix_instrumental",
@@ -58,6 +70,8 @@ describe("backendPayload", () => {
         },
         effectiveGlobalPhaseParams: undefined,
         missingModels: [],
+        blockingIssues: [],
+        warnings: [],
         canProceed: true,
         isExplicitPipelinePhaseFix: false,
         debug: {
@@ -76,7 +90,64 @@ describe("backendPayload", () => {
     expect(payload.overlap).toBeCloseTo(0.75)
     expect(payload.segmentSize).toBe(352800)
     expect(payload.outputFormat).toBe("wav")
+    expect(payload.pipelineConfig).toEqual(payload.workflow?.steps)
     expect(payload.workflow?.kind).toBe("pipeline")
     expect(payload.workflow?.steps?.[1]?.action).toBe("phase_fix")
+  })
+
+  it("forwards explicit pipelineConfig for preflight transport", async () => {
+    const separationPreflight = vi.fn(async () => ({ ok: true }))
+    const payload = {
+      inputFile: "C:/audio.wav",
+      modelId: "workflow_phase_fix_instrumental",
+      outputDir: "C:/out",
+      outputFormat: "wav" as const,
+      pipelineConfig: [{ step_name: "explicit", action: "separate", model_id: "A" }],
+      workflow: {
+        version: 1 as const,
+        id: "workflow_phase_fix_instrumental",
+        name: "Workflow",
+        kind: "pipeline" as const,
+        steps: [{ id: "workflow", action: "separate", model_id: "B" }],
+      },
+    } as any
+
+    await executeSeparationPreflight(
+      { separationPreflight } as unknown as Window["electronAPI"],
+      payload,
+    )
+
+    expect(separationPreflight).toHaveBeenCalledTimes(1)
+    const args = separationPreflight.mock.calls[0] as any[]
+    expect(args[18]).toEqual(payload.pipelineConfig)
+    expect(args[19]).toEqual(payload.workflow)
+  })
+
+  it("forwards explicit pipelineConfig for execution transport", async () => {
+    const separateAudio = vi.fn(async () => ({ success: true, outputFiles: {} }))
+    const payload = {
+      inputFile: "C:/audio.wav",
+      modelId: "workflow_phase_fix_instrumental",
+      outputDir: "C:/out",
+      outputFormat: "wav" as const,
+      pipelineConfig: [{ step_name: "explicit", action: "separate", model_id: "A" }],
+      workflow: {
+        version: 1 as const,
+        id: "workflow_phase_fix_instrumental",
+        name: "Workflow",
+        kind: "pipeline" as const,
+        steps: [{ id: "workflow", action: "separate", model_id: "B" }],
+      },
+    } as any
+
+    await executeSeparation(
+      { separateAudio } as unknown as Window["electronAPI"],
+      payload,
+    )
+
+    expect(separateAudio).toHaveBeenCalledTimes(1)
+    const args = separateAudio.mock.calls[0] as any[]
+    expect(args[18]).toEqual(payload.pipelineConfig)
+    expect(args[19]).toEqual(payload.workflow)
   })
 })

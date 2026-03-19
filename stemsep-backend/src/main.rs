@@ -3,12 +3,13 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
+use std::collections::VecDeque;
 use std::ffi::OsString;
 use std::io::{self, BufRead, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::time::Duration;
 
@@ -19,6 +20,11 @@ use sysinfo::System;
 
 use reqwest;
 use reqwest::header;
+
+#[cfg(target_os = "windows")]
+use wasapi::{
+    initialize_mta, DeviceEnumerator, Direction, SampleType, StreamMode, WaveFormat,
+};
 
 #[cfg(feature = "tract")]
 use tract_onnx::prelude as tract;
@@ -69,11 +75,89 @@ struct BackendConfig {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PlaybackDeviceInfo {
+    id: String,
+    label: String,
+    kind: String,
+    is_default: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct PlaybackCaptureResultData {
+    capture_id: String,
+    file_path: String,
+    capture_sample_rate: u32,
+    capture_channels: u16,
+    capture_start_at: String,
+    capture_end_at: String,
+    duration_sec: f64,
+}
+
+static PLAYBACK_CAPTURE_CANCELS: OnceLock<Mutex<HashMap<String, Arc<AtomicBool>>>> = OnceLock::new();
+
+fn playback_capture_cancels() -> &'static Mutex<HashMap<String, Arc<AtomicBool>>> {
+    PLAYBACK_CAPTURE_CANCELS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn register_playback_capture(capture_id: &str) -> Arc<AtomicBool> {
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+    let mut registry = playback_capture_cancels().lock().expect("capture cancel registry");
+    registry.insert(capture_id.to_string(), cancel_flag.clone());
+    cancel_flag
+}
+
+fn finish_playback_capture(capture_id: &str) {
+    let mut registry = playback_capture_cancels().lock().expect("capture cancel registry");
+    registry.remove(capture_id);
+}
+
+fn cancel_playback_capture_request(capture_id: Option<&str>) -> bool {
+    let registry = playback_capture_cancels().lock().expect("capture cancel registry");
+    match capture_id {
+        Some(id) => registry
+            .get(id)
+            .map(|flag| {
+                flag.store(true, Ordering::SeqCst);
+                true
+            })
+            .unwrap_or(false),
+        None => {
+            for flag in registry.values() {
+                flag.store(true, Ordering::SeqCst);
+            }
+            !registry.is_empty()
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 struct ResolvedSourceLink {
     role: String,
     url: String,
     host: String,
     manual: bool,
+    channel: String,
+    priority: usize,
+    auth: String,
+    verified: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ResolvedAvailability {
+    #[serde(rename = "class")]
+    class_name: String,
+    reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ResolvedArtifactSource {
+    url: String,
+    host: String,
+    channel: String,
+    priority: usize,
+    auth: String,
+    verified: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -87,6 +171,20 @@ struct ResolvedArtifact {
     source: Option<String>,
     source_host: Option<String>,
     sha256: Option<String>,
+    size_bytes: Option<u64>,
+    sources: Vec<ResolvedArtifactSource>,
+    verified: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ResolvedArtifactInstallation {
+    kind: String,
+    filename: String,
+    relative_path: String,
+    present: bool,
+    verified: bool,
+    required: bool,
+    selected_source: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -94,6 +192,7 @@ struct ResolvedInstallationStatus {
     installed: bool,
     missing_artifacts: Vec<String>,
     relative_paths: Vec<String>,
+    artifacts: Vec<ResolvedArtifactInstallation>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -101,13 +200,25 @@ struct ResolvedDownloadManifest {
     model_id: String,
     family: String,
     mode: String,
+    strategy: String,
     install_mode: String,
     artifact_count: usize,
     downloadable_artifact_count: usize,
     source_policy: String,
+    availability: ResolvedAvailability,
     sources: Vec<ResolvedSourceLink>,
     artifacts: Vec<ResolvedArtifact>,
     manual_instructions: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PartMetadata {
+    model_id: String,
+    filename: String,
+    relative_path: String,
+    source_url: String,
+    sha256: Option<String>,
+    size_bytes: Option<u64>,
 }
 
 fn parse_arg_value(args: &[OsString], name: &str) -> Option<String> {
@@ -243,59 +354,24 @@ fn append_or_merge_registry_models(models_json: &mut Value, overlay_json: &Value
 }
 
 fn load_models_with_guide_overrides(cfg: &BackendConfig) -> Result<Value> {
-    let mut models_json = read_json_file(&cfg.assets_dir.join("models.json.bak"))?;
-    let overrides_path = cfg
-        .assets_dir
-        .join("registry")
-        .join("guide_model_overrides.json");
-
-    let overrides_json = read_json_file(&overrides_path).unwrap_or(Value::Null);
-
-    let Some(models) = models_json.get_mut("models").and_then(|v| v.as_array_mut()) else {
-        return Ok(models_json);
-    };
-
-    let overrides_map = overrides_json
-        .get("models")
-        .and_then(|v| v.as_object())
-        .cloned()
-        .unwrap_or_default();
-
-    for model in models.iter_mut() {
-        let Some(id) = model.get("id").and_then(|v| v.as_str()) else {
-            continue;
-        };
-        if let Some(overlay) = overrides_map.get(id) {
-            merge_json_value(model, overlay);
-        }
-    }
-
-    let guide_digest_path = cfg.assets_dir.join("registry").join("guide_digest.json");
-    if let Ok(guide_digest_json) = read_json_file(&guide_digest_path) {
-        if let Some(digest_overrides) = guide_digest_json
-            .get("model_overrides")
-            .and_then(|v| v.as_object())
-        {
-            for model in models.iter_mut() {
-                let Some(id) = model.get("id").and_then(|v| v.as_str()) else {
-                    continue;
-                };
-                if let Some(overlay) = digest_overrides.get(id) {
-                    merge_json_value(model, overlay);
-                }
-            }
-        }
-    }
-
-    let extra_models_path = cfg.assets_dir.join("registry").join("extra_models.json");
-    if let Ok(extra_models_json) = read_json_file(&extra_models_path) {
-        append_or_merge_registry_models(&mut models_json, &extra_models_json);
-    }
-
-    Ok(models_json)
+    read_json_file(&cfg.assets_dir.join("models.json.bak"))
 }
 
 fn detect_runtime_adapter(model_obj: &Value) -> Option<String> {
+    let preferred = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("preferred"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let allowed = model_obj
+        .get("runtime")
+        .and_then(|v| v.get("allowed"))
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|value| value.as_str().map(|entry| entry.to_string()))
+        .collect::<Vec<_>>();
     let engine = model_obj
         .get("runtime")
         .and_then(|v| v.get("engine"))
@@ -317,7 +393,29 @@ fn detect_runtime_adapter(model_obj: &Value) -> Option<String> {
             Some("demucs") => Some("demucs_native".to_string()),
             Some("fno") => Some("custom_builtin_variant".to_string()),
             Some(_) => Some("native_stemsep".to_string()),
-            None => None,
+            None => match preferred.as_deref() {
+                Some("msst") => Some("msst_builtin".to_string()),
+                Some("demucs") | Some("demucs_native") => Some("demucs_native".to_string()),
+                Some("stemsep") | Some("native_stemsep") => Some("native_stemsep".to_string()),
+                Some(other) => Some(other.to_string()),
+                None => {
+                    if allowed.iter().any(|entry| entry == "msst") {
+                        Some("msst_builtin".to_string())
+                    } else if allowed
+                        .iter()
+                        .any(|entry| matches!(entry.as_str(), "demucs" | "demucs_native"))
+                    {
+                        Some("demucs_native".to_string())
+                    } else if allowed
+                        .iter()
+                        .any(|entry| matches!(entry.as_str(), "stemsep" | "native_stemsep"))
+                    {
+                        Some("native_stemsep".to_string())
+                    } else {
+                        None
+                    }
+                }
+            },
         },
     }
 }
@@ -350,6 +448,28 @@ fn collect_workflow_model_ids(workflow: &Value) -> Vec<String> {
     }
 
     if let Some(steps) = workflow.get("steps").and_then(|v| v.as_array()) {
+        for step in steps {
+            push_id(step.get("model_id").and_then(|v| v.as_str()));
+            push_id(step.get("source_model").and_then(|v| v.as_str()));
+        }
+    }
+
+    ids
+}
+
+fn collect_recipe_model_ids(recipe: &Value) -> Vec<String> {
+    let mut ids: Vec<String> = Vec::new();
+
+    let mut push_id = |candidate: Option<&str>| {
+        if let Some(id) = candidate {
+            let trimmed = id.trim();
+            if !trimmed.is_empty() && !ids.iter().any(|existing| existing == trimmed) {
+                ids.push(trimmed.to_string());
+            }
+        }
+    };
+
+    if let Some(steps) = recipe.get("steps").and_then(|v| v.as_array()) {
         for step in steps {
             push_id(step.get("model_id").and_then(|v| v.as_str()));
             push_id(step.get("source_model").and_then(|v| v.as_str()));
@@ -401,6 +521,61 @@ fn find_model_object(models_json: &Value, model_id: &str) -> Option<Value> {
                 .find(|m| m.get("id").and_then(|v| v.as_str()) == Some(model_id))
         })
         .cloned()
+}
+
+fn find_recipe_object(recipes_json: &Value, recipe_id: &str) -> Option<Value> {
+    recipes_json
+        .get("recipes")
+        .and_then(|v| v.as_array())
+        .and_then(|arr| {
+            arr.iter()
+                .find(|recipe| recipe.get("id").and_then(|v| v.as_str()) == Some(recipe_id))
+        })
+        .cloned()
+}
+
+fn has_complete_audio_quality_thresholds(value: Option<&Value>) -> bool {
+    let Some(obj) = value.and_then(|v| v.as_object()) else {
+        return false;
+    };
+
+    [
+        "min_correlation",
+        "min_snr_db",
+        "min_si_sdr_db",
+        "max_gain_delta_db",
+        "max_clipped_samples",
+    ]
+    .iter()
+    .all(|key| obj.contains_key(*key))
+}
+
+fn extract_recipe_id_from_manifest(manifest: &Value) -> Option<String> {
+    manifest
+        .get("recipe_id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            manifest
+                .get("config")
+                .and_then(|v| v.get("recipe_id").or_else(|| v.get("recipeId")))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
+}
+
+fn extract_golden_set_id_from_manifest(manifest: &Value) -> Option<String> {
+    manifest
+        .get("golden_set_id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            manifest
+                .get("config")
+                .and_then(|v| v.get("golden_set_id").or_else(|| v.get("goldenSetId")))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
 }
 
 fn model_family(model_obj: &Value) -> String {
@@ -514,6 +689,58 @@ fn artifact_exists_anywhere(
         .any(|path| path.exists())
 }
 
+fn find_existing_artifact_path(
+    models_dir: &Path,
+    model_id: &str,
+    artifact: &ResolvedArtifact,
+) -> Option<PathBuf> {
+    let canonical = models_dir.join(artifact.relative_path.replace('/', "\\"));
+    if canonical.exists() {
+        return Some(canonical);
+    }
+    legacy_artifact_paths(models_dir, model_id, &artifact.kind, &artifact.filename)
+        .into_iter()
+        .find(|path| path.exists())
+}
+
+fn verify_local_artifact_hash(path: &Path, expected_sha256: &str) -> Result<bool> {
+    let mut file = std::fs::File::open(path)
+        .with_context(|| format!("open {} for sha256", path.display()))?;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 1024 * 128];
+    loop {
+        let read = file.read(&mut buffer).context("read artifact for sha256")?;
+        if read == 0 {
+            break;
+        }
+        hasher.update(&buffer[..read]);
+    }
+    let actual = format!("{:x}", hasher.finalize());
+    Ok(actual.eq_ignore_ascii_case(expected_sha256))
+}
+
+fn part_metadata_path(tmp_path: &Path) -> PathBuf {
+    let file_name = tmp_path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or("download.part");
+    tmp_path.with_file_name(format!("{file_name}.json"))
+}
+
+fn read_part_metadata(path: &Path) -> Option<PartMetadata> {
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str::<PartMetadata>(&text).ok()
+}
+
+fn write_part_metadata(path: &Path, metadata: &PartMetadata) -> Result<()> {
+    let payload = serde_json::to_vec_pretty(metadata).context("serialize part metadata")?;
+    std::fs::write(path, payload).with_context(|| format!("write {}", path.display()))
+}
+
+fn remove_part_metadata(path: &Path) {
+    let _ = std::fs::remove_file(path);
+}
+
 fn resolve_model_download_manifest(
     cfg: &BackendConfig,
     model_id: &str,
@@ -522,13 +749,46 @@ fn resolve_model_download_manifest(
     let links = model_obj.get("links").and_then(|v| v.as_object());
     let runtime = model_obj.get("runtime").and_then(|v| v.as_object());
     let install = model_obj.get("install").and_then(|v| v.as_object());
+    let availability_obj = model_obj.get("availability").and_then(|v| v.as_object());
     let install_mode = install
         .and_then(|v| v.get("mode"))
         .and_then(|v| v.as_str())
         .or_else(|| runtime.and_then(|v| v.get("install_mode")).and_then(|v| v.as_str()))
+        .or_else(|| {
+            model_obj
+                .get("download")
+                .and_then(|v| v.get("install_mode"))
+                .and_then(|v| v.as_str())
+        })
         .unwrap_or("direct")
         .to_string();
-    let manual_registry = install_mode == "manual"
+    let availability = ResolvedAvailability {
+        class_name: availability_obj
+            .and_then(|v| v.get("class"))
+            .and_then(|v| v.as_str())
+            .unwrap_or_else(|| {
+                if install_mode == "manual"
+                    || runtime
+                        .and_then(|v| v.get("requires_manual_assets"))
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false)
+                {
+                    "manual_import"
+                } else if model_obj.get("catalog_status").and_then(|v| v.as_str()) == Some("blocked")
+                {
+                    "blocked_non_public"
+                } else {
+                    "direct"
+                }
+            })
+            .to_string(),
+        reason: availability_obj
+            .and_then(|v| v.get("reason"))
+            .and_then(|v| v.as_str())
+            .map(|v| v.to_string()),
+    };
+    let manual_registry = availability.class_name == "manual_import"
+        || install_mode == "manual"
         || runtime
             .and_then(|v| v.get("requires_manual_assets"))
             .and_then(|v| v.as_bool())
@@ -536,28 +796,70 @@ fn resolve_model_download_manifest(
 
     let mut sources: Vec<ResolvedSourceLink> = Vec::new();
     let mut seen_source_urls: Vec<String> = Vec::new();
-    let mut push_source = |role: &str, url: &str, manual: bool| {
-        let trimmed = url.trim();
-        if trimmed.is_empty() || seen_source_urls.iter().any(|existing| existing == trimmed) {
+    let mut push_source = |role: &str, source_value: &Value, manual: bool| {
+        let trimmed = if let Some(url) = source_value.as_str() {
+            url.trim().to_string()
+        } else {
+            source_value
+                .get("url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        };
+        if trimmed.is_empty()
+            || seen_source_urls
+                .iter()
+                .any(|existing| existing.as_str() == trimmed.as_str())
+        {
             return;
         }
         seen_source_urls.push(trimmed.to_string());
         sources.push(ResolvedSourceLink {
             role: role.to_string(),
             url: trimmed.to_string(),
-            host: url_host(trimmed).unwrap_or_else(|| "unknown".to_string()),
+            host: source_value
+                .get("host")
+                .and_then(|v| v.as_str())
+                .map(|v| v.to_string())
+                .or_else(|| url_host(&trimmed))
+                .unwrap_or_else(|| "unknown".to_string()),
             manual,
+            channel: source_value
+                .get("channel")
+                .and_then(|v| v.as_str())
+                .unwrap_or_else(|| {
+                    if trimmed.contains("github.com/engdahlz/stemsep-models") {
+                        "mirror"
+                    } else {
+                        "upstream"
+                    }
+                })
+                .to_string(),
+            priority: source_value
+                .get("priority")
+                .and_then(|v| v.as_u64())
+                .unwrap_or((sources.len() + 1) as u64) as usize,
+            auth: source_value
+                .get("auth")
+                .and_then(|v| v.as_str())
+                .unwrap_or("none")
+                .to_string(),
+            verified: source_value
+                .get("verified")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true),
         });
     };
 
     if let Some(links_obj) = links {
-        if let Some(url) = links_obj.get("checkpoint").and_then(|v| v.as_str()) {
+        if let Some(url) = links_obj.get("checkpoint") {
             push_source("checkpoint", url, manual_registry);
         }
-        if let Some(url) = links_obj.get("config").and_then(|v| v.as_str()) {
+        if let Some(url) = links_obj.get("config") {
             push_source("config", url, manual_registry);
         }
-        if let Some(url) = links_obj.get("homepage").and_then(|v| v.as_str()) {
+        if let Some(url) = links_obj.get("homepage") {
             push_source("homepage", url, true);
         }
     }
@@ -567,9 +869,6 @@ fn resolve_model_download_manifest(
         .and_then(|v| v.as_array())
     {
         for source in download_sources {
-            let Some(url) = source.get("url").and_then(|v| v.as_str()) else {
-                continue;
-            };
             let role = source
                 .get("role")
                 .and_then(|v| v.as_str())
@@ -577,8 +876,8 @@ fn resolve_model_download_manifest(
             let manual = source
                 .get("manual")
                 .and_then(|v| v.as_bool())
-                .unwrap_or(true);
-            push_source(role, url, manual);
+                .unwrap_or(manual_registry);
+            push_source(role, source, manual);
         }
     }
 
@@ -594,7 +893,9 @@ fn resolve_model_download_manifest(
         required: bool,
         manual: bool,
         sha256: Option<String>,
+        size_bytes: Option<u64>,
         explicit_relative_path: Option<String>,
+        artifact_sources: Vec<ResolvedArtifactSource>,
     ) {
         let trimmed = filename.trim();
         if trimmed.is_empty() || trimmed.contains(".MISSING") {
@@ -612,6 +913,7 @@ fn resolve_model_download_manifest(
             .as_deref()
             .map(is_stale_legacy_mirror_url)
             .unwrap_or(false);
+        let effective_sources = artifact_sources;
         let probe = ResolvedArtifact {
             kind: kind.to_string(),
             filename: trimmed.to_string(),
@@ -622,8 +924,17 @@ fn resolve_model_download_manifest(
             source: source.clone(),
             source_host: source_host.clone(),
             sha256: sha256.clone(),
+            size_bytes,
+            sources: effective_sources.clone(),
+            verified: false,
         };
-        let exists = artifact_exists_anywhere(models_dir, model_id, &probe);
+        let existing_path = find_existing_artifact_path(models_dir, model_id, &probe);
+        let exists = existing_path.is_some();
+        let verified = if let (Some(path), Some(expected_sha256)) = (existing_path.as_ref(), sha256.as_deref()) {
+            verify_local_artifact_hash(path, expected_sha256).unwrap_or(false)
+        } else {
+            exists
+        };
         artifacts.push(ResolvedArtifact {
             kind: kind.to_string(),
             filename: trimmed.to_string(),
@@ -634,6 +945,9 @@ fn resolve_model_download_manifest(
             source,
             source_host,
             sha256,
+            size_bytes,
+            sources: effective_sources,
+            verified,
         });
     }
 
@@ -650,18 +964,97 @@ fn resolve_model_download_manifest(
                 continue;
             };
             let kind = item.get("kind").and_then(|v| v.as_str()).unwrap_or("aux");
-            let source = item
-                .get("source")
-                .and_then(|v| v.as_str())
-                .map(|v| v.to_string());
             let required = item
                 .get("required")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(true);
+            let mut artifact_sources: Vec<ResolvedArtifactSource> = item
+                .get("sources")
+                .and_then(|v| v.as_array())
+                .map(|entries| {
+                    entries
+                        .iter()
+                        .filter_map(|entry| {
+                            let url = entry.get("url").and_then(|v| v.as_str())?.trim().to_string();
+                            if url.is_empty() {
+                                return None;
+                            }
+                            Some(ResolvedArtifactSource {
+                                url: url.clone(),
+                                host: entry
+                                    .get("host")
+                                    .and_then(|v| v.as_str())
+                                    .map(|v| v.to_string())
+                                    .or_else(|| url_host(&url))
+                                    .unwrap_or_else(|| "unknown".to_string()),
+                                channel: entry
+                                    .get("channel")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or_else(|| {
+                                        if url.contains("github.com/engdahlz/stemsep-models") {
+                                            "mirror"
+                                        } else {
+                                            "upstream"
+                                        }
+                                    })
+                                    .to_string(),
+                                priority: entry
+                                    .get("priority")
+                                    .and_then(|v| v.as_u64())
+                                    .unwrap_or(1) as usize,
+                                auth: entry
+                                    .get("auth")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("none")
+                                    .to_string(),
+                                verified: entry
+                                    .get("verified")
+                                    .and_then(|v| v.as_bool())
+                                    .unwrap_or(true),
+                            })
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+            let legacy_source = item
+                .get("source")
+                .and_then(|v| v.as_str())
+                .map(|v| v.to_string());
+            if artifact_sources.is_empty() {
+                if let Some(url) = legacy_source.clone() {
+                    artifact_sources.push(ResolvedArtifactSource {
+                        url: url.clone(),
+                        host: url_host(&url).unwrap_or_else(|| "unknown".to_string()),
+                        channel: item
+                            .get("channel")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or_else(|| {
+                                if url.contains("github.com/engdahlz/stemsep-models") {
+                                    "mirror"
+                                } else {
+                                    "upstream"
+                                }
+                            })
+                            .to_string(),
+                        priority: 1,
+                        auth: item
+                            .get("auth")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("none")
+                            .to_string(),
+                        verified: item
+                            .get("verified")
+                            .and_then(|v| v.as_bool())
+                            .unwrap_or(true),
+                    });
+                }
+            }
+            artifact_sources.sort_by_key(|entry| entry.priority);
+            let source = artifact_sources.first().map(|entry| entry.url.clone());
             let manual = item
                 .get("manual")
                 .and_then(|v| v.as_bool())
-                .unwrap_or(manual_registry || source.is_none());
+                .unwrap_or(manual_registry || artifact_sources.is_empty());
             let relative_path = item
                 .get("relative_path")
                 .and_then(|v| v.as_str())
@@ -670,6 +1063,7 @@ fn resolve_model_download_manifest(
                 .get("sha256")
                 .and_then(|v| v.as_str())
                 .map(|v| v.to_string());
+            let size_bytes = item.get("size_bytes").and_then(|v| v.as_u64());
             push_artifact_entry(
                 &cfg.models_dir,
                 model_obj,
@@ -682,7 +1076,9 @@ fn resolve_model_download_manifest(
                 required,
                 manual,
                 sha256,
+                size_bytes,
                 relative_path,
+                artifact_sources,
             );
         }
     } else {
@@ -708,7 +1104,9 @@ fn resolve_model_download_manifest(
                         true,
                         manual,
                         sha256,
+                        primary.get("size_bytes").and_then(|v| v.as_u64()),
                         None,
+                        Vec::new(),
                     );
                 }
             }
@@ -733,7 +1131,9 @@ fn resolve_model_download_manifest(
                         true,
                         manual,
                         sha256,
+                        config_obj.get("size_bytes").and_then(|v| v.as_u64()),
                         None,
+                        Vec::new(),
                     );
                 }
             }
@@ -758,7 +1158,9 @@ fn resolve_model_download_manifest(
                         true,
                         manual,
                         sha256,
+                        entry.get("size_bytes").and_then(|v| v.as_u64()),
                         None,
+                        Vec::new(),
                     );
                 }
             }
@@ -787,6 +1189,8 @@ fn resolve_model_download_manifest(
                     manual,
                     None,
                     None,
+                    None,
+                    Vec::new(),
                 );
             } else if let Some(url) = links
                 .and_then(|v| v.get("checkpoint"))
@@ -806,6 +1210,8 @@ fn resolve_model_download_manifest(
                     false,
                     None,
                     None,
+                    None,
+                    Vec::new(),
                 );
             }
         }
@@ -832,6 +1238,8 @@ fn resolve_model_download_manifest(
                 manual,
                 None,
                 None,
+                None,
+                Vec::new(),
             );
         } else if let Some(url) = links
             .and_then(|v| v.get("config"))
@@ -851,6 +1259,8 @@ fn resolve_model_download_manifest(
                     false,
                     None,
                     None,
+                    None,
+                    Vec::new(),
                 );
             }
         }
@@ -878,6 +1288,8 @@ fn resolve_model_download_manifest(
                 true,
                 None,
                 None,
+                None,
+                Vec::new(),
             );
         }
     }
@@ -950,10 +1362,12 @@ fn resolve_model_download_manifest(
         model_id: model_id.to_string(),
         family: model_family(model_obj),
         mode,
+        strategy: availability.class_name.clone(),
         install_mode,
         artifact_count: artifacts.len(),
         downloadable_artifact_count,
         source_policy,
+        availability,
         sources,
         artifacts,
         manual_instructions,
@@ -969,17 +1383,62 @@ fn resolve_installation_status(
         .iter()
         .map(|artifact| artifact.relative_path.clone())
         .collect::<Vec<_>>();
+    let artifacts = manifest
+        .artifacts
+        .iter()
+        .map(|artifact| ResolvedArtifactInstallation {
+            kind: artifact.kind.clone(),
+            filename: artifact.filename.clone(),
+            relative_path: artifact.relative_path.clone(),
+            present: artifact.exists,
+            verified: artifact.verified,
+            required: artifact.required,
+            selected_source: artifact.source.clone(),
+        })
+        .collect::<Vec<_>>();
     let missing_artifacts = manifest
         .artifacts
         .iter()
-        .filter(|artifact| artifact.required && !artifact.exists)
+        .filter(|artifact| artifact.required && (!artifact.exists || !artifact.verified))
         .map(|artifact| artifact.relative_path.clone())
         .collect::<Vec<_>>();
     ResolvedInstallationStatus {
         installed: missing_artifacts.is_empty() && !manifest.artifacts.is_empty(),
         missing_artifacts,
         relative_paths,
+        artifacts,
     }
+}
+
+fn artifact_download_sources(artifact: &ResolvedArtifact) -> Vec<ResolvedArtifactSource> {
+    let mut sources = artifact.sources.clone();
+    if sources.is_empty() {
+        if let Some(url) = artifact.source.clone() {
+            sources.push(ResolvedArtifactSource {
+                url: url.clone(),
+                host: artifact
+                    .source_host
+                    .clone()
+                    .or_else(|| url_host(&url))
+                    .unwrap_or_else(|| "unknown".to_string()),
+                channel: if url.contains("github.com/engdahlz/stemsep-models") {
+                    "mirror".to_string()
+                } else {
+                    "upstream".to_string()
+                },
+                priority: 1,
+                auth: "none".to_string(),
+                verified: true,
+            });
+        }
+    }
+    sources.sort_by_key(|entry| {
+        (
+            if entry.channel == "upstream" { 0usize } else { 1usize },
+            entry.priority,
+        )
+    });
+    sources
 }
 
 fn download_with_progress_cancellable(
@@ -991,6 +1450,9 @@ fn download_with_progress_cancellable(
     artifact_count: usize,
     current_file: String,
     current_relative_path: String,
+    current_source: String,
+    expected_sha256: Option<String>,
+    expected_size: Option<u64>,
     cancel: Option<Arc<AtomicBool>>,
 ) -> Result<()> {
     std::fs::create_dir_all(
@@ -1007,6 +1469,26 @@ fn download_with_progress_cancellable(
             .ok_or_else(|| anyhow!("invalid destination filename"))?;
         dest_path.with_file_name(format!("{fname}.part"))
     };
+    let metadata_path = part_metadata_path(&tmp_path);
+
+    let part_metadata = PartMetadata {
+        model_id: model_id.clone(),
+        filename: current_file.clone(),
+        relative_path: current_relative_path.clone(),
+        source_url: url.to_string(),
+        sha256: expected_sha256.clone(),
+        size_bytes: expected_size,
+    };
+    if let Some(existing_meta) = read_part_metadata(&metadata_path) {
+        if existing_meta.source_url != part_metadata.source_url
+            || existing_meta.sha256 != part_metadata.sha256
+            || existing_meta.size_bytes != part_metadata.size_bytes
+        {
+            let _ = std::fs::remove_file(&tmp_path);
+            remove_part_metadata(&metadata_path);
+        }
+    }
+    write_part_metadata(&metadata_path, &part_metadata)?;
 
     let hf_token = std::env::var("STEMSEP_HF_TOKEN")
         .ok()
@@ -1041,6 +1523,9 @@ fn download_with_progress_cancellable(
             "artifactCount": artifact_count,
             "currentFile": current_file,
             "currentRelativePath": current_relative_path,
+            "currentSource": current_source,
+            "stage": "downloading",
+            "verified": false,
             "message": if existing_len > 0 { "Resuming download" } else { "Starting download" }
         }),
     );
@@ -1065,12 +1550,32 @@ fn download_with_progress_cancellable(
     if existing_len > 0 && resp.status() == reqwest::StatusCode::RANGE_NOT_SATISFIABLE {
         // Best-effort: promote the partial file to final.
         if tmp_path.exists() {
+            if let Some(expected) = expected_size {
+                let actual = std::fs::metadata(&tmp_path).map(|m| m.len()).unwrap_or(0);
+                if actual != expected {
+                    return Err(anyhow!(
+                        "partial file size mismatch for {}: expected {expected} bytes, got {actual}",
+                        current_relative_path
+                    ));
+                }
+            }
+            if let Some(expected_sha256) = expected_sha256.as_deref() {
+                if !verify_local_artifact_hash(&tmp_path, expected_sha256)
+                    .context("verify sha256 for resumed partial file")?
+                {
+                    return Err(anyhow!(
+                        "sha256 mismatch for {} after resume",
+                        current_relative_path
+                    ));
+                }
+            }
             if dest_path.exists() {
                 let _ = std::fs::remove_file(&tmp_path);
             } else {
                 std::fs::rename(&tmp_path, dest_path)
                     .with_context(|| format!("move into place: {}", dest_path.display()))?;
             }
+            remove_part_metadata(&metadata_path);
 
             return Ok(());
         }
@@ -1159,6 +1664,9 @@ fn download_with_progress_cancellable(
                     "artifactCount": artifact_count,
                     "currentFile": current_file,
                     "currentRelativePath": current_relative_path,
+                    "currentSource": current_source,
+                    "stage": "downloading",
+                    "verified": false,
                     "message": "Resumed"
                 }),
             );
@@ -1180,6 +1688,9 @@ fn download_with_progress_cancellable(
                     "artifactCount": artifact_count,
                     "currentFile": current_file,
                     "currentRelativePath": current_relative_path,
+                    "currentSource": current_source,
+                    "stage": "paused",
+                    "verified": false,
                     "progress": total.map(|t| ((downloaded as f64 / t as f64) * 100.0).floor() as i64)
                 }),
             );
@@ -1207,6 +1718,9 @@ fn download_with_progress_cancellable(
                         "artifactCount": artifact_count,
                         "currentFile": current_file,
                         "currentRelativePath": current_relative_path,
+                        "currentSource": current_source,
+                        "stage": "downloading",
+                        "verified": false,
                     }),
                 );
             }
@@ -1216,22 +1730,64 @@ fn download_with_progress_cancellable(
     out.flush().ok();
     drop(out);
 
+    send_event(
+        &stdout,
+        serde_json::json!({
+            "type": "progress",
+            "model_id": model_id,
+            "progress": 100,
+            "artifactIndex": artifact_index,
+            "artifactCount": artifact_count,
+            "currentFile": current_file,
+            "currentRelativePath": current_relative_path,
+            "currentSource": current_source,
+            "stage": "verifying",
+            "verified": false,
+        }),
+    );
+
+    if let Some(expected) = expected_size {
+        let actual = std::fs::metadata(&tmp_path)
+            .with_context(|| format!("stat {}", tmp_path.display()))?
+            .len();
+        if actual != expected {
+            let _ = std::fs::remove_file(&tmp_path);
+            remove_part_metadata(&metadata_path);
+            return Err(anyhow!(
+                "size mismatch for {}: expected {expected} bytes, got {actual}",
+                current_relative_path
+            ));
+        }
+    }
+    if let Some(expected_sha256) = expected_sha256.as_deref() {
+        if !verify_local_artifact_hash(&tmp_path, expected_sha256)
+            .with_context(|| format!("verify sha256 for {}", current_relative_path))?
+        {
+            let _ = std::fs::remove_file(&tmp_path);
+            remove_part_metadata(&metadata_path);
+            return Err(anyhow!("sha256 mismatch for {}", current_relative_path));
+        }
+    }
+
     // Atomic-ish replace
     if dest_path.exists() {
         let _ = std::fs::remove_file(dest_path);
     }
     std::fs::rename(&tmp_path, dest_path)
         .with_context(|| format!("move into place: {}", dest_path.display()))?;
+    remove_part_metadata(&metadata_path);
 
     Ok(())
 }
 
 #[derive(Clone)]
 struct DownloadFile {
-    url: String,
     dest_path: PathBuf,
     relative_path: String,
     filename: String,
+    sources: Vec<ResolvedArtifactSource>,
+    sha256: Option<String>,
+    size_bytes: Option<u64>,
 }
 
 #[derive(Clone)]
@@ -1246,7 +1802,7 @@ struct DownloadManager {
 }
 
 impl DownloadManager {
-    fn start(&self, model_id: &str, files: Vec<DownloadFile>, stdout: Arc<Mutex<io::Stdout>>) {
+    fn start(&self, model_id: &str, files: Vec<DownloadFile>, stdout: Arc<Mutex<io::Stdout>>) -> bool {
         let cancel = Arc::new(AtomicBool::new(false));
         let task = DownloadTask {
             files: files.clone(),
@@ -1254,6 +1810,9 @@ impl DownloadManager {
         };
         {
             let mut map = self.tasks.lock().expect("downloads lock");
+            if map.contains_key(model_id) {
+                return false;
+            }
             map.insert(model_id.to_string(), task);
         }
 
@@ -1279,40 +1838,62 @@ impl DownloadManager {
                     continue;
                 }
 
-                let res = download_with_progress_cancellable(
-                    &f.url,
-                    &f.dest_path,
-                    stdout.clone(),
-                    model_id_clone.clone(),
-                    idx + 1,
-                    files.len(),
-                    f.filename.clone(),
-                    f.relative_path.clone(),
-                    Some(cancel.clone()),
-                );
+                let mut source_errors: Vec<String> = Vec::new();
+                let mut completed = false;
+                for source in &f.sources {
+                    let res = download_with_progress_cancellable(
+                        &source.url,
+                        &f.dest_path,
+                        stdout.clone(),
+                        model_id_clone.clone(),
+                        idx + 1,
+                        files.len(),
+                        f.filename.clone(),
+                        f.relative_path.clone(),
+                        source.url.clone(),
+                        f.sha256.clone(),
+                        f.size_bytes,
+                        Some(cancel.clone()),
+                    );
 
-                match res {
-                    Ok(()) => {
-                        if cancel.load(Ordering::Relaxed) {
-                            // paused
-                            return;
+                    match res {
+                        Ok(()) => {
+                            if cancel.load(Ordering::Relaxed) {
+                                return;
+                            }
+                            if f.dest_path.exists() {
+                                completed_paths.push(f.dest_path.to_string_lossy().to_string());
+                            }
+                            completed = true;
+                            break;
                         }
-                        if f.dest_path.exists() {
-                            completed_paths.push(f.dest_path.to_string_lossy().to_string());
+                        Err(e) => {
+                            source_errors.push(format!("{}: {e:#}", source.url));
                         }
                     }
-                    Err(e) => {
-                        send_event(
-                            &stdout,
-                            serde_json::json!({
-                                "type": "error",
-                                "model_id": model_id_clone,
-                                "error": format!("{e:#}")
-                            }),
-                        );
-                        mgr.clear_task(&model_id_clone);
-                        return;
-                    }
+                }
+
+                if !completed {
+                    send_event(
+                        &stdout,
+                        serde_json::json!({
+                            "type": "error",
+                            "model_id": model_id_clone,
+                            "artifactIndex": idx + 1,
+                            "artifactCount": files.len(),
+                            "currentFile": f.filename,
+                            "currentRelativePath": f.relative_path,
+                            "stage": "failed",
+                            "verified": false,
+                            "error": if source_errors.is_empty() {
+                                "No valid download source succeeded".to_string()
+                            } else {
+                                format!("All download sources failed:\n{}", source_errors.join("\n"))
+                            }
+                        }),
+                    );
+                    mgr.clear_task(&model_id_clone);
+                    return;
                 }
             }
 
@@ -1323,6 +1904,8 @@ impl DownloadManager {
                     "type": "progress",
                     "model_id": model_id_clone,
                     "progress": 100,
+                    "stage": "verifying",
+                    "verified": true,
                 }),
             );
             send_event(
@@ -1333,10 +1916,13 @@ impl DownloadManager {
                     "path": primary_path,
                     "paths": completed_paths,
                     "artifactCount": files.len(),
+                    "stage": "installed",
+                    "verified": true,
                 }),
             );
             mgr.clear_task(&model_id_clone);
         });
+        true
     }
 
     fn request_pause(&self, model_id: &str) -> bool {
@@ -1369,8 +1955,8 @@ impl DownloadManager {
         };
 
         if let Some(files) = files {
-            self.start(model_id, files, stdout);
-            true
+            self.clear_task(model_id);
+            self.start(model_id, files, stdout)
         } else {
             false
         }
@@ -1425,6 +2011,150 @@ fn remove_model_files(cfg: &BackendConfig, model_id: &str) -> Result<usize> {
         }
     }
     Ok(removed)
+}
+
+fn copy_or_link_file(src: &Path, dest: &Path, allow_copy: bool) -> Result<()> {
+    if let Some(parent) = dest.parent() {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("create {}", parent.display()))?;
+    }
+    if dest.exists() {
+        std::fs::remove_file(dest).with_context(|| format!("remove {}", dest.display()))?;
+    }
+    match std::fs::hard_link(src, dest) {
+        Ok(()) => Ok(()),
+        Err(link_error) => {
+            if !allow_copy {
+                return Err(link_error).with_context(|| {
+                    format!("hard-link {} -> {}", src.display(), dest.display())
+                });
+            }
+            std::fs::copy(src, dest)
+                .with_context(|| format!("copy {} -> {}", src.display(), dest.display()))?;
+            Ok(())
+        }
+    }
+}
+
+fn import_model_artifacts(
+    cfg: &BackendConfig,
+    model_id: &str,
+    files: &[Value],
+    allow_copy: bool,
+) -> Result<(ResolvedDownloadManifest, ResolvedInstallationStatus)> {
+    let models_json = load_models_with_guide_overrides(cfg)?;
+    let model_obj = find_model_object(&models_json, model_id)
+        .ok_or_else(|| anyhow!("Unknown model_id: {model_id}"))?;
+    let manifest = resolve_model_download_manifest(cfg, model_id, &model_obj);
+    if manifest.availability.class_name == "blocked_non_public" {
+        return Err(anyhow!(
+            "{}",
+            manifest
+                .availability
+                .reason
+                .clone()
+                .unwrap_or_else(|| format!("Model {model_id} is blocked and cannot be imported"))
+        ));
+    }
+    if files.is_empty() {
+        return Err(anyhow!("No files supplied for import"));
+    }
+
+    let mut used_targets: Vec<String> = Vec::new();
+    let mut matched_any = false;
+    for file in files {
+        let path = file
+            .get("path")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("Each import file must include a path"))?;
+        let src = PathBuf::from(path);
+        if !src.exists() {
+            return Err(anyhow!("Import source does not exist: {}", src.display()));
+        }
+        let kind = file
+            .get("kind")
+            .and_then(|v| v.as_str())
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty());
+        let filename = src
+            .file_name()
+            .and_then(|value| value.to_str())
+            .map(|value| value.to_string())
+            .unwrap_or_default();
+
+        let mut candidates: Vec<&ResolvedArtifact> = manifest
+            .artifacts
+            .iter()
+            .filter(|artifact| artifact.filename == filename)
+            .collect();
+        if candidates.is_empty() {
+            if let Some(kind_name) = kind.as_deref() {
+                candidates = manifest
+                    .artifacts
+                    .iter()
+                    .filter(|artifact| artifact.kind == kind_name)
+                    .collect();
+            }
+        }
+        if candidates.is_empty() {
+            return Err(anyhow!(
+                "Could not match imported file '{}' to any artifact for model {}",
+                filename,
+                model_id
+            ));
+        }
+        if candidates.len() > 1 {
+            return Err(anyhow!(
+                "Imported file '{}' matched multiple artifacts for model {}; specify a unique filename",
+                filename,
+                model_id
+            ));
+        }
+        let artifact = candidates.remove(0);
+        if used_targets.iter().any(|target| target == &artifact.relative_path) {
+            return Err(anyhow!(
+                "Multiple import files map to the same artifact {}",
+                artifact.relative_path
+            ));
+        }
+        used_targets.push(artifact.relative_path.clone());
+        let dest = cfg
+            .models_dir
+            .join(artifact.relative_path.replace('/', "\\"));
+        copy_or_link_file(&src, &dest, allow_copy)?;
+        if let Some(expected_size) = artifact.size_bytes {
+            let actual_size = std::fs::metadata(&dest)
+                .with_context(|| format!("stat {}", dest.display()))?
+                .len();
+            if actual_size != expected_size {
+                let _ = std::fs::remove_file(&dest);
+                return Err(anyhow!(
+                    "Imported file size mismatch for {}: expected {expected_size} bytes, got {actual_size}",
+                    artifact.relative_path
+                ));
+            }
+        }
+        if let Some(expected_sha256) = artifact.sha256.as_deref() {
+            if !verify_local_artifact_hash(&dest, expected_sha256)
+                .with_context(|| format!("verify sha256 for {}", dest.display()))?
+            {
+                let _ = std::fs::remove_file(&dest);
+                return Err(anyhow!(
+                    "Imported file failed sha256 verification for {}",
+                    artifact.relative_path
+                ));
+            }
+        }
+        matched_any = true;
+    }
+
+    if !matched_any {
+        return Err(anyhow!("No import files were matched to manifest artifacts"));
+    }
+
+    let refreshed_manifest = resolve_model_download_manifest(cfg, model_id, &model_obj);
+    let installation = resolve_installation_status(cfg, &refreshed_manifest);
+    Ok((refreshed_manifest, installation))
 }
 
 fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -> bool {
@@ -1631,6 +2361,342 @@ fn env_true(key: &str, default_value: bool) -> bool {
     }
 }
 
+#[cfg(target_os = "windows")]
+fn detect_playback_devices_native() -> Result<Vec<PlaybackDeviceInfo>> {
+    let _ = initialize_mta().ok();
+    let enumerator = DeviceEnumerator::new().context("create device enumerator")?;
+    let default_id = enumerator
+        .get_default_device(&Direction::Render)
+        .ok()
+        .and_then(|device| device.get_id().ok());
+    let collection = enumerator
+        .get_device_collection(&Direction::Render)
+        .context("enumerate render devices")?;
+
+    let mut devices = Vec::new();
+    let count = collection.get_nbr_devices().context("count render devices")?;
+    for index in 0..count {
+        let device = collection
+            .get_device_at_index(index)
+            .with_context(|| format!("read render device at index {index}"))?;
+        let id = device.get_id().context("read render device id")?;
+        let label = device
+            .get_friendlyname()
+            .unwrap_or_else(|_| format!("Playback Device {}", index + 1));
+        devices.push(PlaybackDeviceInfo {
+            is_default: default_id.as_deref() == Some(id.as_str()),
+            id,
+            label,
+            kind: "render_endpoint".to_string(),
+        });
+    }
+
+    Ok(devices)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn detect_playback_devices_native() -> Result<Vec<PlaybackDeviceInfo>> {
+    Err(anyhow!(
+        "Native playback capture is only available on Windows in this build."
+    ))
+}
+
+#[cfg(target_os = "windows")]
+fn capture_playback_loopback_native(
+    stdout: &Arc<Mutex<io::Stdout>>,
+    capture_id: &str,
+    device_id: &str,
+    output_path: &Path,
+    expected_duration_sec: Option<f64>,
+    start_timeout_ms: u64,
+    trailing_silence_ms: u64,
+    min_active_rms: f64,
+) -> Result<PlaybackCaptureResultData> {
+    let _ = initialize_mta().ok();
+    let cancel_flag = register_playback_capture(capture_id);
+    let capture_start_at = Utc::now().to_rfc3339();
+    let start_instant = std::time::Instant::now();
+
+    let finalize_with_cleanup = |writer: hound::WavWriter<std::io::BufWriter<std::fs::File>>,
+                                 success: bool|
+     -> Result<()> {
+        writer.finalize().context("finalize capture wav")?;
+        if !success && output_path.exists() {
+            let _ = std::fs::remove_file(output_path);
+        }
+        Ok(())
+    };
+
+    let capture_result = (|| -> Result<PlaybackCaptureResultData> {
+        if let Some(parent) = output_path.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("create output directory {}", parent.display()))?;
+        }
+
+        let enumerator = DeviceEnumerator::new().context("create device enumerator")?;
+        let device = enumerator
+            .get_device(device_id)
+            .with_context(|| format!("resolve playback device {device_id}"))?;
+        let device_format = device
+            .get_device_format()
+            .context("read playback device format")?;
+        let sample_rate = device_format.get_samplespersec().max(44_100);
+        let channels = 2usize;
+        let desired_format = WaveFormat::new(
+            32,
+            32,
+            &SampleType::Float,
+            sample_rate as usize,
+            channels,
+            None,
+        );
+        let frame_bytes = desired_format.get_blockalign() as usize;
+
+        let mut audio_client = device
+            .get_iaudioclient()
+            .context("activate playback audio client")?;
+        let (_default_period, min_period) = audio_client
+            .get_device_period()
+            .context("read playback device period")?;
+        let mode = StreamMode::EventsShared {
+            autoconvert: true,
+            buffer_duration_hns: min_period.max(0),
+        };
+        audio_client
+            .initialize_client(&desired_format, &Direction::Render, &mode)
+            .context("initialize render loopback capture")?;
+        let event_handle = audio_client
+            .set_get_eventhandle()
+            .context("create loopback event handle")?;
+        let buffer_frame_count = audio_client
+            .get_buffer_size()
+            .context("read loopback buffer size")?;
+        let capture_client = audio_client
+            .get_audiocaptureclient()
+            .context("create loopback capture client")?;
+        let mut sample_queue: VecDeque<u8> = VecDeque::with_capacity(
+            100 * frame_bytes * (1024 + 2 * buffer_frame_count as usize),
+        );
+
+        let wav_spec = hound::WavSpec {
+            channels: channels as u16,
+            sample_rate,
+            bits_per_sample: 16,
+            sample_format: hound::SampleFormat::Int,
+        };
+        let writer = hound::WavWriter::create(output_path, wav_spec)
+            .with_context(|| format!("create capture wav at {}", output_path.display()))?;
+        let mut writer = writer;
+
+        send_playback_capture_progress(
+            stdout,
+            capture_id,
+            "awaiting_audio",
+            Some("Waiting for Qobuz playback to begin..."),
+            Some(0.0),
+            Some(0.0),
+            None,
+        )?;
+
+        audio_client.start_stream().context("start loopback stream")?;
+
+        let mut audio_detected = false;
+        let mut first_active_at: Option<std::time::Instant> = None;
+        let mut last_active_at = std::time::Instant::now();
+        let mut last_progress_emit = std::time::Instant::now();
+
+        loop {
+            if cancel_flag.load(Ordering::SeqCst) {
+                audio_client.stop_stream().ok();
+                finalize_with_cleanup(writer, false)?;
+                return Err(anyhow!("Capture cancelled"));
+            }
+
+            let new_frames = capture_client
+                .get_next_packet_size()
+                .context("read next loopback packet size")?
+                .unwrap_or(0);
+            if new_frames > 0 {
+                let additional = (new_frames as usize * frame_bytes)
+                    .saturating_sub(sample_queue.capacity().saturating_sub(sample_queue.len()));
+                sample_queue.reserve(additional);
+                capture_client
+                    .read_from_device_to_deque(&mut sample_queue)
+                    .context("read loopback audio packet")?;
+            }
+
+            let available_frames = sample_queue.len() / frame_bytes;
+            if available_frames > 0 {
+                let mut chunk = vec![0u8; available_frames * frame_bytes];
+                for byte in &mut chunk {
+                    *byte = sample_queue.pop_front().unwrap_or(0);
+                }
+
+                let mut rms_sum = 0.0f64;
+                let mut rms_count = 0usize;
+                let mut pcm_samples = Vec::with_capacity(available_frames * channels);
+                for frame in 0..available_frames {
+                    for channel in 0..channels {
+                        let offset = frame * frame_bytes + channel * 4;
+                        let sample = f32::from_le_bytes([
+                            chunk[offset],
+                            chunk[offset + 1],
+                            chunk[offset + 2],
+                            chunk[offset + 3],
+                        ]);
+                        rms_sum += f64::from(sample * sample);
+                        rms_count += 1;
+                        let pcm = (sample.clamp(-1.0, 1.0) * f32::from(i16::MAX)).round() as i16;
+                        pcm_samples.push(pcm);
+                    }
+                }
+
+                let rms = if rms_count > 0 {
+                    (rms_sum / rms_count as f64).sqrt()
+                } else {
+                    0.0
+                };
+
+                if rms >= min_active_rms {
+                    last_active_at = std::time::Instant::now();
+                    if !audio_detected {
+                        audio_detected = true;
+                        first_active_at = Some(std::time::Instant::now());
+                        send_playback_capture_progress(
+                            stdout,
+                            capture_id,
+                            "capturing",
+                            Some("Audio activity detected. Capturing playback..."),
+                            Some(0.0),
+                            Some(0.0),
+                            None,
+                        )?;
+                    }
+                }
+
+                if audio_detected {
+                    for sample in pcm_samples {
+                        writer
+                            .write_sample(sample)
+                            .context("write capture wav sample")?;
+                    }
+
+                    if last_progress_emit.elapsed() >= Duration::from_millis(700) {
+                        let elapsed = first_active_at
+                            .map(|started| started.elapsed().as_secs_f64())
+                            .unwrap_or(0.0);
+                        let progress =
+                            expected_duration_sec.map(|expected| (elapsed / expected).clamp(0.0, 1.0));
+                        send_playback_capture_progress(
+                            stdout,
+                            capture_id,
+                            "capturing",
+                            Some("Recording Qobuz playback to WAV..."),
+                            progress,
+                            Some(elapsed),
+                            None,
+                        )?;
+                        last_progress_emit = std::time::Instant::now();
+                    }
+
+                    let elapsed = first_active_at
+                        .map(|started| started.elapsed().as_secs_f64())
+                        .unwrap_or(0.0);
+                    if let Some(expected) = expected_duration_sec {
+                        if elapsed >= expected + 2.0 {
+                            break;
+                        }
+                    }
+                    if elapsed > 2.0
+                        && last_active_at.elapsed() >= Duration::from_millis(trailing_silence_ms)
+                    {
+                        break;
+                    }
+                } else if start_instant.elapsed() >= Duration::from_millis(start_timeout_ms) {
+                    audio_client.stop_stream().ok();
+                    finalize_with_cleanup(writer, false)?;
+                    return Err(anyhow!(
+                        "No audio activity was detected on the selected playback device."
+                    ));
+                }
+            } else if !audio_detected
+                && start_instant.elapsed() >= Duration::from_millis(start_timeout_ms)
+            {
+                audio_client.stop_stream().ok();
+                finalize_with_cleanup(writer, false)?;
+                return Err(anyhow!(
+                    "No audio activity was detected on the selected playback device."
+                ));
+            }
+
+            if event_handle.wait_for_event(250).is_err()
+                && !audio_detected
+                && start_instant.elapsed() >= Duration::from_millis(start_timeout_ms)
+            {
+                audio_client.stop_stream().ok();
+                finalize_with_cleanup(writer, false)?;
+                return Err(anyhow!(
+                    "Playback did not start before the capture timeout elapsed."
+                ));
+            }
+        }
+
+        audio_client.stop_stream().ok();
+
+        if first_active_at.is_none() {
+            finalize_with_cleanup(writer, false)?;
+            return Err(anyhow!(
+                "Playback capture did not produce any WAV samples."
+            ));
+        }
+
+        send_playback_capture_progress(
+            stdout,
+            capture_id,
+            "saving",
+            Some("Finalizing captured WAV..."),
+            Some(1.0),
+            first_active_at.map(|started| started.elapsed().as_secs_f64()),
+            None,
+        )?;
+
+        finalize_with_cleanup(writer, true)?;
+
+        let capture_end_at = Utc::now().to_rfc3339();
+        let duration_sec = first_active_at
+            .map(|started| started.elapsed().as_secs_f64())
+            .unwrap_or(0.0);
+        Ok(PlaybackCaptureResultData {
+            capture_id: capture_id.to_string(),
+            file_path: output_path.to_string_lossy().to_string(),
+            capture_sample_rate: sample_rate,
+            capture_channels: channels as u16,
+            capture_start_at,
+            capture_end_at,
+            duration_sec,
+        })
+    })();
+
+    finish_playback_capture(capture_id);
+    capture_result
+}
+
+#[cfg(not(target_os = "windows"))]
+fn capture_playback_loopback_native(
+    _stdout: &Arc<Mutex<io::Stdout>>,
+    _capture_id: &str,
+    _device_id: &str,
+    _output_path: &Path,
+    _expected_duration_sec: Option<f64>,
+    _start_timeout_ms: u64,
+    _trailing_silence_ms: u64,
+    _min_active_rms: f64,
+) -> Result<PlaybackCaptureResultData> {
+    Err(anyhow!(
+        "Native playback capture is only available on Windows in this build."
+    ))
+}
+
 fn env_u64(key: &str, default_value: u64) -> u64 {
     match std::env::var(key) {
         Ok(v) => v.trim().parse::<u64>().unwrap_or(default_value),
@@ -1826,6 +2892,30 @@ fn build_quality_manifest(
         .get("config")
         .cloned()
         .unwrap_or(Value::Object(Map::new()));
+    let recipe_id = extra
+        .get("recipe_id")
+        .or_else(|| extra.get("recipeId"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            config
+                .get("recipe_id")
+                .or_else(|| config.get("recipeId"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        });
+    let golden_set_id = extra
+        .get("golden_set_id")
+        .or_else(|| extra.get("goldenSetId"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            config
+                .get("golden_set_id")
+                .or_else(|| config.get("goldenSetId"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        });
     let metrics = extra.get("metrics").cloned().unwrap_or(Value::Null);
     let output_items = parse_output_items(extra);
 
@@ -1952,6 +3042,12 @@ fn build_quality_manifest(
         "model_ids".to_string(),
         Value::Array(model_ids.into_iter().map(Value::String).collect()),
     );
+    if let Some(recipe_id) = recipe_id {
+        manifest_obj.insert("recipe_id".to_string(), Value::String(recipe_id));
+    }
+    if let Some(golden_set_id) = golden_set_id {
+        manifest_obj.insert("golden_set_id".to_string(), Value::String(golden_set_id));
+    }
     manifest_obj.insert("models".to_string(), Value::Array(model_rows));
     manifest_obj.insert("config".to_string(), config);
     manifest_obj.insert("config_hash".to_string(), Value::String(config_hash));
@@ -2223,6 +3319,399 @@ fn read_wav_to_f32_stereo(path: &Path) -> Result<(u32, Vec<f32>)> {
     }
 }
 
+#[derive(Debug, Clone)]
+struct AudioQualityThresholds {
+    min_correlation: f64,
+    min_snr_db: f64,
+    min_si_sdr_db: f64,
+    max_gain_delta_db: f64,
+    max_clipped_samples: usize,
+}
+
+fn parse_audio_quality_thresholds(value: Option<&Value>) -> AudioQualityThresholds {
+    let obj = value.and_then(|v| v.as_object());
+    let get_f64 = |snake: &str, camel: &str, default: f64| {
+        obj.and_then(|map| map.get(snake).or_else(|| map.get(camel)))
+            .and_then(|v| v.as_f64())
+            .unwrap_or(default)
+    };
+    let get_usize = |snake: &str, camel: &str, default: usize| {
+        obj.and_then(|map| map.get(snake).or_else(|| map.get(camel)))
+            .and_then(|v| v.as_u64())
+            .map(|v| v as usize)
+            .unwrap_or(default)
+    };
+
+    AudioQualityThresholds {
+        min_correlation: get_f64("min_correlation", "minCorrelation", 0.995),
+        min_snr_db: get_f64("min_snr_db", "minSnrDb", 24.0),
+        min_si_sdr_db: get_f64("min_si_sdr_db", "minSiSdrDb", 24.0),
+        max_gain_delta_db: get_f64("max_gain_delta_db", "maxGainDeltaDb", 1.0),
+        max_clipped_samples: get_usize("max_clipped_samples", "maxClippedSamples", 0),
+    }
+}
+
+fn rms(samples: &[f32]) -> f64 {
+    if samples.is_empty() {
+        return 0.0;
+    }
+    let sum_sq = samples
+        .iter()
+        .map(|sample| (*sample as f64) * (*sample as f64))
+        .sum::<f64>();
+    (sum_sq / samples.len() as f64).sqrt()
+}
+
+fn peak_abs(samples: &[f32]) -> f64 {
+    samples
+        .iter()
+        .map(|sample| (*sample as f64).abs())
+        .fold(0.0_f64, f64::max)
+}
+
+fn clipped_samples(samples: &[f32], threshold: f64) -> usize {
+    samples
+        .iter()
+        .filter(|sample| (**sample as f64).abs() > threshold)
+        .count()
+}
+
+fn db(value: f64) -> f64 {
+    20.0 * value.max(1e-12).log10()
+}
+
+fn correlation_stereo(a: &[f32], b: &[f32]) -> f64 {
+    let len = a.len().min(b.len());
+    if len < 2 {
+        return 0.0;
+    }
+
+    let mut corrs: Vec<f64> = Vec::new();
+    for channel in 0..2 {
+        let mut a_vals: Vec<f64> = Vec::new();
+        let mut b_vals: Vec<f64> = Vec::new();
+        let mut idx = channel;
+        while idx < len {
+            a_vals.push(a[idx] as f64);
+            b_vals.push(b[idx] as f64);
+            idx += 2;
+        }
+        if a_vals.is_empty() || b_vals.is_empty() {
+            continue;
+        }
+        let mean_a = a_vals.iter().sum::<f64>() / a_vals.len() as f64;
+        let mean_b = b_vals.iter().sum::<f64>() / b_vals.len() as f64;
+        let mut dot = 0.0_f64;
+        let mut norm_a = 0.0_f64;
+        let mut norm_b = 0.0_f64;
+        for (va, vb) in a_vals.iter().zip(b_vals.iter()) {
+            let ca = *va - mean_a;
+            let cb = *vb - mean_b;
+            dot += ca * cb;
+            norm_a += ca * ca;
+            norm_b += cb * cb;
+        }
+        let denom = norm_a.sqrt() * norm_b.sqrt();
+        if denom > 0.0 {
+            corrs.push(dot / denom);
+        }
+    }
+
+    if corrs.is_empty() {
+        0.0
+    } else {
+        corrs.iter().sum::<f64>() / corrs.len() as f64
+    }
+}
+
+fn snr_db(reference: &[f32], estimate: &[f32]) -> f64 {
+    let len = reference.len().min(estimate.len());
+    if len == 0 {
+        return 0.0;
+    }
+    let mut signal = 0.0_f64;
+    let mut error = 0.0_f64;
+    for idx in 0..len {
+        let ref_v = reference[idx] as f64;
+        let err_v = estimate[idx] as f64 - ref_v;
+        signal += ref_v * ref_v;
+        error += err_v * err_v;
+    }
+    if error <= 0.0 {
+        return f64::INFINITY;
+    }
+    10.0 * (signal.max(1e-20) / error.max(1e-20)).log10()
+}
+
+fn si_sdr_db(reference: &[f32], estimate: &[f32]) -> f64 {
+    let len = reference.len().min(estimate.len());
+    if len < 2 {
+        return 0.0;
+    }
+
+    let mut values: Vec<f64> = Vec::new();
+    for channel in 0..2 {
+        let mut ref_vals: Vec<f64> = Vec::new();
+        let mut est_vals: Vec<f64> = Vec::new();
+        let mut idx = channel;
+        while idx < len {
+            ref_vals.push(reference[idx] as f64);
+            est_vals.push(estimate[idx] as f64);
+            idx += 2;
+        }
+        if ref_vals.is_empty() || est_vals.is_empty() {
+            continue;
+        }
+        let s_energy = ref_vals.iter().map(|value| value * value).sum::<f64>();
+        if s_energy <= 0.0 {
+            continue;
+        }
+        let dot = ref_vals
+            .iter()
+            .zip(est_vals.iter())
+            .map(|(ref_v, est_v)| ref_v * est_v)
+            .sum::<f64>();
+        let alpha = dot / s_energy;
+        let mut target = 0.0_f64;
+        let mut noise = 0.0_f64;
+        for (ref_v, est_v) in ref_vals.iter().zip(est_vals.iter()) {
+            let target_v = alpha * *ref_v;
+            let noise_v = *est_v - target_v;
+            target += target_v * target_v;
+            noise += noise_v * noise_v;
+        }
+        if noise <= 0.0 {
+            values.push(f64::INFINITY);
+        } else {
+            values.push(10.0 * (target.max(1e-20) / noise.max(1e-20)).log10());
+        }
+    }
+
+    if values.is_empty() {
+        0.0
+    } else {
+        values.iter().sum::<f64>() / values.len() as f64
+    }
+}
+
+fn finite_or_null(value: f64) -> Value {
+    if value.is_finite() {
+        Value::from(value)
+    } else {
+        Value::Null
+    }
+}
+
+fn manifest_output_paths(manifest: &Value) -> HashMap<String, String> {
+    manifest
+        .get("outputs")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|item| {
+            let label = item.get("label").and_then(|v| v.as_str())?;
+            let path = item.get("path").and_then(|v| v.as_str())?;
+            let exists = item.get("exists").and_then(|v| v.as_bool()).unwrap_or(false);
+            if !exists {
+                return None;
+            }
+            Some((label.to_string(), path.to_string()))
+        })
+        .collect()
+}
+
+fn build_audio_quality_report(
+    baseline: &Value,
+    candidate: &Value,
+    thresholds: &AudioQualityThresholds,
+) -> Value {
+    let baseline_outputs = manifest_output_paths(baseline);
+    let candidate_outputs = manifest_output_paths(candidate);
+
+    let mut labels: Vec<String> = baseline_outputs
+        .keys()
+        .chain(candidate_outputs.keys())
+        .cloned()
+        .collect();
+    labels.sort();
+    labels.dedup();
+
+    let mut pairs: Vec<Value> = Vec::new();
+    let mut compared_pairs = 0usize;
+    let mut failed_pairs = 0usize;
+    let mut skipped_pairs = 0usize;
+
+    for label in labels {
+        let Some(reference_path) = baseline_outputs.get(&label) else {
+            skipped_pairs += 1;
+            pairs.push(serde_json::json!({
+                "label": label,
+                "verdict": "skipped",
+                "reason": "missing baseline output",
+            }));
+            continue;
+        };
+        let Some(candidate_path) = candidate_outputs.get(&label) else {
+            failed_pairs += 1;
+            pairs.push(serde_json::json!({
+                "label": label,
+                "reference_path": reference_path,
+                "verdict": "fail",
+                "reason": "missing candidate output",
+            }));
+            continue;
+        };
+        if Path::new(reference_path)
+            .extension()
+            .and_then(|v| v.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase()
+            != "wav"
+            || Path::new(candidate_path)
+                .extension()
+                .and_then(|v| v.to_str())
+                .unwrap_or("")
+                .to_ascii_lowercase()
+                != "wav"
+        {
+            skipped_pairs += 1;
+            pairs.push(serde_json::json!({
+                "label": label,
+                "reference_path": reference_path,
+                "candidate_path": candidate_path,
+                "verdict": "skipped",
+                "reason": "audio QA currently supports WAV-only pairwise regression",
+            }));
+            continue;
+        }
+
+        let pair_result = (|| -> Result<Value> {
+            let (reference_sr, reference_audio) = read_wav_to_f32_stereo(Path::new(reference_path))?;
+            let (candidate_sr, candidate_audio) = read_wav_to_f32_stereo(Path::new(candidate_path))?;
+            if reference_sr != candidate_sr {
+                return Ok(serde_json::json!({
+                    "label": label,
+                    "reference_path": reference_path,
+                    "candidate_path": candidate_path,
+                    "verdict": "skipped",
+                    "reason": format!("sample rate mismatch: {} != {}", reference_sr, candidate_sr),
+                }));
+            }
+            let len = reference_audio.len().min(candidate_audio.len());
+            let reference_audio = &reference_audio[..len];
+            let candidate_audio = &candidate_audio[..len];
+            if len == 0 {
+                return Ok(serde_json::json!({
+                    "label": label,
+                    "reference_path": reference_path,
+                    "candidate_path": candidate_path,
+                    "verdict": "skipped",
+                    "reason": "empty audio pair",
+                }));
+            }
+
+            let correlation = correlation_stereo(reference_audio, candidate_audio);
+            let snr = snr_db(reference_audio, candidate_audio);
+            let si_sdr = si_sdr_db(reference_audio, candidate_audio);
+            let gain_delta_db = db(rms(candidate_audio)) - db(rms(reference_audio));
+            let candidate_peak = peak_abs(candidate_audio);
+            let candidate_clipped = clipped_samples(candidate_audio, 1.0);
+            let duration_seconds = (len as f64 / 2.0) / reference_sr as f64;
+            let mut regressions: Vec<String> = Vec::new();
+
+            if correlation < thresholds.min_correlation {
+                regressions.push(format!(
+                    "correlation {:.6} < {:.6}",
+                    correlation, thresholds.min_correlation
+                ));
+            }
+            if snr.is_finite() && snr < thresholds.min_snr_db {
+                regressions.push(format!("snr_db {:.2} < {:.2}", snr, thresholds.min_snr_db));
+            }
+            if si_sdr.is_finite() && si_sdr < thresholds.min_si_sdr_db {
+                regressions.push(format!(
+                    "si_sdr_db {:.2} < {:.2}",
+                    si_sdr, thresholds.min_si_sdr_db
+                ));
+            }
+            if gain_delta_db.abs() > thresholds.max_gain_delta_db {
+                regressions.push(format!(
+                    "abs(gain_delta_db) {:.2} > {:.2}",
+                    gain_delta_db.abs(),
+                    thresholds.max_gain_delta_db
+                ));
+            }
+            if candidate_clipped > thresholds.max_clipped_samples {
+                regressions.push(format!(
+                    "clipped_samples {} > {}",
+                    candidate_clipped, thresholds.max_clipped_samples
+                ));
+            }
+
+            Ok(serde_json::json!({
+                "label": label,
+                "reference_path": reference_path,
+                "candidate_path": candidate_path,
+                "sample_rate": reference_sr,
+                "duration_seconds": duration_seconds,
+                "correlation": finite_or_null(correlation),
+                "snr_db": finite_or_null(snr),
+                "si_sdr_db": finite_or_null(si_sdr),
+                "gain_delta_db": finite_or_null(gain_delta_db),
+                "candidate_peak_abs": finite_or_null(candidate_peak),
+                "candidate_clipped_samples": candidate_clipped,
+                "verdict": if regressions.is_empty() { "pass" } else { "fail" },
+                "regressions": regressions,
+            }))
+        })();
+
+        match pair_result {
+            Ok(result) => {
+                let verdict = result.get("verdict").and_then(|v| v.as_str()).unwrap_or("skipped");
+                match verdict {
+                    "pass" => compared_pairs += 1,
+                    "fail" => {
+                        compared_pairs += 1;
+                        failed_pairs += 1;
+                    }
+                    _ => skipped_pairs += 1,
+                }
+                pairs.push(result);
+            }
+            Err(err) => {
+                failed_pairs += 1;
+                pairs.push(serde_json::json!({
+                    "label": label,
+                    "reference_path": reference_path,
+                    "candidate_path": candidate_path,
+                    "verdict": "fail",
+                    "reason": err.to_string(),
+                }));
+            }
+        }
+    }
+
+    serde_json::json!({
+        "schema_version": "1.0",
+        "mode": "pairwise_output_regression",
+        "thresholds": {
+            "min_correlation": thresholds.min_correlation,
+            "min_snr_db": thresholds.min_snr_db,
+            "min_si_sdr_db": thresholds.min_si_sdr_db,
+            "max_gain_delta_db": thresholds.max_gain_delta_db,
+            "max_clipped_samples": thresholds.max_clipped_samples,
+        },
+        "summary": {
+            "compared_pairs": compared_pairs,
+            "failed_pairs": failed_pairs,
+            "skipped_pairs": skipped_pairs,
+        },
+        "verdict": if failed_pairs == 0 && compared_pairs > 0 { "pass" } else if compared_pairs == 0 { "skipped" } else { "fail" },
+        "pairs": pairs,
+    })
+}
+
 #[cfg(feature = "tract")]
 fn tract_introspect_onnx(path: &Path) -> Result<Value> {
     let model = tract::onnx()
@@ -2299,6 +3788,37 @@ fn send_err(
     write_json_line_locked(stdout, &resp)
 }
 
+fn send_playback_capture_progress(
+    stdout: &Arc<Mutex<io::Stdout>>,
+    capture_id: &str,
+    status: &str,
+    detail: Option<&str>,
+    progress: Option<f64>,
+    elapsed_sec: Option<f64>,
+    error: Option<&str>,
+) -> Result<()> {
+    let mut payload = serde_json::json!({
+        "type": "playback_capture_progress",
+        "capture_id": capture_id,
+        "status": status,
+    });
+
+    if let Some(detail) = detail {
+        payload["detail"] = Value::String(detail.to_string());
+    }
+    if let Some(progress) = progress {
+        payload["progress"] = Value::from(progress);
+    }
+    if let Some(elapsed_sec) = elapsed_sec {
+        payload["elapsed_sec"] = Value::from(elapsed_sec);
+    }
+    if let Some(error) = error {
+        payload["error"] = Value::String(error.to_string());
+    }
+
+    write_json_line_locked(stdout, &payload)
+}
+
 fn resolve_youtube_native(url: &str, stdout: &Arc<Mutex<io::Stdout>>) -> Result<Value> {
     if url.trim().is_empty() {
         return Err(anyhow!("url is required"));
@@ -2350,10 +3870,18 @@ opts = {
 }
 
 title = "YouTube Audio"
+channel = None
+duration = None
+thumbnail = None
+canonical_url = url
 prepared = ""
 with yt_dlp.YoutubeDL(opts) as ydl:
     info = ydl.extract_info(url, download=True)
     title = info.get("title") or title
+    channel = info.get("uploader") or info.get("channel") or info.get("creator")
+    duration = info.get("duration")
+    thumbnail = info.get("thumbnail")
+    canonical_url = info.get("webpage_url") or info.get("original_url") or url
     prepared = ydl.prepare_filename(info)
 
 root, _ = os.path.splitext(prepared)
@@ -2367,7 +3895,15 @@ if not os.path.exists(candidate):
     sys.stderr.write("Could not locate converted WAV output\n")
     sys.exit(3)
 
-print(json.dumps({"file_path": candidate, "title": title, "source_url": url}))
+print(json.dumps({
+    "file_path": candidate,
+    "title": title,
+    "source_url": url,
+    "channel": channel,
+    "duration_sec": duration,
+    "thumbnail_url": thumbnail,
+    "canonical_url": canonical_url,
+}))
 "#;
 
     let output = Command::new(&python)
@@ -3503,7 +5039,235 @@ fn main() -> Result<()> {
                     .get("recipes")
                     .cloned()
                     .unwrap_or(Value::Array(vec![]));
-                send_ok(&stdout, req.id, recipes)?;
+                let models_json = load_models_with_guide_overrides(&cfg).unwrap_or(Value::Null);
+                let mut out: Vec<Value> = Vec::new();
+
+                for recipe in recipes.as_array().cloned().unwrap_or_default() {
+                    let mut obj = recipe.as_object().cloned().unwrap_or_default();
+                    let required_model_ids = collect_recipe_model_ids(&recipe);
+                    let simple_requested = obj
+                        .get("simple_surface")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false);
+                    let surface_policy = obj
+                        .get("surface_policy")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .unwrap_or_else(|| {
+                            if simple_requested {
+                                "verified_only".to_string()
+                            } else {
+                                "advanced_only".to_string()
+                            }
+                        });
+                    let requires_verified_assets = obj
+                        .get("requires_verified_assets")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(simple_requested);
+                    let requires_qa_pass = obj
+                        .get("requires_qa_pass")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(simple_requested);
+                    let golden_set_id = obj
+                        .get("golden_set_id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    let qa_policy_ready = golden_set_id
+                        .as_ref()
+                        .is_some_and(|id| !id.trim().is_empty())
+                        && has_complete_audio_quality_thresholds(
+                            obj.get("audio_quality_thresholds"),
+                        );
+                    let quality_tradeoff = obj
+                        .get("quality_tradeoff")
+                        .cloned()
+                        .unwrap_or_else(|| {
+                            obj.get("quality_goal")
+                                .cloned()
+                                .unwrap_or(Value::Null)
+                        });
+
+                    let mut required_models: Vec<Value> = Vec::new();
+                    let mut surface_blockers: Vec<String> = Vec::new();
+
+                    if simple_requested
+                        && obj
+                            .get("promotion_status")
+                            .and_then(|v| v.as_str())
+                            == Some("supported_advanced")
+                    {
+                        surface_blockers.push(
+                            "Recipe is marked as supported_advanced and must stay out of Simple mode."
+                                .to_string(),
+                        );
+                    }
+                    if requires_qa_pass
+                        && obj.get("qa_status").and_then(|v| v.as_str()) != Some("verified")
+                    {
+                        surface_blockers.push(
+                            "Recipe requires qa_status=verified before it can be shown in Simple mode."
+                                .to_string(),
+                        );
+                    }
+                    if requires_qa_pass && !qa_policy_ready {
+                        surface_blockers.push(
+                            "Recipe requires a golden_set_id and complete audio_quality_thresholds before QA promotion."
+                                .to_string(),
+                        );
+                    }
+
+                    for model_id in required_model_ids {
+                        let model_obj =
+                            find_model_object(&models_json, &model_id).unwrap_or(Value::Null);
+                        let catalog_status = model_obj
+                            .get("catalog_status")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string());
+                        let metrics_status = model_obj
+                            .get("metrics_status")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string());
+                        let readiness = model_obj
+                            .get("status")
+                            .and_then(|v| v.get("readiness"))
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string());
+                        let simple_allowed = model_obj
+                            .get("status")
+                            .and_then(|v| v.get("simple_allowed"))
+                            .and_then(|v| v.as_bool());
+                        let blocked_reason = model_obj
+                            .get("status")
+                            .and_then(|v| v.get("blocking_reason"))
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string())
+                            .or_else(|| {
+                                model_obj
+                                    .get("runtime")
+                                    .and_then(|v| v.get("blocking_reason"))
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.to_string())
+                            });
+                        let runtime_adapter = detect_runtime_adapter(&model_obj);
+                        let install_manifest =
+                            resolve_model_download_manifest(&cfg, &model_id, &model_obj);
+                        let install_mode = install_manifest.install_mode.clone();
+                        let download_mode = install_manifest.mode.clone();
+
+                        if simple_requested && requires_verified_assets {
+                            if catalog_status.as_deref() != Some("verified") {
+                                surface_blockers.push(format!(
+                                    "{model_id} is {status} and cannot back a Simple recipe yet.",
+                                    status = catalog_status
+                                        .clone()
+                                        .unwrap_or_else(|| "unclassified".to_string())
+                                ));
+                            }
+                            if matches!(install_mode.as_str(), "manual" | "custom_runtime") {
+                                surface_blockers.push(format!(
+                                    "{model_id} requires {install_mode} installation and cannot be Simple-surfaced."
+                                ));
+                            }
+                            if matches!(download_mode.as_str(), "manual" | "unavailable") {
+                                surface_blockers.push(format!(
+                                    "{model_id} does not expose a verified direct-download manifest."
+                                ));
+                            }
+                            if runtime_adapter.is_none() {
+                                surface_blockers.push(format!(
+                                    "{model_id} does not expose a runtime adapter."
+                                ));
+                            }
+                            if simple_allowed == Some(false) {
+                                surface_blockers.push(
+                                    blocked_reason
+                                        .clone()
+                                        .unwrap_or_else(|| {
+                                            format!(
+                                                "{model_id} is explicitly blocked from Simple mode."
+                                            )
+                                        }),
+                                );
+                            }
+                        }
+
+                        required_models.push(serde_json::json!({
+                            "id": model_id,
+                            "catalog_status": catalog_status,
+                            "metrics_status": metrics_status,
+                            "readiness": readiness,
+                            "simple_allowed": simple_allowed,
+                            "blocked_reason": blocked_reason,
+                            "runtime_adapter": runtime_adapter,
+                            "install_mode": install_mode,
+                            "download_mode": download_mode,
+                        }));
+                    }
+
+                    surface_blockers.sort();
+                    surface_blockers.dedup();
+
+                    let effective_simple_surface = simple_requested
+                        && surface_policy == "verified_only"
+                        && surface_blockers.is_empty();
+
+                    obj.insert(
+                        "simple_surface".to_string(),
+                        Value::Bool(effective_simple_surface),
+                    );
+                    obj.insert(
+                        "surface_policy".to_string(),
+                        Value::String(surface_policy),
+                    );
+                    obj.insert(
+                        "requires_verified_assets".to_string(),
+                        Value::Bool(requires_verified_assets),
+                    );
+                    obj.insert(
+                        "requires_qa_pass".to_string(),
+                        Value::Bool(requires_qa_pass),
+                    );
+                    obj.insert(
+                        "qa_policy_ready".to_string(),
+                        Value::Bool(qa_policy_ready),
+                    );
+                    if let Some(golden_set_id) = golden_set_id {
+                        obj.insert(
+                            "golden_set_id".to_string(),
+                            Value::String(golden_set_id),
+                        );
+                    }
+                    obj.insert(
+                        "quality_tradeoff".to_string(),
+                        quality_tradeoff,
+                    );
+                    if !obj.contains_key("guide_topics") {
+                        let mut guide_topics: Vec<Value> = Vec::new();
+                        if let Some(target) = obj.get("target").cloned() {
+                            guide_topics.push(target);
+                        }
+                        if let Some(family) = obj.get("family").cloned() {
+                            guide_topics.push(family);
+                        }
+                        obj.insert("guide_topics".to_string(), Value::Array(guide_topics));
+                    }
+                    obj.insert(
+                        "required_model_statuses".to_string(),
+                        Value::Array(required_models),
+                    );
+                    obj.insert(
+                        "surface_blockers".to_string(),
+                        Value::Array(
+                            surface_blockers
+                                .into_iter()
+                                .map(Value::String)
+                                .collect::<Vec<_>>(),
+                        ),
+                    );
+                    out.push(Value::Object(obj));
+                }
+
+                send_ok(&stdout, req.id, Value::Array(out))?;
             }
             "quality_baseline_create" => {
                 let manifest = build_quality_manifest(&cfg, &req.extra, &stdout)?;
@@ -3555,7 +5319,121 @@ fn main() -> Result<()> {
                 );
                 let candidate = parse_manifest_input(&cfg, &req.extra, &stdout, "candidate")?;
                 send_quality_progress(&stdout, "compare", 70.0, "Comparing manifests", None);
-                let comparison = compare_quality_manifests(&baseline, &candidate);
+                let mut comparison = compare_quality_manifests(&baseline, &candidate);
+                let recipe_id = req
+                    .extra
+                    .get("recipe_id")
+                    .or_else(|| req.extra.get("recipeId"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .or_else(|| extract_recipe_id_from_manifest(&candidate))
+                    .or_else(|| extract_recipe_id_from_manifest(&baseline));
+                let recipes_json =
+                    read_json_file(&cfg.assets_dir.join("recipes.json")).unwrap_or(Value::Null);
+                let recipe_obj = recipe_id
+                    .as_ref()
+                    .and_then(|id| find_recipe_object(&recipes_json, id));
+                let resolved_thresholds_value = req
+                    .extra
+                    .get("audio_quality_thresholds")
+                    .or_else(|| req.extra.get("audioQualityThresholds"))
+                    .cloned()
+                    .or_else(|| {
+                        recipe_obj
+                            .as_ref()
+                            .and_then(|recipe| recipe.get("audio_quality_thresholds"))
+                            .cloned()
+                    });
+                let resolved_golden_set_id = req
+                    .extra
+                    .get("golden_set_id")
+                    .or_else(|| req.extra.get("goldenSetId"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .or_else(|| extract_golden_set_id_from_manifest(&candidate))
+                    .or_else(|| extract_golden_set_id_from_manifest(&baseline))
+                    .or_else(|| {
+                        recipe_obj
+                            .as_ref()
+                            .and_then(|recipe| recipe.get("golden_set_id"))
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string())
+                    });
+                let qa_policy_source = if req
+                    .extra
+                    .get("audio_quality_thresholds")
+                    .or_else(|| req.extra.get("audioQualityThresholds"))
+                    .is_some()
+                {
+                    "request"
+                } else if recipe_obj.is_some() {
+                    "recipe"
+                } else {
+                    "default"
+                };
+                let thresholds =
+                    parse_audio_quality_thresholds(resolved_thresholds_value.as_ref());
+                send_quality_progress(
+                    &stdout,
+                    "audio_regression",
+                    82.0,
+                    "Running pairwise audio regression checks",
+                    None,
+                );
+                let audio_quality = build_audio_quality_report(&baseline, &candidate, &thresholds);
+                if let Some(comparison_obj) = comparison.as_object_mut() {
+                    let verdict = audio_quality
+                        .get("verdict")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("skipped");
+                    let failed_pairs = audio_quality
+                        .get("summary")
+                        .and_then(|v| v.get("failed_pairs"))
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0) as usize;
+                    let mut difference_count = comparison_obj
+                        .get("difference_count")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0) as usize;
+                    if verdict == "fail" {
+                        if let Some(differences) = comparison_obj
+                            .get_mut("differences")
+                            .and_then(|v| v.as_array_mut())
+                        {
+                            if let Some(pairs) = audio_quality.get("pairs").and_then(|v| v.as_array()) {
+                                for pair in pairs {
+                                    if pair.get("verdict").and_then(|v| v.as_str()) != Some("fail") {
+                                        continue;
+                                    }
+                                    differences.push(serde_json::json!({
+                                        "type": "audio_quality_regression",
+                                        "label": pair.get("label").cloned().unwrap_or(Value::Null),
+                                        "baseline": pair.get("reference_path").cloned().unwrap_or(Value::Null),
+                                        "candidate": pair.get("candidate_path").cloned().unwrap_or(Value::Null),
+                                        "reason": pair.get("regressions").cloned().unwrap_or(Value::Null),
+                                    }));
+                                }
+                            }
+                            difference_count = differences.len();
+                        }
+                        comparison_obj.insert("compatible".to_string(), Value::Bool(false));
+                    }
+                    let score_penalty = (difference_count as i64 * 10)
+                        + (failed_pairs as i64 * 5);
+                    comparison_obj.insert(
+                        "quality_score".to_string(),
+                        Value::from((100 - score_penalty).max(0)),
+                    );
+                    comparison_obj.insert(
+                        "difference_count".to_string(),
+                        Value::from(difference_count as u64),
+                    );
+                    comparison_obj.insert("audio_quality".to_string(), audio_quality.clone());
+                    comparison_obj.insert(
+                        "audio_quality_verdict".to_string(),
+                        Value::String(verdict.to_string()),
+                    );
+                }
                 send_event(
                     &stdout,
                     serde_json::json!({
@@ -3563,6 +5441,7 @@ fn main() -> Result<()> {
                         "action": "quality_compare",
                         "compatible": comparison.get("compatible").cloned().unwrap_or(Value::Bool(false)),
                         "quality_score": comparison.get("quality_score").cloned().unwrap_or(Value::Null),
+                        "audio_quality_verdict": comparison.get("audio_quality_verdict").cloned().unwrap_or(Value::Null),
                         "ts": now_ts_seconds()
                     }),
                 );
@@ -3571,6 +5450,21 @@ fn main() -> Result<()> {
                 out.insert("baseline".to_string(), baseline);
                 out.insert("candidate".to_string(), candidate);
                 out.insert("comparison".to_string(), comparison);
+                out.insert(
+                    "qa_policy".to_string(),
+                    serde_json::json!({
+                        "recipe_id": recipe_id,
+                        "golden_set_id": resolved_golden_set_id,
+                        "audio_quality_thresholds": {
+                            "min_correlation": thresholds.min_correlation,
+                            "min_snr_db": thresholds.min_snr_db,
+                            "min_si_sdr_db": thresholds.min_si_sdr_db,
+                            "max_gain_delta_db": thresholds.max_gain_delta_db,
+                            "max_clipped_samples": thresholds.max_clipped_samples
+                        },
+                        "source": qa_policy_source
+                    }),
+                );
                 send_ok(&stdout, req.id, Value::Object(out))?;
             }
             "get-gpu-devices" | "get_gpu_devices" => {
@@ -3617,10 +5511,12 @@ fn main() -> Result<()> {
                                 && !artifact.exists
                         })
                         .map(|artifact| DownloadFile {
-                            url: artifact.source.clone().unwrap_or_default(),
                             dest_path: cfg.models_dir.join(artifact.relative_path.replace('/', "\\")),
                             relative_path: artifact.relative_path.clone(),
                             filename: artifact.filename.clone(),
+                            sources: artifact_download_sources(artifact),
+                            sha256: artifact.sha256.clone(),
+                            size_bytes: artifact.size_bytes,
                         })
                         .collect();
 
@@ -3651,20 +5547,21 @@ fn main() -> Result<()> {
                         .first()
                         .map(|file| file.dest_path.to_string_lossy().to_string());
 
-                    downloads.start(&model_id, files.clone(), stdout.clone());
+                    let scheduled = downloads.start(&model_id, files.clone(), stdout.clone());
 
                     // Respond immediately so Electron IPC resolves; events continue in background.
                     send_ok(
                         &stdout,
                         req_id,
                         serde_json::json!({
-                            "scheduled": true,
+                            "scheduled": scheduled,
                             "model_id": model_id,
                             "dest": primary_path,
                             "files": files
                                 .iter()
                                 .map(|f| f.dest_path.to_string_lossy().to_string())
                                 .collect::<Vec<_>>(),
+                            "already_in_flight": !scheduled,
                             "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
                             "installation": serde_json::to_value(&installation).unwrap_or(Value::Null)
                         }),
@@ -3715,10 +5612,12 @@ fn main() -> Result<()> {
                             .iter()
                             .filter(|artifact| artifact.required && !artifact.manual && artifact.source.is_some())
                             .map(|artifact| DownloadFile {
-                                url: artifact.source.clone().unwrap_or_default(),
                                 dest_path: cfg.models_dir.join(artifact.relative_path.replace('/', "\\")),
                                 relative_path: artifact.relative_path.clone(),
                                 filename: artifact.filename.clone(),
+                                sources: artifact_download_sources(artifact),
+                                sha256: artifact.sha256.clone(),
+                                size_bytes: artifact.size_bytes,
                             })
                             .collect();
                         if files.is_empty() {
@@ -3726,7 +5625,7 @@ fn main() -> Result<()> {
                                 "Model {model_id} does not expose downloadable artifacts for resume"
                             ));
                         }
-                        downloads.start(&model_id, files, stdout.clone());
+                        let _ = downloads.start(&model_id, files, stdout.clone());
                     }
 
                     send_ok(
@@ -3742,6 +5641,46 @@ fn main() -> Result<()> {
 
                 if let Err(e) = result {
                     let _ = send_err(&stdout, req.id, "DOWNLOAD_FAILED", &format!("{e:#}"));
+                }
+            }
+            "import_model_files" => {
+                let req_id = req.id.clone();
+                let result: Result<()> = (|| {
+                    let model_id = req
+                        .extra
+                        .get("model_id")
+                        .and_then(|v| v.as_str())
+                        .ok_or_else(|| anyhow!("model_id is required"))?
+                        .to_string();
+                    let files = req
+                        .extra
+                        .get("files")
+                        .and_then(|v| v.as_array())
+                        .ok_or_else(|| anyhow!("files[] is required"))?;
+                    let allow_copy = req
+                        .extra
+                        .get("allow_copy")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(true);
+
+                    let (manifest, installation) =
+                        import_model_artifacts(&cfg, &model_id, files, allow_copy)?;
+
+                    send_ok(
+                        &stdout,
+                        req_id,
+                        serde_json::json!({
+                            "model_id": model_id,
+                            "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
+                            "installation": serde_json::to_value(&installation).unwrap_or(Value::Null),
+                            "artifacts": serde_json::to_value(&installation.artifacts).unwrap_or(Value::Null),
+                        }),
+                    )?;
+                    Ok(())
+                })();
+
+                if let Err(e) = result {
+                    let _ = send_err(&stdout, req.id, "IMPORT_FAILED", &format!("{e:#}"));
                 }
             }
             "remove_model" => {
@@ -4353,6 +6292,17 @@ fn main() -> Result<()> {
                         .and_then(|v| v.as_array())
                         .cloned()
                         .unwrap_or_default();
+                    let runtime_allowed = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("allowed"))
+                        .and_then(|v| v.as_array())
+                        .cloned()
+                        .unwrap_or_default();
+                    let runtime_preferred = model_obj
+                        .get("runtime")
+                        .and_then(|v| v.get("preferred"))
+                        .cloned()
+                        .unwrap_or(Value::Null);
                     let runtime_fallbacks = model_obj
                         .get("runtime")
                         .and_then(|v| v.get("fallbacks"))
@@ -4474,57 +6424,214 @@ fn main() -> Result<()> {
                         }
                     }
 
-                    required_models_out.push(serde_json::json!({
-                        "id": mid,
-                        "name": model_obj.get("name").cloned().unwrap_or(Value::Null),
-                        "installed": exists,
-                        "curated": curated,
-                        "support_tier": support_tier,
-                        "guide_rank": model_obj.get("guide_rank").cloned().unwrap_or(Value::Null),
-                        "readiness": readiness,
-                        "simple_allowed": simple_allowed,
-                        "blocking_reason": blocking_reason,
-                        "install_mode": install_mode,
-                        "runtime_engine": runtime_engine,
-                        "runtime_model_type": runtime_model_type,
-                        "runtime_adapter": runtime_adapter_for_model,
-                        "runtime_variant": model_obj
+                    let mut required_model = serde_json::Map::new();
+                    required_model.insert("id".to_string(), Value::String(mid.clone()));
+                    required_model.insert(
+                        "name".to_string(),
+                        model_obj.get("name").cloned().unwrap_or(Value::Null),
+                    );
+                    required_model.insert("installed".to_string(), Value::Bool(exists));
+                    required_model.insert("curated".to_string(), curated.into());
+                    required_model.insert("support_tier".to_string(), support_tier.into());
+                    required_model.insert(
+                        "guide_rank".to_string(),
+                        model_obj.get("guide_rank").cloned().unwrap_or(Value::Null),
+                    );
+                    required_model.insert(
+                        "catalog_status".to_string(),
+                        model_obj
+                            .get("catalog_status")
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                    );
+                    required_model.insert(
+                        "metrics_status".to_string(),
+                        model_obj
+                            .get("metrics_status")
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                    );
+                    required_model.insert("readiness".to_string(), readiness.into());
+                    required_model.insert("simple_allowed".to_string(), simple_allowed.into());
+                    required_model.insert("blocking_reason".to_string(), blocking_reason.into());
+                    required_model.insert(
+                        "blocked_reason".to_string(),
+                        model_obj
+                            .get("status")
+                            .and_then(|v| v.get("blocking_reason"))
+                            .cloned()
+                            .or_else(|| {
+                                model_obj
+                                    .get("runtime")
+                                    .and_then(|v| v.get("blocking_reason"))
+                                    .cloned()
+                            })
+                            .unwrap_or(Value::Null),
+                    );
+                    required_model.insert("install_mode".to_string(), install_mode.into());
+                    required_model.insert("runtime_engine".to_string(), runtime_engine.into());
+                    required_model.insert(
+                        "runtime_model_type".to_string(),
+                        runtime_model_type.into(),
+                    );
+                    required_model.insert(
+                        "runtime_adapter".to_string(),
+                        runtime_adapter_for_model.into(),
+                    );
+                    required_model.insert(
+                        "runtime_allowed".to_string(),
+                        Value::Array(runtime_allowed),
+                    );
+                    required_model.insert(
+                        "runtime_preferred".to_string(),
+                        runtime_preferred,
+                    );
+                    required_model.insert(
+                        "runtime_variant".to_string(),
+                        model_obj
                             .get("runtime")
                             .and_then(|v| v.get("variant"))
                             .cloned()
                             .unwrap_or(Value::Null),
-                        "runtime_config_ref": runtime_config_ref,
-                        "runtime_checkpoint_ref": runtime_checkpoint_ref,
-                        "runtime_patch_profile": runtime_patch_profile,
-                        "runtime_required": Value::Array(runtime_required),
-                        "runtime_fallbacks": Value::Array(runtime_fallbacks),
-                        "runtime_hosts": Value::Array(runtime_hosts),
-                        "install_burden": install_burden,
-                        "requires_manual_assets": requires_manual_assets,
-                        "required_files": Value::Array(required_files),
-                        "requires_patch": requires_patch,
-                        "requires_custom_repo_file": Value::Array(requires_custom_repo_file),
-                        "quality_role": model_obj.get("quality_role").cloned().unwrap_or(Value::Null),
-                        "workflow_roles": model_obj.get("workflow_roles").cloned().unwrap_or(Value::Array(vec![])),
-                        "best_for": model_obj.get("best_for").cloned().unwrap_or(Value::Array(vec![])),
-                        "artifacts_risk": model_obj.get("artifacts_risk").cloned().unwrap_or(Value::Null),
-                        "vram_profile": model_obj.get("vram_profile").cloned().unwrap_or(Value::Null),
-                        "chunk_overlap_policy": model_obj.get("chunk_overlap_policy").cloned().unwrap_or(Value::Null),
-                        "quality_axes": model_obj.get("quality_axes").cloned().unwrap_or(Value::Null),
-                        "content_fit": model_obj.get("content_fit").cloned().unwrap_or(Value::Array(vec![])),
-                        "operating_profiles": model_obj.get("operating_profiles").cloned().unwrap_or(Value::Null),
-                        "quality_tier": model_obj
+                    );
+                    required_model.insert(
+                        "runtime_config_ref".to_string(),
+                        runtime_config_ref.into(),
+                    );
+                    required_model.insert(
+                        "runtime_checkpoint_ref".to_string(),
+                        runtime_checkpoint_ref.into(),
+                    );
+                    required_model.insert(
+                        "runtime_patch_profile".to_string(),
+                        runtime_patch_profile.into(),
+                    );
+                    required_model.insert(
+                        "runtime_required".to_string(),
+                        Value::Array(runtime_required),
+                    );
+                    required_model.insert(
+                        "runtime_fallbacks".to_string(),
+                        Value::Array(runtime_fallbacks),
+                    );
+                    required_model.insert(
+                        "runtime_hosts".to_string(),
+                        Value::Array(runtime_hosts),
+                    );
+                    required_model.insert("install_burden".to_string(), install_burden.into());
+                    required_model.insert(
+                        "requires_manual_assets".to_string(),
+                        Value::Bool(requires_manual_assets),
+                    );
+                    required_model.insert(
+                        "missing_assets".to_string(),
+                        Value::Array(
+                            missing_assets_for_model
+                                .iter()
+                                .cloned()
+                                .map(Value::String)
+                                .collect::<Vec<_>>(),
+                        ),
+                    );
+                    required_model.insert(
+                        "required_files".to_string(),
+                        Value::Array(required_files),
+                    );
+                    required_model.insert(
+                        "requires_patch".to_string(),
+                        Value::Bool(requires_patch),
+                    );
+                    required_model.insert(
+                        "requires_custom_repo_file".to_string(),
+                        Value::Array(requires_custom_repo_file),
+                    );
+                    required_model.insert(
+                        "quality_role".to_string(),
+                        model_obj
+                            .get("quality_role")
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                    );
+                    required_model.insert(
+                        "workflow_roles".to_string(),
+                        model_obj
+                            .get("workflow_roles")
+                            .cloned()
+                            .unwrap_or(Value::Array(vec![])),
+                    );
+                    required_model.insert(
+                        "best_for".to_string(),
+                        model_obj
+                            .get("best_for")
+                            .cloned()
+                            .unwrap_or(Value::Array(vec![])),
+                    );
+                    required_model.insert(
+                        "artifacts_risk".to_string(),
+                        model_obj
+                            .get("artifacts_risk")
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                    );
+                    required_model.insert(
+                        "vram_profile".to_string(),
+                        model_obj
+                            .get("vram_profile")
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                    );
+                    required_model.insert(
+                        "chunk_overlap_policy".to_string(),
+                        model_obj
+                            .get("chunk_overlap_policy")
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                    );
+                    required_model.insert(
+                        "quality_axes".to_string(),
+                        model_obj
+                            .get("quality_axes")
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                    );
+                    required_model.insert(
+                        "content_fit".to_string(),
+                        model_obj
+                            .get("content_fit")
+                            .cloned()
+                            .unwrap_or(Value::Array(vec![])),
+                    );
+                    required_model.insert(
+                        "operating_profiles".to_string(),
+                        model_obj
+                            .get("operating_profiles")
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                    );
+                    required_model.insert(
+                        "quality_tier".to_string(),
+                        model_obj
                             .get("quality_profile")
                             .and_then(|v| v.get("quality_tier"))
                             .cloned()
                             .unwrap_or(Value::Null),
-                        "target_roles": model_obj
+                    );
+                    required_model.insert(
+                        "target_roles".to_string(),
+                        model_obj
                             .get("quality_profile")
                             .and_then(|v| v.get("target_roles"))
                             .cloned()
                             .unwrap_or(Value::Array(vec![])),
-                        "vram_required": model_obj.get("vram_required").cloned().unwrap_or(Value::Null)
-                    }));
+                    );
+                    required_model.insert(
+                        "vram_required".to_string(),
+                        model_obj
+                            .get("vram_required")
+                            .cloned()
+                            .unwrap_or(Value::Null),
+                    );
+                    required_models_out.push(Value::Object(required_model));
                 }
 
                 if !missing_models.is_empty() {
@@ -4658,11 +6765,114 @@ fn main() -> Result<()> {
                     .iter()
                     .filter_map(|v| v.get("vram_required").and_then(|v| v.as_f64()))
                     .fold(0.0_f64, f64::max);
-                let simple_surface = recipe_meta
+                let simple_surface_requested = recipe_meta
                     .as_ref()
                     .and_then(|v| v.get("simple_surface"))
                     .and_then(|v| v.as_bool())
                     .unwrap_or(false);
+                let surface_policy = recipe_meta
+                    .as_ref()
+                    .and_then(|v| v.get("surface_policy"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(if simple_surface_requested {
+                        "verified_only"
+                    } else {
+                        "advanced_only"
+                    });
+                let requires_verified_assets = recipe_meta
+                    .as_ref()
+                    .and_then(|v| v.get("requires_verified_assets"))
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(simple_surface_requested);
+                let requires_qa_pass = recipe_meta
+                    .as_ref()
+                    .and_then(|v| v.get("requires_qa_pass"))
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(simple_surface_requested);
+                let golden_set_id = recipe_meta
+                    .as_ref()
+                    .and_then(|v| v.get("golden_set_id"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                let qa_policy_ready = golden_set_id
+                    .as_ref()
+                    .is_some_and(|id| !id.trim().is_empty())
+                    && has_complete_audio_quality_thresholds(
+                        recipe_meta
+                            .as_ref()
+                            .and_then(|v| v.get("audio_quality_thresholds")),
+                    );
+                let mut surface_blockers: Vec<String> = Vec::new();
+                if simple_surface_requested
+                    && recipe_meta
+                        .as_ref()
+                        .and_then(|v| v.get("promotion_status"))
+                        .and_then(|v| v.as_str())
+                        == Some("supported_advanced")
+                {
+                    surface_blockers.push(
+                        "Recipe is marked supported_advanced and must stay out of Simple mode."
+                            .to_string(),
+                    );
+                }
+                if requires_qa_pass
+                    && recipe_meta
+                        .as_ref()
+                        .and_then(|v| v.get("qa_status"))
+                        .and_then(|v| v.as_str())
+                        != Some("verified")
+                {
+                    surface_blockers.push(
+                        "Recipe requires qa_status=verified before it can be surfaced in Simple mode."
+                            .to_string(),
+                    );
+                }
+                if requires_qa_pass && !qa_policy_ready {
+                    surface_blockers.push(
+                        "Recipe requires a golden_set_id and complete audio_quality_thresholds before promotion."
+                            .to_string(),
+                    );
+                }
+                if requires_verified_assets {
+                    for model in &required_models_out {
+                        let mid = model.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
+                        if model.get("catalog_status").and_then(|v| v.as_str()) != Some("verified")
+                        {
+                            surface_blockers.push(format!(
+                                "{mid} is not catalog_status=verified."
+                            ));
+                        }
+                        if matches!(
+                            model.get("install_mode").and_then(|v| v.as_str()),
+                            Some("manual" | "custom_runtime")
+                        ) {
+                            surface_blockers.push(format!(
+                                "{mid} requires manual/custom runtime installation."
+                            ));
+                        }
+                        if model
+                            .get("runtime_adapter")
+                            .and_then(|v| v.as_str())
+                            .is_none()
+                        {
+                            surface_blockers.push(format!(
+                                "{mid} does not expose a runtime adapter."
+                            ));
+                        }
+                        if model.get("simple_allowed").and_then(|v| v.as_bool()) == Some(false) {
+                            let reason = model
+                                .get("blocked_reason")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("model is blocked from Simple mode");
+                            surface_blockers.push(format!("{mid}: {reason}"));
+                        }
+                    }
+                }
+                surface_blockers.sort();
+                surface_blockers.dedup();
+                let simple_surface = simple_surface_requested
+                    && surface_policy == "verified_only"
+                    && surface_blockers.is_empty();
                 let difficulty = recipe_meta
                     .as_ref()
                     .and_then(|v| v.get("difficulty"))
@@ -4717,12 +6927,34 @@ fn main() -> Result<()> {
                         .cloned()
                         .unwrap_or(Value::Null),
                     "difficulty": difficulty,
+                    "surface_policy": surface_policy,
+                    "requires_verified_assets": requires_verified_assets,
+                    "requires_qa_pass": requires_qa_pass,
+                    "golden_set_id": golden_set_id,
+                    "audio_quality_thresholds": recipe_meta
+                        .as_ref()
+                        .and_then(|v| v.get("audio_quality_thresholds"))
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                    "qa_policy_ready": qa_policy_ready,
                     "simple_surface": simple_surface,
                     "simple_goal": recipe_meta
                         .as_ref()
                         .and_then(|v| v.get("simple_goal"))
                         .cloned()
                         .unwrap_or(Value::Null),
+                    "quality_tradeoff": recipe_meta
+                        .as_ref()
+                        .and_then(|v| v.get("quality_tradeoff"))
+                        .cloned()
+                        .or_else(|| recipe_meta.as_ref().and_then(|v| v.get("quality_goal")).cloned())
+                        .unwrap_or(Value::Null),
+                    "guide_topics": recipe_meta
+                        .as_ref()
+                        .and_then(|v| v.get("guide_topics"))
+                        .cloned()
+                        .unwrap_or(Value::Array(vec![])),
+                    "surface_blockers": surface_blockers,
                     "guide_rank": recipe_meta
                         .as_ref()
                         .and_then(|v| v.get("guide_rank"))
@@ -4952,6 +7184,129 @@ fn main() -> Result<()> {
                     send_err(&stdout, req.id, "INVALID", "job_id is required")?;
                 }
             }
+            "detect_playback_devices" => {
+                match detect_playback_devices_native() {
+                    Ok(devices) => {
+                        send_ok(
+                            &stdout,
+                            req.id,
+                            serde_json::to_value(devices).unwrap_or(Value::Array(vec![])),
+                        )?;
+                    }
+                    Err(error) => {
+                        send_err(
+                            &stdout,
+                            req.id,
+                            "CAPTURE_ENVIRONMENT_FAILED",
+                            &format!("{error:#}"),
+                        )?;
+                    }
+                }
+            }
+            "capture_playback_loopback" => {
+                let capture_id = req.extra.get("capture_id").and_then(|v| v.as_str());
+                let device_id = req.extra.get("device_id").and_then(|v| v.as_str());
+                let output_path = req.extra.get("output_path").and_then(|v| v.as_str());
+
+                if capture_id.is_none() || device_id.is_none() || output_path.is_none() {
+                    send_err(
+                        &stdout,
+                        req.id,
+                        "INVALID",
+                        "capture_id, device_id and output_path are required",
+                    )?;
+                    continue;
+                }
+
+                let expected_duration_sec = req
+                    .extra
+                    .get("expected_duration_sec")
+                    .and_then(|v| v.as_f64())
+                    .filter(|value| value.is_finite() && *value > 0.0);
+                let start_timeout_ms = req
+                    .extra
+                    .get("start_timeout_ms")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(15_000);
+                let trailing_silence_ms = req
+                    .extra
+                    .get("trailing_silence_ms")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(2_500);
+                let min_active_rms = req
+                    .extra
+                    .get("min_active_rms")
+                    .and_then(|v| v.as_f64())
+                    .filter(|value| value.is_finite() && *value > 0.0)
+                    .unwrap_or(0.003);
+
+                match capture_playback_loopback_native(
+                    &stdout,
+                    capture_id.unwrap(),
+                    device_id.unwrap(),
+                    Path::new(output_path.unwrap()),
+                    expected_duration_sec,
+                    start_timeout_ms,
+                    trailing_silence_ms,
+                    min_active_rms,
+                ) {
+                    Ok(result) => {
+                        send_playback_capture_progress(
+                            &stdout,
+                            capture_id.unwrap(),
+                            "completed",
+                            Some("Captured WAV is ready for separation."),
+                            Some(1.0),
+                            Some(result.duration_sec),
+                            None,
+                        )?;
+                        send_ok(
+                            &stdout,
+                            req.id,
+                            serde_json::to_value(result).unwrap_or(Value::Null),
+                        )?;
+                    }
+                    Err(error) => {
+                        let error_text = format!("{error:#}");
+                        let cancelled = error_text.to_lowercase().contains("cancelled");
+                        let _ = send_playback_capture_progress(
+                            &stdout,
+                            capture_id.unwrap(),
+                            if cancelled { "cancelled" } else { "error" },
+                            if cancelled {
+                                Some("Capture cancelled.")
+                            } else {
+                                Some("Playback capture failed.")
+                            },
+                            None,
+                            None,
+                            Some(&error_text),
+                        );
+                        send_err(
+                            &stdout,
+                            req.id,
+                            if cancelled {
+                                "CAPTURE_CANCELLED"
+                            } else {
+                                "CAPTURE_FAILED"
+                            },
+                            &error_text,
+                        )?;
+                    }
+                }
+            }
+            "cancel_playback_capture" => {
+                let capture_id = req.extra.get("capture_id").and_then(|v| v.as_str());
+                let cancelled = cancel_playback_capture_request(capture_id);
+                send_ok(
+                    &stdout,
+                    req.id,
+                    serde_json::json!({
+                        "success": cancelled,
+                        "capture_id": capture_id,
+                    }),
+                )?;
+            }
             "get_workflows" => {
                 // Minimal parity: keep shape similar to Python ({workflows: [...]})
                 send_ok(
@@ -5017,7 +7372,6 @@ fn main() -> Result<()> {
                             "card_metrics": m.get("card_metrics").cloned().unwrap_or(Value::Null),
                             "catalog_status": m.get("catalog_status").cloned().unwrap_or(Value::Null),
                             "metrics_status": m.get("metrics_status").cloned().unwrap_or(Value::Null),
-                            "metrics_evidence": m.get("metrics_evidence").cloned().unwrap_or(Value::Null),
                             "links": m.get("links").cloned().unwrap_or(Value::Null),
                             "runtime": m.get("runtime").cloned().unwrap_or(Value::Null),
                             "install": m.get("install").cloned().unwrap_or(Value::Null),

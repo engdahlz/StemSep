@@ -5,12 +5,17 @@ export interface PreflightRequiredModel {
   curated?: boolean | null
   support_tier?: string | null
   guide_rank?: number | null
+  catalog_status?: string | null
+  metrics_status?: string | null
   readiness?: string | null
   simple_allowed?: boolean | null
   blocking_reason?: string | null
+  blocked_reason?: string | null
   runtime_engine?: string | null
   runtime_model_type?: string | null
   runtime_adapter?: string | null
+  runtime_allowed?: string[]
+  runtime_preferred?: string | null
   runtime_variant?: string | null
   runtime_required?: string[]
   runtime_fallbacks?: string[]
@@ -20,6 +25,7 @@ export interface PreflightRequiredModel {
   runtime_patch_profile?: string | null
   install_burden?: string | null
   requires_manual_assets?: boolean
+  missing_assets?: string[]
   required_files?: string[]
   requires_patch?: boolean
   requires_custom_repo_file?: string[]
@@ -42,8 +48,22 @@ export interface SeparationPreflightPlan {
   workflow_family?: string | null
   quality_goal?: string | null
   difficulty?: string | null
+  surface_policy?: string | null
+  requires_verified_assets?: boolean
+  requires_qa_pass?: boolean
+  golden_set_id?: string | null
+  audio_quality_thresholds?: {
+    min_correlation?: number
+    min_snr_db?: number
+    min_si_sdr_db?: number
+    max_gain_delta_db?: number
+    max_clipped_samples?: number
+  } | null
   simple_surface?: boolean
   simple_goal?: string | null
+  guide_topics?: string[]
+  quality_tradeoff?: string | null
+  surface_blockers?: string[]
   guide_rank?: number | null
   expected_vram_tier?: string | null
   expected_runtime_tier?: string | null

@@ -125,7 +125,12 @@ msgpack==1.1.2
 multidict==6.7.0
 nest-asyncio==1.6.0
 networkx==3.5
+# FNO-backed models depend on neuraloperator/neuralop and its runtime pieces.
+# Keep these explicit so backend environments don't silently drift into a
+# "neuralop installed but FNO1d unavailable" state.
 neuraloperator==1.0.2; python_version < "3.14"
+torch-harmonics==0.7.3; python_version < "3.14"
+zarr; python_version < "3.14"
 nh3==0.3.2
 nltk==3.9.2
 # numba is optional but can significantly speed up some DSP paths.

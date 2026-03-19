@@ -14,6 +14,9 @@ export const createModelSlice: StateCreator<AppState, [["zustand/immer", never]]
             model.downloadProgress = 0
             model.downloadError = undefined
             model.downloadPaused = false
+            model.downloadState = "queued"
+            model.downloadStage = "queued"
+            model.downloadVerified = false
         }
     }),
 
@@ -24,23 +27,35 @@ export const createModelSlice: StateCreator<AppState, [["zustand/immer", never]]
             model.downloadSpeed = data.speed
             model.downloadEta = data.eta
             model.downloadError = undefined
+            model.downloading = true
+            model.downloadPaused = false
+            model.downloadStage = data.stage
+            model.downloadCurrentFile = data.currentFile
+            model.downloadCurrentRelativePath = data.currentRelativePath
+            model.downloadCurrentSource = data.currentSource
+            model.downloadVerified = data.verified
+            if (data.stage === "verifying") {
+                model.downloadState = "verifying"
+            } else if (data.stage === "preflighting") {
+                model.downloadState = "preflighting"
+            } else {
+                model.downloadState = "downloading"
+            }
         }
     }),
 
     completeDownload: (modelId) => set((state) => {
         const model = state.models.find(m => m.id === modelId)
         if (model) {
-            model.installed = true
-            model.installation = {
-                ...(model.installation || {}),
-                installed: true,
-                missing_artifacts: [],
-            }
             model.downloading = false
             model.downloadProgress = 100
             model.downloadSpeed = undefined
             model.downloadEta = undefined
             model.downloadError = undefined
+            model.downloadPaused = false
+            model.downloadState = "verifying"
+            model.downloadStage = "installed"
+            model.downloadVerified = true
         }
     }),
 
@@ -52,6 +67,8 @@ export const createModelSlice: StateCreator<AppState, [["zustand/immer", never]]
             model.downloadSpeed = undefined
             model.downloadEta = undefined
             model.downloadError = error
+            model.downloadState = "failed"
+            model.downloadStage = "failed"
         }
     }),
 
@@ -60,6 +77,8 @@ export const createModelSlice: StateCreator<AppState, [["zustand/immer", never]]
         if (model) {
             model.downloading = false
             model.downloadPaused = true
+            model.downloadState = "paused"
+            model.downloadStage = "paused"
         }
     }),
 
@@ -69,6 +88,8 @@ export const createModelSlice: StateCreator<AppState, [["zustand/immer", never]]
             model.downloading = true
             model.downloadPaused = false
             model.downloadError = undefined
+            model.downloadState = "queued"
+            model.downloadStage = "queued"
         }
     }),
 
@@ -80,6 +101,25 @@ export const createModelSlice: StateCreator<AppState, [["zustand/immer", never]]
                 ...(model.installation || {}),
                 installed,
             }
+            model.downloadState = installed ? "installed" : "idle"
+            if (!installed) {
+                model.downloadVerified = false
+            }
         }
+    }),
+
+    upsertModel: (model) => set((state) => {
+        const existingIndex = state.models.findIndex(entry => entry.id === model.id)
+        if (existingIndex >= 0) {
+            state.models[existingIndex] = { ...state.models[existingIndex], ...model }
+            return
+        }
+        state.models.push(model)
+    }),
+
+    mergeModel: (modelId, patch) => set((state) => {
+        const model = state.models.find(entry => entry.id === modelId)
+        if (!model) return
+        Object.assign(model, patch)
     }),
 })

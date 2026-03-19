@@ -1,28 +1,62 @@
 import { useEffect } from 'react'
 import { useStore } from '../stores/useStore'
 import { logger } from '../utils/logger'
+import { normalizeModel } from '../lib/models/normalizeModel'
 
 export function useModelEvents() {
     const {
         setDownloadProgress,
         completeDownload,
         setDownloadError,
-        pauseDownload
+        pauseDownload,
+        mergeModel,
     } = useStore()
 
     useEffect(() => {
         if (!window.electronAPI) return
 
         // Progress listener
-        const removeProgressListener = window.electronAPI.onDownloadProgress((data: { modelId: string, progress: number, speed?: number, eta?: number }) => {
+        const removeProgressListener = window.electronAPI.onDownloadProgress((data: {
+            modelId: string,
+            progress: number,
+            stage?: string,
+            artifactIndex?: number,
+            artifactCount?: number,
+            currentFile?: string,
+            currentRelativePath?: string,
+            currentSource?: string,
+            verified?: boolean,
+            message?: string,
+            speed?: number,
+            eta?: number,
+        }) => {
             // logger.debug(`Download progress: ${data.modelId} - ${data.progress}%`, undefined, 'useModelEvents')
             setDownloadProgress(data)
         })
 
         // Complete listener
-        const removeCompleteListener = window.electronAPI.onDownloadComplete((data: { modelId: string }) => {
+        const removeCompleteListener = window.electronAPI.onDownloadComplete(async (data: { modelId: string }) => {
             logger.info(`Download complete: ${data.modelId}`, undefined, 'useModelEvents')
             completeDownload(data.modelId)
+            try {
+                const [downloadInfo, installation] = await Promise.all([
+                    window.electronAPI?.resolveModelDownload?.(data.modelId),
+                    window.electronAPI?.getModelInstallation?.(data.modelId),
+                ])
+                mergeModel(data.modelId, normalizeModel({
+                    id: data.modelId,
+                    download: downloadInfo?.download,
+                    installation,
+                    installed: Boolean(installation?.installed),
+                    downloading: false,
+                    downloadPaused: false,
+                    downloadProgress: 100,
+                    downloadState: installation?.installed ? "installed" : "failed",
+                    downloadVerified: Boolean(installation?.installed),
+                }))
+            } catch (error) {
+                logger.error(`Failed to refresh installation after download: ${data.modelId}`, error, 'useModelEvents')
+            }
         })
 
         // Error listener
@@ -43,5 +77,5 @@ export function useModelEvents() {
             removeErrorListener()
             removePausedListener()
         }
-    }, [setDownloadProgress, completeDownload, setDownloadError, pauseDownload])
+    }, [setDownloadProgress, completeDownload, setDownloadError, pauseDownload, mergeModel])
 }

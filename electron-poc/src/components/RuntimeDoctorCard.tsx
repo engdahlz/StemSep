@@ -4,6 +4,7 @@ import { useSystemRuntimeInfo } from '../hooks/useSystemRuntimeInfo'
 
 interface RuntimeDoctorCardProps {
   compact?: boolean
+  showHeader?: boolean
 }
 
 const Status = ({
@@ -29,7 +30,10 @@ const Status = ({
   </div>
 )
 
-export function RuntimeDoctorCard({ compact = false }: RuntimeDoctorCardProps) {
+export function RuntimeDoctorCard({
+  compact = false,
+  showHeader = true,
+}: RuntimeDoctorCardProps) {
   const { info, loading, error } = useSystemRuntimeInfo()
   const runtime = info?.runtimeFingerprint
   const torch = runtime?.torch
@@ -43,15 +47,17 @@ export function RuntimeDoctorCard({ compact = false }: RuntimeDoctorCardProps) {
 
   return (
     <div className="rounded-[1.6rem] border border-white/55 bg-[rgba(255,255,255,0.5)] p-5 shadow-[0_24px_80px_rgba(141,150,179,0.14)] backdrop-blur-xl">
-      <div className={compact ? 'pb-3' : 'pb-4'}>
-        <div className="flex items-center gap-2 text-[16px] font-medium text-slate-800">
-          <Activity className="h-5 w-5" />
-          Model / Env Doctor
+      {showHeader && (
+        <div className={compact ? 'pb-3' : 'pb-4'}>
+          <div className="flex items-center gap-2 text-[16px] font-medium text-slate-800">
+            <Activity className="h-5 w-5" />
+            Model / Env Doctor
+          </div>
+          <div className="mt-1 text-sm text-slate-500">
+            Preflight checks for Python, Torch, CUDA and FNO compatibility.
+          </div>
         </div>
-        <div className="mt-1 text-sm text-slate-500">
-          Preflight checks for Python, Torch, CUDA and FNO compatibility.
-        </div>
-      </div>
+      )}
       <div className="space-y-3">
         {loading && (
           <div className="text-sm text-slate-500">Collecting runtime diagnostics...</div>

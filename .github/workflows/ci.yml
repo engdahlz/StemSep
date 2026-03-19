@@ -82,17 +82,12 @@ jobs:
           python -m pip install -r StemSepApp/requirements-dev.txt
           python -m pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
 
-      - name: Guide Sync + Coverage Gate
-        shell: pwsh
-        run: |
-          python scripts/registry/sync_guide_knowledge.py `
-            --allow-fetch-failure `
-            --max-age-days 90 `
-            --max-unsynced-models 200 `
-            --gate `
-            --output-dir reports/guide_sync/ci
-
       - name: Pytest
         shell: pwsh
         run: |
           .\scripts\run_pytest.ps1 -q StemSepApp/tests
+
+      - name: Validate recipe promotion policies
+        shell: pwsh
+        run: |
+          python .\scripts\qa\validate_recipe_promotions.py

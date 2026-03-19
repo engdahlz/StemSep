@@ -5,9 +5,9 @@
     "tool": "scripts/registry/migrate_legacy_models_to_v2.py",
     "repo": "StemSep",
     "commit": null,
-    "notes": "Enriched via update_registry.py (Missing blocks, Phase Fix refs, Restoration roles) | Tags enriched via update_registry_tags.py"
+    "notes": "Enriched via update_registry.py (Missing blocks, Phase Fix refs, Restoration roles) | Tags enriched via update_registry_tags.py | Synced from extra_models.json, guide_model_overrides.json, and registry_link_fixes.json"
   },
-  "guide_revision": "2026-03-04",
+  "guide_revision": "2026-03-14",
   "models": [
     {
       "id": "amane-4-stems-large",
@@ -18,8 +18,8 @@
       "tags": [],
       "stems": [],
       "links": {
-        "checkpoint": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
-        "config": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew.yaml",
+        "checkpoint": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/mel_band_roformer_4stems_large_ver1.ckpt",
+        "config": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/config_large.yaml",
         "homepage": "https://huggingface.co/anvuew/dereverb_mel_band_roformer"
       },
       "artifacts": {
@@ -131,7 +131,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -166,8 +166,8 @@
       "tags": [],
       "stems": [],
       "links": {
-        "checkpoint": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew_sdr_19.1729.ckpt",
-        "config": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew.yaml",
+        "checkpoint": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/mel_band_roformer_4stems_xl_ver1.ckpt",
+        "config": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/config_xl.yaml",
         "homepage": "https://huggingface.co/anvuew/dereverb_mel_band_roformer"
       },
       "artifacts": {
@@ -276,7 +276,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -430,7 +430,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -468,7 +468,9 @@
       ],
       "stems": [],
       "links": {
-        "homepage": "https://huggingface.co/Aname-Tommy"
+        "homepage": "https://huggingface.co/Aname-Tommy",
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/Fullness.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml"
       },
       "artifacts": {
         "primary": {
@@ -590,7 +592,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -623,6 +625,117 @@
           "Use Aname-Tommy upstream references and install the checkpoint and YAML manually if you have access to the original release.",
           "Place the files under msst/amane-inst-fullness/ inside the configured model root."
         ]
+      }
+    },
+    {
+      "id": "amane-kapm-vocal",
+      "name": "FullnessVocalModel / kapm (Aname-Tommy)",
+      "type": "Aname-Tommy FullnessVocalModel checkpoint from the report.",
+      "architecture": "Mel-Roformer",
+      "description": "Aname-Tommy FullnessVocalModel checkpoint from the report.",
+      "tags": [
+        "vocals"
+      ],
+      "stems": [
+        "vocals"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/Aname-Tommy/MelBandRoformers/resolve/main/FullnessVocalModel.ckpt",
+        "config": null,
+        "homepage": "https://huggingface.co/Aname-Tommy/MelBandRoformers/resolve/main/FullnessVocalModel.ckpt"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "FullnessVocalModel.ckpt",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "config": null,
+        "additional": []
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "direct",
+        "requires_manual_assets": false,
+        "required_files": [
+          "FullnessVocalModel.ckpt"
+        ],
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": true
+      },
+      "catalog_status": "candidate",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads this published artifact directly."
+        ]
+      }
+    },
+    {
+      "id": "anvuew-bs-roformer-mag",
+      "name": "Anvuew BS-RoFormer Mag",
+      "type": "Roformer - Vocals",
+      "architecture": "BS-Roformer",
+      "description": "Guide-tracked vocal model specialized for magnitude-spectrum accuracy.",
+      "tags": [
+        "vocals",
+        "cleanup"
+      ],
+      "stems": [
+        "vocals",
+        "instrumental"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/anvuew/BS_RoFormer_mag",
+        "config": "https://huggingface.co/anvuew/BS_RoFormer_mag",
+        "homepage": "https://huggingface.co/anvuew/BS_RoFormer_mag"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "engine": "msst_builtin",
+        "model_type": "bs_roformer",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "Guide candidate tracked for vocal-magnitude accuracy; checkpoint/config verification is still pending."
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Candidate model is not yet promoted into a verified local runtime path."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "install": {
+        "mode": "manual"
       }
     },
     {
@@ -666,12 +779,18 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": null
+        "blocking_reason": null,
+        "engine": "msst_builtin",
+        "model_type": "bs_roformer",
+        "hosts": [
+          "msst"
+        ],
+        "install_burden": "low"
       },
       "vram_required": 8.0,
       "stems": [],
       "recommended_settings": {},
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "verified",
       "metrics_status": "guide_curated",
       "metrics_evidence": [],
@@ -688,14 +807,40 @@
           20.4029,
           "Mono"
         ],
-        "source": "Guide 2026-03-04",
+        "source": "Guide 2026-03-14",
         "evidence_url": "https://huggingface.co/anvuew/dereverb_bs_roformer",
         "evidence_note": "New BS-Roformer dereverb variant highlighted in the live guide.",
         "last_verified": "2026-03-04"
       },
       "sdr": 0.0,
       "fullness": null,
-      "bleedless": null
+      "bleedless": null,
+      "guide_rank": 1,
+      "guide_notes": [
+        "Guide-highlighted BS-Roformer dereverb variant for restoration chains."
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": true,
+        "curated": true,
+        "support_tier": "supported_advanced"
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "dereverb",
+        "restoration_finish"
+      ],
+      "content_fit": [
+        "speech",
+        "vocals",
+        "restoration"
+      ],
+      "best_for": [
+        "mono dereverb",
+        "restoration chains"
+      ]
     },
     {
       "id": "anvuew-dereverb-mono",
@@ -759,7 +904,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -825,7 +975,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -849,7 +999,21 @@
         "evidence_url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer",
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "restoration_step"
+      ],
+      "content_fit": [
+        "mono_vocals",
+        "restoration"
+      ],
+      "best_for": [
+        "mono dereverb rescue",
+        "spoken or center-panned vocals"
+      ]
     },
     {
       "id": "anvuew-dereverb-room",
@@ -913,7 +1077,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -979,7 +1148,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "verified",
       "metrics_status": "verified",
       "metrics_evidence": [],
@@ -1003,7 +1172,65 @@
       },
       "sdr": 0.0,
       "fullness": null,
-      "bleedless": null
+      "bleedless": null,
+      "guide_rank": 1,
+      "guide_notes": [
+        "Preferred dereverb step in live and restoration chains."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "restoration"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 1
+      },
+      "hardware_tiers": [
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 8,
+          "max_vram_gb": 11.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 12,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": false,
+        "blocking_reason": "Expose through restoration workflows."
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "restoration_step"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 7,
+        "noise_risk": 3,
+        "harmony_capture": 4,
+        "bgv_retention": 4,
+        "mud_risk": 2,
+        "specialization": "room dereverb"
+      },
+      "content_fit": [
+        "live_recording",
+        "reverb_heavy",
+        "restoration"
+      ],
+      "best_for": [
+        "room removal",
+        "live vocal cleanup"
+      ],
+      "workflow_groups": [
+        "restoration"
+      ]
     },
     {
       "id": "anvuew-dereverb-v2",
@@ -1133,7 +1360,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -1197,10 +1424,10 @@
       },
       "vram_required": 8.0,
       "recommended_settings": {
-        "segment_size": null,
+        "segment_size": 352800,
         "batch_size": null,
         "tta": null,
-        "overlap": null,
+        "overlap": 2,
         "shifts": null,
         "bit_depth": null
       },
@@ -1219,7 +1446,15 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium",
+        "requires_custom_repo_file": [
+          "bs_roformer.py"
+        ]
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -1284,7 +1519,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -1308,7 +1543,68 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "guide_rank": 1,
+      "guide_notes": [
+        "Guide-recommended fusion partner for premium karaoke workflows."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "karaoke"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 1
+      },
+      "hardware_tiers": [
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 8,
+          "max_vram_gb": 11.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 12,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 4
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": false,
+        "blocking_reason": "Expose through curated karaoke workflows."
+      },
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "karaoke_base",
+        "lead_back_splitter"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 9,
+        "noise_risk": 3,
+        "harmony_capture": 8,
+        "bgv_retention": 8,
+        "mud_risk": 2,
+        "specialization": "karaoke base"
+      },
+      "content_fit": [
+        "karaoke",
+        "lead_back",
+        "harmonies"
+      ],
+      "best_for": [
+        "karaoke base pass",
+        "lead/backing separation"
+      ],
+      "workflow_groups": [
+        "karaoke",
+        "workflow"
+      ]
     },
     {
       "id": "anvuew-vocals",
@@ -1435,7 +1731,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -1461,6 +1757,195 @@
         "last_verified": "2026-03-04"
       },
       "homepage": "https://huggingface.co/anvuew/BS-RoFormer"
+    },
+    {
+      "id": "apollo-restoration",
+      "name": "Apollo Restoration",
+      "type": "restoration",
+      "architecture": "Apollo",
+      "description": "Advanced Apollo restoration runtime for low-quality source cleanup and guide-backed harmony recovery experiments.",
+      "tags": [],
+      "stems": [
+        "restored"
+      ],
+      "links": {
+        "homepage": "https://huggingface.co/JusperLee/Apollo",
+        "checkpoint": "https://huggingface.co/JusperLee/Apollo/resolve/main/pytorch_model.bin",
+        "config": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_apollo.yaml"
+      },
+      "metrics": {
+        "sdr": 0,
+        "fullness": 0,
+        "bleedless": 0,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 8,
+      "recommended_settings": {},
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "apollo",
+        "variant": "apollo",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "msst_builtin"
+        ],
+        "config_ref": "apollo-restoration.yaml",
+        "checkpoint_ref": "apollo-restoration.ckpt",
+        "install_mode": "direct",
+        "install_burden": "high",
+        "requires_manual_assets": false,
+        "required_files": [
+          "pytorch_model.bin",
+          "config_apollo.yaml"
+        ],
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Advanced runtime only until Apollo assets are verified locally."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads the published Apollo restoration weight and config directly.",
+          "Files are stored under msst/apollo-restoration/ inside the configured model root."
+        ]
+      },
+      "quality_role": [
+        "post_process",
+        "special_stem"
+      ],
+      "best_for": [
+        "restoration",
+        "advanced vocal recovery"
+      ],
+      "artifacts_risk": [
+        "manual asset setup",
+        "experimental on dense mixes"
+      ],
+      "vram_profile": "mid_vram",
+      "workflow_groups": [
+        "restoration",
+        "special stems"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 6,
+        "noise_risk": 3,
+        "harmony_capture": 7,
+        "bgv_retention": 7,
+        "mud_risk": 3,
+        "specialization": "restoration and recovery"
+      },
+      "workflow_roles": [
+        "restoration_step",
+        "harmony_recovery"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "live_recording",
+        "harmonies",
+        "special_stems"
+      ],
+      "download": {
+        "sources": [
+          {
+            "role": "checkpoint",
+            "url": "https://huggingface.co/JusperLee/Apollo/resolve/main/pytorch_model.bin",
+            "manual": false
+          },
+          {
+            "role": "config",
+            "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_apollo.yaml",
+            "manual": false
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "checkpoint",
+            "filename": "pytorch_model.bin",
+            "relative_path": "msst/apollo-restoration/pytorch_model.bin",
+            "required": true,
+            "manual": false,
+            "source": "https://huggingface.co/JusperLee/Apollo/resolve/main/pytorch_model.bin"
+          },
+          {
+            "kind": "config",
+            "filename": "config_apollo.yaml",
+            "relative_path": "msst/apollo-restoration/config_apollo.yaml",
+            "required": true,
+            "manual": false,
+            "source": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_apollo.yaml"
+          }
+        ]
+      }
+    },
+    {
+      "id": "audiosep",
+      "name": "AudioSep",
+      "type": "AudioSep zero-shot audio separation project from the report.",
+      "architecture": "Other",
+      "description": "AudioSep zero-shot audio separation project from the report.",
+      "tags": [],
+      "stems": [],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://github.com/Audio-AGI/AudioSep"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://github.com/Audio-AGI/AudioSep",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
+      }
     },
     {
       "id": "aufr33-denoise-aggressive",
@@ -1524,7 +2009,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -1590,7 +2080,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -1614,7 +2104,62 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "guide_rank": 2,
+      "guide_notes": [
+        "Closest shipped option to crowd/live restoration cleanup."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "restoration"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 2
+      },
+      "hardware_tiers": [
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": false,
+        "blocking_reason": "Expose through restoration workflows."
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "restoration_step"
+      ],
+      "quality_axes": {
+        "fullness": 5,
+        "bleedless": 8,
+        "noise_risk": 4,
+        "harmony_capture": 3,
+        "bgv_retention": 3,
+        "mud_risk": 3,
+        "specialization": "aggressive denoise"
+      },
+      "content_fit": [
+        "restoration",
+        "live_recording",
+        "noise_heavy"
+      ],
+      "best_for": [
+        "post-dereverb denoise",
+        "live/crowd cleanup"
+      ]
     },
     {
       "id": "aufr33-denoise-std",
@@ -1744,7 +2289,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -1768,6 +2313,138 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
+      }
+    },
+    {
+      "id": "bandit-dnr",
+      "name": "BandIt DnR",
+      "type": "restoration",
+      "architecture": "BandIt",
+      "description": "BandIt-plus style denoise/music/effects runtime for advanced cleanup and comparison workflows.",
+      "tags": [],
+      "stems": [
+        "speech",
+        "music",
+        "effects"
+      ],
+      "links": {
+        "homepage": "https://github.com/kwatcharasupat/bandit-v2"
+      },
+      "metrics": {
+        "sdr": 0,
+        "fullness": 0,
+        "bleedless": 0,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 8,
+      "recommended_settings": {},
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "bandit",
+        "variant": "bandit",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "msst_builtin"
+        ],
+        "config_ref": "bandit-dnr.yaml",
+        "checkpoint_ref": "bandit-dnr.ckpt",
+        "install_mode": "manual",
+        "install_burden": "high",
+        "requires_manual_assets": true,
+        "required_files": [
+          "bandit-dnr.yaml",
+          "bandit-dnr.ckpt"
+        ],
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "BandIt is available as an advanced MSST runtime only."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "BandIt v2 is documented in the research report, but the current registry does not yet have a stable public weights URL for automated download.",
+          "Import the original checkpoint and YAML manually if you have access to the OG release or UVR download-center bundle.",
+          "Place the files under msst/bandit-dnr/ inside the configured model root."
+        ]
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "best_for": [
+        "noise reduction",
+        "advanced cleanup"
+      ],
+      "artifacts_risk": [
+        "manual asset setup"
+      ],
+      "vram_profile": "mid_vram",
+      "workflow_groups": [
+        "restoration"
+      ],
+      "quality_axes": {
+        "fullness": 5,
+        "bleedless": 5,
+        "noise_risk": 2,
+        "harmony_capture": 4,
+        "bgv_retention": 4,
+        "mud_risk": 3,
+        "specialization": "denoise and source cleanup"
+      },
+      "workflow_roles": [
+        "restoration_step"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "live_recording",
+        "cleanup"
+      ],
+      "download": {
+        "sources": [
+          {
+            "role": "manual_reference",
+            "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training",
+            "manual": true
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "config",
+            "filename": "bandit-dnr.yaml",
+            "relative_path": "msst/bandit-dnr/bandit-dnr.yaml",
+            "required": true,
+            "manual": true
+          },
+          {
+            "kind": "checkpoint",
+            "filename": "bandit-dnr.ckpt",
+            "relative_path": "msst/bandit-dnr/bandit-dnr.ckpt",
+            "required": true,
+            "manual": true
+          }
+        ]
       }
     },
     {
@@ -1828,7 +2505,16 @@
           "stemsep-legacy"
         ],
         "preferred": "stemsep-legacy",
-        "blocking_reason": null
+        "blocking_reason": null,
+        "hosts": [
+          "msst",
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "requires_patch": true,
+        "requires_custom_repo_file": [
+          "BandIt runtime bridge"
+        ]
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -1893,7 +2579,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "candidate",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -1918,7 +2604,83 @@
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
       },
-      "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v.1.0.3"
+      "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v.1.0.3",
+      "guide_rank": 4,
+      "guide_notes": [
+        "BandIt is technically valuable for hybrid experiments, but runtime support is still higher-friction than the core curated stack."
+      ],
+      "install": {
+        "mode": "custom_runtime"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": false,
+        "blocking_reason": "BandIt remains a custom-runtime advanced model."
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "high_band_source"
+      ],
+      "content_fit": [
+        "hybrid_crossover",
+        "experimental"
+      ],
+      "best_for": [
+        "hybrid experiments",
+        "high-band comparison passes"
+      ]
+    },
+    {
+      "id": "becruily-deux",
+      "name": "Deux (Becruily)",
+      "type": "Becruily Deux community Roformer model.",
+      "architecture": "Mel-Roformer",
+      "description": "Becruily Deux community Roformer model.",
+      "tags": [
+        "vocals"
+      ],
+      "stems": [
+        "vocals"
+      ],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://huggingface.co/becruily/mel-band-roformer-deux"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://huggingface.co/becruily/mel-band-roformer-deux",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
+      }
     },
     {
       "id": "becruily-guitar",
@@ -1978,7 +2740,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -2043,7 +2810,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -2067,7 +2834,33 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "quality_role": [
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "special_stem"
+      ],
+      "quality_axes": {
+        "fullness": 7,
+        "bleedless": 8,
+        "noise_risk": 3,
+        "harmony_capture": 2,
+        "bgv_retention": 1,
+        "mud_risk": 2,
+        "specialization": "guitar isolation"
+      },
+      "content_fit": [
+        "special_stems",
+        "guitar"
+      ],
+      "best_for": [
+        "guitar extraction",
+        "special-stem workflows"
+      ],
+      "workflow_groups": [
+        "special stems"
+      ]
     },
     {
       "id": "becruily-inst",
@@ -2107,10 +2900,10 @@
       },
       "vram_required": 6.0,
       "recommended_settings": {
-        "segment_size": null,
+        "segment_size": 352800,
         "batch_size": null,
         "tta": null,
-        "overlap": null,
+        "overlap": 4,
         "shifts": null,
         "bit_depth": null
       },
@@ -2129,7 +2922,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -2194,7 +2992,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -2225,7 +3023,64 @@
       },
       "sdr": 0.0,
       "fullness": null,
-      "bleedless": null
+      "bleedless": null,
+      "guide_rank": 2,
+      "guide_notes": [
+        "Clean instrumental reference used to tame noisy/fullness-oriented outputs."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "instrumental"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 2
+      },
+      "hardware_tiers": [
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": false,
+        "blocking_reason": "Companion model for multi-model workflows."
+      },
+      "quality_role": [
+        "ensemble_partner",
+        "phase_reference"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 9,
+        "noise_risk": 2,
+        "harmony_capture": 4,
+        "bgv_retention": 4,
+        "mud_risk": 2,
+        "specialization": "instrumental cleanup"
+      },
+      "workflow_roles": [
+        "cleanup_reference",
+        "phase_reference"
+      ],
+      "content_fit": [
+        "cleanup_reference",
+        "low_artifact"
+      ],
+      "best_for": [
+        "cleaning noisy instrumental outputs",
+        "phase-fix cleanup"
+      ]
     },
     {
       "id": "becruily-vocal",
@@ -2288,7 +3143,13 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "audio_separator",
+          "uvr"
+        ],
+        "install_burden": "low"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -2321,11 +3182,21 @@
         "recommended_params": {
           "lowHz": 500,
           "highHz": 5000,
-          "highFreqWeight": 2.0
+          "highFreqWeight": 2
         },
         "recommended_usage": [
           "Use as a phase reference source for fixing artifacts in fuller but noisier models (e.g., Unwa Inst V1e, Gabox)."
-        ]
+        ],
+        "reference_model_id": "unwa-inst-v1e-plus",
+        "references": {
+          "vocals": [
+            "bs-roformer-viperx-1297"
+          ],
+          "instrumental": [
+            "unwa-inst-v1e-plus",
+            "unwa-hyperace"
+          ]
+        }
       },
       "capabilities": {
         "stems": [],
@@ -2356,7 +3227,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -2380,6 +3251,155 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
+      },
+      "guide_rank": 3,
+      "guide_notes": [
+        "Clean vocal model used as phase reference in instrumental workflows."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "vocals"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 4
+      },
+      "hardware_tiers": [
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": false,
+        "blocking_reason": "Advanced companion model for phase-fix workflows."
+      },
+      "quality_role": [
+        "phase_reference",
+        "ensemble_partner"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 9,
+        "noise_risk": 2,
+        "harmony_capture": 7,
+        "bgv_retention": 6,
+        "mud_risk": 2,
+        "specialization": "clean phase source"
+      },
+      "workflow_roles": [
+        "cleanup_reference",
+        "phase_reference"
+      ],
+      "content_fit": [
+        "cleanup_reference",
+        "instrumental_phase_fix"
+      ],
+      "best_for": [
+        "phase-fix source",
+        "clean vocal reference"
+      ]
+    },
+    {
+      "id": "bs-conformer-medium",
+      "name": "BS Conformer Medium (ZFTurbo)",
+      "type": "Experimental BS Conformer Medium separator from the report.",
+      "architecture": "Other",
+      "description": "Experimental BS Conformer Medium separator from the report.",
+      "tags": [],
+      "stems": [],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.18"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.18",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
+      }
+    },
+    {
+      "id": "bs-mamba2",
+      "name": "BS Mamba2 (ZFTurbo)",
+      "type": "Experimental BS Mamba2 separator from the report.",
+      "architecture": "Other",
+      "description": "Experimental BS Mamba2 separator from the report.",
+      "tags": [],
+      "stems": [],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.19"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.19",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
       }
     },
     {
@@ -2505,7 +3525,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -2540,8 +3560,8 @@
       "tags": [],
       "stems": [],
       "links": {
-        "checkpoint": "https://huggingface.co/Aname-Tommy/BS-Roformers/resolve/main/v2.ckpt",
-        "config": "https://huggingface.co/Aname-Tommy/BS-Roformers/resolve/main/config_v2.yaml",
+        "checkpoint": "https://huggingface.co/SYH99999/bs_roformer_4stems_ft/resolve/main/bs_roformer_4stems_ft.pth",
+        "config": "https://huggingface.co/SYH99999/bs_roformer_4stems_ft/resolve/main/config.yaml",
         "homepage": "https://huggingface.co/Aname-Tommy/BS-Roformers"
       },
       "artifacts": {
@@ -2662,7 +3682,7 @@
           "blocked_reason": "public_weights_mismatch_expected_format"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -2688,6 +3708,56 @@
         "last_verified": "2026-03-04"
       },
       "homepage": "https://huggingface.co/Aname-Tommy/BS-Roformers"
+    },
+    {
+      "id": "bs-roformer-inst-exp-value-residual",
+      "name": "BS-Roformer Inst-EXP-Value-Residual",
+      "type": "Community BS-Roformer instrumental residual variant from the report.",
+      "architecture": "BS-Roformer",
+      "description": "Community BS-Roformer instrumental residual variant from the report.",
+      "tags": [
+        "instrumental"
+      ],
+      "stems": [
+        "instrumental"
+      ],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://huggingface.co/pcunwa/BS-Roformer-Inst-EXP-Value-Residual"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://huggingface.co/pcunwa/BS-Roformer-Inst-EXP-Value-Residual",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
+      }
     },
     {
       "id": "bs-roformer-karaoke-becruily",
@@ -2727,10 +3797,10 @@
       },
       "vram_required": 8.0,
       "recommended_settings": {
-        "segment_size": null,
+        "segment_size": 352800,
         "batch_size": null,
         "tta": null,
-        "overlap": null,
+        "overlap": 2,
         "shifts": null,
         "bit_depth": null
       },
@@ -2749,7 +3819,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -2814,7 +3889,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -2838,7 +3913,63 @@
         "evidence_url": "https://huggingface.co/becruily/bs-roformer-karaoke",
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "guide_rank": 2,
+      "guide_notes": [
+        "Strong karaoke base model for lead/back separation."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "karaoke"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 2
+      },
+      "hardware_tiers": [
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 8,
+          "max_vram_gb": 11.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 12,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 4
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": false,
+        "blocking_reason": "Expose through curated karaoke workflows."
+      },
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "karaoke_base",
+        "lead_back_splitter"
+      ],
+      "quality_axes": {
+        "fullness": 7,
+        "bleedless": 9,
+        "noise_risk": 2,
+        "harmony_capture": 7,
+        "bgv_retention": 7,
+        "mud_risk": 2,
+        "specialization": "karaoke cleanup"
+      },
+      "content_fit": [
+        "karaoke",
+        "lead_back"
+      ],
+      "best_for": [
+        "clean backing tracks",
+        "lead/back pair workflows"
+      ]
     },
     {
       "id": "bs-roformer-large-inst",
@@ -2949,13 +4080,13 @@
       },
       "vram_required": 8.0,
       "stems": [],
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "guide_curated",
       "metrics_evidence": [
         {
-          "source": "Guide 2026-03-04",
-          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "source": "Guide 2026-03-14",
+          "url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
           "note": "Guide lists Fullness 32.06, Bleedless 43.95, SDR 17.61.",
           "verified_at": "2026-03-04"
         }
@@ -2973,8 +4104,8 @@
           32.06,
           43.95
         ],
-        "source": "Guide 2026-03-04",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "source": "Guide 2026-03-14",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "BS-Roformer-Large-Inst / bs_large_v2_inst guide entry.",
         "last_verified": "2026-03-04"
       },
@@ -3107,7 +4238,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -3179,11 +4310,11 @@
       },
       "vram_required": 8.0,
       "recommended_settings": {
-        "segment_size": null,
+        "segment_size": 352800,
         "batch_size": null,
         "tta": null,
-        "overlap": null,
-        "shifts": null,
+        "overlap": 4,
+        "shifts": 1,
         "bit_depth": null
       },
       "settings_semantics": {
@@ -3201,7 +4332,13 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "audio_separator",
+          "uvr"
+        ],
+        "install_burden": "low"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -3234,11 +4371,22 @@
         "recommended_params": {
           "lowHz": 500,
           "highHz": 5000,
-          "highFreqWeight": 2.0
+          "highFreqWeight": 2
         },
         "recommended_usage": [
           "Use as a phase reference source for fixing artifacts in fuller but noisier models (e.g., Unwa Inst V1e, Gabox)."
-        ]
+        ],
+        "reference_model_id": "becruily-vocal",
+        "references": {
+          "vocals": [
+            "mel-band-roformer-kim",
+            "becruily-vocal"
+          ],
+          "instrumental": [
+            "becruily-vocal",
+            "mel-band-roformer-kim"
+          ]
+        }
       },
       "capabilities": {
         "stems": [],
@@ -3269,7 +4417,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -3300,7 +4448,212 @@
       },
       "sdr": 12.97,
       "fullness": 9.5,
-      "bleedless": 9.0
+      "bleedless": 9.0,
+      "guide_rank": 1,
+      "guide_notes": [
+        "Guide-favorite for clean vocals and bleedless separation.",
+        "Strong phase reference for cleanup-oriented workflows."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "vocals",
+          "instrumental"
+        ],
+        "quality_tier": "ultra",
+        "deterministic_priority": 1
+      },
+      "hardware_tiers": [
+        {
+          "tier": "cpu_only",
+          "max_vram_gb": 0,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2,
+          "notes": "CPU-safe fallback."
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4,
+          "notes": "Best quality/performance balance."
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 10,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8,
+          "notes": "Max context for premium quality."
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": true
+      },
+      "quality_role": [
+        "primary",
+        "phase_reference"
+      ],
+      "quality_axes": {
+        "fullness": 7,
+        "bleedless": 10,
+        "noise_risk": 2,
+        "harmony_capture": 7,
+        "bgv_retention": 7,
+        "mud_risk": 2,
+        "specialization": "bleedless cleanup"
+      },
+      "workflow_roles": [
+        "cleanup_reference",
+        "phase_reference",
+        "lead_back_splitter"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1,
+          "notes": [
+            "Best default for most guide-style runs."
+          ]
+        },
+        "max_sdr": {
+          "segment_size": 705600,
+          "overlap": 4,
+          "shifts": 1,
+          "notes": [
+            "Higher context for stronger objective separation."
+          ]
+        },
+        "max_bleedless": {
+          "segment_size": 441000,
+          "overlap": 4,
+          "shifts": 1,
+          "notes": [
+            "Use when residual backing bleed matters more than fullness."
+          ]
+        }
+      },
+      "content_fit": [
+        "busy_mix",
+        "duets",
+        "mono_vocals",
+        "cleanup_reference"
+      ],
+      "best_for": [
+        "bleedless vocals",
+        "instrumental cleanup reference",
+        "lead/back refinement"
+      ],
+      "workflow_groups": [
+        "vocals",
+        "instrumental",
+        "karaoke"
+      ]
+    },
+    {
+      "id": "demucs-v3-mdx",
+      "name": "Demucs v3 mdx",
+      "type": "Demucs v3 mdx artifact from the report.",
+      "architecture": "Demucs",
+      "description": "Demucs v3 mdx artifact from the report.",
+      "tags": [],
+      "stems": [],
+      "links": {
+        "checkpoint": "https://dl.fbaipublicfiles.com/demucs/mdx_final/6b9c2ca1-3fd82607.th",
+        "config": null,
+        "homepage": "https://dl.fbaipublicfiles.com/demucs/mdx_final/6b9c2ca1-3fd82607.th"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "6b9c2ca1-3fd82607.th",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "config": null,
+        "additional": []
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "direct",
+        "requires_manual_assets": false,
+        "required_files": [
+          "6b9c2ca1-3fd82607.th"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": true
+      },
+      "catalog_status": "candidate",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads this published artifact directly."
+        ]
+      }
+    },
+    {
+      "id": "demucs-v3-mdx-extra",
+      "name": "Demucs v3 mdx_extra",
+      "type": "Demucs v3 mdx_extra artifact tracked from the report.",
+      "architecture": "Demucs",
+      "description": "Demucs v3 mdx_extra artifact tracked from the report.",
+      "tags": [],
+      "stems": [],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://dl.fbaipublicfiles.com/demucs/mdx_final/"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "mdx_extra.th"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://dl.fbaipublicfiles.com/demucs/mdx_final/",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them.",
+          "Expected filenames: mdx_extra.th"
+        ]
+      }
     },
     {
       "id": "drypd-side-extraction",
@@ -3311,7 +4664,9 @@
       "tags": [],
       "stems": [],
       "links": {
-        "homepage": "https://huggingface.co/drypd/scnet-side-extraction"
+        "homepage": "https://drive.google.com/drive/folders/1ZSUw6ZuhJusv7HE5eMa-MORKA0XbSEht?usp=sharing",
+        "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt",
+        "config": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/config_musdb18_scnet.yaml"
       },
       "artifacts": {
         "primary": {
@@ -3428,7 +4783,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -3457,8 +4812,8 @@
       "install": {
         "mode": "manual",
         "notes": [
-          "The upstream Hugging Face repository currently requires authentication and does not expose a public direct-download link.",
-          "Use the drypd/scnet-side-extraction upstream page and install the checkpoint manually if you have access.",
+          "Side/difference extraction is distributed as a Drive bundle in the source report.",
+          "Import the original checkpoint manually if you have access to the Drive folder.",
           "Place the file under scnet/drypd-side-extraction/ inside the configured model root."
         ]
       }
@@ -3588,7 +4943,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -3619,7 +4974,25 @@
       },
       "sdr": 0.0,
       "fullness": null,
-      "bleedless": null
+      "bleedless": null,
+      "guide_rank": 2,
+      "guide_notes": [
+        "Duality v1 is tracked as an advanced-only backing-vocal and karaoke splitter."
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Duality remains advanced-only until its local bundle and QA are verified."
+      },
+      "quality_role": [
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "duality",
+        "backing_vocal_splitter"
+      ]
     },
     {
       "id": "duality-v2-unwa",
@@ -3746,7 +5119,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -3771,7 +5144,26 @@
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
       },
-      "homepage": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality"
+      "homepage": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality",
+      "guide_rank": 1,
+      "guide_notes": [
+        "Duality v2 is the preferred tracked duality workflow candidate but remains advanced-only."
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Duality v2 needs verified local QA before Simple promotion."
+      },
+      "quality_role": [
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "duality",
+        "backing_vocal_splitter",
+        "harmony_recovery"
+      ]
     },
     {
       "id": "gabox-denoise-debleed",
@@ -3836,7 +5228,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -3902,7 +5299,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -3926,7 +5323,62 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "guide_rank": 1,
+      "guide_notes": [
+        "Recommended final debled step for premium instrumental chains."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "restoration",
+          "instrumental"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 1
+      },
+      "hardware_tiers": [
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": false,
+        "blocking_reason": "Expose through curated cleanup workflows."
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "restoration_step"
+      ],
+      "quality_axes": {
+        "fullness": 5,
+        "bleedless": 9,
+        "noise_risk": 2,
+        "harmony_capture": 2,
+        "bgv_retention": 2,
+        "mud_risk": 2,
+        "specialization": "debleed cleanup"
+      },
+      "content_fit": [
+        "instrumental_bleed",
+        "restoration"
+      ],
+      "best_for": [
+        "removing residual vocal bleed",
+        "final cleanup pass"
+      ]
     },
     {
       "id": "gabox-inst-fv4-noise",
@@ -3939,8 +5391,8 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/INSTV5N.ckpt",
-        "config": null,
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_Fv4Noise.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -4049,7 +5501,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -4135,7 +5587,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -4189,7 +5646,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -4213,7 +5670,61 @@
         "evidence_url": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental",
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "guide_rank": 4,
+      "guide_notes": [
+        "Guide-cited bleedless instrumental option."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "instrumental"
+        ],
+        "quality_tier": "balanced",
+        "deterministic_priority": 7
+      },
+      "hardware_tiers": [
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": false,
+        "blocking_reason": "Use as an advanced or fallback workflow ingredient."
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "cleanup_reference"
+      ],
+      "quality_axes": {
+        "fullness": 7,
+        "bleedless": 8,
+        "noise_risk": 2,
+        "harmony_capture": 3,
+        "bgv_retention": 3,
+        "mud_risk": 2,
+        "specialization": "bleedless instrumental"
+      },
+      "content_fit": [
+        "instrumental_bleed",
+        "low_artifact"
+      ],
+      "best_for": [
+        "bleedless instrumental companion",
+        "cleanup in ensembles"
+      ]
     },
     {
       "id": "gabox-inst-fv7z",
@@ -4226,8 +5737,8 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/INSTV7N.ckpt",
-        "config": null,
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/Inst_GaboxFv7z.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -4336,7 +5847,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -4374,7 +5885,7 @@
       "stems": [],
       "links": {
         "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/Inst_FV8b.ckpt",
-        "config": null,
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
         "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental"
       },
       "artifacts": {
@@ -4483,7 +5994,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -4510,6 +6021,56 @@
       }
     },
     {
+      "id": "gabox-inst-v6",
+      "name": "Gabox INSTV6",
+      "type": "Gabox instrumental variant v6 from the report.",
+      "architecture": "Mel-Roformer",
+      "description": "Gabox instrumental variant v6 from the report.",
+      "tags": [
+        "instrumental"
+      ],
+      "stems": [
+        "instrumental"
+      ],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://huggingface.co/GaboxR67"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://huggingface.co/GaboxR67",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
+      }
+    },
+    {
       "id": "gabox-inst-v6n",
       "name": "Gabox Inst V6N",
       "type": "Roformer - Instrumental",
@@ -4521,7 +6082,7 @@
       "stems": [],
       "links": {
         "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/INSTV6N.ckpt",
-        "config": null,
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -4630,7 +6191,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -4657,6 +6218,109 @@
       }
     },
     {
+      "id": "gabox-inst-v7n",
+      "name": "Gabox INSTV7N",
+      "type": "Gabox instrumental variant v7n from the report.",
+      "architecture": "Mel-Roformer",
+      "description": "Gabox instrumental variant v7n from the report.",
+      "tags": [
+        "instrumental"
+      ],
+      "stems": [
+        "instrumental"
+      ],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://huggingface.co/GaboxR67"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://huggingface.co/GaboxR67",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
+      }
+    },
+    {
+      "id": "gabox-last-bs-roformer",
+      "name": "Gabox Last BS-RoFormer",
+      "type": "Backing Vocal Focus",
+      "architecture": "BS-Roformer",
+      "description": "Guide-tracked experimental model focused on removing lead vocals while keeping BV.",
+      "tags": [
+        "karaoke",
+        "backing_vocals",
+        "harmonies"
+      ],
+      "stems": [
+        "instrumental",
+        "vocals"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/bsroformers/last_bs_roformer.ckpt",
+        "config": "https://huggingface.co/GaboxR67/MelBandRoformers",
+        "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "engine": "msst_builtin",
+        "model_type": "bs_roformer",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "Experimental guide candidate; not yet normalized into a verified local asset bundle."
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Experimental backing-vocal candidate remains gated pending QA."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "install": {
+        "mode": "manual"
+      }
+    },
+    {
       "id": "gabox-resurrection",
       "name": "Gabox Resurrection",
       "type": "Roformer - Instrumental",
@@ -4668,7 +6332,7 @@
       "stems": [],
       "links": {
         "checkpoint": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/BS_ResurrectioN.ckpt",
-        "config": null,
+        "config": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/resolve/main/BS-Roformer-Resurrection-Inst-Config.yaml",
         "homepage": "https://huggingface.co/GaboxR67/MelBandRoformers/tree/main/melbandroformers/experimental"
       },
       "artifacts": {
@@ -4777,7 +6441,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -4928,7 +6592,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -5079,7 +6743,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -5230,7 +6894,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -5301,13 +6965,13 @@
       "vram_required": 6.0,
       "stems": [],
       "recommended_settings": {},
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "verified",
       "metrics_status": "guide_curated",
       "metrics_evidence": [
         {
-          "source": "Guide 2026-03-04",
-          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "source": "Guide 2026-03-14",
+          "url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
           "note": "Guide excerpt matched for gabox-voc-fv7.",
           "verified_at": "2026-03-04"
         }
@@ -5325,8 +6989,8 @@
           17.99,
           33.85
         ],
-        "source": "Guide 2026-03-04",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "source": "Guide 2026-03-14",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "voc_fv7 guide entry.",
         "last_verified": "2026-03-04"
       },
@@ -5459,7 +7123,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -5599,13 +7263,13 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "verified",
       "metrics_status": "guide_curated",
       "metrics_evidence": [
         {
-          "source": "Guide 2026-03-04",
-          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "source": "Guide 2026-03-14",
+          "url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
           "note": "Guide excerpt matched for gabox-voc-fv7beta3.",
           "verified_at": "2026-03-04"
         }
@@ -5623,8 +7287,8 @@
           21.82,
           30.83
         ],
-        "source": "Guide 2026-03-04",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "source": "Guide 2026-03-14",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "vocfv7beta3 guide entry.",
         "last_verified": "2026-03-04"
       },
@@ -5757,7 +7421,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -5781,6 +7445,558 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
+      }
+    },
+    {
+      "id": "gilliaan-monostereo-dual-beta2",
+      "name": "Gilliaan MonoStereo Dual Beta2",
+      "type": "Phantom Center / Mono-Stereo Duality",
+      "architecture": "Mel-Roformer",
+      "description": "Guide-tracked phantom-center / mono-stereo duality candidate.",
+      "tags": [
+        "phantom_center",
+        "duality",
+        "karaoke"
+      ],
+      "stems": [
+        "instrumental",
+        "vocals"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/gilliaaan/Mel-Band-Roformer-MonoStereo-Duality/blob/main/gilliaan_MonoStereo_Dual_Beta2.ckpt",
+        "config": "https://huggingface.co/gilliaaan/Mel-Band-Roformer-MonoStereo-Duality",
+        "homepage": "https://huggingface.co/gilliaaan/Mel-Band-Roformer-MonoStereo-Duality"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "engine": "msst_builtin",
+        "model_type": "mel_band_roformer",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "Guide candidate tracked for phantom-center workflows; direct-download/runtime verification is still pending."
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Candidate is tracked but not yet QA-verified for local execution."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Tracked from the live guide as a new phantom-center candidate.",
+          "Do not promote to Simple mode until checkpoint/config packaging and QA are verified."
+        ]
+      }
+    },
+    {
+      "id": "htdemucs",
+      "name": "HTDemucs",
+      "type": "general",
+      "architecture": "Demucs",
+      "description": "Manual Demucs baseline for broad 4-stem separation and fallback workflows.",
+      "tags": [],
+      "stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "links": {
+        "homepage": "https://github.com/facebookresearch/demucs",
+        "checkpoint": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
+        "config": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml"
+      },
+      "metrics": {
+        "sdr": 0,
+        "fullness": 0,
+        "bleedless": 0,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 8,
+      "recommended_settings": {},
+      "runtime": {
+        "variant": "demucs",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "demucs_native",
+          "custom_script"
+        ],
+        "install_burden": "medium",
+        "engine": "demucs_native",
+        "model_type": "htdemucs",
+        "config_ref": "htdemucs.yaml",
+        "checkpoint_ref": "htdemucs.th",
+        "install_mode": "direct",
+        "requires_manual_assets": false,
+        "required_files": [
+          "955717e8-8726e21a.th",
+          "config_musdb18_htdemucs.yaml"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Manual Demucs assets required before this runtime can be used."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads the Demucs config bag and official upstream checkpoint directly.",
+          "Files are stored under demucs/htdemucs/ inside the configured model root."
+        ]
+      },
+      "quality_role": [
+        "primary",
+        "ensemble_partner"
+      ],
+      "best_for": [
+        "4-stem general",
+        "fallback separation",
+        "broad accompaniment recovery"
+      ],
+      "artifacts_risk": [
+        "transient smearing",
+        "crowded high-end blur"
+      ],
+      "vram_profile": "mid_vram",
+      "chunk_overlap_policy": {
+        "default_segment_size": 352800,
+        "default_overlap": 4,
+        "notes": [
+          "Use moderate overlap for stable Demucs exports."
+        ]
+      },
+      "workflow_groups": [
+        "4-stem general",
+        "instrumental"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 6,
+        "noise_risk": 3,
+        "harmony_capture": 6,
+        "bgv_retention": 5,
+        "mud_risk": 4,
+        "specialization": "broad 4-stem fallback"
+      },
+      "workflow_roles": [
+        "cleanup_reference",
+        "special_stem"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_fullness": {
+          "segment_size": 485100,
+          "overlap": 8,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "4-stem_general",
+        "secondary_pass",
+        "fallback"
+      ],
+      "download": {
+        "sources": [
+          {
+            "role": "official_release",
+            "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
+            "manual": false
+          },
+          {
+            "role": "yaml_config",
+            "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
+            "manual": false
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "checkpoint",
+            "filename": "955717e8-8726e21a.th",
+            "relative_path": "demucs/htdemucs/955717e8-8726e21a.th",
+            "required": true,
+            "manual": false,
+            "source": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th"
+          },
+          {
+            "kind": "config",
+            "filename": "config_musdb18_htdemucs.yaml",
+            "relative_path": "demucs/htdemucs/config_musdb18_htdemucs.yaml",
+            "required": true,
+            "manual": false,
+            "source": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml"
+          }
+        ]
+      }
+    },
+    {
+      "id": "htdemucs-6s",
+      "name": "HTDemucs 6S",
+      "type": "special",
+      "architecture": "Demucs",
+      "description": "Manual 6-stem Demucs build for guitar/piano-aware special stem workflows.",
+      "tags": [],
+      "stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other",
+        "guitar",
+        "piano"
+      ],
+      "links": {
+        "homepage": "https://github.com/facebookresearch/demucs",
+        "checkpoint": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th",
+        "config": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_htdemucs_6stems.yaml"
+      },
+      "metrics": {
+        "sdr": 0,
+        "fullness": 0,
+        "bleedless": 0,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 12,
+      "recommended_settings": {},
+      "runtime": {
+        "variant": "demucs",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "demucs_native",
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "engine": "demucs_native",
+        "model_type": "htdemucs_6s",
+        "config_ref": "htdemucs_6s.yaml",
+        "checkpoint_ref": "htdemucs_6s.th",
+        "install_mode": "direct",
+        "requires_manual_assets": false,
+        "required_files": [
+          "5c90dfd2-34c22ccb.th",
+          "config_htdemucs_6stems.yaml"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Manual Demucs assets required before this runtime can be used."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads the 6-stem Demucs config bag and official upstream checkpoint directly.",
+          "Files are stored under demucs/htdemucs-6s/ inside the configured model root."
+        ]
+      },
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "best_for": [
+        "special stem extension",
+        "guitar/piano-aware passes"
+      ],
+      "artifacts_risk": [
+        "high VRAM usage",
+        "more diffuse separation on dense mixes"
+      ],
+      "vram_profile": "high_vram",
+      "chunk_overlap_policy": {
+        "default_segment_size": 352800,
+        "default_overlap": 4,
+        "notes": [
+          "Use only when special stems are required."
+        ]
+      },
+      "workflow_groups": [
+        "special stems",
+        "4-stem general"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 6,
+        "noise_risk": 4,
+        "harmony_capture": 4,
+        "bgv_retention": 3,
+        "mud_risk": 4,
+        "specialization": "special stem extension"
+      },
+      "workflow_roles": [
+        "special_stem"
+      ],
+      "content_fit": [
+        "special_stems",
+        "guitar",
+        "piano"
+      ],
+      "download": {
+        "sources": [
+          {
+            "role": "official_release",
+            "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th",
+            "manual": false
+          },
+          {
+            "role": "yaml_config",
+            "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_htdemucs_6stems.yaml",
+            "manual": false
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "checkpoint",
+            "filename": "5c90dfd2-34c22ccb.th",
+            "relative_path": "demucs/htdemucs-6s/5c90dfd2-34c22ccb.th",
+            "required": true,
+            "manual": false,
+            "source": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th"
+          },
+          {
+            "kind": "config",
+            "filename": "config_htdemucs_6stems.yaml",
+            "relative_path": "demucs/htdemucs-6s/config_htdemucs_6stems.yaml",
+            "required": true,
+            "manual": false,
+            "source": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_htdemucs_6stems.yaml"
+          }
+        ]
+      }
+    },
+    {
+      "id": "htdemucs-ft",
+      "name": "HTDemucs FT",
+      "type": "general",
+      "architecture": "Demucs",
+      "description": "Fine-tuned Demucs variant for higher quality full-band separation when manually installed.",
+      "tags": [],
+      "stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "links": {
+        "homepage": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th"
+      },
+      "metrics": {
+        "sdr": 0,
+        "fullness": 0,
+        "bleedless": 0,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 10,
+      "recommended_settings": {},
+      "runtime": {
+        "variant": "demucs",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "demucs_native",
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "engine": "demucs_native",
+        "model_type": "htdemucs",
+        "config_ref": "htdemucs_ft.yaml",
+        "checkpoint_ref": "f7e0c4bc-ba3fe64a.th",
+        "install_mode": "direct",
+        "requires_manual_assets": false,
+        "required_files": [
+          "htdemucs_ft.yaml",
+          "f7e0c4bc-ba3fe64a.th",
+          "d12395a8-e57c48e6.th",
+          "92cfc3b6-ef3bcb9c.th",
+          "04573f0d-f3cf25b2.th"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Advanced-only Demucs package with multi-file upstream weights."
+      },
+      "catalog_status": "candidate",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads the Demucs YAML bag file together with all required upstream .th weights.",
+          "Files are stored under demucs/htdemucs-ft/ inside the configured model root.",
+          "Recommended for curated premium workflows, not simple mode."
+        ]
+      },
+      "quality_role": [
+        "primary",
+        "ensemble_partner"
+      ],
+      "best_for": [
+        "secondary Demucs pass",
+        "body recovery after a cleaner main model"
+      ],
+      "artifacts_risk": [
+        "slow runtime",
+        "heavy VRAM usage"
+      ],
+      "vram_profile": "high_vram",
+      "chunk_overlap_policy": {
+        "default_segment_size": 485100,
+        "default_overlap": 8,
+        "notes": [
+          "Higher overlap improves continuity but increases runtime."
+        ]
+      },
+      "workflow_groups": [
+        "4-stem general",
+        "workflow"
+      ],
+      "quality_axes": {
+        "fullness": 9,
+        "bleedless": 7,
+        "noise_risk": 3,
+        "harmony_capture": 6,
+        "bgv_retention": 5,
+        "mud_risk": 3,
+        "specialization": "secondary cleanup pass"
+      },
+      "workflow_roles": [
+        "cleanup_reference"
+      ],
+      "content_fit": [
+        "4-stem_general",
+        "secondary_pass",
+        "busy_mix"
+      ],
+      "download": {
+        "sources": [
+          {
+            "role": "demucs_weights_1",
+            "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th",
+            "manual": false
+          },
+          {
+            "role": "demucs_weights_2",
+            "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th",
+            "manual": false
+          },
+          {
+            "role": "demucs_weights_3",
+            "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th",
+            "manual": false
+          },
+          {
+            "role": "demucs_weights_4",
+            "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/04573f0d-f3cf25b2.th",
+            "manual": false
+          },
+          {
+            "role": "yaml_config",
+            "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/htdemucs_ft.yaml",
+            "manual": false
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "weights",
+            "filename": "f7e0c4bc-ba3fe64a.th",
+            "relative_path": "demucs/htdemucs-ft/f7e0c4bc-ba3fe64a.th",
+            "required": true,
+            "manual": false,
+            "source": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th"
+          },
+          {
+            "kind": "weights",
+            "filename": "d12395a8-e57c48e6.th",
+            "relative_path": "demucs/htdemucs-ft/d12395a8-e57c48e6.th",
+            "required": true,
+            "manual": false,
+            "source": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th"
+          },
+          {
+            "kind": "weights",
+            "filename": "92cfc3b6-ef3bcb9c.th",
+            "relative_path": "demucs/htdemucs-ft/92cfc3b6-ef3bcb9c.th",
+            "required": true,
+            "manual": false,
+            "source": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th"
+          },
+          {
+            "kind": "weights",
+            "filename": "04573f0d-f3cf25b2.th",
+            "relative_path": "demucs/htdemucs-ft/04573f0d-f3cf25b2.th",
+            "required": true,
+            "manual": false,
+            "source": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/04573f0d-f3cf25b2.th"
+          },
+          {
+            "kind": "config",
+            "filename": "htdemucs_ft.yaml",
+            "relative_path": "demucs/htdemucs-ft/htdemucs_ft.yaml",
+            "required": true,
+            "manual": false,
+            "source": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/htdemucs_ft.yaml"
+          }
+        ]
       }
     },
     {
@@ -5845,7 +8061,16 @@
           "stemsep-legacy"
         ],
         "preferred": "stemsep-legacy",
-        "blocking_reason": null
+        "blocking_reason": null,
+        "hosts": [
+          "msst",
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "requires_patch": true,
+        "requires_custom_repo_file": [
+          "Apollo runtime bridge"
+        ]
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -5911,7 +8136,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "candidate",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -5935,7 +8160,50 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "guide_rank": 3,
+      "guide_notes": [
+        "Apollo universal is useful when you need MSST-era hybrid coverage, but should stay in advanced workflows."
+      ],
+      "install": {
+        "mode": "custom_runtime",
+        "notes": [
+          "Treat as technically supported but not curated for simple mode."
+        ]
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": false,
+        "blocking_reason": "Apollo currently requires an external/custom runtime path."
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "high_band_source",
+        "special_stem"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 7,
+        "noise_risk": 4,
+        "harmony_capture": 6,
+        "bgv_retention": 5,
+        "mud_risk": 3,
+        "specialization": "experimental hybrid partner"
+      },
+      "content_fit": [
+        "hybrid_crossover",
+        "experimental"
+      ],
+      "best_for": [
+        "advanced hybrid workflows",
+        "MSST-only experiments"
+      ],
+      "workflow_groups": [
+        "instrumental",
+        "special stems"
+      ]
     },
     {
       "id": "lew-apollo-vocal",
@@ -5999,7 +8267,16 @@
           "stemsep-legacy"
         ],
         "preferred": "stemsep-legacy",
-        "blocking_reason": null
+        "blocking_reason": null,
+        "hosts": [
+          "msst",
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "requires_patch": true,
+        "requires_custom_repo_file": [
+          "Apollo runtime bridge"
+        ]
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -6065,7 +8342,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "candidate",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -6089,7 +8366,34 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "guide_rank": 3,
+      "guide_notes": [
+        "Apollo vocal helps on difficult harmony/backing cases when custom runtime support is available."
+      ],
+      "install": {
+        "mode": "custom_runtime"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": false,
+        "blocking_reason": "Apollo vocal needs a custom runtime and should stay advanced-only."
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "lead_back_splitter"
+      ],
+      "content_fit": [
+        "harmonies",
+        "bgv",
+        "duets"
+      ],
+      "best_for": [
+        "harmony-heavy vocal rescue",
+        "difficult backing vocal cases"
+      ]
     },
     {
       "id": "mdx-net-hq4",
@@ -6214,7 +8518,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "candidate",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -6371,7 +8675,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "candidate",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -6416,8 +8720,8 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/491e44cfaf909b73ce14f6185298de9c82867de3/MDX23C_models/MDX23C_D1581.ckpt",
-        "config": null,
+        "checkpoint": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/MDX23C_D1581.ckpt",
+        "config": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_061321.yaml",
         "homepage": "https://huggingface.co/Politrees/UVR_resources"
       },
       "artifacts": {
@@ -6528,7 +8832,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "candidate",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -6572,8 +8876,8 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://github.com/jarredou/models/releases/download/DrumSep/drumsep_5stems_mdx23c_jarredou.ckpt",
-        "config": "https://github.com/jarredou/models/releases/download/DrumSep/config_mdx23c.yaml",
+        "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-DrumSep-aufr33-jarredou.ckpt",
+        "config": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/config_drumsep_mdx23c.yaml",
         "homepage": "https://github.com/jarredou/models/releases/tag/DrumSep"
       },
       "artifacts": {
@@ -6599,10 +8903,10 @@
       },
       "vram_required": 4.0,
       "recommended_settings": {
-        "segment_size": null,
+        "segment_size": 112455,
         "batch_size": null,
         "tta": null,
-        "overlap": null,
+        "overlap": 2,
         "shifts": null,
         "bit_depth": null
       },
@@ -6621,7 +8925,12 @@
           "stemsep-legacy"
         ],
         "preferred": "stemsep-legacy",
-        "blocking_reason": null
+        "blocking_reason": null,
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -6688,7 +8997,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "verified",
       "metrics_status": "guide_curated",
       "metrics_evidence": [],
@@ -6705,14 +9014,77 @@
           25.0361,
           12.347
         ],
-        "source": "Guide 2026-03-04",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "source": "Guide 2026-03-14",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "Guide lists per-stem drumsep metrics for the public 5-stem release.",
         "last_verified": "2026-03-04"
       },
       "sdr": 0.0,
       "fullness": null,
-      "bleedless": null
+      "bleedless": null,
+      "guide_rank": 1,
+      "guide_notes": [
+        "Best local drum split for kick/snare/toms/hat/cymbals."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "drums",
+          "multi_stem"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 1
+      },
+      "hardware_tiers": [
+        {
+          "tier": "cpu_only",
+          "max_vram_gb": 0,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": true
+      },
+      "quality_role": [
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "special_stem"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 8,
+        "noise_risk": 2,
+        "harmony_capture": 1,
+        "bgv_retention": 1,
+        "mud_risk": 2,
+        "specialization": "drum split"
+      },
+      "content_fit": [
+        "drums",
+        "multistem_drums"
+      ],
+      "best_for": [
+        "kick/snare/toms/hat/cymbals splits"
+      ],
+      "workflow_groups": [
+        "drums",
+        "special stems"
+      ]
     },
     {
       "id": "mdx23c-drumsep-6stem",
@@ -6839,7 +9211,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "candidate",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -6901,10 +9273,10 @@
       },
       "vram_required": 4.0,
       "recommended_settings": {
-        "segment_size": null,
+        "segment_size": 112455,
         "batch_size": null,
         "tta": null,
-        "overlap": null,
+        "overlap": 2,
         "shifts": null,
         "bit_depth": null
       },
@@ -6923,7 +9295,12 @@
           "stemsep-legacy"
         ],
         "preferred": "stemsep-legacy",
-        "blocking_reason": null
+        "blocking_reason": null,
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "low"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -6988,7 +9365,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "candidate",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -7020,7 +9397,342 @@
       "sdr": 0.0,
       "fullness": null,
       "bleedless": null,
-      "homepage": "https://huggingface.co/Eddycrack864/audio-separator-models"
+      "homepage": "https://huggingface.co/Eddycrack864/audio-separator-models",
+      "guide_rank": 1,
+      "guide_notes": [
+        "Fast preview/general-purpose fallback for low VRAM and CPU."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "vocals",
+          "instrumental"
+        ],
+        "quality_tier": "fast",
+        "deterministic_priority": 1
+      },
+      "hardware_tiers": [
+        {
+          "tier": "cpu_only",
+          "max_vram_gb": 0,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 2,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": true
+      },
+      "quality_role": [
+        "primary"
+      ],
+      "workflow_roles": [
+        "fullness_source"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 6,
+        "noise_risk": 2,
+        "harmony_capture": 4,
+        "bgv_retention": 4,
+        "mud_risk": 2,
+        "specialization": "preview baseline"
+      },
+      "content_fit": [
+        "low_vram",
+        "preview",
+        "cpu_only"
+      ],
+      "best_for": [
+        "preview runs",
+        "CPU fallback",
+        "quick compare baseline"
+      ]
+    },
+    {
+      "id": "mdx23c-instvoc-hq-2",
+      "name": "MDX23C-8KFFT-InstVoc_HQ_2",
+      "type": "MDX23C InstVoc HQ 2 checkpoint from the report.",
+      "architecture": "MDX23C",
+      "description": "MDX23C InstVoc HQ 2 checkpoint from the report.",
+      "tags": [
+        "instrumental",
+        "vocals"
+      ],
+      "stems": [
+        "instrumental",
+        "vocals"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-8KFFT-InstVoc_HQ_2.ckpt",
+        "config": null,
+        "homepage": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-8KFFT-InstVoc_HQ_2.ckpt"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "MDX23C-8KFFT-InstVoc_HQ_2.ckpt",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "config": null,
+        "additional": []
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "direct",
+        "requires_manual_assets": false,
+        "required_files": [
+          "MDX23C-8KFFT-InstVoc_HQ_2.ckpt"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": true
+      },
+      "catalog_status": "candidate",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads this published artifact directly."
+        ]
+      }
+    },
+    {
+      "id": "mdx23c-similarity",
+      "name": "MDX23C Similarity (wesleyr36)",
+      "type": "MDX23C Similarity checkpoint family from the report.",
+      "architecture": "MDX23C",
+      "description": "MDX23C Similarity checkpoint family from the report.",
+      "tags": [],
+      "stems": [],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.10"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.10",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
+      }
+    },
+    {
+      "id": "mdxnet-inst-hq-2",
+      "name": "UVR-MDX-NET-Inst_HQ_2",
+      "type": "Classic UVR MDX-Net Inst HQ 2 ONNX model.",
+      "architecture": "MDX-Net",
+      "description": "Classic UVR MDX-Net Inst HQ 2 ONNX model.",
+      "tags": [
+        "instrumental"
+      ],
+      "stems": [
+        "instrumental"
+      ],
+      "links": {
+        "checkpoint": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_2.onnx",
+        "config": null,
+        "homepage": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_2.onnx"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "onnx",
+          "filename": "UVR-MDX-NET-Inst_HQ_2.onnx",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "config": null,
+        "additional": []
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "direct",
+        "requires_manual_assets": false,
+        "required_files": [
+          "UVR-MDX-NET-Inst_HQ_2.onnx"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": true
+      },
+      "catalog_status": "candidate",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads this published artifact directly."
+        ]
+      }
+    },
+    {
+      "id": "mdxnet-inst-hq-3",
+      "name": "UVR-MDX-NET-Inst_HQ_3",
+      "type": "Classic UVR MDX-Net Inst HQ 3 ONNX model.",
+      "architecture": "MDX-Net",
+      "description": "Classic UVR MDX-Net Inst HQ 3 ONNX model.",
+      "tags": [
+        "instrumental"
+      ],
+      "stems": [
+        "instrumental"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDXNet/UVR-MDX-NET-Inst_HQ_3.onnx",
+        "config": null,
+        "homepage": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDXNet/UVR-MDX-NET-Inst_HQ_3.onnx"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "onnx",
+          "filename": "UVR-MDX-NET-Inst_HQ_3.onnx",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "config": null,
+        "additional": []
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "direct",
+        "requires_manual_assets": false,
+        "required_files": [
+          "UVR-MDX-NET-Inst_HQ_3.onnx"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": true
+      },
+      "catalog_status": "candidate",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads this published artifact directly."
+        ]
+      }
+    },
+    {
+      "id": "medleyvox",
+      "name": "MedleyVox",
+      "type": "MedleyVox singing voice separation project from the report.",
+      "architecture": "Other",
+      "description": "MedleyVox singing voice separation project from the report.",
+      "tags": [
+        "vocals"
+      ],
+      "stems": [],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://github.com/jeonchangbin49/medleyvox"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://github.com/jeonchangbin49/medleyvox",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
+      }
     },
     {
       "id": "mel-band-crowd",
@@ -7155,7 +9867,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -7179,7 +9891,30 @@
         "evidence_url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v.1.0.4",
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "guide_rank": 1,
+      "guide_notes": [
+        "Tracked as the crowd/ambience cleanup candidate for restoration workflows."
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Crowd cleanup remains advanced-only until golden-set QA is available."
+      },
+      "quality_role": [
+        "post_process"
+      ],
+      "workflow_roles": [
+        "crowd_cleanup",
+        "restoration"
+      ],
+      "content_fit": [
+        "live",
+        "crowd",
+        "ambience"
+      ]
     },
     {
       "id": "mel-band-karaoke-aufr33",
@@ -7241,7 +9976,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -7306,7 +10046,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -7337,7 +10077,32 @@
       },
       "sdr": 0.0,
       "fullness": null,
-      "bleedless": null
+      "bleedless": null,
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "lead_back_splitter"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 8,
+        "noise_risk": 3,
+        "harmony_capture": 8,
+        "bgv_retention": 8,
+        "mud_risk": 2,
+        "specialization": "harmony-focused karaoke split"
+      },
+      "content_fit": [
+        "karaoke",
+        "harmonies",
+        "duets"
+      ],
+      "best_for": [
+        "duets",
+        "backing vocal emphasis"
+      ]
     },
     {
       "id": "mel-band-karaoke-becruily",
@@ -7399,7 +10164,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -7464,7 +10234,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -7488,7 +10258,31 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "karaoke_base"
+      ],
+      "quality_axes": {
+        "fullness": 7,
+        "bleedless": 8,
+        "noise_risk": 3,
+        "harmony_capture": 8,
+        "bgv_retention": 8,
+        "mud_risk": 3,
+        "specialization": "backing-vocal retention"
+      },
+      "content_fit": [
+        "karaoke",
+        "bgv",
+        "harmonies"
+      ],
+      "best_for": [
+        "karaoke with stronger harmony retention"
+      ]
     },
     {
       "id": "mel-band-roformer-kim",
@@ -7503,7 +10297,7 @@
       "stems": [],
       "links": {
         "checkpoint": "https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt",
-        "config": "https://raw.githubusercontent.com/KimberleyJensen/Mel-Band-Roformer-Vocal-Model/main/configs/config_vocals_mel_band_roformer.yaml",
+        "config": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml",
         "homepage": null
       },
       "artifacts": {
@@ -7529,10 +10323,10 @@
       },
       "vram_required": 6.0,
       "recommended_settings": {
-        "segment_size": null,
+        "segment_size": 352800,
         "batch_size": null,
         "tta": null,
-        "overlap": null,
+        "overlap": 4,
         "shifts": null,
         "bit_depth": null
       },
@@ -7551,7 +10345,13 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "audio_separator",
+          "uvr"
+        ],
+        "install_burden": "low"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -7582,13 +10382,24 @@
       "phase_fix": {
         "is_valid_reference": true,
         "recommended_params": {
-          "lowHz": 500,
-          "highHz": 5000,
-          "highFreqWeight": 2.0
+          "lowHz": 420,
+          "highHz": 4200,
+          "highFreqWeight": 2
         },
         "recommended_usage": [
           "Use as a phase reference source for fixing artifacts in fuller but noisier models (e.g., Unwa Inst V1e, Gabox)."
-        ]
+        ],
+        "reference_model_id": "bs-roformer-viperx-1297",
+        "references": {
+          "vocals": [
+            "bs-roformer-viperx-1297",
+            "becruily-vocal"
+          ],
+          "instrumental": [
+            "unwa-inst-v1e-plus",
+            "gabox-resurrection"
+          ]
+        }
       },
       "capabilities": {
         "stems": [],
@@ -7619,7 +10430,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -7643,6 +10454,150 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
+      },
+      "guide_rank": 2,
+      "guide_notes": [
+        "High-fullness vocal model and strong phase-fix companion.",
+        "Useful when ViperX sounds too thin."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "vocals"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 3
+      },
+      "hardware_tiers": [
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 10,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": true
+      },
+      "quality_role": [
+        "primary",
+        "phase_reference"
+      ],
+      "quality_axes": {
+        "fullness": 9,
+        "bleedless": 7,
+        "noise_risk": 3,
+        "harmony_capture": 8,
+        "bgv_retention": 8,
+        "mud_risk": 3,
+        "specialization": "fullness rescue"
+      },
+      "workflow_roles": [
+        "fullness_source",
+        "phase_reference"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_fullness": {
+          "segment_size": 1102500,
+          "overlap": 4,
+          "shifts": 1,
+          "notes": [
+            "Guide-style body-first setting; slower and heavier."
+          ]
+        },
+        "max_sdr": {
+          "segment_size": 705600,
+          "overlap": 4,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "thin_vocals",
+        "harmonies",
+        "duets"
+      ],
+      "best_for": [
+        "fuller vocals",
+        "phase-fix companion",
+        "harmony recovery"
+      ]
+    },
+    {
+      "id": "melband-roformer-syhftv3epsilon",
+      "name": "MelBandRoformerSYHFTV3Epsilon (SYH99999)",
+      "type": "SYH99999 MelBand Roformer epsilon variant.",
+      "architecture": "Mel-Roformer",
+      "description": "SYH99999 MelBand Roformer epsilon variant.",
+      "tags": [
+        "vocals"
+      ],
+      "stems": [
+        "vocals"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/SYH99999/MelBandRoformerSYHFTV3Epsilon/resolve/main/MelBandRoformerSYHFTV3Epsilon.ckpt",
+        "config": null,
+        "homepage": "https://huggingface.co/SYH99999/MelBandRoformerSYHFTV3Epsilon/resolve/main/MelBandRoformerSYHFTV3Epsilon.ckpt"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "MelBandRoformerSYHFTV3Epsilon.ckpt",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "config": null,
+        "additional": []
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "direct",
+        "requires_manual_assets": false,
+        "required_files": [
+          "MelBandRoformerSYHFTV3Epsilon.ckpt"
+        ],
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": true
+      },
+      "catalog_status": "candidate",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads this published artifact directly."
+        ]
       }
     },
     {
@@ -7770,7 +10725,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -7794,6 +10749,156 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
+      }
+    },
+    {
+      "id": "mvsep-bagpipes-other",
+      "name": "MVSEP Bagpipes",
+      "type": "Special Stem",
+      "architecture": "Other",
+      "description": "Guide-tracked MVSEP bagpipes/other candidate.",
+      "tags": [
+        "special_stem",
+        "wind",
+        "bagpipes"
+      ],
+      "stems": [
+        "other"
+      ],
+      "links": {
+        "checkpoint": "https://mvsep.com",
+        "config": "https://mvsep.com",
+        "homepage": "https://mvsep.com"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "MVSEP special-stem candidate has no verified local runtime package yet."
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Online/special-stem candidate only; local packaging is still pending."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "install": {
+        "mode": "manual"
+      }
+    },
+    {
+      "id": "mvsep-braam-other",
+      "name": "MVSEP Braam",
+      "type": "Special Stem",
+      "architecture": "Other",
+      "description": "Guide-tracked MVSEP braam/effect candidate.",
+      "tags": [
+        "special_stem",
+        "sfx",
+        "braam"
+      ],
+      "stems": [
+        "other"
+      ],
+      "links": {
+        "checkpoint": "https://mvsep.com",
+        "config": "https://mvsep.com",
+        "homepage": "https://mvsep.com"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "MVSEP effect candidate has no verified local runtime package yet."
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Online/special-stem candidate only; local packaging is still pending."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "install": {
+        "mode": "manual"
+      }
+    },
+    {
+      "id": "natanworkspace-melband-roformer",
+      "name": "natanworkspace/melband_roformer",
+      "type": "natanworkspace community MelBand Roformer repository from the report.",
+      "architecture": "Mel-Roformer",
+      "description": "natanworkspace community MelBand Roformer repository from the report.",
+      "tags": [
+        "vocals"
+      ],
+      "stems": [
+        "vocals"
+      ],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://huggingface.co/natanworkspace/melband_roformer"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://huggingface.co/natanworkspace/melband_roformer",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
       }
     },
     {
@@ -7924,7 +11029,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -7989,10 +11094,10 @@
       },
       "vram_required": 12.0,
       "recommended_settings": {
-        "segment_size": null,
+        "segment_size": 352800,
         "batch_size": null,
         "tta": null,
-        "overlap": null,
+        "overlap": 4,
         "shifts": null,
         "bit_depth": null
       },
@@ -8011,7 +11116,12 @@
           "stemsep-legacy"
         ],
         "preferred": "stemsep-legacy",
-        "blocking_reason": null
+        "blocking_reason": null,
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -8076,7 +11186,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "candidate",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -8100,6 +11210,215 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
+      },
+      "guide_rank": 1,
+      "guide_notes": [
+        "Best low-end definition and bass-focused separation."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "bass",
+          "instrumental"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 1
+      },
+      "hardware_tiers": [
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 12,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4,
+          "notes": "Heavy VRAM footprint."
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": true
+      },
+      "quality_role": [
+        "primary",
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "low_band_source"
+      ],
+      "quality_axes": {
+        "fullness": 9,
+        "bleedless": 7,
+        "noise_risk": 3,
+        "harmony_capture": 3,
+        "bgv_retention": 2,
+        "mud_risk": 2,
+        "specialization": "low-end definition"
+      },
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_fullness": {
+          "segment_size": 705600,
+          "overlap": 4,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "bass_heavy",
+        "hybrid_crossover",
+        "dense_low_end"
+      ],
+      "best_for": [
+        "bass extraction",
+        "low-band hybrid splits"
+      ],
+      "workflow_groups": [
+        "bass",
+        "instrumental",
+        "special stems"
+      ]
+    },
+    {
+      "id": "scnet-masked-xl",
+      "name": "SCNet Masked XL",
+      "type": "general",
+      "architecture": "SCNet",
+      "description": "Advanced SCNet masked runtime for comparison and low-band crossover experiments.",
+      "tags": [],
+      "stems": [
+        "vocals",
+        "instrumental"
+      ],
+      "links": {
+        "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.17",
+        "checkpoint": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/model_scnet_masked_ep_111_sdr_9.8286.ckpt",
+        "config": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/config_musdb18_scnet_xl_ihf.yaml"
+      },
+      "metrics": {
+        "sdr": 0,
+        "fullness": 0,
+        "bleedless": 0,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "vram_required": 12,
+      "recommended_settings": {},
+      "runtime": {
+        "engine": "msst_builtin",
+        "model_type": "scnet_masked",
+        "variant": "scnet_masked",
+        "required": [
+          "python",
+          "torch"
+        ],
+        "fallbacks": [
+          "cpu"
+        ],
+        "hosts": [
+          "msst_builtin"
+        ],
+        "config_ref": "scnet-masked-xl.yaml",
+        "checkpoint_ref": "scnet-masked-xl.ckpt",
+        "install_mode": "direct",
+        "install_burden": "high",
+        "requires_manual_assets": false,
+        "required_files": [
+          "model_scnet_masked_ep_111_sdr_9.8286.ckpt",
+          "config_musdb18_scnet_xl_ihf.yaml"
+        ],
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "SCNet masked XL is advanced-only until validated in local QA."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads the published SCNet Masked XL IHF checkpoint and config directly.",
+          "Files are stored under msst/scnet-masked-xl/ inside the configured model root."
+        ]
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "best_for": [
+        "hybrid crossover",
+        "advanced comparison"
+      ],
+      "artifacts_risk": [
+        "slow runtime",
+        "high VRAM usage"
+      ],
+      "vram_profile": "high_vram",
+      "workflow_groups": [
+        "instrumental",
+        "workflow"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 7,
+        "noise_risk": 3,
+        "harmony_capture": 6,
+        "bgv_retention": 5,
+        "mud_risk": 3,
+        "specialization": "hybrid low band support"
+      },
+      "workflow_roles": [
+        "low_band_source",
+        "secondary_cleanup_pass"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "busy_mix",
+        "low_band"
+      ],
+      "download": {
+        "sources": [
+          {
+            "role": "checkpoint",
+            "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/model_scnet_masked_ep_111_sdr_9.8286.ckpt",
+            "manual": false
+          },
+          {
+            "role": "config",
+            "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/config_musdb18_scnet_xl_ihf.yaml",
+            "manual": false
+          }
+        ],
+        "artifacts": [
+          {
+            "kind": "checkpoint",
+            "filename": "model_scnet_masked_ep_111_sdr_9.8286.ckpt",
+            "relative_path": "msst/scnet-masked-xl/model_scnet_masked_ep_111_sdr_9.8286.ckpt",
+            "required": true,
+            "manual": false,
+            "source": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/model_scnet_masked_ep_111_sdr_9.8286.ckpt"
+          },
+          {
+            "kind": "config",
+            "filename": "config_musdb18_scnet_xl_ihf.yaml",
+            "relative_path": "msst/scnet-masked-xl/config_musdb18_scnet_xl_ihf.yaml",
+            "required": true,
+            "manual": false,
+            "source": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/config_musdb18_scnet_xl_ihf.yaml"
+          }
+        ]
       }
     },
     {
@@ -8225,7 +11544,7 @@
           "routing_default": "legacy_runtime_placeholder"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "candidate",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -8251,6 +11570,52 @@
         "last_verified": "2026-03-04"
       },
       "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v.1.0.6"
+    },
+    {
+      "id": "scnet-tran",
+      "name": "SCNet Tran (ZFTurbo)",
+      "type": "SCNet Tran release tracked from the report.",
+      "architecture": "SCNet",
+      "description": "SCNet Tran release tracked from the report.",
+      "tags": [],
+      "stems": [],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.14"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/tag/v1.0.14",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
+      }
     },
     {
       "id": "small-karaoke-gaboxauf",
@@ -8297,7 +11662,7 @@
       "vram_required": 6.0,
       "stems": [],
       "recommended_settings": {},
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "candidate",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -8315,7 +11680,7 @@
           "MSST"
         ],
         "source": "Guide mention",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "Guide says metrics exist, but the snippet does not include numeric values near the release note.",
         "last_verified": "2026-03-04"
       },
@@ -8451,7 +11816,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -8605,7 +11970,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -8629,7 +11994,25 @@
         "evidence_url": "https://huggingface.co/Sucial/Chorus_Male_Female_BS_Roformer",
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "guide_rank": 1,
+      "guide_notes": [
+        "Guide-tracked duet/speaker split model for male/female isolation."
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Male/Female split remains advanced-only until assets and QA are verified."
+      },
+      "quality_role": [
+        "special_stem"
+      ],
+      "workflow_roles": [
+        "speaker_split",
+        "duet_split"
+      ]
     },
     {
       "id": "unwa-big-beta-5e",
@@ -8669,10 +12052,10 @@
       },
       "vram_required": 8.0,
       "recommended_settings": {
-        "segment_size": null,
+        "segment_size": 352800,
         "batch_size": null,
         "tta": null,
-        "overlap": null,
+        "overlap": 4,
         "shifts": null,
         "bit_depth": null
       },
@@ -8691,7 +12074,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "medium"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -8756,7 +12144,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -8780,7 +12168,76 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "guide_rank": 4,
+      "guide_notes": [
+        "High-fullness vocal option with more bleed than the cleanest models."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "vocals"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 5
+      },
+      "hardware_tiers": [
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 10,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": false,
+        "blocking_reason": "Use via curated workflow rather than as a Simple-mode single model."
+      },
+      "quality_role": [
+        "primary",
+        "ensemble_partner"
+      ],
+      "quality_axes": {
+        "fullness": 10,
+        "bleedless": 6,
+        "noise_risk": 5,
+        "harmony_capture": 9,
+        "bgv_retention": 9,
+        "mud_risk": 4,
+        "specialization": "full vocal body"
+      },
+      "workflow_roles": [
+        "fullness_source"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_fullness": {
+          "segment_size": 1102500,
+          "overlap": 4,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "thin_vocals",
+        "harmonies",
+        "bgv"
+      ],
+      "best_for": [
+        "vocal body",
+        "breath detail",
+        "backing vocal retention"
+      ]
     },
     {
       "id": "unwa-big-beta-6x",
@@ -8907,7 +12364,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -8978,13 +12435,13 @@
       "vram_required": 6.0,
       "stems": [],
       "recommended_settings": {},
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "verified",
       "metrics_status": "guide_curated",
       "metrics_evidence": [
         {
-          "source": "Guide 2026-03-04",
-          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "source": "Guide 2026-03-14",
+          "url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
           "note": "Guide lists Bleedless 38.77, Fullness 16.20, SDR 11.20.",
           "verified_at": "2026-03-04"
         }
@@ -9002,14 +12459,66 @@
           16.2,
           38.77
         ],
-        "source": "Guide 2026-03-04",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "source": "Guide 2026-03-14",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "Big Beta 7 vocal guide entry.",
         "last_verified": "2026-03-04"
       },
       "sdr": 11.2,
       "fullness": 16.2,
       "bleedless": 38.77
+    },
+    {
+      "id": "unwa-bs-exp-siamese-roformer",
+      "name": "Unwa BS-EXP SiameseRoformer",
+      "type": "Roformer - Vocals",
+      "architecture": "BS-Roformer",
+      "description": "Guide-tracked SiameseRoformer vocal candidate.",
+      "tags": [
+        "vocals",
+        "backing_vocals"
+      ],
+      "stems": [
+        "vocals",
+        "instrumental"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/pcunwa/BS-EXP-SiameseRoformer",
+        "config": "https://huggingface.co/pcunwa/BS-EXP-SiameseRoformer",
+        "homepage": "https://huggingface.co/pcunwa/BS-EXP-SiameseRoformer"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "allowed": [
+          "msst"
+        ],
+        "preferred": "msst",
+        "engine": "custom_builtin_variant",
+        "model_type": "bs_roformer",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "blocking_reason": "SiameseRoformer candidate may require custom runtime support and has not been verified yet."
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "Candidate is tracked only for advanced/manual experimentation."
+      },
+      "catalog_status": "candidate",
+      "metrics_status": "missing_evidence",
+      "install": {
+        "mode": "manual"
+      }
     },
     {
       "id": "unwa-debleed",
@@ -9025,8 +12534,8 @@
       ],
       "stems": [],
       "links": {
-        "checkpoint": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/roformers/mel_band_roformer_bleed_suppressor_v1.ckpt",
-        "config": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/roformers/config_mel_band_roformer_bleed_suppressor_v1.yaml",
+        "checkpoint": "https://huggingface.co/jarredou/bleed_suppressor_melband_rofo_by_unwa_97chris/resolve/main/bleed_suppressor_v1.ckpt",
+        "config": "https://huggingface.co/jarredou/bleed_suppressor_melband_rofo_by_unwa_97chris/resolve/main/config_bleed_suppressor_v1.yaml",
         "homepage": "https://huggingface.co/Eddycrack864/audio-separator-models"
       },
       "artifacts": {
@@ -9143,7 +12652,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -9294,7 +12803,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -9358,10 +12867,10 @@
       },
       "vram_required": 8.0,
       "recommended_settings": {
-        "segment_size": null,
+        "segment_size": 352800,
         "batch_size": null,
         "tta": null,
-        "overlap": null,
+        "overlap": 4,
         "shifts": null,
         "bit_depth": null
       },
@@ -9381,7 +12890,12 @@
         ],
         "preferred": "msst",
         "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
-        "variant": "hyperace_v1"
+        "variant": "hyperace_v1",
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "medium"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -9446,13 +12960,13 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "guide_curated",
       "metrics_evidence": [
         {
-          "source": "Guide 2026-03-04",
-          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "source": "Guide 2026-03-14",
+          "url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
           "note": "Guide excerpt matched for unwa-hyperace.",
           "verified_at": "2026-03-04"
         }
@@ -9470,14 +12984,69 @@
           36.91,
           38.77
         ],
-        "source": "Guide 2026-03-04",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "source": "Guide 2026-03-14",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "Unwa HyperACE instrumental guide entry.",
         "last_verified": "2026-03-04"
       },
       "sdr": 17.27,
       "fullness": 36.91,
-      "bleedless": 38.77
+      "bleedless": 38.77,
+      "guide_rank": 1,
+      "guide_notes": [
+        "Top instrumental detail model when HyperACE runtime is healthy."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "instrumental"
+        ],
+        "quality_tier": "ultra",
+        "deterministic_priority": 2
+      },
+      "hardware_tiers": [
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 8,
+          "max_vram_gb": 11.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 12,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": true
+      },
+      "quality_role": [
+        "primary",
+        "ensemble_partner"
+      ],
+      "quality_axes": {
+        "fullness": 9,
+        "bleedless": 7,
+        "noise_risk": 4,
+        "harmony_capture": 5,
+        "bgv_retention": 4,
+        "mud_risk": 3,
+        "specialization": "high-detail instrumental"
+      },
+      "workflow_roles": [
+        "fullness_source",
+        "high_band_source"
+      ],
+      "content_fit": [
+        "busy_mix",
+        "dense_arrangement"
+      ],
+      "best_for": [
+        "detail-heavy instrumental extraction",
+        "hybrid top-end recovery"
+      ]
     },
     {
       "id": "unwa-hyperace-v2-inst",
@@ -9540,7 +13109,18 @@
         ],
         "preferred": "msst",
         "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
-        "variant": "hyperace_v2"
+        "variant": "hyperace_v2",
+        "engine": "custom_builtin_variant",
+        "model_type": "bs_roformer",
+        "patch_profile": "hyperace_v2",
+        "config_ref": "config.yaml",
+        "checkpoint_ref": "bs_roformer_inst_hyperacev2.ckpt",
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "config.yaml",
+          "bs_roformer_inst_hyperacev2.ckpt"
+        ]
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -9590,13 +13170,13 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "guide_curated",
       "metrics_evidence": [
         {
-          "source": "Guide 2026-03-04",
-          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "source": "Guide 2026-03-14",
+          "url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
           "note": "Guide excerpt matched for unwa-hyperace-v2-inst.",
           "verified_at": "2026-03-04"
         }
@@ -9614,14 +13194,32 @@
           38.03,
           37.87
         ],
-        "source": "Guide 2026-03-04",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "source": "Guide 2026-03-14",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "HyperACE v2 instrumental guide entry.",
         "last_verified": "2026-03-04"
       },
       "sdr": 17.4,
       "fullness": 38.03,
-      "bleedless": 37.87
+      "bleedless": 37.87,
+      "guide_rank": 2,
+      "guide_notes": [
+        "Tracked HyperAce V2 instrumental variant for advanced-only instrumental comparisons."
+      ],
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "curated": false,
+        "support_tier": "supported_advanced",
+        "blocking_reason": "HyperAce V2 remains advanced-only until its local runtime bundle and golden-set QA are verified."
+      },
+      "quality_role": [
+        "primary"
+      ],
+      "workflow_roles": [
+        "instrumental",
+        "advanced_comparison"
+      ]
     },
     {
       "id": "unwa-hyperace-v2-voc",
@@ -9734,7 +13332,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "guide_curated",
       "metrics_evidence": [],
@@ -9751,8 +13349,8 @@
           "Lead Vox",
           "Guide"
         ],
-        "source": "Guide 2026-03-04",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "source": "Guide 2026-03-14",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "Guide lists HyperACE v2 vocal SDR 11.39 but not the full triad nearby.",
         "last_verified": "2026-03-04"
       },
@@ -9823,7 +13421,22 @@
         ],
         "preferred": "msst",
         "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
-        "variant": "fno"
+        "variant": "fno",
+        "required": [
+          "cuda",
+          "python",
+          "torch",
+          "neuralop"
+        ],
+        "fallbacks": [],
+        "hosts": [
+          "custom_script"
+        ],
+        "install_burden": "high",
+        "requires_patch": true,
+        "requires_custom_repo_file": [
+          "neuralop FNO1d runtime"
+        ]
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -9888,13 +13501,13 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "guide_curated",
       "metrics_evidence": [
         {
-          "source": "Guide 2026-03-04",
-          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "source": "Guide 2026-03-14",
+          "url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
           "note": "Guide lists Inst FNO with Fullness 32.03, Bleedless 42.87, SDR 17.60.",
           "verified_at": "2026-03-04"
         }
@@ -9912,15 +13525,69 @@
           32.03,
           42.87
         ],
-        "source": "Guide 2026-03-04",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "source": "Guide 2026-03-14",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "Unwa Inst FNO guide entry.",
         "last_verified": "2026-03-04"
       },
       "sdr": 17.6,
       "fullness": 32.03,
       "bleedless": 42.87,
-      "homepage": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO"
+      "homepage": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO",
+      "guide_rank": 3,
+      "guide_notes": [
+        "Excellent precision but runtime-sensitive because it depends on neuralop FNO1d."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "instrumental"
+        ],
+        "quality_tier": "quality",
+        "deterministic_priority": 8
+      },
+      "hardware_tiers": [
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 8,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        }
+      ],
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": false,
+        "blocking_reason": "Requires verified neuralop/FNO1d runtime."
+      },
+      "install": {
+        "mode": "custom_runtime",
+        "notes": [
+          "Requires verified neuralop/FNO1d environment before workflow use."
+        ]
+      },
+      "quality_role": [
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "cleanup_reference",
+        "high_band_source"
+      ],
+      "quality_axes": {
+        "fullness": 8,
+        "bleedless": 9,
+        "noise_risk": 3,
+        "harmony_capture": 4,
+        "bgv_retention": 3,
+        "mud_risk": 2,
+        "specialization": "precision cleanup"
+      },
+      "content_fit": [
+        "precision_cleanup",
+        "expert_only"
+      ],
+      "best_for": [
+        "precision instrumental cleanup",
+        "expert FNO workflows"
+      ]
     },
     {
       "id": "unwa-inst-v1e",
@@ -10049,7 +13716,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -10120,10 +13787,10 @@
       },
       "vram_required": 6.0,
       "recommended_settings": {
-        "segment_size": null,
+        "segment_size": 352800,
         "batch_size": null,
         "tta": null,
-        "overlap": null,
+        "overlap": 4,
         "shifts": null,
         "bit_depth": null
       },
@@ -10142,7 +13809,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "audio_separator"
+        ],
+        "install_burden": "medium"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -10207,7 +13879,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -10231,7 +13903,98 @@
         "evidence_url": null,
         "evidence_note": "No verified metric trio is currently attached to this model.",
         "last_verified": "2026-03-04"
-      }
+      },
+      "guide_rank": 1,
+      "guide_notes": [
+        "Top instrumental fullness model. Best when paired with phase-fix cleanup."
+      ],
+      "quality_profile": {
+        "target_roles": [
+          "instrumental"
+        ],
+        "quality_tier": "ultra",
+        "deterministic_priority": 1
+      },
+      "hardware_tiers": [
+        {
+          "tier": "low_vram",
+          "min_vram_gb": 4,
+          "max_vram_gb": 5.99,
+          "recommended_segment_size": 112455,
+          "recommended_overlap": 2
+        },
+        {
+          "tier": "mid_vram",
+          "min_vram_gb": 6,
+          "max_vram_gb": 9.99,
+          "recommended_segment_size": 352800,
+          "recommended_overlap": 4
+        },
+        {
+          "tier": "high_vram",
+          "min_vram_gb": 10,
+          "recommended_segment_size": 485100,
+          "recommended_overlap": 8
+        }
+      ],
+      "status": {
+        "readiness": "verified",
+        "simple_allowed": true
+      },
+      "quality_role": [
+        "primary",
+        "ensemble_partner"
+      ],
+      "quality_axes": {
+        "fullness": 10,
+        "bleedless": 6,
+        "noise_risk": 5,
+        "harmony_capture": 5,
+        "bgv_retention": 4,
+        "mud_risk": 4,
+        "specialization": "instrumental fullness"
+      },
+      "workflow_roles": [
+        "fullness_source"
+      ],
+      "operating_profiles": {
+        "balanced": {
+          "segment_size": 352800,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_fullness": {
+          "segment_size": 1102500,
+          "overlap": 4,
+          "shifts": 1,
+          "notes": [
+            "Guide-preferred body setting."
+          ]
+        },
+        "max_sdr": {
+          "segment_size": 705600,
+          "overlap": 4,
+          "shifts": 1
+        },
+        "max_bleedless": {
+          "segment_size": 441000,
+          "overlap": 4,
+          "shifts": 1
+        }
+      },
+      "content_fit": [
+        "busy_mix",
+        "full_band",
+        "instrumental_mastering"
+      ],
+      "best_for": [
+        "full instrumentals",
+        "body-first backing tracks"
+      ],
+      "workflow_groups": [
+        "instrumental",
+        "workflow"
+      ]
     },
     {
       "id": "unwa-inst-v2",
@@ -10358,7 +14121,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -10516,7 +14279,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -10667,7 +14430,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -10818,7 +14581,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -10969,7 +14732,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "missing_evidence",
       "metrics_evidence": [],
@@ -11120,13 +14883,13 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "verified",
       "metrics_status": "guide_curated",
       "metrics_evidence": [
         {
-          "source": "Guide 2026-03-04",
-          "url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+          "source": "Guide 2026-03-14",
+          "url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
           "note": "Guide excerpt matched for unwa-revive-2.",
           "verified_at": "2026-03-04"
         }
@@ -11144,8 +14907,8 @@
           15.13,
           40.07
         ],
-        "source": "Guide 2026-03-04",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "source": "Guide 2026-03-14",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "Revive 2 guide entry.",
         "last_verified": "2026-03-04"
       },
@@ -11280,7 +15043,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "verified",
       "metrics_status": "guide_curated",
       "metrics_evidence": [],
@@ -11297,14 +15060,185 @@
           21.43,
           30.51
         ],
-        "source": "Guide 2026-03-04",
-        "evidence_url": "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt",
+        "source": "Guide 2026-03-14",
+        "evidence_url": "https://docs.google.com/document/d/17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c/export?format=txt",
         "evidence_note": "Revive 3e guide entry.",
         "last_verified": "2026-03-04"
       },
       "sdr": 10.98,
       "fullness": 21.43,
       "bleedless": 30.51
+    },
+    {
+      "id": "uvr-denoise",
+      "name": "UVR-DeNoise",
+      "type": "Classic UVR DeNoise VR model.",
+      "architecture": "VR",
+      "description": "Classic UVR DeNoise VR model.",
+      "tags": [
+        "denoise"
+      ],
+      "stems": [
+        "restored"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/VR_Arch/UVR-DeNoise.pth",
+        "config": null,
+        "homepage": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/VR_Arch/UVR-DeNoise.pth"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "checkpoint",
+          "filename": "UVR-DeNoise.pth",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "config": null,
+        "additional": []
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "direct",
+        "requires_manual_assets": false,
+        "required_files": [
+          "UVR-DeNoise.pth"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": true
+      },
+      "catalog_status": "candidate",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads this published artifact directly."
+        ]
+      }
+    },
+    {
+      "id": "uvr-denoise-lite",
+      "name": "UVR-DeNoise Lite",
+      "type": "Classic UVR DeNoise Lite VR model.",
+      "architecture": "VR",
+      "description": "Classic UVR DeNoise Lite VR model.",
+      "tags": [
+        "denoise"
+      ],
+      "stems": [
+        "restored"
+      ],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "UVR-DeNoise-Lite.pth"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them.",
+          "Expected filenames: UVR-DeNoise-Lite.pth"
+        ]
+      }
+    },
+    {
+      "id": "uvr-mdxnet-main",
+      "name": "UVR_MDXNET_Main",
+      "type": "Classic UVR MDX-Net Main ONNX model.",
+      "architecture": "MDX-Net",
+      "description": "Classic UVR MDX-Net Main ONNX model.",
+      "tags": [
+        "instrumental"
+      ],
+      "stems": [
+        "instrumental"
+      ],
+      "links": {
+        "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDXNet/UVR_MDXNET_Main.onnx",
+        "config": null,
+        "homepage": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDXNet/UVR_MDXNET_Main.onnx"
+      },
+      "artifacts": {
+        "primary": {
+          "kind": "onnx",
+          "filename": "UVR_MDXNET_Main.onnx",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "config": null,
+        "additional": []
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "direct",
+        "requires_manual_assets": false,
+        "required_files": [
+          "UVR_MDXNET_Main.onnx"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "experimental",
+        "simple_allowed": true
+      },
+      "catalog_status": "candidate",
+      "install": {
+        "mode": "direct",
+        "notes": [
+          "StemSep downloads this published artifact directly."
+        ]
+      }
     },
     {
       "id": "viperx-karaoke-1297",
@@ -11366,7 +15300,12 @@
           "msst"
         ],
         "preferred": "msst",
-        "blocking_reason": "Roformer models are MSST-only in strict-spec mode."
+        "blocking_reason": "Roformer models are MSST-only in strict-spec mode.",
+        "hosts": [
+          "stemsep",
+          "msst"
+        ],
+        "install_burden": "medium"
       },
       "compatibility": {
         "uvr_compatible": null,
@@ -11431,7 +15370,7 @@
           "routing_default": "msst_only_for_roformer"
         }
       },
-      "guide_revision": "2026-03-04",
+      "guide_revision": "2026-03-14",
       "catalog_status": "manual_only",
       "metrics_status": "vendor_matched",
       "metrics_evidence": [
@@ -11462,7 +15401,226 @@
       },
       "sdr": 12.97,
       "fullness": 9.5,
-      "bleedless": 9.0
+      "bleedless": 9.0,
+      "quality_role": [
+        "special_stem",
+        "ensemble_partner"
+      ],
+      "workflow_roles": [
+        "lead_back_splitter"
+      ],
+      "quality_axes": {
+        "fullness": 6,
+        "bleedless": 9,
+        "noise_risk": 2,
+        "harmony_capture": 6,
+        "bgv_retention": 6,
+        "mud_risk": 2,
+        "specialization": "bleedless lead/back split"
+      },
+      "content_fit": [
+        "karaoke",
+        "lead_back"
+      ],
+      "best_for": [
+        "lead/back cleanup",
+        "bleedless karaoke refinement"
+      ]
+    },
+    {
+      "id": "vr-arch-5-hp",
+      "name": "VR Arch 5_HP (Karaoke-UVR)",
+      "type": "VR Arch 5_HP karaoke model from the report.",
+      "architecture": "VR",
+      "description": "VR Arch 5_HP karaoke model from the report.",
+      "tags": [],
+      "stems": [],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "5_HP-Karaoke-UVR.pth"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them.",
+          "Expected filenames: 5_HP-Karaoke-UVR.pth"
+        ]
+      }
+    },
+    {
+      "id": "vr-arch-6-hp",
+      "name": "VR Arch 6_HP (Karaoke-UVR)",
+      "type": "VR Arch 6_HP karaoke model from the report.",
+      "architecture": "VR",
+      "description": "VR Arch 6_HP karaoke model from the report.",
+      "tags": [],
+      "stems": [],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "6_HP-Karaoke-UVR.pth"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them.",
+          "Expected filenames: 6_HP-Karaoke-UVR.pth"
+        ]
+      }
+    },
+    {
+      "id": "vr-arch-9-hp2-uvr",
+      "name": "VR Arch 9_HP2-UVR (500m_1)",
+      "type": "VR Arch 9_HP2-UVR model from the report.",
+      "architecture": "VR",
+      "description": "VR Arch 9_HP2-UVR model from the report.",
+      "tags": [],
+      "stems": [],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [
+          "9_HP2-UVR.pth"
+        ],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them.",
+          "Expected filenames: 9_HP2-UVR.pth"
+        ]
+      }
+    },
+    {
+      "id": "xlancelab-msr-9stems",
+      "name": "xlancelab MSR Models (9 stems)",
+      "type": "9-stem music source removal research bundle from xlancelab.",
+      "architecture": "Other",
+      "description": "9-stem music source removal research bundle from xlancelab.",
+      "tags": [
+        "multi-stem"
+      ],
+      "stems": [],
+      "links": {
+        "checkpoint": null,
+        "config": null,
+        "homepage": "https://github.com/ModistAndrew/xlance-msr"
+      },
+      "metrics": {
+        "sdr": null,
+        "fullness": null,
+        "bleedless": null,
+        "aura_stft": null,
+        "aura_mrstft": null,
+        "log_wmse": null
+      },
+      "recommended_settings": {},
+      "runtime": {
+        "install_mode": "manual",
+        "requires_manual_assets": true,
+        "required_files": [],
+        "allowed": [
+          "stemsep-legacy"
+        ],
+        "preferred": "stemsep-legacy"
+      },
+      "status": {
+        "readiness": "manual",
+        "simple_allowed": false,
+        "blocking_reason": "Manual import required until curated direct artifacts are verified."
+      },
+      "catalog_status": "manual_only",
+      "install": {
+        "mode": "manual",
+        "notes": [
+          "Model source: https://github.com/ModistAndrew/xlance-msr",
+          "This model is tracked in the report coverage set but does not yet have a curated, verified direct artifact URL in StemSep.",
+          "Import the original published artifact(s) manually if you have access to them."
+        ]
+      }
     }
   ]
 }

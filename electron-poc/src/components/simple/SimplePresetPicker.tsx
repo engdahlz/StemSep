@@ -76,8 +76,8 @@ export function SimplePresetPicker({
   )
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-4 rounded-[1.5rem] border border-white/55 bg-[rgba(255,255,255,0.5)] p-4 shadow-[0_20px_60px_rgba(141,150,179,0.14)] backdrop-blur-xl">
+    <div className="rounded-[1.5rem] border border-white/55 bg-[rgba(255,255,255,0.5)] p-4 shadow-[0_20px_60px_rgba(141,150,179,0.14)] backdrop-blur-xl">
+      <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-medium text-slate-800">Pick a preset</div>
@@ -186,46 +186,45 @@ export function SimplePresetPicker({
             </div>
           )}
         </div>
-      </div>
-
-      {recommended.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-sm font-medium text-slate-800">Recommended</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {recommended.map(p => (
-              <SimplePresetCard
-                key={p.id}
-                preset={p}
-                selected={p.id === selectedPresetId}
-                availability={availability}
-                onSelect={() => onSelectPreset(p.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      <CollapsibleSection
-        title={`More options (${others.length})`}
-        defaultOpen={recommended.length === 0}
-        className="border-white/55 bg-[rgba(255,255,255,0.5)]"
-      >
-        {others.length === 0 ? (
-          <div className="text-sm text-slate-500">No presets match your filters.</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {others.map(p => (
-              <SimplePresetCard
-                key={p.id}
-                preset={p}
-                selected={p.id === selectedPresetId}
-                availability={availability}
-                onSelect={() => onSelectPreset(p.id)}
-              />
-            ))}
+        {recommended.length > 0 && (
+          <div className="space-y-2">
+            <div className="pt-1 text-sm font-medium text-slate-800">Recommended</div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {recommended.map(p => (
+                <SimplePresetCard
+                  key={p.id}
+                  preset={p}
+                  selected={p.id === selectedPresetId}
+                  availability={availability}
+                  onSelect={() => onSelectPreset(p.id)}
+                />
+              ))}
+            </div>
           </div>
         )}
-      </CollapsibleSection>
+
+        <CollapsibleSection
+          title={`More options (${others.length})`}
+          defaultOpen={recommended.length === 0}
+          className="border-white/55 bg-white/28"
+        >
+          {others.length === 0 ? (
+            <div className="text-sm text-slate-500">No presets match your filters.</div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {others.map(p => (
+                <SimplePresetCard
+                  key={p.id}
+                  preset={p}
+                  selected={p.id === selectedPresetId}
+                  availability={availability}
+                  onSelect={() => onSelectPreset(p.id)}
+                />
+              ))}
+            </div>
+          )}
+        </CollapsibleSection>
+      </div>
     </div>
   )
 }

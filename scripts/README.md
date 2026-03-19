@@ -5,7 +5,7 @@
 ## Layout
 
 - `scripts/inference.py`: Python runner spawned by the Rust backend
-- `scripts/registry/`: registry, guide-sync and catalog maintenance
+- `scripts/registry/`: registry and catalog maintenance helpers
 - `scripts/dev/`: debugging and investigation tools
 - `scripts/qa/`: QA/reporting helpers
 - `scripts/download/`: model/bootstrap helpers
@@ -31,7 +31,6 @@ Everything else should prefer a subfolder.
 
 ```powershell
 .\scripts\run_py.ps1 .\scripts\registry\validate_model_registry.py
-.\scripts\run_py.ps1 .\scripts\registry\sync_guide_knowledge.py
 .\scripts\run_pytest.ps1 -q StemSepApp/tests
 ```
 
@@ -39,4 +38,5 @@ Everything else should prefer a subfolder.
 
 - Run scripts from the repo root unless a script says otherwise.
 - Many registry/download tools mutate files under `StemSepApp/assets/`.
+- External guide research is manual; it is not part of CI or the default quality gate.
 - Generated reports belong under ignored output folders, not in git.

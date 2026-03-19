@@ -48,11 +48,99 @@ const getTrackIcon = (name: string) => {
     return AudioLines
 }
 
+const REMOTE_MEDIA_PATTERN = /^(blob:|data:|https?:)/i
+const localAudioBlobCache = new Map<string, string>()
+
+function base64ToBlobUrl(base64: string, mimeType: string): string {
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index)
+    }
+    return URL.createObjectURL(new Blob([bytes], { type: mimeType }))
+}
+
+function getCachedLocalAudioUrl(cacheKey: string) {
+    return localAudioBlobCache.get(cacheKey) || null
+}
+
+function cacheLocalAudioUrl(cacheKey: string, url: string) {
+    localAudioBlobCache.set(cacheKey, url)
+}
+
+function withAlpha(hex: string, alphaHex: string) {
+    return `${hex}${alphaHex}`
+}
+
+function createStemWaveformRenderer(color: string) {
+    const fillColor = adjustColorBrightness(color, 8)
+    const glowColor = withAlpha(color, '24')
+
+    return (channelData: unknown, ctx: CanvasRenderingContext2D) => {
+        const canvasContext = ctx as CanvasRenderingContext2D & {
+            roundRect?: (x: number, y: number, width: number, height: number, radii?: number | DOMPointInit | Iterable<number | DOMPointInit>) => void
+        }
+        const channels = Array.isArray(channelData) ? channelData as Float32Array[] : []
+        if (channels.length === 0) return
+
+        const width = canvasContext.canvas.width
+        const height = canvasContext.canvas.height
+        const centerY = height / 2
+        const bars = Math.max(48, Math.floor(width / 6))
+        const step = Math.max(1, Math.floor((channels[0]?.length || 0) / bars))
+        const amplitudes: number[] = []
+
+        for (let barIndex = 0; barIndex < bars; barIndex += 1) {
+            const start = barIndex * step
+            const end = Math.min(start + step, channels[0]?.length || 0)
+            let peak = 0
+
+            for (let sampleIndex = start; sampleIndex < end; sampleIndex += 1) {
+                let mixed = 0
+                for (const channel of channels) {
+                    mixed += Math.abs(channel[sampleIndex] || 0)
+                }
+                mixed /= channels.length || 1
+                if (mixed > peak) peak = mixed
+            }
+
+            amplitudes.push(peak)
+        }
+
+        const maxAmplitude = Math.max(...amplitudes, 0.001)
+        const drawableWidth = width / bars
+        const barWidth = Math.max(2, drawableWidth * 0.72)
+
+        canvasContext.clearRect(0, 0, width, height)
+        canvasContext.fillStyle = fillColor
+        canvasContext.shadowColor = glowColor
+        canvasContext.shadowBlur = 12
+
+        for (let barIndex = 0; barIndex < amplitudes.length; barIndex += 1) {
+            const normalized = Math.min(1, amplitudes[barIndex] / maxAmplitude)
+            const eased = Math.pow(normalized, 0.65)
+            const barHeight = Math.max(6, eased * (height * 0.42))
+            const x = barIndex * drawableWidth + (drawableWidth - barWidth) / 2
+            const y = centerY - barHeight
+
+            if (typeof canvasContext.roundRect === 'function') {
+                canvasContext.beginPath()
+                canvasContext.roundRect(x, y, barWidth, barHeight * 2, barWidth / 2)
+                canvasContext.fill()
+            } else {
+                canvasContext.fillRect(x, y, barWidth, barHeight * 2)
+            }
+        }
+
+        canvasContext.shadowBlur = 0
+    }
+}
+
 export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>(function WaveformTrack({
     url,
     name,
     color,
-    height = 64,
+    height = 92,
     isPlaying,
     currentTime,
     syncVersion,
@@ -75,15 +163,21 @@ export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>
     const [showSpectrogram, setShowSpectrogram] = useState(false)
     const [loadError, setLoadError] = useState<string | null>(null)
     const isMasterRef = useRef(isMaster)
+    const currentTimeRef = useRef(currentTime)
+    const onReadyRef = useRef(onReady)
+    const onSeekRef = useRef(onSeek)
     const onTimeUpdateRef = useRef(onTimeUpdate)
     const onEndedRef = useRef(onEnded)
     const TrackIcon = getTrackIcon(name)
 
     useEffect(() => {
         isMasterRef.current = isMaster
+        currentTimeRef.current = currentTime
+        onReadyRef.current = onReady
+        onSeekRef.current = onSeek
         onTimeUpdateRef.current = onTimeUpdate
         onEndedRef.current = onEnded
-    }, [isMaster, onEnded, onTimeUpdate])
+    }, [currentTime, isMaster, onEnded, onReady, onSeek, onTimeUpdate])
 
     useImperativeHandle(ref, () => ({
         getCurrentTime: () => wavesurferRef.current?.getCurrentTime() ?? 0,
@@ -98,6 +192,8 @@ export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>
         if (!containerRef.current) return
 
         let mounted = true
+        let objectUrl: string | null = null
+        let shouldRevokeObjectUrl = false
         setLoadError(null)
         setIsReady(false)
 
@@ -113,67 +209,156 @@ export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>
             }))
         }
 
-        try {
-            const ws = WaveSurfer.create({
-                container: containerRef.current,
-                waveColor: color,
-                progressColor: adjustColorBrightness(color, -20),
-                cursorColor: '#ef4444',
-                height: showSpectrogram ? 64 : height,
-                normalize: false,
-                minPxPerSec: 50,
-                interact: true,
-                hideScrollbar: true,
-                url: toMediaUrl(url),
-                plugins,
-            })
+        const getBlobFallbackUrl = async () => {
+            if (
+                REMOTE_MEDIA_PATTERN.test(url) ||
+                !window.electronAPI?.readAudioFile
+            ) {
+                return null
+            }
 
-            ws.on('ready', () => {
-                if (!mounted) return
-                setIsReady(true)
-                onReady(ws.getDuration())
-            })
+            const audioFile = await window.electronAPI.readAudioFile(url)
+            if (!mounted) return null
 
-            ws.on('error', (error) => {
-                if (error instanceof Error && error.name === 'AbortError') return
-                console.error('[WaveformTrack] Error loading audio:', name, error)
-                setLoadError(previewLoadMessage(undefined, error instanceof Error ? error.message : String(error)))
-            })
+            if (!audioFile.success) {
+                throw new Error(
+                    previewLoadMessage(
+                        audioFile.code,
+                        audioFile.hint || audioFile.error,
+                    ),
+                )
+            }
 
-            ws.on('interaction', (newTime) => {
-                onSeek(newTime)
-            })
+            const cacheKey = audioFile.resolvedPath || url
+            const cachedObjectUrl = getCachedLocalAudioUrl(cacheKey)
+            if (cachedObjectUrl) {
+                return cachedObjectUrl
+            }
 
-            ws.on('timeupdate', (time) => {
-                if (!isMasterRef.current) return
-                onTimeUpdateRef.current?.(time)
-            })
-
-            ws.on('finish', () => {
-                if (!isMasterRef.current) return
-                onEndedRef.current?.()
-            })
-
-            wavesurferRef.current = ws
-        } catch (error) {
-            console.error('[WaveformTrack] Failed to create WaveSurfer:', error)
-            setLoadError(previewLoadMessage(undefined, error instanceof Error ? error.message : String(error)))
+            objectUrl = base64ToBlobUrl(audioFile.data, audioFile.mimeType)
+            cacheLocalAudioUrl(cacheKey, objectUrl)
+            shouldRevokeObjectUrl = false
+            return objectUrl
         }
+
+        const createWaveform = async (
+            sourceUrl: string,
+            allowBlobFallback: boolean,
+        ) => {
+            try {
+                const ws = WaveSurfer.create({
+                    container: containerRef.current!,
+                    waveColor: withAlpha(color, '55'),
+                    progressColor: adjustColorBrightness(color, -12),
+                    cursorColor: 'transparent',
+                    cursorWidth: 0,
+                    barWidth: showSpectrogram ? undefined : 0,
+                    barGap: showSpectrogram ? undefined : 0,
+                    barRadius: showSpectrogram ? undefined : 999,
+                    height: showSpectrogram ? 72 : height,
+                    normalize: !showSpectrogram,
+                    minPxPerSec: showSpectrogram ? 85 : 140,
+                    fillParent: false,
+                    interact: true,
+                    hideScrollbar: true,
+                    autoScroll: true,
+                    autoCenter: true,
+                    renderFunction: showSpectrogram
+                        ? undefined
+                        : createStemWaveformRenderer(color),
+                    url: sourceUrl,
+                    plugins,
+                })
+
+                ws.on('ready', () => {
+                    if (!mounted) return
+                    setIsReady(true)
+                    onReadyRef.current(ws.getDuration())
+                })
+
+                ws.on('error', async (error) => {
+                    if (error instanceof Error && error.name === 'AbortError') return
+
+                    if (allowBlobFallback) {
+                        try {
+                            const fallbackUrl = await getBlobFallbackUrl()
+                            if (fallbackUrl && mounted) {
+                                ws.destroy()
+                                if (wavesurferRef.current === ws) {
+                                    wavesurferRef.current = null
+                                }
+                                void createWaveform(fallbackUrl, false)
+                                return
+                            }
+                        } catch (fallbackError) {
+                            console.error('[WaveformTrack] Blob fallback failed:', name, fallbackError)
+                            setLoadError(
+                                previewLoadMessage(
+                                    undefined,
+                                    fallbackError instanceof Error
+                                        ? fallbackError.message
+                                        : String(fallbackError),
+                                ),
+                            )
+                            return
+                        }
+                    }
+
+                    console.error('[WaveformTrack] Error loading audio:', name, error)
+                    setLoadError(previewLoadMessage(undefined, error instanceof Error ? error.message : String(error)))
+                })
+
+                ws.on('interaction', (newTime) => {
+                    onSeekRef.current(newTime)
+                })
+
+                ws.on('timeupdate', (time) => {
+                    if (!isMasterRef.current) return
+                    onTimeUpdateRef.current?.(time)
+                })
+
+                ws.on('finish', () => {
+                    if (!isMasterRef.current) return
+                    onEndedRef.current?.()
+                })
+
+                wavesurferRef.current = ws
+            } catch (error) {
+                console.error('[WaveformTrack] Failed to create WaveSurfer:', error)
+                setLoadError(previewLoadMessage(undefined, error instanceof Error ? error.message : String(error)))
+            }
+        }
+
+        const initializeWaveform = async () => {
+            const sourceUrl = toMediaUrl(url)
+            await createWaveform(sourceUrl, true)
+        }
+
+        void initializeWaveform()
 
         return () => {
             mounted = false
             wavesurferRef.current?.destroy()
             wavesurferRef.current = null
+            if (objectUrl && shouldRevokeObjectUrl) {
+                URL.revokeObjectURL(objectUrl)
+            }
             setIsReady(false)
             setLoadError(null)
         }
-    }, [color, height, name, onReady, onSeek, showSpectrogram, url])
+    }, [color, height, name, showSpectrogram, url])
 
     useEffect(() => {
         const ws = wavesurferRef.current
         if (!ws || !isReady) return
 
-        ws.setTime(Math.max(0, currentTime))
+        ws.setTime(Math.max(0, currentTimeRef.current))
+    }, [isReady, syncVersion])
+
+    useEffect(() => {
+        const ws = wavesurferRef.current
+        if (!ws || !isReady) return
+
         if (isPlaying) {
             void ws.play().catch((error) => {
                 if (error instanceof Error && error.name === 'AbortError') return
@@ -182,7 +367,7 @@ export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>
         } else {
             ws.pause()
         }
-    }, [currentTime, isPlaying, isReady, name, syncVersion])
+    }, [isPlaying, isReady, name])
 
     useEffect(() => {
         const ws = wavesurferRef.current
@@ -198,8 +383,8 @@ export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>
 
     return (
         <div className={cn(
-            "flex items-center gap-4 rounded-[1.35rem] border p-4 backdrop-blur-md transition-all duration-300 shadow-[0_18px_34px_rgba(141,150,179,0.1)]",
-            muted ? "border-white/45 bg-white/36" : "border-white/70 bg-white/58"
+            "flex items-center gap-4 rounded-[1.45rem] border p-4 backdrop-blur-md transition-all duration-300 shadow-[0_18px_34px_rgba(141,150,179,0.1)]",
+            muted ? "border-white/45 bg-white/34" : "border-white/70 bg-white/64"
         )}>
             <div className="flex w-32 shrink-0 items-center gap-3">
                 <div
@@ -223,12 +408,14 @@ export const WaveformTrack = forwardRef<WaveformTrackHandle, WaveformTrackProps>
 
             <div
                 className={cn(
-                    "relative min-h-[72px] flex-1 overflow-hidden rounded-[1rem] border border-white/65 bg-white/72 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] transition-all ease-in-out",
+                    "relative min-h-[96px] flex-1 overflow-hidden rounded-[1.15rem] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(241,245,249,0.92))] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] transition-all ease-in-out",
                     showSpectrogram && "min-h-[196px]"
                 )}
                 style={{ height: showSpectrogram ? 196 : Math.max(height, 72) }}
                 ref={containerRef}
             >
+                <div className="pointer-events-none absolute inset-y-2 left-1/2 z-10 w-px -translate-x-1/2 bg-[linear-gradient(180deg,rgba(255,255,255,0),rgba(15,23,42,0.55),rgba(255,255,255,0))]" />
+                <div className="pointer-events-none absolute inset-y-5 left-1/2 z-10 w-3 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.95)_0%,rgba(255,255,255,0)_72%)] opacity-90" />
                 {!isReady && (
                     <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500">
                         {loadError ? (

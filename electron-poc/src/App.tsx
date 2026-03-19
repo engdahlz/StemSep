@@ -4,7 +4,6 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Sidebar } from "./components/Sidebar";
 import SeparatePage from "./components/SeparatePage";
 import { ModelsPage } from "./components/ModelsPage";
-import { HistoryPage } from "./components/HistoryPage";
 import { SettingsPage } from "./components/SettingsPage";
 import { ConfigurePage, SeparationConfig } from "./components/ConfigurePage";
 import QualityLabPage from "./components/QualityLabPage";
@@ -49,7 +48,6 @@ const isPage = (value: string | null): value is Page => {
     value === "home" ||
     value === "models" ||
     value === "settings" ||
-    value === "history" ||
     value === "about" ||
     value === "results" ||
     value === "configure" ||
@@ -60,6 +58,7 @@ const isPage = (value: string | null): value is Page => {
 const getInitialPage = (): Page => {
   if (typeof window === "undefined") return "home";
   const pageParam = new URLSearchParams(window.location.search).get(PAGE_PARAM_KEY);
+  if (pageParam === "history") return "results";
   return isPage(pageParam) ? pageParam : "home";
 };
 
@@ -178,6 +177,13 @@ function App() {
     file: ConfigureFileInfo;
   } | null>(null);
 
+  const handlePageChange = (page: Page) => {
+    if (page === "results") {
+      useStore.getState().clearLoadedSession();
+    }
+    setCurrentPage(page);
+  };
+
   const handleConfigureConfirm = (config: SeparationConfig) => {
     if (!configureFile) return;
 
@@ -215,6 +221,7 @@ function App() {
           <SeparatePage
             onNavigateToModels={handleNavigateToModels}
             onNavigateToConfigure={handleNavigateToConfigure}
+            onNavigateToResults={() => setCurrentPage("results")}
             pendingSeparationConfig={pendingSeparationConfig}
             onClearPendingConfig={() => setPendingSeparationConfig(null)}
           />
@@ -258,8 +265,6 @@ function App() {
         return <ResultsPage onBack={() => setCurrentPage("home")} />;
       case "settings":
         return <SettingsPage />;
-      case "history":
-        return <HistoryPage onNavigate={setCurrentPage} />;
       case "quality":
         return <QualityLabPage />;
       case "about":
@@ -283,11 +288,15 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <div className="relative h-screen w-screen overflow-hidden bg-[#ffffff] text-[#fafafa]">
-          <div
-            className="absolute inset-0 bg-center bg-cover bg-no-repeat"
-            style={{ backgroundImage: `url(${figmaHomeBg})` }}
+        <div className="relative h-screen w-screen overflow-hidden bg-[#20283b] text-[#fafafa]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_24%),linear-gradient(135deg,#6e758f_0%,#8b7886_34%,#4f628f_72%,#223357_100%)]" />
+          <img
+            src={figmaHomeBg}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover opacity-90"
           />
+          <div className="absolute inset-0 bg-white/6" />
           {currentPage !== "configure" && (
             <div className="pointer-events-none fixed left-0 right-0 top-5 z-30 flex justify-center">
               <h1 className="stemsep-app-title text-[29px] tracking-[-1.1px] text-white">
@@ -297,7 +306,7 @@ function App() {
           )}
 
           {currentPage === "home" && <MachineAnalyzer />}
-          <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+          <Sidebar currentPage={currentPage} onPageChange={handlePageChange} />
           <main className="relative z-10 h-full w-full overflow-hidden">
             {renderPage()}
           </main>

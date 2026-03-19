@@ -196,7 +196,7 @@ export default function HistoryDialog({ isOpen, onClose }: HistoryDialogProps) {
           ) : (
             <div className="space-y-3">
               {filteredHistory.map((entry) => {
-                const fileName = entry.inputFile.split(/[/\\]/).pop() || entry.inputFile
+                const fileName = entry.displayName || entry.inputFile.split(/[/\\]/).pop() || entry.inputFile
                 return (
                   <div
                     key={entry.id}

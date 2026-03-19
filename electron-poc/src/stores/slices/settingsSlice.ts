@@ -65,6 +65,13 @@ export const createSettingsSlice: StateCreator<
       }
     }),
 
+  updateHistoryItem: (id, patch) =>
+    set((state) => {
+      const item = state.history.find((entry) => entry.id === id);
+      if (!item) return;
+      Object.assign(item, patch);
+    }),
+
   removeFromHistory: (id) =>
     set((state) => {
       state.history = state.history.filter((item) => item.id !== id);

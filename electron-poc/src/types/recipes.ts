@@ -45,6 +45,14 @@ export interface RecipeWorkflowStep {
 
 export type RecipeStep = RecipeEnsembleStep | RecipeWorkflowStep
 
+export interface RecipeAudioQualityThresholds {
+  min_correlation?: number
+  min_snr_db?: number
+  min_si_sdr_db?: number
+  max_gain_delta_db?: number
+  max_clipped_samples?: number
+}
+
 export interface Recipe {
   id: string
   name: string
@@ -59,7 +67,14 @@ export interface Recipe {
   expected_runtime_tier?: RecipeRuntimeTier
   guide_rank?: number
   simple_surface?: boolean
+  surface_policy?: 'verified_only' | 'advanced_only' | 'manual_review'
+  requires_verified_assets?: boolean
+  requires_qa_pass?: boolean
+  golden_set_id?: string
+  audio_quality_thresholds?: RecipeAudioQualityThresholds
   simple_goal?: string
+  guide_topics?: string[]
+  quality_tradeoff?: string
   recommended_for?: string[]
   contraindications?: string[]
   workflow_summary?: string
@@ -70,6 +85,18 @@ export interface Recipe {
   vram_category?: 'low' | 'medium' | 'high'
   operating_profile?: string
   intermediate_outputs?: string[]
+  surface_blockers?: string[]
+  required_model_statuses?: Array<{
+    id: string
+    catalog_status?: string | null
+    metrics_status?: string | null
+    readiness?: string | null
+    simple_allowed?: boolean | null
+    blocked_reason?: string | null
+    runtime_adapter?: string | null
+    install_mode?: string | null
+    download_mode?: string | null
+  }>
   fallback_policy?: {
     mode?: 'none' | 'runtime_fallback' | 'workflow_fallback' | 'profile_fallback'
     reason?: string

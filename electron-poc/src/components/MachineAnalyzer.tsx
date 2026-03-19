@@ -3,160 +3,102 @@ import {
   AlertTriangle,
   CheckCircle,
   Cpu,
-  Gauge,
-  HardDrive,
   Loader2,
-  MemoryStick,
   Monitor,
+  Sparkles,
   X,
 } from "lucide-react";
 
+import { Badge } from "./ui/badge";
+import { useStore } from "../stores/useStore";
 import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
+import { ALL_PRESETS } from "../presets";
+import { recipesToPresets } from "../lib/recipePresets";
+import { buildMachineAnalysis } from "../lib/systemRuntime/machineAnalysis";
 
 type AnalysisState = "idle" | "scanning" | "done";
 
-type SystemMetric = {
-  label: string;
-  value: string;
-  score: number;
-  icon: typeof Cpu;
+const toneClasses = (score: number) => {
+  if (score >= 75) {
+    return {
+      text: "text-emerald-100",
+      accent: "text-emerald-200",
+      chip: "border-emerald-300/28 bg-emerald-300/14 text-emerald-100",
+      bar: "from-emerald-300 via-emerald-200 to-white/90",
+      glow: "shadow-[0_0_24px_rgba(110,231,183,0.22)]",
+    };
+  }
+  if (score >= 50) {
+    return {
+      text: "text-amber-100",
+      accent: "text-amber-200",
+      chip: "border-amber-300/28 bg-amber-300/14 text-amber-50",
+      bar: "from-amber-300 via-amber-200 to-white/85",
+      glow: "shadow-[0_0_24px_rgba(252,211,77,0.2)]",
+    };
+  }
+  return {
+    text: "text-rose-100",
+    accent: "text-rose-200",
+    chip: "border-rose-300/28 bg-rose-300/14 text-rose-50",
+    bar: "from-rose-300 via-rose-200 to-white/85",
+    glow: "shadow-[0_0_24px_rgba(253,164,175,0.2)]",
+  };
 };
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(Math.max(value, min), max);
-
 export function MachineAnalyzer() {
-  const { info: runtimeInfo } = useSystemRuntimeInfo();
+  const models = useStore((state) => state.models);
+  const recipes = useStore((state) => state.recipes);
+  const { info: runtimeInfo, error, loading, refresh } = useSystemRuntimeInfo();
+
   const [isOpen, setIsOpen] = useState(false);
   const [analysisState, setAnalysisState] = useState<AnalysisState>("idle");
   const [progress, setProgress] = useState(0);
 
-  const systemMetrics = useMemo<SystemMetric[]>(() => {
-    const gpuInfo = runtimeInfo?.gpu;
-    const system = gpuInfo?.system_info;
-    const activeGpu =
-      gpuInfo?.gpus?.find((gpu: any) => gpu.recommended) || gpuInfo?.gpus?.[0];
+  const presets = useMemo(() => {
+    return [...ALL_PRESETS, ...recipesToPresets(Array.isArray(recipes) ? recipes : [])];
+  }, [recipes]);
 
-    const cpuCount = Number(system?.cpu_count || 0);
-    const ramGb = Number(system?.memory_total_gb || 0);
-    const gpuVram = Number(activeGpu?.memory_gb || 0);
+  const analysis = useMemo(() => {
+    return buildMachineAnalysis(runtimeInfo, models as any, presets);
+  }, [models, presets, runtimeInfo]);
 
-    const cpuScore = clamp(cpuCount * 9, 20, 100);
-    const ramScore = clamp(ramGb * 6, 20, 100);
-    const gpuScore = activeGpu
-      ? clamp(gpuVram * 10 + 15, 25, 100)
-      : clamp(ramGb * 3, 20, 48);
-    const runtimeScore =
-      gpuInfo?.has_cuda || activeGpu
-        ? clamp(72 + Math.min(gpuVram, 8) * 3, 55, 100)
-        : 42;
-    const platformScore = system?.platform?.toLowerCase().includes("win")
-      ? 82
-      : 70;
-
-    return [
-      {
-        label: "CPU Cores",
-        value: cpuCount ? `${cpuCount} cores` : "Unknown",
-        score: cpuScore,
-        icon: Cpu,
-      },
-      {
-        label: "Memory",
-        value: ramGb ? `${ramGb} GB RAM` : "Unknown",
-        score: ramScore,
-        icon: MemoryStick,
-      },
-      {
-        label: "GPU",
-        value: activeGpu?.name || "CPU only",
-        score: gpuScore,
-        icon: Monitor,
-      },
-      {
-        label: "Runtime",
-        value: gpuInfo?.has_cuda || activeGpu ? "GPU-ready" : "CPU fallback",
-        score: runtimeScore,
-        icon: Gauge,
-      },
-      {
-        label: "Platform",
-        value: system?.platform || "Unknown",
-        score: platformScore,
-        icon: HardDrive,
-      },
-    ];
-  }, [runtimeInfo]);
-
-  const overallScore = useMemo(() => {
-    if (!systemMetrics.length) return 0;
-    const total = systemMetrics.reduce((sum, item) => sum + item.score, 0);
-    return Math.round(total / systemMetrics.length);
-  }, [systemMetrics]);
-
-  const verdict = useMemo(() => {
-    if (overallScore >= 80) {
-      return {
-        text: "Excellent — your machine should handle heavy separation chains comfortably.",
-        icon: CheckCircle,
-        color: "text-emerald-300",
-      };
-    }
-    if (overallScore >= 60) {
-      return {
-        text: "Good — most models should run smoothly, with some limits on larger chains.",
-        icon: CheckCircle,
-        color: "text-amber-300",
-      };
-    }
-    return {
-      text: "Limited — prefer lighter models or CPU-safe workflows for stable results.",
-      icon: AlertTriangle,
-      color: "text-amber-300",
-    };
-  }, [overallScore]);
-
-  const getScoreColor = (score: number) => {
-    if (score >= 75) return "text-emerald-300";
-    if (score >= 50) return "text-amber-300";
-    return "text-rose-300";
-  };
-
-  const getBarColor = (score: number) => {
-    if (score >= 75) return "bg-emerald-400/80";
-    if (score >= 50) return "bg-amber-400/80";
-    return "bg-rose-400/80";
-  };
-
-  const runAnalysis = () => {
-    setAnalysisState("scanning");
+  const closeAnalyzer = () => {
+    setIsOpen(false);
+    setAnalysisState("idle");
     setProgress(0);
+  };
+
+  const runAnalysis = async () => {
+    setAnalysisState("scanning");
+    setProgress(8);
 
     const interval = window.setInterval(() => {
       setProgress((value) => {
-        if (value >= 100) {
-          window.clearInterval(interval);
-          return 100;
-        }
-        return value + 2;
+        if (value >= 92) return 92;
+        return value + 4;
       });
-    }, 40);
+    }, 120);
 
-    window.setTimeout(() => {
-      window.clearInterval(interval);
+    try {
+      await refresh(true);
       setProgress(100);
-      setAnalysisState("done");
-    }, 2200);
+      window.setTimeout(() => {
+        setAnalysisState("done");
+      }, 160);
+    } finally {
+      window.clearInterval(interval);
+    }
   };
 
-  const VerdictIcon = verdict.icon;
+  const scoreTone = toneClasses(analysis.overallScore);
 
   return (
     <>
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="fixed right-5 top-5 z-30 rounded-[14px] border border-white/30 bg-white/20 p-2.5 text-white shadow-lg shadow-black/10 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-white/50 hover:bg-white/30 active:scale-95"
+        className="fixed right-5 top-5 z-30 rounded-[18px] border border-white/28 bg-white/18 p-3 text-white shadow-[0_18px_40px_rgba(0,0,0,0.18)] backdrop-blur-xl transition-all duration-300 hover:scale-[1.04] hover:border-white/42 hover:bg-white/24 active:scale-95"
         aria-label="Open machine analyzer"
       >
         <Monitor className="h-5 w-5" />
@@ -166,145 +108,350 @@ export function MachineAnalyzer() {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-xl"
-            onClick={() => {
-              setIsOpen(false);
-              setAnalysisState("idle");
-              setProgress(0);
-            }}
+            className="fixed inset-0 z-50 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_35%),rgba(17,21,33,0.38)] backdrop-blur-xl"
+            onClick={closeAnalyzer}
             aria-label="Close machine analyzer overlay"
           />
-          <div className="fixed left-1/2 top-1/2 z-[60] max-h-[85vh] w-[460px] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-3xl border border-white/30 bg-white/15 text-white shadow-2xl shadow-black/30 backdrop-blur-2xl">
-            <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-white/10 via-transparent to-white/5" />
-            <div className="pointer-events-none absolute inset-0 rounded-3xl shadow-inner shadow-white/10" />
-            <div className="relative">
-              <div className="flex items-start justify-between gap-4 px-6 pb-4 pt-6">
-                <div>
-                  <h2 className="text-[18px] tracking-[-0.5px] text-white drop-shadow-lg">
+
+          <div className="fixed left-1/2 top-1/2 z-[60] w-[min(860px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[2rem] border border-white/22 bg-[linear-gradient(145deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08))] text-white shadow-[0_40px_120px_rgba(10,14,22,0.32)] backdrop-blur-2xl">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.2),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(123,166,255,0.16),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))]" />
+            <div className="pointer-events-none absolute inset-[1px] rounded-[calc(2rem-1px)] border border-white/10" />
+
+            <div className="relative max-h-[85vh] overflow-y-auto px-6 pb-6 pt-6 sm:px-7">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-3">
+                  <Badge className="border-white/18 bg-white/12 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.22em] text-white/62">
                     Machine Analysis
-                  </h2>
-                  <p className="mt-0.5 text-[13px] tracking-[-0.2px] text-white/50 drop-shadow">
-                    Check your system's readiness for stem separation
-                  </p>
+                  </Badge>
+                  <div>
+                    <h2 className="text-[28px] font-medium tracking-[-1px] text-white drop-shadow-[0_10px_28px_rgba(14,18,28,0.22)]">
+                      Tune StemSep to this machine
+                    </h2>
+                    <p className="mt-2 max-w-[620px] text-[14px] leading-6 tracking-[-0.22px] text-white/62">
+                      This view now scores the machine against StemSep&apos;s own
+                      guide-derived registry, runtime checks and VRAM guardrails,
+                      so the verdict reflects what the app can actually run well.
+                    </p>
+                  </div>
                 </div>
+
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsOpen(false);
-                    setAnalysisState("idle");
-                    setProgress(0);
-                  }}
-                  className="rounded-xl p-2 text-white/50 transition-all hover:bg-white/15 hover:text-white"
+                  onClick={closeAnalyzer}
+                  className="rounded-[16px] border border-white/10 bg-white/8 p-2.5 text-white/55 transition-all hover:border-white/18 hover:bg-white/14 hover:text-white"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               {analysisState === "idle" && (
-                <div className="flex flex-col items-center px-6 pb-6 pt-2">
-                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/20 bg-white/10 shadow-lg shadow-black/10 backdrop-blur-md">
-                    <Cpu className="h-7 w-7 text-white/50" />
+                <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+                  <div className="min-w-0 rounded-[1.8rem] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.06))] p-6 shadow-[0_24px_60px_rgba(10,14,22,0.18)]">
+                    <div className="flex items-start gap-4">
+                      <div className="relative mt-1 flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.4rem] border border-white/18 bg-white/10 shadow-[0_18px_40px_rgba(10,14,22,0.22)]">
+                        <div className="absolute inset-2 rounded-[1rem] bg-[radial-gradient(circle,rgba(255,255,255,0.22),transparent_70%)]" />
+                        <Cpu className="relative h-7 w-7 text-white/88" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[22px] font-medium tracking-[-0.7px] text-white">
+                          Analyze this setup
+                        </p>
+                        <p className="mt-2 max-w-[440px] text-[13px] leading-6 text-white/58">
+                          We check actual runtime readiness, hardware tier, guided
+                          workflow coverage and verified model fit. The result is
+                          based on the same internal rules the app uses for
+                          separation decisions.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 md:grid-cols-3">
+                      {[
+                        {
+                          label: "Performance",
+                          value: "Headroom for larger chains and higher context settings",
+                        },
+                        {
+                          label: "Runtime",
+                          value: "Whether the current Torch path can really use the machine",
+                        },
+                        {
+                          label: "Guidance",
+                          value: "Preset and workflow advice grounded in the guide-backed registry",
+                        },
+                      ].map((item) => (
+                        <div
+                          key={item.label}
+                          className="min-w-0 rounded-[1.2rem] border border-white/12 bg-white/8 p-3"
+                        >
+                          <div className="text-[10px] uppercase tracking-[0.16em] text-white/42">
+                            {item.label}
+                          </div>
+                          <div className="mt-2 break-words text-[13px] leading-6 text-white/70">
+                            {item.value}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void runAnalysis();
+                      }}
+                      className="mt-6 inline-flex items-center justify-center gap-2 rounded-[999px] border border-white/26 bg-white/18 px-5 py-3 text-[14px] font-medium tracking-[-0.25px] text-white shadow-[0_18px_40px_rgba(10,14,22,0.18)] transition-all duration-300 hover:scale-[1.02] hover:border-white/38 hover:bg-white/24 active:scale-95"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Run Analysis
+                    </button>
                   </div>
-                  <p className="mb-6 text-center text-[14px] leading-6 tracking-[-0.2px] text-white/60 drop-shadow">
-                    Analyze your hardware to see which models
-                    <br />
-                    run best on your machine
-                  </p>
-                  <button
-                    type="button"
-                    onClick={runAnalysis}
-                    className="rounded-[38px] border border-white/30 bg-white/20 px-6 py-2.5 text-[14px] tracking-[-0.3px] text-white shadow-lg shadow-black/20 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-white/50 hover:bg-white/30 active:scale-95"
-                  >
-                    Run Analysis
-                  </button>
+
+                  <div className="min-w-0 rounded-[1.8rem] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.04))] p-5">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-white/42">
+                      What you get
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {[
+                        "A readiness score tied to current runtime health, not just raw hardware specs.",
+                        "A view of which guided workflows are actually supported, limited or blocked.",
+                        "Recommendations that follow the same 4 GB / 6 GB / 10 GB VRAM breakpoints used elsewhere in the app.",
+                      ].map((copy) => (
+                        <div
+                          key={copy}
+                          className="min-w-0 rounded-[1.1rem] border border-white/10 bg-white/7 p-3"
+                        >
+                          <p className="break-words text-[13px] leading-6 text-white/68">
+                            {copy}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 
               {analysisState === "scanning" && (
-                <div className="flex flex-col items-center px-6 pb-6 pt-2">
-                  <Loader2 className="mb-5 h-10 w-10 animate-spin text-white/60 drop-shadow-lg" />
-                  <p className="mb-4 text-[14px] tracking-[-0.2px] text-white/70 drop-shadow">
-                    Scanning hardware…
-                  </p>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-white/80 shadow-[0_0_8px_rgba(255,255,255,0.4)] transition-all duration-100"
-                      style={{ width: `${progress}%` }}
-                    />
+                <div className="mt-6 rounded-[1.9rem] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.05))] p-6 sm:p-7">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="relative flex h-24 w-24 items-center justify-center">
+                      <div className="absolute inset-0 rounded-full border border-white/12 bg-[radial-gradient(circle,rgba(255,255,255,0.16),transparent_65%)] blur-[2px]" />
+                      <div className="absolute inset-3 rounded-full border border-white/16" />
+                      <Loader2 className="relative h-9 w-9 animate-spin text-white/80" />
+                    </div>
+
+                    <div className="mt-4 text-[24px] font-medium tracking-[-0.8px] text-white">
+                      Reading your system profile
+                    </div>
+                    <p className="mt-2 max-w-[460px] text-[14px] leading-6 text-white/60">
+                      Refreshing runtime diagnostics, hardware info and guide-backed
+                      compatibility data for the workflows used in StemSep.
+                    </p>
+
+                    <div className="mt-6 w-full max-w-[460px]">
+                      <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.18em] text-white/42">
+                        <span>Progress</span>
+                        <span>{progress}%</span>
+                      </div>
+                      <div className="mt-2 h-3 overflow-hidden rounded-full border border-white/10 bg-white/7 p-[2px]">
+                        <div
+                          className="h-full rounded-full bg-[linear-gradient(90deg,rgba(255,255,255,0.92),rgba(255,223,191,0.92),rgba(160,194,255,0.9))] shadow-[0_0_18px_rgba(255,255,255,0.28)] transition-all duration-100"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <p className="mt-2 text-xs text-white/42">{progress}%</p>
                 </div>
               )}
 
               {analysisState === "done" && (
-                <div className="px-6 pb-6 pt-1">
-                  <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/20 bg-white/10 p-4 shadow-lg shadow-black/10 backdrop-blur-md">
-                    <div>
-                      <p className="mb-1 text-[12px] tracking-[-0.1px] text-white/50 drop-shadow">
-                        Overall Score
-                      </p>
-                      <p
-                        className={`text-[32px] tracking-[-1.5px] drop-shadow-lg ${getScoreColor(overallScore)}`}
-                      >
-                        {overallScore}
-                      </p>
+                <div className="mt-6 space-y-5">
+                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+                    <div className="min-w-0 rounded-[1.9rem] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.06))] p-6 shadow-[0_24px_60px_rgba(10,14,22,0.18)]">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="text-[11px] uppercase tracking-[0.18em] text-white/42">
+                            Overall readiness
+                          </div>
+                          <div
+                            className={`mt-3 text-[56px] font-medium leading-none tracking-[-3px] ${scoreTone.text}`}
+                          >
+                            {analysis.overallScore}
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Badge className={`px-3 py-1 text-[11px] font-medium ${scoreTone.chip}`}>
+                              {analysis.tierLabel}
+                            </Badge>
+                            <Badge className="border-white/16 bg-white/10 px-3 py-1 text-[11px] font-medium text-white/72">
+                              {analysis.accelerationLabel}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div
+                          className={`relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full border border-white/16 bg-white/7 ${scoreTone.glow}`}
+                        >
+                          <div
+                            className="absolute inset-[7px] rounded-full border-[6px] border-white/12"
+                            style={{
+                              background: `conic-gradient(rgba(255,255,255,0) ${Math.max(
+                                0,
+                                Math.min(100, analysis.overallScore),
+                              )}%, rgba(255,255,255,0.14) 0%)`,
+                            }}
+                          />
+                          <Monitor className={`relative h-6 w-6 ${scoreTone.accent}`} />
+                        </div>
+                      </div>
+
+                      <div className="mt-5 flex items-start gap-3 rounded-[1.3rem] border border-white/12 bg-white/7 p-4">
+                        {analysis.overallScore >= 60 ? (
+                          <CheckCircle className={`mt-0.5 h-5 w-5 shrink-0 ${scoreTone.accent}`} />
+                        ) : (
+                          <AlertTriangle className={`mt-0.5 h-5 w-5 shrink-0 ${scoreTone.accent}`} />
+                        )}
+                        <div className="min-w-0">
+                          <div className="text-[15px] font-medium tracking-[-0.3px] text-white">
+                            {analysis.verdictTitle}
+                          </div>
+                          <div className="mt-1 text-[13px] leading-6 text-white/64">
+                            {analysis.verdictText}
+                          </div>
+                        </div>
+                      </div>
+
+                      {(analysis.issues.length > 0 || error) && (
+                        <div className="mt-4 space-y-2">
+                          {[...analysis.issues, ...(error ? [error] : [])].map((issue) => (
+                            <div
+                              key={issue}
+                              className="rounded-[1.1rem] border border-amber-300/18 bg-amber-300/10 p-3 text-[12px] leading-5 text-amber-50/90"
+                            >
+                              {issue}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-white/15">
-                      <Gauge
-                        className={`h-5 w-5 ${getScoreColor(overallScore)}`}
-                      />
+
+                    <div className="min-w-0 rounded-[1.9rem] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.04))] p-5">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-white/70" />
+                        <div className="text-[13px] font-medium tracking-[-0.2px] text-white">
+                          Recommended approach
+                        </div>
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        {analysis.recommendations.map((item) => (
+                          <div
+                            key={item}
+                            className="rounded-[1.15rem] border border-white/12 bg-white/8 p-3"
+                          >
+                            <p className="break-words text-[13px] leading-6 text-white/66">
+                              {item}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    {systemMetrics.map((item) => {
-                      const Icon = item.icon;
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {analysis.metrics.map((item) => {
+                      const tone = toneClasses(item.score);
+
                       return (
                         <div
                           key={item.label}
-                          className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/8 px-4 py-3 backdrop-blur-sm"
+                          className="min-w-0 rounded-[1.35rem] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.05))] p-4"
                         >
-                          <Icon className="h-4 w-4 shrink-0 text-white/40 drop-shadow" />
-                          <div className="min-w-0 flex-1">
-                            <div className="mb-1.5 flex items-center justify-between gap-3">
-                              <span className="text-[12px] tracking-[-0.1px] text-white/55">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="text-[14px] font-medium tracking-[-0.2px] text-white">
                                 {item.label}
-                              </span>
-                              <span className="truncate text-[12px] tracking-[-0.1px] text-white/80 drop-shadow">
+                              </div>
+                              <div className="mt-0.5 break-words text-[12px] leading-5 text-white/58">
                                 {item.value}
-                              </span>
+                              </div>
                             </div>
-                            <div className="h-1 overflow-hidden rounded-full bg-white/10">
-                              <div
-                                className={`h-full rounded-full ${getBarColor(item.score)}`}
-                                style={{ width: `${item.score}%` }}
-                              />
-                            </div>
+
+                            <Badge className={`px-3 py-1 text-[11px] font-medium ${tone.chip}`}>
+                              {item.score}/100
+                            </Badge>
                           </div>
-                          <span className={`ml-1 text-[12px] ${getScoreColor(item.score)}`}>
-                            {item.score}
-                          </span>
+
+                          <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/8">
+                            <div
+                              className={`h-full rounded-full bg-gradient-to-r ${tone.bar}`}
+                              style={{ width: `${item.score}%` }}
+                            />
+                          </div>
+
+                          <p className="mt-3 break-words text-[12px] leading-5 text-white/56">
+                            {item.hint}
+                          </p>
                         </div>
                       );
                     })}
                   </div>
 
-                  <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-white/15 bg-white/8 px-4 py-3 backdrop-blur-sm">
-                    <VerdictIcon
-                      className={`mt-0.5 h-4 w-4 shrink-0 ${verdict.color}`}
-                    />
-                    <p className="text-[13px] leading-[1.5] tracking-[-0.2px] text-white/60 drop-shadow">
-                      {verdict.text}
-                    </p>
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    {analysis.workflows.map((workflow) => {
+                      const tone =
+                        workflow.status === "supported"
+                          ? toneClasses(84)
+                          : workflow.status === "limited"
+                            ? toneClasses(62)
+                            : toneClasses(34);
+
+                      return (
+                        <div
+                          key={workflow.label}
+                          className="min-w-0 rounded-[1.25rem] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.05))] p-4"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="text-[14px] font-medium tracking-[-0.2px] text-white">
+                              {workflow.label}
+                            </div>
+                            <Badge className={`px-3 py-1 text-[11px] font-medium ${tone.chip}`}>
+                              {workflow.status}
+                            </Badge>
+                          </div>
+                          <div className="mt-3 text-[12px] text-white/76">
+                            {workflow.presetName || "No fit found"}
+                          </div>
+                          <p className="mt-2 break-words text-[12px] leading-5 text-white/56">
+                            {workflow.reason}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={runAnalysis}
-                    className="mt-4 w-full rounded-[38px] border border-white/25 bg-white/15 px-4 py-2.5 text-[13px] tracking-[-0.2px] text-white/70 shadow-lg shadow-black/10 backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:border-white/40 hover:bg-white/25 hover:text-white active:scale-95"
-                  >
-                    Run Again
-                  </button>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void runAnalysis();
+                      }}
+                      className="inline-flex items-center justify-center gap-2 rounded-[999px] border border-white/24 bg-white/16 px-5 py-3 text-[14px] font-medium tracking-[-0.2px] text-white transition-all duration-300 hover:scale-[1.01] hover:border-white/34 hover:bg-white/22 active:scale-95"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Run Again
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeAnalyzer}
+                      className="inline-flex items-center justify-center rounded-[999px] border border-white/14 bg-white/8 px-5 py-3 text-[14px] tracking-[-0.2px] text-white/72 transition-all hover:border-white/22 hover:bg-white/12 hover:text-white"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {loading && analysisState === "idle" && (
+                <div className="mt-4 text-[12px] text-white/50">
+                  Runtime information is still loading.
                 </div>
               )}
             </div>

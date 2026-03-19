@@ -1,10 +1,17 @@
 import { CSSProperties, useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
+  Check,
+  ChevronDown,
+  CloudDownload,
   Disc3,
   Headphones,
+  Link2,
+  Loader2,
   Mic2,
   Music2,
   Radio,
+  RefreshCw,
+  ShieldCheck,
   Upload,
 } from "lucide-react";
 
@@ -14,6 +21,7 @@ import HistoryDialog from "./HistoryDialog";
 import { useStore } from "../stores/useStore";
 import { SeparationConfig } from "./ConfigurePage";
 import { QueueItem } from "../types/store";
+import type { QueueSourceMeta, SourceType } from "../types/store";
 import { toast } from "sonner";
 import { ModelDetails } from "./ModelDetails";
 import { ALL_PRESETS, Preset } from "../presets";
@@ -25,7 +33,6 @@ import {
 } from "@/lib/policy/recommendationPolicy";
 import MissingModelsDialog from "./dialogs/MissingModelsDialog";
 import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
-import { modelRequiresFnoRuntime } from "../lib/systemRuntime/modelRuntime";
 import {
   buildSeparationBackendPayload,
   executeSeparation,
@@ -33,6 +40,13 @@ import {
 } from "@/lib/separation/backendPayload";
 import type { SeparationProgressEvent } from "@/types/media";
 import { queueUpdatesFromProgressEvent } from "@/lib/separation/progressEvent";
+import type {
+  ActiveLibraryProvider,
+  CaptureEnvironmentStatus,
+  PlaybackCaptureProgressPayload,
+  PlaybackDevice,
+  RemoteCatalogItem,
+} from "@/types/remote";
 
 // --- Constants & Types ---
 
@@ -48,13 +62,80 @@ interface SeparatePageProps {
     filePath: string,
     presetId?: string,
   ) => void;
+  onNavigateToResults?: () => void;
   pendingSeparationConfig?: PendingSeparationConfig | null;
   onClearPendingConfig?: () => void;
 }
 
+type QueueInput =
+  | string
+  | {
+      path: string;
+      displayName?: string;
+      sourceUrl?: string;
+      sourceType?: SourceType;
+      sourceMeta?: QueueSourceMeta;
+    };
+
+type ProviderLibraryState = {
+  items: RemoteCatalogItem[];
+  authenticated: boolean;
+  loaded: boolean;
+  error?: string | null;
+  message?: string | null;
+};
+
+const REMOTE_PROVIDERS: ActiveLibraryProvider[] = ["qobuz"];
+
+const createInitialProviderState = (): Record<
+  ActiveLibraryProvider,
+  ProviderLibraryState
+> => ({
+  spotify: {
+    items: [],
+    authenticated: false,
+    loaded: false,
+    error: null,
+    message: "Sign in, then load your library or search for a track.",
+  },
+  qobuz: {
+    items: [],
+    authenticated: false,
+    loaded: false,
+    error: null,
+    message: "Sign in, then load your library or search for a track.",
+  },
+});
+
+const getDisplayNameForPath = (path: string, displayName?: string) =>
+  displayName || path.split(/[\\/]/).pop() || path;
+
+const getProviderLabel = (provider: ActiveLibraryProvider) =>
+  provider === "qobuz" ? "Qobuz" : "Spotify";
+
+const getProviderEmptyStateText = (provider: ActiveLibraryProvider) =>
+  provider === "qobuz"
+    ? "No Qobuz tracks were found in the current view. Load favorites or run a search, then try again."
+    : "No tracks were found on the current page. Open your library or search results, then refresh.";
+
+const isLikelyYouTubeUrl = (value: string) => {
+  try {
+    const parsed = new URL(value);
+    const host = parsed.hostname.toLowerCase();
+    return (
+      host === "youtu.be" ||
+      host.endsWith("youtube.com") ||
+      host.endsWith("youtube-nocookie.com")
+    );
+  } catch {
+    return false;
+  }
+};
+
 export default function SeparatePage({
   onNavigateToModels,
   onNavigateToConfigure,
+  onNavigateToResults,
   pendingSeparationConfig,
   onClearPendingConfig,
 }: SeparatePageProps) {
@@ -98,6 +179,40 @@ export default function SeparatePage({
   // Dialogs State
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [activeImportTab, setActiveImportTab] = useState<
+    "youtube" | ActiveLibraryProvider
+  >("youtube");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [isResolvingYouTube, setIsResolvingYouTube] = useState(false);
+  const [youtubeProgress, setYoutubeProgress] = useState<{
+    status: string;
+    percent?: string;
+    speed?: string;
+    eta?: string;
+    error?: string;
+  } | null>(null);
+  const [providerLibraries, setProviderLibraries] = useState<
+    Record<ActiveLibraryProvider, ProviderLibraryState>
+  >(createInitialProviderState);
+  const [providerQueries, setProviderQueries] = useState<
+    Record<ActiveLibraryProvider, string>
+  >({
+    spotify: "",
+    qobuz: "",
+  });
+  const [loadingProvider, setLoadingProvider] =
+    useState<ActiveLibraryProvider | null>(null);
+  const [capturingProvider, setCapturingProvider] =
+    useState<ActiveLibraryProvider | null>(null);
+  const [captureProgress, setCaptureProgress] =
+    useState<PlaybackCaptureProgressPayload | null>(null);
+  const [captureEnvironment, setCaptureEnvironment] =
+    useState<CaptureEnvironmentStatus | null>(null);
+  const [playbackDevices, setPlaybackDevices] = useState<PlaybackDevice[]>([]);
+  const [selectedPlaybackDeviceId, setSelectedPlaybackDeviceId] = useState("");
+  const [isSavingPlaybackDevice, setIsSavingPlaybackDevice] = useState(false);
+  const [isPlaybackDeviceMenuOpen, setIsPlaybackDeviceMenuOpen] =
+    useState(false);
 
   // Model Details Overlay State
   const [detailsModelId, setDetailsModelId] = useState<string | null>(null);
@@ -246,6 +361,8 @@ export default function SeparatePage({
   const completeSeparation = useStore((state) => state.completeSeparation);
   const addLog = useStore((state) => state.addLog);
   const addToHistory = useStore((state) => state.addToHistory);
+  const history = useStore((state) => state.history);
+  const loadSession = useStore((state) => state.loadSession);
   const outputDirectory = useStore((state) => state.settings.defaultOutputDir);
   const cancelSeparation = useStore((state) => state.cancelSeparation);
   const phaseParams = useStore((state) => state.settings.phaseParams);
@@ -267,6 +384,27 @@ export default function SeparatePage({
   const processingQueueItem = useMemo(() => {
     return queue.find((q) => q.status === "processing");
   }, [queue]);
+
+  const completedQueueItem = useMemo(() => {
+    const completedItems = queue.filter((q) => q.status === "completed");
+    return completedItems[completedItems.length - 1] || null;
+  }, [queue]);
+
+  const latestCompletedSession = useMemo(() => {
+    const sortedCompleted = [...history]
+      .filter((item) => item.status === "completed")
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    if (!completedQueueItem) {
+      return sortedCompleted[0] || null;
+    }
+
+    return (
+      sortedCompleted.find((item) => item.inputFile === completedQueueItem.file) ||
+      sortedCompleted[0] ||
+      null
+    );
+  }, [completedQueueItem, history]);
 
   const formatDuration = useCallback((totalSeconds: number) => {
     const s = Math.max(0, Math.floor(totalSeconds));
@@ -298,6 +436,78 @@ export default function SeparatePage({
     separationStartTime,
   ]);
 
+  const isProcessingPossiblyStalled = useMemo(() => {
+    if (!isProcessing || !processingQueueItem?.lastProgressTime) return false;
+    return nowMs - processingQueueItem.lastProgressTime >= 30_000;
+  }, [isProcessing, nowMs, processingQueueItem?.lastProgressTime]);
+
+  const verifyPlayableOutputs = useCallback(
+    async (
+      outputFiles: Record<string, string> | undefined,
+      playback?: {
+        sourceKind: "preview_cache" | "saved_output" | "missing_source";
+        previewDir?: string;
+        savedDir?: string;
+      },
+    ) => {
+      if (!outputFiles || Object.keys(outputFiles).length === 0) {
+        return {
+          resolved: {} as Record<string, string>,
+          issues: {} as Record<string, string>,
+        };
+      }
+
+      let resolved = outputFiles;
+      let issuesFromResolver: Record<
+        string,
+        { code?: string; hint?: string; originalPath?: string }
+      > = {};
+
+      if (window.electronAPI?.resolvePlaybackStems) {
+        const playbackResolution = await window.electronAPI.resolvePlaybackStems(
+          outputFiles,
+          playback,
+        );
+        if (playbackResolution.success) {
+          resolved = playbackResolution.stems || {};
+          issuesFromResolver = playbackResolution.issues || {};
+        }
+      }
+
+      const existenceChecks = await Promise.all(
+        Object.entries(resolved).map(async ([stem, filePath]) => {
+          const exists = await window.electronAPI?.checkFileExists?.(filePath);
+          return [stem, filePath, !!exists] as const;
+        }),
+      );
+
+      const verifiedOutputs: Record<string, string> = {};
+      const issues: Record<string, string> = {};
+
+      for (const [stem, filePath, exists] of existenceChecks) {
+        if (exists) {
+          verifiedOutputs[stem] = filePath;
+          continue;
+        }
+
+        const resolverIssue = issuesFromResolver[stem];
+        issues[stem] =
+          resolverIssue?.hint ||
+          `Resolved playback file is missing: ${filePath}`;
+      }
+
+      for (const [stem, issue] of Object.entries(issuesFromResolver)) {
+        if (!verifiedOutputs[stem] && !issues[stem]) {
+          issues[stem] =
+            issue?.hint || "Playback source could not be resolved.";
+        }
+      }
+
+      return { resolved: verifiedOutputs, issues };
+    },
+    [],
+  );
+
   // Prepared run created in ConfigurePage. This should stay idle until the user
   // explicitly presses the primary CTA on the home screen.
   const [preparedSeparation, setPreparedSeparation] =
@@ -308,6 +518,7 @@ export default function SeparatePage({
   // add audio -> configure -> explicit start.
   const processingPendingConfigRef = useRef(false);
   const dragDepthRef = useRef(0);
+  const playbackDeviceMenuRef = useRef<HTMLDivElement | null>(null);
   const heroIcons = useMemo(() => {
     const orbitIcons = [Music2, Headphones, Mic2, Radio, Disc3, Upload];
     const circles = [80, 120, 160];
@@ -375,6 +586,7 @@ export default function SeparatePage({
         const queueItem: QueueItem = {
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           file: file.path,
+          displayName: file.name,
           status: "pending",
         };
         addToQueueStore([queueItem]);
@@ -399,6 +611,21 @@ export default function SeparatePage({
   // NOTE: Removed 'queue' from dependencies to prevent double-execution
   // The queue check uses a snapshot, which is acceptable for this use case
 
+  useEffect(() => {
+    return (
+      window.electronAPI?.onYouTubeProgress?.((data) => {
+        setYoutubeProgress(data);
+      }) || undefined
+    );
+  }, []);
+
+  useEffect(() => {
+    return (
+      window.electronAPI?.onPlaybackCaptureProgress?.((data) => {
+        setCaptureProgress(data);
+      }) || undefined
+    );
+  }, []);
   // --- Effects ---
 
   useEffect(() => {
@@ -509,7 +736,7 @@ export default function SeparatePage({
       if (filePaths && filePaths.length > 0) {
         await addToQueue(filePaths);
         // Navigate to configure page with first file
-        const fileName = filePaths[0].split(/[\\/]/).pop() || "Unknown";
+        const fileName = getDisplayNameForPath(filePaths[0]);
         onNavigateToConfigure?.(fileName, filePaths[0], selectedPreset);
       }
     } catch (error) {
@@ -517,6 +744,411 @@ export default function SeparatePage({
       toast.error("Failed to select files");
     }
   };
+
+  const handleResolveYouTube = async () => {
+    const trimmedUrl = youtubeUrl.trim();
+    if (!trimmedUrl) {
+      toast.error("Paste a YouTube link first");
+      return;
+    }
+    if (!isLikelyYouTubeUrl(trimmedUrl)) {
+      toast.error("That does not look like a valid YouTube link");
+      return;
+    }
+    if (!window.electronAPI?.resolveYouTubeUrl) {
+      toast.error("YouTube import is not available in this build");
+      return;
+    }
+
+    setIsResolvingYouTube(true);
+    setYoutubeProgress({ status: "starting" });
+
+    try {
+      const result = await window.electronAPI.resolveYouTubeUrl(trimmedUrl);
+      if (!result.success) {
+        toast.error(result.error, {
+          description: result.hint,
+        });
+        return;
+      }
+
+      const displayName = result.title?.trim() || "YouTube Audio";
+      await addToQueue([
+        {
+          path: result.file_path,
+          displayName,
+          sourceUrl: result.canonical_url || result.source_url || trimmedUrl,
+          sourceType: "youtube",
+          sourceMeta: {
+            provider: "youtube",
+            title: displayName,
+            channel: result.channel,
+            durationSec:
+              typeof result.duration_sec === "number"
+                ? result.duration_sec
+                : undefined,
+            artworkUrl: result.thumbnail_url,
+            thumbnailUrl: result.thumbnail_url,
+            canonicalUrl:
+              result.canonical_url || result.source_url || trimmedUrl,
+            qualityLabel: "Best available",
+            isLossless: false,
+            downloadOrigin: "remote_resolve",
+          },
+        },
+      ]);
+      setYoutubeUrl("");
+      toast.success(`Imported: ${displayName}`);
+      onNavigateToConfigure?.(displayName, result.file_path, selectedPreset);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to import YouTube link",
+      );
+    } finally {
+      setIsResolvingYouTube(false);
+    }
+  };
+
+  const updateProviderLibrary = useCallback(
+    (
+      provider: ActiveLibraryProvider,
+      patch: Partial<ProviderLibraryState>,
+    ) => {
+      setProviderLibraries((current) => ({
+        ...current,
+        [provider]: {
+          ...current[provider],
+          ...patch,
+        },
+      }));
+    },
+    [],
+  );
+
+  const refreshCaptureEnvironment = useCallback(async () => {
+    try {
+      const [devices, environment] = await Promise.all([
+        window.electronAPI?.detectPlaybackDevices?.() || Promise.resolve([]),
+        window.electronAPI?.getCaptureEnvironmentStatus?.() ||
+          Promise.resolve<CaptureEnvironmentStatus | null>(null),
+      ]);
+
+      const resolvedDevices = Array.isArray(devices) ? devices : [];
+      setPlaybackDevices(resolvedDevices);
+
+      if (environment) {
+        setCaptureEnvironment(environment);
+        if (environment.selectedDeviceId) {
+          setSelectedPlaybackDeviceId(environment.selectedDeviceId);
+          return;
+        }
+      }
+
+      const defaultDevice =
+        resolvedDevices.find((device) => device.isDefault) || resolvedDevices[0];
+      setSelectedPlaybackDeviceId(defaultDevice?.id || "");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to refresh the Qobuz capture environment",
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshCaptureEnvironment();
+  }, [refreshCaptureEnvironment]);
+
+  useEffect(() => {
+    if (!isPlaybackDeviceMenuOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        playbackDeviceMenuRef.current &&
+        event.target instanceof Node &&
+        !playbackDeviceMenuRef.current.contains(event.target)
+      ) {
+        setIsPlaybackDeviceMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [isPlaybackDeviceMenuOpen]);
+
+  useEffect(() => {
+    if (activeImportTab === "youtube") return;
+    if (!window.electronAPI?.getLibraryAuthStatus) return;
+
+    let cancelled = false;
+    const provider = activeImportTab;
+
+    const refreshAuthStatus = async () => {
+      try {
+        const result = await window.electronAPI.getLibraryAuthStatus(provider);
+        if (cancelled) return;
+        if (result.success) {
+          updateProviderLibrary(provider, {
+            authenticated: !!result.authenticated,
+            error: result.authenticated ? null : undefined,
+            message: result.authenticated
+              ? `${getProviderLabel(provider)} connected.`
+              : undefined,
+          });
+        }
+      } catch {
+        // Ignore passive auth refresh failures.
+      }
+    };
+
+    void refreshAuthStatus();
+    void refreshCaptureEnvironment();
+    const handleFocus = () => {
+      void refreshAuthStatus();
+      void refreshCaptureEnvironment();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [activeImportTab, refreshCaptureEnvironment, updateProviderLibrary]);
+
+  const handleAuthLibraryProvider = useCallback(
+    async (provider: ActiveLibraryProvider) => {
+      if (!window.electronAPI?.authLibraryProvider) {
+        toast.error("Library auth is unavailable in this build");
+        return;
+      }
+
+      const result = await window.electronAPI.authLibraryProvider(provider);
+      if (!result.success) {
+        updateProviderLibrary(provider, {
+          error: result.error,
+          message: result.hint || null,
+        });
+        toast.error(result.error, {
+          description: result.hint,
+        });
+        return;
+      }
+
+      updateProviderLibrary(provider, {
+        authenticated: !!result.authenticated,
+        error: null,
+        message:
+          result.message || "Sign in, then refresh the library.",
+      });
+      toast.success(result.message || `Opened ${getProviderLabel(provider)} sign-in window`);
+      window.setTimeout(() => {
+        void refreshCaptureEnvironment();
+      }, 800);
+    },
+    [refreshCaptureEnvironment, updateProviderLibrary],
+  );
+
+  const handleLoadLibrary = useCallback(
+    async (provider: ActiveLibraryProvider, mode: "library" | "search") => {
+      if (
+        !window.electronAPI?.listLibraryCollection ||
+        !window.electronAPI?.searchLibrary
+      ) {
+        toast.error("Library browsing is unavailable in this build");
+        return;
+      }
+
+      const query = providerQueries[provider].trim();
+      setLoadingProvider(provider);
+      updateProviderLibrary(provider, {
+        error: null,
+        message:
+          mode === "search" && query
+            ? "Searching tracks..."
+            : "Loading library...",
+      });
+
+      try {
+        const result =
+          mode === "search" && query
+            ? await window.electronAPI.searchLibrary(provider, query)
+            : await window.electronAPI.listLibraryCollection(provider, "library");
+
+        if (!result.success) {
+          updateProviderLibrary(provider, {
+            authenticated: !!result.authenticated,
+            loaded: true,
+            error: result.error,
+            message: result.hint || null,
+          });
+          toast.error(result.error, {
+            description: result.hint,
+          });
+          return;
+        }
+
+        updateProviderLibrary(provider, {
+          authenticated: !!result.authenticated,
+          items: result.items,
+          loaded: true,
+          error: null,
+          message:
+            result.items.length > 0
+              ? `Found ${result.items.length} track${result.items.length === 1 ? "" : "s"} ready for capture.`
+              : "No tracks were found in the current view.",
+        });
+      } finally {
+        setLoadingProvider((current) => (current === provider ? null : current));
+      }
+    },
+    [providerQueries, updateProviderLibrary],
+  );
+
+  const handleSavePlaybackDevice = useCallback(async () => {
+    if (!selectedPlaybackDeviceId) {
+      toast.error("Select a silent output device first");
+      return;
+    }
+    if (!window.electronAPI?.setCaptureOutputDevice) {
+      toast.error("Capture setup is unavailable in this build");
+      return;
+    }
+
+    setIsSavingPlaybackDevice(true);
+    try {
+      const result = await window.electronAPI.setCaptureOutputDevice(
+        selectedPlaybackDeviceId,
+      );
+      if (!result.success) {
+        toast.error(result.error || "Failed to save the silent output device");
+        return;
+      }
+      toast.success(
+        result.label
+          ? `Silent output saved: ${result.label}`
+          : "Silent output saved",
+      );
+      await refreshCaptureEnvironment();
+    } finally {
+      setIsSavingPlaybackDevice(false);
+    }
+  }, [refreshCaptureEnvironment, selectedPlaybackDeviceId]);
+
+  const handleCaptureLibraryItem = useCallback(
+    async (item: RemoteCatalogItem) => {
+      if (
+        !window.electronAPI?.preparePlaybackCapture ||
+        !window.electronAPI?.startPlaybackCapture
+      ) {
+        toast.error("Playback capture is unavailable in this build");
+        return;
+      }
+      if (!selectedPlaybackDeviceId) {
+        toast.error("Select a playback device first");
+        return;
+      }
+      if (!captureEnvironment?.selectedDeviceReady) {
+        toast.error("Save and validate a silent output device first");
+        return;
+      }
+
+      setCapturingProvider(item.provider as ActiveLibraryProvider);
+      setCaptureProgress({
+        provider: item.provider as ActiveLibraryProvider,
+        status: "starting",
+        detail: `Preparing ${item.title} for capture...`,
+      });
+
+      try {
+        const prepare = await window.electronAPI.preparePlaybackCapture(
+          item.provider as ActiveLibraryProvider,
+          item.trackId,
+        );
+        if (!prepare.success) {
+          toast.error(prepare.error, {
+            description: prepare.hint,
+          });
+          return;
+        }
+
+        const started = await window.electronAPI.startPlaybackCapture(
+          item.provider as ActiveLibraryProvider,
+          item.trackId,
+          selectedPlaybackDeviceId,
+        );
+        if (!started.success) {
+          toast.error(started.error, {
+            description: started.hint,
+          });
+          return;
+        }
+
+        const displayName =
+          started.display_name || prepare.displayName || item.title;
+        await addToQueue([
+          {
+            path: started.file_path,
+            displayName,
+            sourceUrl:
+              started.canonical_url ||
+              started.source_url ||
+              item.canonicalUrl ||
+              item.playbackUrl,
+            sourceType: item.provider,
+            sourceMeta: {
+              provider: item.provider,
+              providerTrackId: started.provider_track_id || item.trackId,
+              title: item.title,
+              artist: started.artist || item.artist,
+              album: started.album || item.album,
+              artworkUrl: started.artwork_url || item.artworkUrl,
+              durationSec:
+                typeof started.duration_sec === "number"
+                  ? started.duration_sec
+                  : item.durationSec,
+              canonicalUrl:
+                started.canonical_url ||
+                item.canonicalUrl ||
+                item.playbackUrl ||
+                item.pageUrl,
+              qualityLabel: started.quality_label || item.qualityLabel,
+              isLossless: started.is_lossless,
+              ingestMode: started.ingest_mode,
+              playbackSurface: started.playback_surface,
+              qualityMode: started.quality_mode,
+              verifiedLossless: started.verified_lossless,
+              captureDeviceId: started.capture_device_id,
+              captureSampleRate: started.capture_sample_rate,
+              captureChannels: started.capture_channels,
+              captureStartAt: started.capture_start_at,
+              captureEndAt: started.capture_end_at,
+            },
+          },
+        ]);
+        toast.success(`Captured: ${displayName}`);
+        onNavigateToConfigure?.(displayName, started.file_path, selectedPreset);
+      } catch (error) {
+        await window.electronAPI?.cancelPlaybackCapture?.();
+        toast.error(
+          error instanceof Error ? error.message : "Playback capture failed",
+        );
+      } finally {
+        setCapturingProvider((current) =>
+          current === item.provider ? null : current,
+        );
+        setCaptureProgress(null);
+      }
+    },
+    [
+      addToQueue,
+      captureEnvironment?.selectedDeviceReady,
+      onNavigateToConfigure,
+      selectedPlaybackDeviceId,
+      selectedPreset,
+    ],
+  );
 
   const leadQueueItem = useMemo(() => {
     return (
@@ -556,7 +1188,7 @@ export default function SeparatePage({
 
     const item = leadQueueItem;
     if (!item) return;
-    const fileName = item.file.split(/[\\/]/).pop() || "Unknown";
+    const fileName = getDisplayNameForPath(item.file, item.displayName);
     onNavigateToConfigure?.(fileName, item.file, selectedPreset);
   }, [
     hasPreparedConfig,
@@ -578,9 +1210,15 @@ export default function SeparatePage({
 
   const queueStatusText = isDragging
     ? "Drop files to start a new separation"
-    : queue.length > 0
-      ? isProcessing
-        ? `Processing ${queue.filter((item) => item.status === "completed").length}/${queue.length}${progressMessage ? ` · ${progressMessage}` : ""}${processingTimingText ? ` · ${processingTimingText}` : ""}`
+    : isResolvingYouTube
+      ? `Importing from YouTube${youtubeProgress?.percent ? ` · ${youtubeProgress.percent}` : ""}${youtubeProgress?.speed ? ` · ${youtubeProgress.speed}` : ""}${youtubeProgress?.eta ? ` · ETA ${youtubeProgress.eta}` : ""}`
+      : loadingProvider
+        ? `${getProviderLabel(loadingProvider)} · ${providerLibraries[loadingProvider].message || "Syncing library..."}`
+        : capturingProvider
+          ? `${getProviderLabel(capturingProvider)} · ${captureProgress?.detail || captureProgress?.status || "Preparing capture..."}${captureProgress?.percent ? ` · ${captureProgress.percent}` : ""}`
+      : queue.length > 0
+        ? isProcessing
+          ? `Processing ${queue.filter((item) => item.status === "completed").length}/${queue.length}${processingQueueItem?.activeStepLabel ? ` · ${processingQueueItem.activeStepLabel}` : processingQueueItem?.activeModelId ? ` · ${processingQueueItem.activeModelId}` : ""}${progressMessage ? ` · ${progressMessage}` : ""}${processingTimingText ? ` · ${processingTimingText}` : ""}${isProcessingPossiblyStalled ? " · Waiting for next update…" : ""}`
         : hasPreparedConfig
           ? "Configuration ready · press Start Separation"
           : `Queue ready · ${queue.length} file${queue.length > 1 ? "s" : ""} pending · configuration required`
@@ -599,28 +1237,41 @@ export default function SeparatePage({
     );
   }, [leadQueueItem?.file, preparedSeparation?.file?.path, queue, removeFromQueue]);
 
-  const addToQueue = useCallback(
-    async (paths: string[]) => {
-      // First, remove any completed items from queue to prevent confusion
-      const completedItems = queue.filter((q) => q.status === "completed");
-      if (completedItems.length > 0) {
-        completedItems.forEach((item) => removeFromQueue(item.id));
-      }
+  const handleOpenLatestResults = useCallback(() => {
+    if (!latestCompletedSession) return;
+    loadSession(latestCompletedSession);
+    onNavigateToResults?.();
+  }, [latestCompletedSession, loadSession, onNavigateToResults]);
 
-      const newItems = paths.map((path) => ({
-        id: Math.random().toString(36).substring(7),
-        file: path,
-        status: "pending" as const,
-        progress: 0,
-        modelId: selectedPreset, // Default to currently selected preset
-      }));
-      addToQueueStore(newItems);
-      toast.success(
-        `Added ${paths.length} file${paths.length > 1 ? "s" : ""} to queue`,
-      );
-    },
-    [addToQueueStore, selectedPreset, queue, removeFromQueue],
-  );
+  async function addToQueue(entries: QueueInput[]) {
+    // First, remove any completed items from queue to prevent confusion
+    const completedItems = queue.filter((q) => q.status === "completed");
+    if (completedItems.length > 0) {
+      completedItems.forEach((item) => removeFromQueue(item.id));
+    }
+
+    const normalizedEntries = entries.map((entry) =>
+      typeof entry === "string"
+        ? { path: entry, sourceType: "local_file" as const }
+        : entry,
+    );
+
+    const newItems = normalizedEntries.map((entry) => ({
+      id: Math.random().toString(36).substring(7),
+      file: entry.path,
+      displayName: entry.displayName,
+      sourceUrl: entry.sourceUrl,
+      sourceType: entry.sourceType || "local_file",
+      sourceMeta: entry.sourceMeta,
+      status: "pending" as const,
+      progress: 0,
+      modelId: selectedPreset, // Default to currently selected preset
+    }));
+    addToQueueStore(newItems);
+    toast.success(
+      `Added ${normalizedEntries.length} source${normalizedEntries.length > 1 ? "s" : ""} to queue`,
+    );
+  }
 
   const supportedAudioExtensions = useMemo(
     () => new Set(["wav", "flac", "mp3", "m4a", "aac", "ogg", "opus", "aif", "aiff", "wma"]),
@@ -673,7 +1324,7 @@ export default function SeparatePage({
     filePath: string,
   ) => {
     // Use output directory if set, otherwise backend will use temp directory
-    // User can export from Results Studio after previewing
+    // User can export from Results after previewing
     const targetOutputDir = outputDirectory || "";
 
     const plan = resolveSeparationPlan({
@@ -681,50 +1332,31 @@ export default function SeparatePage({
       presets: combinedPresets as any,
       models: models as any,
       globalPhaseParams: phaseParams,
+      runtimeSupport: {
+        fnoSupported:
+          runtimeInfo?.runtimeFingerprint?.neuralop?.fno1d_import_ok !== false,
+      },
     });
 
     if (!plan.canProceed) {
-      setMissingDialogItems(plan.missingModels);
-      setMissingDialogOpen(true);
+      if (plan.missingModels.length > 0) {
+        setMissingDialogItems(plan.missingModels);
+        setMissingDialogOpen(true);
+      } else if (plan.blockingIssues.length > 0) {
+        toast.error(plan.blockingIssues[0]);
+      }
 
       // Make sure the queue item isn't left in "processing" if we stop before preflight
       const queueItem = queue.find((q) => q.file === filePath);
       if (queueItem) {
         updateQueueItem(queueItem.id, {
           status: "failed",
-          error: "Missing models (see dialog)",
+          error:
+            plan.blockingIssues[0] || "Missing models or runtime requirements",
         });
       }
 
       return;
-    }
-
-    const fnoSupported =
-      runtimeInfo?.runtimeFingerprint?.neuralop?.fno1d_import_ok !== false;
-    if (!fnoSupported) {
-      const candidateModelIds =
-        plan.effectiveModelId === "ensemble"
-          ? (plan.effectiveEnsembleConfig?.models || []).map((m) => m.model_id)
-          : [plan.effectiveModelId];
-      const blockedFnoModels = candidateModelIds.filter((id) => {
-        const model = models.find((candidate) => candidate.id === id);
-        return modelRequiresFnoRuntime(model);
-      });
-      if (blockedFnoModels.length > 0) {
-        toast.error("Separation blocked: model requires FNO1d support", {
-          description:
-            "Install a neuraloperator/neuralop build with neuralop.models.FNO1d and restart StemSep.",
-        });
-
-        const queueItem = queue.find((q) => q.file === filePath);
-        if (queueItem) {
-          updateQueueItem(queueItem.id, {
-            status: "failed",
-            error: `Blocked by runtime doctor: ${blockedFnoModels.join(", ")}`,
-          });
-        }
-        return;
-      }
     }
 
     // Update queue item to processing
@@ -740,7 +1372,9 @@ export default function SeparatePage({
     }
 
     setSeparationStatus();
-    addLog(`Starting separation of ${filePath.split(/[\\/]/).pop()}...`);
+    addLog(
+      `Starting separation of ${getDisplayNameForPath(filePath, queueItem?.displayName)}...`,
+    );
 
     try {
       const backendPayload = buildSeparationBackendPayload({
@@ -770,16 +1404,32 @@ export default function SeparatePage({
       // Call backend - if targetOutputDir is empty, backend uses temp directory
       const result = await executeSeparation(window.electronAPI, backendPayload);
 
+      const verifiedOutputsResult = await verifyPlayableOutputs(
+        result?.outputFiles,
+        {
+          sourceKind: "preview_cache",
+          previewDir: result?.outputDir,
+        },
+      );
+
+      if (Object.keys(verifiedOutputsResult.resolved).length === 0) {
+        const firstIssue =
+          Object.values(verifiedOutputsResult.issues)[0] ||
+          "Separation completed but no playable output files were verified.";
+        throw new Error(firstIssue);
+      }
+
       if (queueItem) {
         updateQueueItem(queueItem.id, {
           status: "completed",
           backendJobId: result?.jobId,
           progress: 100,
           message: "Complete!",
+          outputFiles: verifiedOutputsResult.resolved,
         });
       }
 
-      const fileName = filePath.split(/[\\/]/).pop() || "file";
+      const fileName = getDisplayNameForPath(filePath, queueItem?.displayName);
 
       // Add to history
       // Get preset info for display.
@@ -795,6 +1445,10 @@ export default function SeparatePage({
 
       addToHistory({
         inputFile: filePath,
+        displayName: queueItem?.displayName,
+        sourceUrl: queueItem?.sourceUrl,
+        sourceType: queueItem?.sourceType,
+        sourceMeta: queueItem?.sourceMeta,
         outputDir: targetOutputDir || "temp",
         modelId: backendPayload.modelId,
         modelName:
@@ -805,7 +1459,7 @@ export default function SeparatePage({
           ? { id: presetInfo.id, name: presetInfo.name }
           : undefined,
         status: "completed",
-        outputFiles: result?.outputFiles || {},
+        outputFiles: verifiedOutputsResult.resolved,
         backendJobId: result?.jobId,
         sourceAudioProfile: result?.sourceAudioProfile,
         stagingDecision: result?.stagingDecision,
@@ -815,13 +1469,13 @@ export default function SeparatePage({
         },
         settings: {
           stems: backendPayload.stems || [],
-          overlap: config.advancedParams?.overlap,
-          segmentSize: config.advancedParams?.segmentSize,
+          overlap: plan.effectiveAdvancedParams?.overlap,
+          segmentSize: plan.effectiveAdvancedParams?.segmentSize,
         },
       });
 
       // Finalize separation
-      completeSeparation(result?.outputFiles || {});
+      completeSeparation(verifiedOutputsResult.resolved);
 
       toast.success(`Separated: ${fileName}`);
       addLog(`Completed: ${fileName}`);
@@ -915,6 +1569,34 @@ export default function SeparatePage({
     }
   }, []);
 
+  const processingIcons = useMemo(() => {
+    const orbitIcons = [Music2, Headphones, Mic2, Radio, Disc3];
+    const circles = [44, 74];
+    const iconsPerCircle = [5, 8];
+
+    return circles.flatMap((radius, circleIndex) => {
+      const count = iconsPerCircle[circleIndex];
+      return Array.from({ length: count }).map((_, iconIndex) => {
+        const angle = (iconIndex / count) * Math.PI * 2;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        const rotation = Math.atan2(y, x) * (180 / Math.PI);
+        const Icon = orbitIcons[(circleIndex + iconIndex) % orbitIcons.length];
+
+        return {
+          key: `processing-${circleIndex}-${iconIndex}`,
+          Icon,
+          style: {
+            "--stemsep-processing-x": `${x}px`,
+            "--stemsep-processing-y": `${y}px`,
+            "--stemsep-processing-rotation": `${rotation}deg`,
+            animationDelay: `${circleIndex * 0.18 + iconIndex * 0.09}s`,
+          } as CSSProperties,
+        };
+      });
+    });
+  }, []);
+
   const handleWindowDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     if (e.dataTransfer?.types.includes("Files")) {
@@ -958,6 +1640,22 @@ export default function SeparatePage({
     setIsOrbitDragActive(false);
   }, []);
 
+  const activeProvider =
+    activeImportTab === "youtube" ? null : activeImportTab;
+  const activeProviderLibrary = activeProvider
+    ? providerLibraries[activeProvider]
+    : null;
+  const activeProviderQuery = activeProvider
+    ? providerQueries[activeProvider]
+    : "";
+  const remoteItems = activeProviderLibrary?.items || [];
+  const selectedPlaybackDevice = useMemo(
+    () =>
+      playbackDevices.find((device) => device.id === selectedPlaybackDeviceId) ||
+      null,
+    [playbackDevices, selectedPlaybackDeviceId],
+  );
+
   return (
     <div
       className="relative h-full overflow-hidden text-white selection:bg-white/20"
@@ -966,8 +1664,8 @@ export default function SeparatePage({
       onDragLeave={handleWindowDragLeave}
       onDrop={handleWindowDropReset}
     >
-      <div className="absolute inset-0 flex items-end justify-center px-6 pb-[18%]">
-        <div className="flex flex-col items-center">
+      <div className="absolute inset-0 flex items-center justify-center px-6">
+        <div className="flex w-full max-w-[760px] flex-col items-center">
           <div
             className="group relative"
             onDragOver={handleOrbitDragOver}
@@ -1016,7 +1714,36 @@ export default function SeparatePage({
             </button>
           </div>
 
-          <div className="mt-[168px] min-h-5 text-center text-[13px] tracking-[-0.2px] text-white/58 drop-shadow">
+          {isProcessing && (
+            <div className="stemsep-processing-shell mt-10 flex h-[144px] w-[220px] items-center justify-center">
+              <div className="stemsep-processing-rotor relative h-full w-full">
+                {processingIcons.map(({ key, Icon, style }) => (
+                  <div
+                    key={key}
+                    className="stemsep-processing-node absolute left-1/2 top-1/2 flex h-9 w-9 items-center justify-center text-white/78"
+                    style={style}
+                  >
+                    <Icon className="stemsep-processing-icon h-4 w-4 drop-shadow-[0_0_10px_rgba(255,255,255,0.42)]" />
+                  </div>
+                ))}
+                <div className="stemsep-processing-core absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-end gap-1">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <span
+                      key={index}
+                      className="stemsep-processing-bar"
+                      style={{ animationDelay: `${index * 0.14}s` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div
+            className={`min-h-5 text-center text-[13px] tracking-[-0.2px] text-white/58 drop-shadow ${
+              isProcessing ? "mt-6" : "mt-16"
+            }`}
+          >
             <div className="flex items-center justify-center gap-2">
               <span>{queueStatusText}</span>
               {queue.length > 0 && !isProcessing && (
@@ -1029,6 +1756,11 @@ export default function SeparatePage({
                 </button>
               )}
             </div>
+            {isProcessing && isProcessingPossiblyStalled && (
+              <div className="mt-2 text-[12px] text-amber-100/85">
+                The job is still running, but progress updates have paused for a moment.
+              </div>
+            )}
           </div>
 
           {queue.length > 0 && (
@@ -1039,12 +1771,24 @@ export default function SeparatePage({
                   onClick={() => {
                     const item = leadQueueItem;
                     if (!item) return;
-                    const fileName = item.file.split(/[\\/]/).pop() || "Unknown";
+                    const fileName = getDisplayNameForPath(
+                      item.file,
+                      item.displayName,
+                    );
                     onNavigateToConfigure?.(fileName, item.file, selectedPreset);
                   }}
                   className="rounded-[18px] border border-white/20 bg-white/12 px-4 py-2 text-[13px] tracking-[-0.2px] text-white/82 backdrop-blur-md transition-all hover:bg-white/18"
                 >
                   Edit Config
+                </button>
+              )}
+              {!isProcessing && latestCompletedSession && completedQueueItem && (
+                <button
+                  type="button"
+                  onClick={handleOpenLatestResults}
+                  className="rounded-[18px] border border-white/20 bg-white/12 px-4 py-2 text-[13px] tracking-[-0.2px] text-white/82 backdrop-blur-md transition-all hover:bg-white/18"
+                >
+                  Open Results
                 </button>
               )}
               {isProcessing && (
@@ -1057,6 +1801,365 @@ export default function SeparatePage({
                 </button>
               )}
             </div>
+          )}
+        </div>
+      </div>
+
+      <div className="absolute inset-x-0 bottom-8 z-30 flex justify-center px-6">
+        <div className="w-[min(920px,calc(100vw-3rem))] rounded-[1.7rem] border border-white/18 bg-white/10 p-3.5 shadow-[0_18px_50px_rgba(0,0,0,0.16)] backdrop-blur-xl">
+          <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/46">
+            <CloudDownload className="h-3.5 w-3.5" />
+            Import Sources
+          </div>
+
+          <div className="mb-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveImportTab("youtube")}
+              className={`rounded-[1.1rem] border px-3 py-2 text-[13px] tracking-[-0.2px] transition-all ${
+                activeImportTab === "youtube"
+                  ? "border-white/34 bg-white/20 text-white"
+                  : "border-white/16 bg-white/8 text-white/62 hover:bg-white/14 hover:text-white/84"
+              }`}
+            >
+              YouTube
+            </button>
+            {REMOTE_PROVIDERS.map((provider) => (
+              <button
+                key={provider}
+                type="button"
+                onClick={() => setActiveImportTab(provider)}
+                className={`rounded-[1.1rem] border px-3 py-2 text-[13px] tracking-[-0.2px] transition-all ${
+                  activeImportTab === provider
+                    ? "border-white/34 bg-white/20 text-white"
+                    : "border-white/16 bg-white/8 text-white/62 hover:bg-white/14 hover:text-white/84"
+                }`}
+              >
+                {getProviderLabel(provider)}
+              </button>
+            ))}
+          </div>
+
+          {activeImportTab === "youtube" ? (
+            <>
+              <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/40">
+                <Link2 className="h-3.5 w-3.5" />
+                Fast Link Import
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="url"
+                  value={youtubeUrl}
+                  onChange={(event) => setYoutubeUrl(event.target.value)}
+                  placeholder="Paste a YouTube link here..."
+                  className="flex-1 rounded-[1.2rem] border border-white/16 bg-white/10 px-4 py-3 text-[14px] tracking-[-0.2px] text-white outline-none transition-all placeholder:text-white/30 focus:border-white/32 focus:bg-white/16"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleResolveYouTube();
+                  }}
+                  disabled={isResolvingYouTube || !youtubeUrl.trim()}
+                  className="inline-flex items-center justify-center gap-2 rounded-[1.2rem] border border-white/24 bg-white/14 px-4 py-3 text-[14px] tracking-[-0.2px] text-white transition-all hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  {isResolvingYouTube ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Fetching...
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="h-4 w-4" />
+                      Import Link
+                    </>
+                  )}
+                </button>
+              </div>
+              {(youtubeProgress?.status || youtubeProgress?.error) && (
+                <div className="mt-2 text-[12px] text-white/58">
+                  {youtubeProgress?.error
+                    ? youtubeProgress.error
+                    : `Status: ${youtubeProgress?.status || "idle"}${youtubeProgress?.percent ? ` · ${youtubeProgress.percent}` : ""}${youtubeProgress?.speed ? ` · ${youtubeProgress.speed}` : ""}${youtubeProgress?.eta ? ` · ETA ${youtubeProgress.eta}` : ""}`}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="mb-1 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/40">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Qobuz Capture
+                  </div>
+                  <p className="text-[12px] text-white/48">
+                    Sign in once, save one silent output, then capture in the
+                    background.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleAuthLibraryProvider(activeImportTab);
+                  }}
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] tracking-[0.04em] transition-all ${
+                    activeProviderLibrary?.authenticated
+                      ? "border-emerald-200/45 bg-emerald-400/16 text-emerald-50 hover:bg-emerald-400/20"
+                      : "border-white/16 bg-white/8 text-white/70 hover:bg-white/12"
+                  }`}
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  {activeProviderLibrary?.authenticated
+                    ? "Authenticated"
+                    : "Not Authenticated"}
+                </button>
+              </div>
+              <div className="mb-3 rounded-[1.3rem] border border-white/12 bg-white/6 p-3">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[13px] tracking-[-0.2px] text-white">
+                      Silent Output
+                    </div>
+                    <div className="text-[11px] text-white/46">
+                      {captureEnvironment?.selectedDeviceLabel
+                        ? `Saved: ${captureEnvironment.selectedDeviceLabel}`
+                        : "Choose where hidden Qobuz playback should go."}
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] ${
+                      captureEnvironment?.selectedDeviceReady
+                        ? "border-emerald-200/40 bg-emerald-400/14 text-emerald-50"
+                        : "border-white/14 bg-white/8 text-white/58"
+                    }`}
+                  >
+                    {captureEnvironment?.selectedDeviceReady ? "Ready" : "Not Set"}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 lg:flex-row">
+                  <div
+                    ref={playbackDeviceMenuRef}
+                    className="relative min-w-0 flex-1"
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setIsPlaybackDeviceMenuOpen((current) => !current)
+                      }
+                      className="flex w-full items-center justify-between gap-3 rounded-[1.2rem] border border-white/16 bg-white/10 px-4 py-3 text-left text-[14px] tracking-[-0.2px] text-white transition-all hover:bg-white/14"
+                    >
+                      <span className="truncate">
+                        {selectedPlaybackDevice?.label || "Choose silent output"}
+                      </span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-white/60 transition-transform ${
+                          isPlaybackDeviceMenuOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+                    {isPlaybackDeviceMenuOpen && (
+                      <div className="absolute left-0 right-0 top-[calc(100%+0.55rem)] z-30 max-h-56 overflow-y-auto rounded-[1.1rem] border border-slate-200/16 bg-slate-950/96 p-1.5 shadow-2xl shadow-black/35 backdrop-blur-xl">
+                        {playbackDevices.length === 0 ? (
+                          <div className="rounded-[0.9rem] px-3 py-2.5 text-[13px] text-white/55">
+                            No outputs found
+                          </div>
+                        ) : (
+                          playbackDevices.map((device) => {
+                            const isSelected =
+                              device.id === selectedPlaybackDeviceId;
+                            return (
+                              <button
+                                key={device.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPlaybackDeviceId(device.id);
+                                  setIsPlaybackDeviceMenuOpen(false);
+                                }}
+                                className={`flex w-full items-center justify-between gap-3 rounded-[0.9rem] px-3 py-2.5 text-left text-[13px] transition-all ${
+                                  isSelected
+                                    ? "bg-white text-slate-950"
+                                    : "text-white/82 hover:bg-white/10"
+                                }`}
+                              >
+                                <span className="truncate">{device.label}</span>
+                                {isSelected && <Check className="h-4 w-4 shrink-0" />}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleSavePlaybackDevice();
+                    }}
+                    disabled={isSavingPlaybackDevice || !selectedPlaybackDeviceId}
+                    className="inline-flex items-center justify-center gap-2 rounded-[1.2rem] border border-white/24 bg-white/14 px-4 py-3 text-[14px] tracking-[-0.2px] text-white transition-all hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-55"
+                  >
+                    {isSavingPlaybackDevice ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Headphones className="h-4 w-4" />
+                    )}
+                    Save Output
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 lg:flex-row">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleLoadLibrary(activeImportTab, "library");
+                  }}
+                  disabled={
+                    loadingProvider === activeImportTab ||
+                    !activeProviderLibrary?.authenticated
+                  }
+                  className="inline-flex items-center justify-center gap-2 rounded-[1.2rem] border border-white/24 bg-white/14 px-4 py-3 text-[14px] tracking-[-0.2px] text-white transition-all hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  {loadingProvider === activeImportTab ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Favorites
+                </button>
+                <input
+                  type="text"
+                  value={activeProviderQuery}
+                  onChange={(event) =>
+                    setProviderQueries((current) => ({
+                      ...current,
+                      [activeImportTab]: event.target.value,
+                    }))
+                  }
+                  placeholder="Search tracks"
+                  disabled={!activeProviderLibrary?.authenticated}
+                  className="flex-1 rounded-[1.2rem] border border-white/16 bg-white/10 px-4 py-3 text-[14px] tracking-[-0.2px] text-white outline-none transition-all placeholder:text-white/30 focus:border-white/32 focus:bg-white/16"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      void handleLoadLibrary(
+                        activeImportTab,
+                        "search",
+                      );
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleLoadLibrary(activeImportTab, "search");
+                  }}
+                  disabled={
+                    loadingProvider === activeImportTab ||
+                    !activeProviderLibrary?.authenticated ||
+                    !activeProviderQuery.trim()
+                  }
+                  className="inline-flex items-center justify-center gap-2 rounded-[1.2rem] border border-white/24 bg-white/14 px-4 py-3 text-[14px] tracking-[-0.2px] text-white transition-all hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  {loadingProvider === activeImportTab ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Link2 className="h-4 w-4" />
+                  )}
+                  Search
+                </button>
+              </div>
+
+              {activeProviderLibrary?.error && (
+                <div className="mt-2 text-[12px] text-white/58">
+                  {activeProviderLibrary.error}
+                </div>
+              )}
+
+              {captureProgress &&
+                captureProgress.provider === activeImportTab &&
+                (captureProgress.detail || captureProgress.error) && (
+                  <div className="mt-2 text-[12px] text-white/62">
+                    {captureProgress.error
+                      ? captureProgress.error
+                      : [
+                          captureProgress.detail || captureProgress.status,
+                          captureProgress.percent,
+                          typeof captureProgress.elapsedSec === "number"
+                            ? `${Math.round(captureProgress.elapsedSec)}s`
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                  </div>
+                )}
+
+              <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1">
+                {remoteItems.length === 0 ? (
+                  <div className="rounded-[1.2rem] border border-white/12 bg-white/8 px-4 py-4 text-[13px] text-white/52">
+                    {!activeProviderLibrary?.authenticated
+                      ? "Authenticate to access your Qobuz library."
+                      : !captureEnvironment?.selectedDeviceReady
+                        ? "Save a silent output before you capture."
+                        : activeProviderLibrary?.loaded
+                          ? getProviderEmptyStateText(activeImportTab)
+                          : "Load Favorites or search for a track."}
+                  </div>
+                ) : (
+                  remoteItems.map((item) => (
+                    <div
+                      key={`${item.provider}-${item.trackId}`}
+                      className="flex items-center gap-3 rounded-[1.2rem] border border-white/12 bg-white/8 px-3 py-3"
+                    >
+                      {item.artworkUrl ? (
+                        <img
+                          src={item.artworkUrl}
+                          alt=""
+                          className="h-12 w-12 shrink-0 rounded-[0.9rem] object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[0.9rem] border border-white/10 bg-white/8 text-white/56">
+                          <Music2 className="h-4 w-4" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[14px] text-white">
+                          {item.title}
+                        </div>
+                        <div className="truncate text-[12px] text-white/54">
+                          {[
+                            item.artist,
+                            item.album,
+                            item.qualityLabel,
+                            item.playbackSurface === "desktop_app"
+                              ? "Desktop app"
+                              : "Browser player",
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleCaptureLibraryItem(item);
+                        }}
+                        disabled={
+                          capturingProvider === item.provider ||
+                          !captureEnvironment?.selectedDeviceReady
+                        }
+                        className="inline-flex items-center justify-center gap-2 rounded-[1rem] border border-white/18 bg-white/12 px-3 py-2 text-[13px] tracking-[-0.2px] text-white transition-all hover:bg-white/18 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {capturingProvider === item.provider ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Radio className="h-4 w-4" />
+                        )}
+                        Capture & Separate
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>

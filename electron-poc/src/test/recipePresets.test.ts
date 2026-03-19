@@ -43,4 +43,23 @@ describe('recipe presets', () => {
     const preset = recipeToPreset(recipe)
     expect(preset.stems).toEqual(['drums', 'kick', 'snare'])
   })
+
+  it('hides blocked recipes from simple recommendations even if simple_surface was requested', () => {
+    const recipe: Recipe = {
+      id: 'workflow_phantom_center_dual_beta2',
+      name: 'Phantom Center Dual Beta2',
+      type: 'pipeline',
+      target: 'instrumental',
+      simple_surface: true,
+      surface_policy: 'verified_only',
+      surface_blockers: ['candidate model is not verified for simple mode'],
+      promotion_status: 'supported_advanced',
+      qa_status: 'pending',
+      steps: [{ step_name: 'split', model_id: 'gilliaan-monostereo-dual-beta2' }],
+    }
+
+    const preset = recipeToPreset(recipe)
+    expect(preset.recommended).toBe(false)
+    expect(preset.simpleVisible).toBe(false)
+  })
 })

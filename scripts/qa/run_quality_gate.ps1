@@ -20,18 +20,16 @@ function Invoke-Step {
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $repoRoot
 
-if (-not $SkipGuideSync) {
-    Invoke-Step "Guide sync report" {
-        & powershell -ExecutionPolicy Bypass -File .\scripts\run_py.ps1 .\scripts\registry\sync_guide_knowledge.py --allow-fetch-failure
-    }
-
-    Invoke-Step "Catalog sync report" {
-        & powershell -ExecutionPolicy Bypass -File .\scripts\run_py.ps1 .\scripts\registry\sync_model_catalog_metrics.py
-    }
+if ($SkipGuideSync) {
+    Write-Host "SkipGuideSync is deprecated; guide sync is no longer part of the quality gate." -ForegroundColor Yellow
 }
 
 Invoke-Step "Registry validation" {
     & powershell -ExecutionPolicy Bypass -File .\scripts\run_py.ps1 .\scripts\registry\validate_model_registry.py --check-verified-urls
+}
+
+Invoke-Step "Recipe promotion policy validation" {
+    & powershell -ExecutionPolicy Bypass -File .\scripts\run_py.ps1 .\scripts\qa\validate_recipe_promotions.py
 }
 
 if (-not $SkipUi) {

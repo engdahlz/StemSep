@@ -4,7 +4,7 @@
     {
       "id": "workflow_phase_fix_instrumental",
       "name": "Best Instrumental",
-      "description": "Guide-first instrumental workflow: fullness from Unwa V1e+ with Becruily phase-fix cleanup.",
+      "description": "Guide-first instrumental workflow: instrument-preserving Unwa V1e with Becruily phase-fix cleanup.",
       "type": "pipeline",
       "target": "instrumental",
       "quality_goal": "premium_quality",
@@ -22,8 +22,8 @@
         "Very low VRAM systems",
         "Fast preview workflows"
       ],
-      "workflow_summary": "Separate with Unwa V1e+, then phase-fix instrumental using Becruily Vocal at 500-5000 Hz.",
-      "source": "Guide-derived simple workflow",
+      "workflow_summary": "Separate with Unwa V1e, then phase-fix instrumental using Becruily Vocal at 500-5000 Hz.",
+      "source": "Guide-derived simple workflow refreshed from the 2026-03 guide revision",
       "defaults": {
         "overlap": 4,
         "segment_size": 352800
@@ -31,7 +31,7 @@
       "steps": [
         {
           "action": "separate",
-          "model_id": "unwa-inst-v1e-plus",
+          "model_id": "unwa-inst-v1e",
           "weight": 1
         },
         {
@@ -70,7 +70,7 @@
     {
       "id": "recipe_vocal_denoise",
       "name": "Best Vocals",
-      "description": "Balanced vocal workflow for clean, detailed vocals with low artifacting.",
+      "description": "Balanced vocal workflow updated to the guide's newer clean-vocal ensemble.",
       "type": "ensemble",
       "target": "vocals",
       "quality_goal": "clean_vocals",
@@ -82,13 +82,15 @@
       "simple_goal": "vocals",
       "recommended_for": [
         "General acapella extraction",
-        "Production-ready vocals with minimal bleed"
+        "Production-ready vocals with minimal bleed",
+        "Backing-vocal-heavy tracks where 5e gets too noisy"
       ],
       "contraindications": [
         "Raw fullness-first vocal rescue",
         "Extreme live crowd/noise cleanup"
       ],
-      "workflow_summary": "Average blend of Unwa Big Beta 5e and Gabox Voc FV4 for a stable clean-vocal default.",
+      "workflow_summary": "Average blend of Unwa Big Beta 6X and Gabox Voc FV4, matching the guide's newer balanced vocal pairing.",
+      "source": "Guide-derived vocal ensemble refreshed from the 2026-03 guide revision",
       "defaults": {
         "overlap": 4,
         "segment_size": 352800
@@ -96,7 +98,7 @@
       "algorithm": "average",
       "steps": [
         {
-          "model_id": "unwa-big-beta-5e",
+          "model_id": "unwa-big-beta-6x",
           "weight": 1
         },
         {
@@ -121,7 +123,7 @@
     {
       "id": "recipe_karaoke_fusion",
       "name": "Bleedless Karaoke",
-      "description": "Guide-recommended karaoke fusion for lead/back split and clean backing tracks.",
+      "description": "Guide-recommended karaoke fusion for backing-track cleanup and lead/back prep.",
       "type": "ensemble",
       "target": "karaoke",
       "quality_goal": "bleedless_backing_track",
@@ -138,12 +140,12 @@
       "contraindications": [
         "Single-click quick previews on low-end systems"
       ],
-      "workflow_summary": "Average fusion of Becruily and Anvuew karaoke Roformers.",
+      "workflow_summary": "Max-spec fusion of Becruily and Anvuew karaoke Roformers, aligned with the guide's common backing-vocal ensemble.",
       "defaults": {
         "overlap": 2,
         "segment_size": 352800
       },
-      "algorithm": "average",
+      "algorithm": "max_spec",
       "steps": [
         {
           "model_id": "bs-roformer-karaoke-becruily",
@@ -165,6 +167,57 @@
         "output_format": "wav",
         "intermediate_outputs": [
           "karaoke_base"
+        ]
+      }
+    },
+    {
+      "id": "recipe_karaoke_harmony_focus",
+      "name": "Karaoke Harmonies",
+      "description": "Newer guide-favored karaoke preset for fuller BGV and harmony-focused extraction.",
+      "type": "single",
+      "target": "karaoke",
+      "quality_goal": "harmony_recovery",
+      "difficulty": "simple",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "simple_surface": true,
+      "simple_goal": "karaoke",
+      "recommended_for": [
+        "Backing-vocal and harmony hunting",
+        "Tracks where older karaoke models sound too thin"
+      ],
+      "contraindications": [
+        "Duets",
+        "General one-click karaoke export when maximum stability matters more than fullness"
+      ],
+      "workflow_summary": "Runs Small Karaoke GaboxAuf, a newer guide-highlighted karaoke model noted for fuller output and better BGV differentiation.",
+      "source": "Guide-derived karaoke preset refreshed from the 2026-03 guide revision",
+      "defaults": {
+        "overlap": 2,
+        "segment_size": 485100
+      },
+      "steps": [
+        {
+          "model_id": "small-karaoke-gaboxauf",
+          "weight": 1,
+          "output": [
+            "instrumental",
+            "vocals"
+          ]
+        }
+      ],
+      "family": "Karaoke to SATB/Harmony",
+      "promotion_status": "curated",
+      "qa_status": "verified",
+      "operating_profile": "balanced",
+      "intermediate_outputs": [
+        "karaoke_harmony"
+      ],
+      "export_policy": {
+        "output_format": "wav",
+        "intermediate_outputs": [
+          "karaoke_harmony"
         ]
       }
     },
@@ -328,14 +381,14 @@
     {
       "id": "recipe_fast_preview",
       "name": "Fast Preview",
-      "description": "Quick low-cost separation for judging a song before running a heavier workflow.",
+      "description": "Product utility preset for quick low-cost judging before running a heavier guide workflow.",
       "type": "single",
       "target": "instrumental",
       "quality_goal": "fast_preview",
       "difficulty": "simple",
       "expected_vram_tier": "cpu_only",
       "expected_runtime_tier": "fast",
-      "guide_rank": 1,
+      "guide_rank": 4,
       "simple_surface": true,
       "simple_goal": "instrumental",
       "recommended_for": [
@@ -345,7 +398,8 @@
       "contraindications": [
         "Final export where maximum quality matters"
       ],
-      "workflow_summary": "Uses MDX23C InstVoc HQ as the fastest reliable preview baseline.",
+      "workflow_summary": "Uses MDX23C InstVoc HQ as the fastest reliable preview baseline before committing to a heavier guide workflow.",
+      "source": "Product utility preset (not a guide flagship workflow)",
       "defaults": {
         "overlap": 2,
         "segment_size": 112455
@@ -751,7 +805,7 @@
         "CPU-only preview runs",
         "Systems missing the cleanup companion models"
       ],
-      "workflow_summary": "Unwa V1e+ for body, Becruily Vocal for phase-fix reference, then Gabox DeBleed for final cleanup.",
+      "workflow_summary": "Unwa V1e for body, Becruily Vocal for phase-fix reference, then Gabox DeBleed for final cleanup.",
       "runtime_policy": {
         "required": [
           "python"
@@ -783,7 +837,7 @@
         {
           "step_name": "fullness",
           "action": "separate",
-          "model_id": "unwa-inst-v1e-plus",
+          "model_id": "unwa-inst-v1e",
           "output": [
             "instrumental",
             "vocals"
@@ -911,7 +965,7 @@
     {
       "id": "ultimate_vocals_bleedless_full",
       "name": "Ultimate Vocals",
-      "description": "Guide-curated vocal chain that balances fullness and bleedless cleanup.",
+      "description": "Guide-curated vocal chain that keeps Big Beta 5e body while cleaning it up with Becruily Vocal.",
       "type": "ensemble",
       "surface": "workflow",
       "target": "vocals",
@@ -924,12 +978,13 @@
       "simple_goal": "vocals",
       "recommended_for": [
         "Production-ready acapellas",
-        "Vocals that sound thin with purely clean models"
+        "Vocals that sound thin with purely clean models",
+        "Modern guide-style fullness plus cleanup blends"
       ],
       "contraindications": [
         "Fast preview jobs"
       ],
-      "workflow_summary": "Blend Unwa Big Beta 5e for body with ViperX for cleanliness, then optionally dereverb/denoise.",
+      "workflow_summary": "Max-spec style pair of Unwa Big Beta 5e and Becruily Vocal, reflecting a guide-listed fullness plus cleanup ensemble.",
       "runtime_policy": {
         "required": [
           "python"
@@ -956,7 +1011,7 @@
         "segment_size": 352800,
         "shifts": 1
       },
-      "algorithm": "average",
+      "algorithm": "max_spec",
       "steps": [
         {
           "model_id": "unwa-big-beta-5e",
@@ -964,7 +1019,7 @@
           "role": "fullness_source"
         },
         {
-          "model_id": "bs-roformer-viperx-1297",
+          "model_id": "becruily-vocal",
           "weight": 1,
           "role": "cleanup_reference"
         }
@@ -1589,6 +1644,325 @@
         "guitar_primary",
         "special_stem_extension"
       ]
+    },
+    {
+      "id": "workflow_dereverb_precision_bs",
+      "name": "Precision Dereverb",
+      "description": "Guide-tracked dereverb workflow built around the newer Anvuew BS dereverb release.",
+      "type": "single",
+      "surface": "restoration",
+      "target": "restoration",
+      "quality_goal": "dereverb_precision",
+      "quality_tradeoff": "Higher dereverb focus with less tolerance for mismatched source material.",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "standard",
+      "guide_rank": 1,
+      "surface_policy": "verified_only",
+      "requires_verified_assets": true,
+      "requires_qa_pass": true,
+      "golden_set_id": "golden_dereverb_precision_v1",
+      "audio_quality_thresholds": {
+        "min_correlation": 0.945,
+        "min_snr_db": 14.0,
+        "min_si_sdr_db": 12.0,
+        "max_gain_delta_db": 1.0,
+        "max_clipped_samples": 0
+      },
+      "guide_topics": ["dereverb", "restoration", "post_processing"],
+      "recommended_for": [
+        "Mono or vocal-focused dereverb cleanup",
+        "Restoration finishing passes"
+      ],
+      "contraindications": [
+        "One-click simple mode promotion before golden-set QA exists"
+      ],
+      "workflow_summary": "Runs the newer Anvuew BS dereverb model as a focused restoration pass.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "dereverb",
+          "model_id": "anvuew-dereverb-bs-225050",
+          "output": [
+            "vocals"
+          ]
+        }
+      ],
+      "family": "Restoration",
+      "promotion_status": "supported_advanced",
+      "qa_status": "pending",
+      "operating_profile": "balanced"
+    },
+    {
+      "id": "workflow_duality_v2_harmony_split",
+      "name": "Duality Harmony Split",
+      "description": "Advanced backing-vocal and harmony workflow built around Duality V2.",
+      "type": "single",
+      "surface": "workflow",
+      "target": "karaoke",
+      "quality_goal": "harmony_recovery",
+      "quality_tradeoff": "Fuller BGV/harmony recovery at the cost of higher instability and manual runtime setup.",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 1,
+      "surface_policy": "verified_only",
+      "requires_verified_assets": true,
+      "requires_qa_pass": true,
+      "golden_set_id": "golden_duality_harmony_v1",
+      "audio_quality_thresholds": {
+        "min_correlation": 0.94,
+        "min_snr_db": 13.0,
+        "min_si_sdr_db": 11.0,
+        "max_gain_delta_db": 1.2,
+        "max_clipped_samples": 0
+      },
+      "guide_topics": ["karaoke", "duality", "harmonies", "backing_vocals"],
+      "recommended_for": [
+        "Harmony hunting",
+        "Backing-vocal focused karaoke prep"
+      ],
+      "contraindications": [
+        "Simple mode",
+        "Systems without verified Duality assets"
+      ],
+      "workflow_summary": "Tracks the guide's Duality V2 path for harmony and backing-vocal separation.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "duality",
+          "model_id": "duality-v2-unwa",
+          "output": [
+            "instrumental",
+            "vocals"
+          ]
+        }
+      ],
+      "family": "Karaoke to SATB/Harmony",
+      "promotion_status": "supported_advanced",
+      "qa_status": "pending",
+      "operating_profile": "balanced"
+    },
+    {
+      "id": "workflow_male_female_duet_split",
+      "name": "Male/Female Duet Split",
+      "description": "Advanced special-stem workflow for separating male and female vocal lines.",
+      "type": "single",
+      "surface": "special_stem",
+      "target": "special_stem",
+      "quality_goal": "speaker_gender_split",
+      "quality_tradeoff": "Highly specialized split that remains manual/advanced until assets and QA are locked down.",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 1,
+      "surface_policy": "verified_only",
+      "requires_verified_assets": true,
+      "requires_qa_pass": true,
+      "golden_set_id": "golden_male_female_duet_v1",
+      "audio_quality_thresholds": {
+        "min_correlation": 0.935,
+        "min_snr_db": 12.0,
+        "min_si_sdr_db": 10.0,
+        "max_gain_delta_db": 1.2,
+        "max_clipped_samples": 0
+      },
+      "guide_topics": ["duet", "male_female", "speaker_split"],
+      "recommended_for": [
+        "Male/female duet isolation",
+        "Podcast/movie speaker experiments"
+      ],
+      "contraindications": [
+        "Generic vocal extraction",
+        "Simple mode"
+      ],
+      "workflow_summary": "Uses the tracked Sucial male/female model for specialized duet separation.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "speaker_split",
+          "model_id": "sucial-male-female",
+          "output": [
+            "lead",
+            "back"
+          ]
+        }
+      ],
+      "family": "Special Stem",
+      "promotion_status": "supported_advanced",
+      "qa_status": "pending",
+      "operating_profile": "balanced"
+    },
+    {
+      "id": "workflow_crowd_ambience_cleanup",
+      "name": "Crowd Ambience Cleanup",
+      "description": "Advanced crowd and ambience reduction chain tracked from the guide.",
+      "type": "single",
+      "surface": "restoration",
+      "target": "restoration",
+      "quality_goal": "crowd_cleanup",
+      "quality_tradeoff": "Targets crowd/ambience aggressively and can over-clean dry sources.",
+      "difficulty": "advanced",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 1,
+      "surface_policy": "verified_only",
+      "requires_verified_assets": true,
+      "requires_qa_pass": true,
+      "golden_set_id": "golden_crowd_cleanup_v1",
+      "audio_quality_thresholds": {
+        "min_correlation": 0.94,
+        "min_snr_db": 13.0,
+        "min_si_sdr_db": 11.0,
+        "max_gain_delta_db": 1.0,
+        "max_clipped_samples": 0
+      },
+      "guide_topics": ["crowd", "ambience", "restoration"],
+      "recommended_for": [
+        "Live recordings",
+        "Audience-heavy stems"
+      ],
+      "contraindications": [
+        "Dry studio material",
+        "Simple mode"
+      ],
+      "workflow_summary": "Runs the Mel-Band crowd model as a focused ambience cleanup pass.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "crowd_cleanup",
+          "model_id": "mel-band-crowd",
+          "output": [
+            "vocals"
+          ]
+        }
+      ],
+      "family": "Restoration",
+      "promotion_status": "supported_advanced",
+      "qa_status": "pending",
+      "operating_profile": "balanced"
+    },
+    {
+      "id": "workflow_phantom_center_dual_beta2",
+      "name": "Phantom Center Dual Beta2",
+      "description": "Tracked phantom-center workflow for the new Gilliaan MonoStereo Dual Beta2 candidate.",
+      "type": "single",
+      "surface": "workflow",
+      "target": "karaoke",
+      "quality_goal": "phantom_center_split",
+      "quality_tradeoff": "Experimental stereo mapping workflow that stays blocked until candidate validation is complete.",
+      "difficulty": "expert",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 1,
+      "surface_policy": "verified_only",
+      "requires_verified_assets": true,
+      "requires_qa_pass": true,
+      "golden_set_id": "golden_phantom_center_dual_v1",
+      "audio_quality_thresholds": {
+        "min_correlation": 0.935,
+        "min_snr_db": 12.0,
+        "min_si_sdr_db": 10.0,
+        "max_gain_delta_db": 1.25,
+        "max_clipped_samples": 0
+      },
+      "guide_topics": ["phantom_center", "duality", "mono_stereo"],
+      "recommended_for": [
+        "Phantom-center extraction experiments",
+        "Mono/stereo duality comparisons"
+      ],
+      "contraindications": [
+        "Any production simple workflow"
+      ],
+      "workflow_summary": "Captures the newest phantom-center guide candidate as an explicit advanced workflow placeholder.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "phantom_center",
+          "model_id": "gilliaan-monostereo-dual-beta2",
+          "output": [
+            "instrumental",
+            "vocals"
+          ]
+        }
+      ],
+      "family": "Karaoke Lead/Back",
+      "promotion_status": "supported_advanced",
+      "qa_status": "pending",
+      "operating_profile": "balanced"
+    },
+    {
+      "id": "workflow_vocal_mag_focus",
+      "name": "Vocal Mag Focus",
+      "description": "Tracked advanced vocal workflow for Anvuew's BS_RoFormer_mag candidate.",
+      "type": "single",
+      "surface": "workflow",
+      "target": "vocals",
+      "quality_goal": "magnitude_accuracy",
+      "quality_tradeoff": "Potentially stronger vocal magnitude accuracy with still-unverified runtime packaging.",
+      "difficulty": "expert",
+      "expected_vram_tier": "mid_vram",
+      "expected_runtime_tier": "advanced",
+      "guide_rank": 1,
+      "surface_policy": "verified_only",
+      "requires_verified_assets": true,
+      "requires_qa_pass": true,
+      "golden_set_id": "golden_vocal_mag_focus_v1",
+      "audio_quality_thresholds": {
+        "min_correlation": 0.95,
+        "min_snr_db": 15.0,
+        "min_si_sdr_db": 13.0,
+        "max_gain_delta_db": 0.9,
+        "max_clipped_samples": 0
+      },
+      "guide_topics": ["vocals", "magnitude_accuracy", "candidate"],
+      "recommended_for": [
+        "Advanced vocal A/B testing",
+        "Guide-candidate validation"
+      ],
+      "contraindications": [
+        "Simple mode"
+      ],
+      "workflow_summary": "Registers the BS_RoFormer_mag guide candidate as an advanced workflow target for future QA.",
+      "defaults": {
+        "overlap": 4,
+        "segment_size": 352800,
+        "shifts": 1
+      },
+      "steps": [
+        {
+          "step_name": "vocal_mag",
+          "model_id": "anvuew-bs-roformer-mag",
+          "output": [
+            "vocals",
+            "instrumental"
+          ]
+        }
+      ],
+      "family": "Ultimate Vocals",
+      "promotion_status": "supported_advanced",
+      "qa_status": "pending",
+      "operating_profile": "balanced"
     }
   ]
 }

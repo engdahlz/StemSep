@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Play, Pause, Loader2, Repeat, FastForward, Save, Trash2 } from 'lucide-react'
+import { Play, Pause, Loader2, Repeat, FastForward, Save, SkipBack, SkipForward, Trash2 } from 'lucide-react'
 import { WaveformTrack, type WaveformTrackHandle } from './WaveformTrack'
+import { Slider } from './ui/slider'
 import { toast } from 'sonner'
 
 interface MultiTrackPlayerProps {
@@ -8,6 +9,7 @@ interface MultiTrackPlayerProps {
     jobId?: string
     onClose?: () => void
     onDiscard?: () => void
+    isResolvingPlayback?: boolean
 }
 
 const STEM_COLORS: Record<string, string> = {
@@ -22,7 +24,13 @@ const STEM_COLORS: Record<string, string> = {
 
 const DEFAULT_COLOR = '#64748b'
 
-export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrackPlayerProps) {
+export function MultiTrackPlayer({
+    stems,
+    jobId,
+    onClose,
+    onDiscard,
+    isResolvingPlayback = false,
+}: MultiTrackPlayerProps) {
     const stemEntries = useMemo(() => Object.entries(stems), [stems])
     const stemNames = useMemo(() => stemEntries.map(([stem]) => stem), [stemEntries])
     const preferredMasterStem = useMemo(() => {
@@ -47,6 +55,22 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
     const [isSaving, setIsSaving] = useState(false)
     const [syncVersion, setSyncVersion] = useState(0)
 
+    const activeStemLabel = useMemo(() => {
+        const soloedStem = stemNames.find((stem) => trackStates[stem]?.soloed)
+        return soloedStem || preferredMasterStem || stemNames[0] || null
+    }, [preferredMasterStem, stemNames, trackStates])
+    const timelineTicks = useMemo(() => {
+        if (!Number.isFinite(duration) || duration <= 0) return []
+        const steps = duration >= 180 ? 6 : duration >= 60 ? 5 : 4
+        return Array.from({ length: steps + 1 }, (_, index) => {
+            const value = (duration / steps) * index
+            return {
+                value,
+                left: `${(index / steps) * 100}%`,
+            }
+        })
+    }, [duration])
+
     const trackRefs = useRef<Record<string, WaveformTrackHandle | null>>({})
 
     useEffect(() => {
@@ -69,7 +93,7 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
         setLoopEnd(null)
     }, [stemNames])
 
-    const isAllReady = readyStems.length >= stemEntries.length
+    const isAllReady = stemEntries.length > 0 && readyStems.length >= stemEntries.length
 
     const requestSync = useCallback(() => {
         setSyncVersion((prev) => prev + 1)
@@ -91,6 +115,16 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
         setCurrentTime(boundedTime)
         requestSync()
     }, [duration, requestSync])
+
+    const handleTimelineChange = useCallback((values: number[]) => {
+        const nextTime = values[0]
+        if (typeof nextTime !== 'number') return
+        handleSeek(nextTime)
+    }, [handleSeek])
+
+    const handleSkipBy = useCallback((delta: number) => {
+        handleSeek(currentTime + delta)
+    }, [currentTime, handleSeek])
 
     const handleMasterTimeUpdate = useCallback((time: number) => {
         if (isLooping && loopStart !== null && loopEnd !== null && time >= loopEnd) {
@@ -228,7 +262,7 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
                 <div>
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                         <span className="stemsep-config-chip">
-                            Result Studio
+                            Results
                         </span>
                         <span className="stemsep-config-chip stemsep-config-chip-subtle normal-case tracking-[-0.1px]">
                             {stemEntries.length} tracks
@@ -242,10 +276,12 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {!isAllReady && (
+                    {(isResolvingPlayback || (stemEntries.length > 0 && !isAllReady)) && (
                         <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/76 px-3 py-1.5 text-[12px] tracking-[-0.2px] text-slate-600">
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            Loading {readyStems.length}/{stemEntries.length}
+                            {isResolvingPlayback
+                                ? "Resolving playback..."
+                                : `Loading ${readyStems.length}/${stemEntries.length}`}
                         </span>
                     )}
                     {onClose && (
@@ -260,90 +296,14 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
                 </div>
             </div>
 
-            <div className="mb-6 flex items-center gap-4 rounded-[1.35rem] border border-white/70 bg-white/54 p-4 shadow-[0_18px_38px_rgba(141,150,179,0.1)] backdrop-blur-xl">
-                <button
-                    type="button"
-                    className="stemsep-config-action relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-[1.1rem] border border-white/75 bg-white/86 text-[#23324c] transition-all hover:scale-[1.02] hover:bg-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={handlePlayPause}
-                    disabled={!isAllReady}
-                >
-                    {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="ml-0.5 h-5 w-5" />}
-                </button>
-
-                <div className="flex items-center gap-2">
-                    <FastForward className="h-4 w-4 text-slate-400" />
-                    <select
-                        className="h-9 rounded-xl border border-white/70 bg-white/76 px-3 text-[12px] text-slate-700 outline-none"
-                        value={playbackRate}
-                        onChange={(e) => setPlaybackRate(parseFloat(e.target.value))}
-                    >
-                        <option value="0.5">0.5x</option>
-                        <option value="0.75">0.75x</option>
-                        <option value="1.0">1.0x</option>
-                        <option value="1.25">1.25x</option>
-                        <option value="1.5">1.5x</option>
-                    </select>
-                </div>
-
-                <div className="h-8 w-px bg-white/60" />
-
-                <div className="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={toggleLoop}
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${
-                            isLooping
-                                ? 'bg-white text-slate-900 shadow-[0_8px_18px_rgba(141,150,179,0.14)]'
-                                : 'bg-white/65 text-slate-500 hover:bg-white/86 hover:text-slate-800'
-                        }`}
-                        title="Toggle Loop"
-                    >
-                        <Repeat className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setLoopPoint('start')}
-                        className={`rounded-lg px-2 py-1 text-[11px] tracking-[-0.2px] transition-all ${
-                            loopStart !== null
-                                ? 'bg-white text-slate-900 shadow-[0_8px_18px_rgba(141,150,179,0.14)]'
-                                : 'bg-white/65 text-slate-500 hover:bg-white/86 hover:text-slate-800'
-                        }`}
-                    >
-                        A {loopStart !== null ? formatTime(loopStart) : ''}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setLoopPoint('end')}
-                        className={`rounded-lg px-2 py-1 text-[11px] tracking-[-0.2px] transition-all ${
-                            loopEnd !== null
-                                ? 'bg-white text-slate-900 shadow-[0_8px_18px_rgba(141,150,179,0.14)]'
-                                : 'bg-white/65 text-slate-500 hover:bg-white/86 hover:text-slate-800'
-                        }`}
-                    >
-                        B {loopEnd !== null ? formatTime(loopEnd) : ''}
-                    </button>
-                    {(loopStart !== null || loopEnd !== null) && (
-                        <button
-                            type="button"
-                            onClick={clearLoop}
-                            className="rounded-lg px-2 py-1 text-[11px] tracking-[-0.2px] text-slate-500 transition-all hover:bg-white/66 hover:text-slate-800"
-                        >
-                            Reset
-                        </button>
-                    )}
-                </div>
-
-                <div className="ml-auto text-right">
-                    <div className="text-[12px] font-medium tracking-[-0.2px] text-slate-700">
-                        {formatTime(currentTime)} / {formatTime(duration)}
+            <div className="stemsep-player-scroll max-h-[470px] space-y-4 overflow-y-auto pr-2">
+                {stemEntries.length === 0 && (
+                    <div className="flex min-h-[160px] items-center justify-center rounded-[1.35rem] border border-dashed border-white/65 bg-white/36 px-6 text-center text-[13px] tracking-[-0.2px] text-slate-500">
+                        {isResolvingPlayback
+                            ? "Preparing playable preview files..."
+                            : "No playable stems are available for this session yet."}
                     </div>
-                    <div className="text-[11px] tracking-[-0.15px] text-slate-500">
-                        {stemEntries.length} active tracks
-                    </div>
-                </div>
-            </div>
-
-            <div className="stemsep-player-scroll max-h-[470px] space-y-3 overflow-y-auto pr-2">
+                )}
                     {stemEntries.map(([stem, url]) => (
                         <WaveformTrack
                             key={stem}
@@ -370,6 +330,180 @@ export function MultiTrackPlayer({ stems, jobId, onClose, onDiscard }: MultiTrac
                             onToggleSolo={() => toggleSolo(stem)}
                         />
                     ))}
+            </div>
+
+            <div className="mt-6 rounded-[1.5rem] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(247,244,250,0.88))] p-5 shadow-[0_24px_48px_rgba(141,150,179,0.14)] backdrop-blur-xl">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
+                            Playback Dock
+                        </div>
+                        <div className="mt-1 text-[16px] tracking-[-0.35px] text-slate-800">
+                            Listen before export
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {stemNames.slice(0, 4).map((stem) => (
+                            <span
+                                key={stem}
+                                className="rounded-full border border-white/75 bg-white/82 px-2.5 py-1 text-[11px] tracking-[-0.15px] text-slate-600 shadow-[0_8px_18px_rgba(141,150,179,0.08)]"
+                            >
+                                {stem}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => handleSkipBy(-5)}
+                            disabled={!isAllReady}
+                            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/78 text-slate-600 shadow-[0_10px_22px_rgba(141,150,179,0.1)] transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                            title="Back 5 seconds"
+                        >
+                            <SkipBack className="h-4 w-4" />
+                        </button>
+                        <button
+                            type="button"
+                            className="stemsep-config-action relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-white/75 bg-white text-[#23324c] shadow-[0_16px_28px_rgba(141,150,179,0.16)] transition-all hover:scale-[1.02] hover:bg-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={handlePlayPause}
+                            disabled={!isAllReady}
+                        >
+                            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="ml-0.5 h-5 w-5" />}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleSkipBy(5)}
+                            disabled={!isAllReady}
+                            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/78 text-slate-600 shadow-[0_10px_22px_rgba(141,150,179,0.1)] transition-all hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                            title="Forward 5 seconds"
+                        >
+                            <SkipForward className="h-4 w-4" />
+                        </button>
+                    </div>
+
+                    <div className="rounded-[1.15rem] border border-white/70 bg-white/76 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                            <div>
+                                <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400">
+                                    Now Playing
+                                </div>
+                                <div className="mt-1 text-[13px] tracking-[-0.2px] text-slate-700">
+                                    {activeStemLabel ? `${activeStemLabel} stem` : 'Playback preview'}
+                                </div>
+                            </div>
+                            {isAllReady && duration > 0 && (
+                                <div className="text-[11px] text-slate-500">
+                                    {stemEntries.length} synced tracks
+                                </div>
+                            )}
+                        </div>
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                            <span className="text-[12px] font-medium tabular-nums tracking-[-0.2px] text-slate-600">
+                                {formatTime(currentTime)}
+                            </span>
+                            <span className="text-[12px] font-medium tabular-nums tracking-[-0.2px] text-slate-500">
+                                {formatTime(duration)}
+                            </span>
+                        </div>
+                        <Slider
+                            value={[Math.min(currentTime, duration || currentTime || 0)]}
+                            max={Math.max(duration, 0.1)}
+                            step={0.01}
+                            disabled={!isAllReady || duration <= 0}
+                            onValueChange={handleTimelineChange}
+                            className="w-full"
+                            trackClassName="h-3 rounded-full bg-[linear-gradient(90deg,rgba(203,213,225,0.45),rgba(226,232,240,0.9))] shadow-[inset_0_1px_3px_rgba(15,23,42,0.08)]"
+                            rangeClassName="bg-[linear-gradient(90deg,#64748b,#334155)] shadow-[0_0_22px_rgba(51,65,85,0.24)]"
+                            thumbClassName="h-5 w-5 border-[3px] border-white bg-[#23324c] shadow-[0_8px_20px_rgba(35,50,76,0.35)]"
+                        />
+                        {timelineTicks.length > 0 && (
+                            <div className="relative mt-3 h-4">
+                                {timelineTicks.map((tick) => (
+                                    <div
+                                        key={tick.left}
+                                        className="absolute top-0 -translate-x-1/2 text-[10px] text-slate-400"
+                                        style={{ left: tick.left }}
+                                    >
+                                        <div className="mx-auto mb-1 h-1.5 w-px bg-slate-300/80" />
+                                        {formatTime(tick.value)}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex items-center gap-2">
+                            <FastForward className="h-4 w-4 text-slate-400" />
+                            <select
+                                className="h-9 rounded-full border border-white/70 bg-white/78 px-3 text-[12px] text-slate-700 outline-none shadow-[0_10px_22px_rgba(141,150,179,0.08)]"
+                                value={playbackRate}
+                                onChange={(e) => setPlaybackRate(parseFloat(e.target.value))}
+                            >
+                                <option value="0.5">0.5x</option>
+                                <option value="0.75">0.75x</option>
+                                <option value="1.0">1.0x</option>
+                                <option value="1.25">1.25x</option>
+                                <option value="1.5">1.5x</option>
+                            </select>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={toggleLoop}
+                                className={`flex h-9 w-9 items-center justify-center rounded-full transition-all ${
+                                    isLooping
+                                        ? 'bg-white text-slate-900 shadow-[0_10px_22px_rgba(141,150,179,0.16)]'
+                                        : 'bg-white/70 text-slate-500 hover:bg-white hover:text-slate-800'
+                                }`}
+                                title="Toggle Loop"
+                            >
+                                <Repeat className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setLoopPoint('start')}
+                                className={`rounded-full px-3 py-1.5 text-[11px] tracking-[-0.15px] transition-all ${
+                                    loopStart !== null
+                                        ? 'bg-white text-slate-900 shadow-[0_10px_22px_rgba(141,150,179,0.16)]'
+                                        : 'bg-white/70 text-slate-500 hover:bg-white hover:text-slate-800'
+                                }`}
+                            >
+                                A {loopStart !== null ? formatTime(loopStart) : ''}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setLoopPoint('end')}
+                                className={`rounded-full px-3 py-1.5 text-[11px] tracking-[-0.15px] transition-all ${
+                                    loopEnd !== null
+                                        ? 'bg-white text-slate-900 shadow-[0_10px_22px_rgba(141,150,179,0.16)]'
+                                        : 'bg-white/70 text-slate-500 hover:bg-white hover:text-slate-800'
+                                }`}
+                            >
+                                B {loopEnd !== null ? formatTime(loopEnd) : ''}
+                            </button>
+                            {(loopStart !== null || loopEnd !== null) && (
+                                <button
+                                    type="button"
+                                    onClick={clearLoop}
+                                    className="rounded-full px-3 py-1.5 text-[11px] tracking-[-0.15px] text-slate-500 transition-all hover:bg-white hover:text-slate-800"
+                                >
+                                    Reset
+                                </button>
+                            )}
+                        </div>
+
+                        {isLooping && loopStart !== null && loopEnd !== null && (
+                            <div className="text-[12px] tracking-[-0.15px] text-slate-500">
+                                {`Looping ${formatTime(loopStart)} to ${formatTime(loopEnd)}`}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {jobId && (

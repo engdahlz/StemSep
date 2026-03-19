@@ -23,6 +23,7 @@ export interface SeparationBackendPayload {
     : never
   postProcessingSteps?: SeparationConfig['postProcessingSteps']
   volumeCompensation?: VolumeCompensation
+  pipelineConfig?: SeparationWorkflow['steps']
   workflow?: SeparationWorkflow
   runtimePolicy?: SeparationConfig['runtimePolicy']
   exportPolicy?: SeparationConfig['exportPolicy']
@@ -51,6 +52,12 @@ export function buildSeparationBackendPayload(args: {
   plan: SeparationPlan
 }): SeparationBackendPayload {
   const { inputFile, outputDir, config, plan } = args
+  const pipelineConfig =
+    plan.effectiveWorkflow?.kind === 'pipeline' &&
+    Array.isArray(plan.effectiveWorkflow.steps) &&
+    plan.effectiveWorkflow.steps.length > 0
+      ? plan.effectiveWorkflow.steps
+      : undefined
 
   return {
     inputFile,
@@ -59,12 +66,17 @@ export function buildSeparationBackendPayload(args: {
     stems: plan.effectiveStems,
     device:
       config.device && config.device !== 'auto' ? config.device : undefined,
-    overlap: toBackendOverlap(config.advancedParams?.overlap),
-    segmentSize: toBackendSegmentSize(config.advancedParams?.segmentSize),
-    shifts: config.advancedParams?.shifts,
+    overlap: toBackendOverlap(
+      plan.effectiveAdvancedParams?.overlap ?? config.advancedParams?.overlap,
+    ),
+    segmentSize: toBackendSegmentSize(
+      plan.effectiveAdvancedParams?.segmentSize ??
+        config.advancedParams?.segmentSize,
+    ),
+    shifts: plan.effectiveAdvancedParams?.shifts ?? config.advancedParams?.shifts,
     outputFormat: config.outputFormat || 'wav',
     bitrate: config.advancedParams?.bitrate,
-    tta: config.advancedParams?.tta,
+    tta: plan.effectiveAdvancedParams?.tta ?? config.advancedParams?.tta,
     ensembleConfig: plan.effectiveEnsembleConfig,
     ensembleAlgorithm: plan.effectiveEnsembleConfig?.algorithm,
     invert: config.invert,
@@ -72,6 +84,7 @@ export function buildSeparationBackendPayload(args: {
     phaseParams: plan.effectiveGlobalPhaseParams,
     postProcessingSteps: plan.effectivePostProcessingSteps,
     volumeCompensation: config.volumeCompensation,
+    pipelineConfig,
     workflow: plan.effectiveWorkflow,
     runtimePolicy: config.runtimePolicy,
     exportPolicy: config.exportPolicy,
@@ -101,6 +114,7 @@ export function executeSeparationPreflight(
     payload.phaseParams,
     payload.postProcessingSteps,
     payload.volumeCompensation,
+    payload.pipelineConfig,
     payload.workflow,
     payload.runtimePolicy,
     payload.exportPolicy,
@@ -130,6 +144,7 @@ export function executeSeparation(
     payload.phaseParams,
     payload.postProcessingSteps,
     payload.volumeCompensation,
+    payload.pipelineConfig,
     payload.workflow,
     payload.runtimePolicy,
     payload.exportPolicy,

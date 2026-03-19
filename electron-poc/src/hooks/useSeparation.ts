@@ -249,6 +249,10 @@ export const useSeparation = () => {
 
           addToHistory({
             inputFile: item.file,
+            displayName: item.displayName,
+            sourceUrl: item.sourceUrl,
+            sourceType: item.sourceType,
+            sourceMeta: item.sourceMeta,
             outputDir: outputDirectory,
             modelId: backendPayload.modelId,
             modelName: displayName || "Unknown Model",

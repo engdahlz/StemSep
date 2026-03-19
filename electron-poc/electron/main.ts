@@ -1,4 +1,15 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, protocol, Menu, screen } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  shell,
+  protocol,
+  Menu,
+  screen,
+  session,
+  desktopCapturer,
+} from "electron";
 import path from "path";
 import { spawn } from "child_process";
 import fs from "fs";
@@ -95,6 +106,9 @@ function sanitizeForPathSegment(name: string) {
     .slice(0, 80);
 }
 
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 type AudioSourceProfile = {
   path: string;
   container: string | null;
@@ -150,6 +164,124 @@ type ExportProgressPayload = {
   outputPath?: string;
   error?: string;
 };
+
+type RemoteLibraryProvider = "spotify" | "qobuz" | "bandcamp";
+type ActiveLibraryProvider = "spotify" | "qobuz";
+type RemoteSourceProvider = "youtube" | RemoteLibraryProvider;
+type IngestMode = "local_file" | "remote_download" | "desktop_capture";
+type PlaybackSurface = "desktop_app" | "browser" | "none";
+type CaptureQualityMode = "best_available" | "verified_lossless";
+
+type RemoteResolveProgressPayload = {
+  provider: RemoteSourceProvider;
+  status: string;
+  detail?: string;
+  percent?: string;
+  progress?: number;
+  speed?: string;
+  eta?: string;
+  error?: string;
+};
+
+type RemoteCatalogItem = {
+  provider: RemoteLibraryProvider;
+  trackId: string;
+  title: string;
+  artist?: string;
+  album?: string;
+  artworkUrl?: string;
+  durationSec?: number;
+  canonicalUrl?: string;
+  qualityLabel?: string;
+  isLossless?: boolean;
+  downloadOrigin?: string;
+  pageUrl?: string;
+  variantId?: string;
+  downloadUrlAvailable?: boolean;
+  sourceUrl?: string;
+  playbackUrl?: string;
+  playbackUri?: string;
+  playbackSurface?: PlaybackSurface;
+  ingestMode?: IngestMode;
+  qualityMode?: CaptureQualityMode;
+  verifiedLossless?: boolean;
+};
+
+type PlaybackDevice = {
+  id: string;
+  label: string;
+  kind: "render_endpoint" | "system_loopback" | "display_loopback";
+  isDefault?: boolean;
+};
+
+type CaptureEnvironmentStatus = {
+  windowsSupported: boolean;
+  provider: "qobuz";
+  authenticated: boolean;
+  selectedDeviceId: string | null;
+  selectedDeviceLabel: string | null;
+  selectedDeviceReady: boolean;
+  speakerSelectionAvailable: boolean;
+  message?: string;
+};
+
+type PlaybackCaptureProgressPayload = {
+  provider: ActiveLibraryProvider;
+  captureId?: string;
+  status: string;
+  detail?: string;
+  progress?: number;
+  percent?: string;
+  elapsedSec?: number;
+  remainingSec?: number;
+  error?: string;
+};
+
+type RemoteProviderConfig = {
+  name: string;
+  partition: string;
+  loginUrl: string;
+  libraryUrl: string;
+  searchUrl?: (query: string) => string;
+};
+
+const REMOTE_PROVIDER_CONFIG: Record<RemoteLibraryProvider, RemoteProviderConfig> = {
+  spotify: {
+    name: "Spotify",
+    partition: "persist:stemsep-spotify",
+    loginUrl: "https://accounts.spotify.com/en/login",
+    libraryUrl: "https://open.spotify.com/collection/tracks",
+    searchUrl: (query) =>
+      `https://open.spotify.com/search/${encodeURIComponent(query)}/tracks`,
+  },
+  qobuz: {
+    name: "Qobuz",
+    partition: "persist:stemsep-qobuz",
+    loginUrl: "https://www.qobuz.com/signin",
+    libraryUrl: "https://play.qobuz.com/user/library/favorites/tracks",
+    searchUrl: (query) =>
+      `https://play.qobuz.com/search/tracks?searchEntry=${encodeURIComponent(query)}`,
+  },
+  bandcamp: {
+    name: "Bandcamp",
+    partition: "persist:stemsep-bandcamp",
+    loginUrl: "https://bandcamp.com/login",
+    libraryUrl: "https://bandcamp.com/collection",
+  },
+};
+
+const REMOTE_AUDIO_EXTENSIONS = new Set([
+  ".wav",
+  ".flac",
+  ".aif",
+  ".aiff",
+  ".mp3",
+  ".m4a",
+  ".aac",
+  ".ogg",
+  ".opus",
+  ".alac",
+]);
 
 function getFfmpegExe(): string {
   // Prefer a bundled ffmpeg binary when available.
@@ -498,6 +630,1599 @@ async function ensureWavInput(
 function emitExportProgress(payload: ExportProgressPayload) {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.webContents.send("export-progress", payload);
+}
+
+const remoteAuthWindows = new Map<RemoteLibraryProvider, BrowserWindow>();
+let qobuzAutomationWindow: BrowserWindow | null = null;
+const remoteCatalogCache = new Map<RemoteLibraryProvider, RemoteCatalogItem[]>();
+const qobuzSinkIdByPlaybackDeviceId = new Map<string, string>();
+const playbackCaptureSessions = new Map<
+  string,
+  {
+    captureId: string;
+    provider: ActiveLibraryProvider;
+    trackId: string;
+    deviceId: string;
+    item: RemoteCatalogItem;
+    startedAt: string;
+  }
+>();
+
+function emitRemoteResolveProgress(payload: RemoteResolveProgressPayload) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send("remote-resolve-progress", payload);
+}
+
+function emitPlaybackCaptureProgress(payload: PlaybackCaptureProgressPayload) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send("playback-capture-progress", payload);
+}
+
+function getRemoteProviderConfig(provider: RemoteLibraryProvider): RemoteProviderConfig {
+  return REMOTE_PROVIDER_CONFIG[provider];
+}
+
+function getRemoteSession(provider: RemoteLibraryProvider) {
+  return session.fromPartition(getRemoteProviderConfig(provider).partition);
+}
+
+function getRemoteCacheBaseDir() {
+  return path.join(app.getPath("userData"), "cache", "remote_sources");
+}
+
+function getRemoteProviderCacheDir(provider: RemoteLibraryProvider) {
+  return path.join(getRemoteCacheBaseDir(), provider);
+}
+
+function getPlaybackCaptureCacheDir() {
+  return path.join(app.getPath("userData"), "cache", "playback_capture");
+}
+
+function getStoredCaptureOutputDeviceId(): string | null {
+  const value = readAppConfig().captureOutputDeviceId;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function normalizeDeviceLabel(label: string | undefined | null) {
+  return String(label || "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+async function getNativePlaybackDevices(): Promise<PlaybackDevice[]> {
+  const devices = await sendPythonCommandWithRetry(
+    "detect_playback_devices",
+    {},
+    20_000,
+    1,
+  );
+  return Array.isArray(devices)
+    ? devices.filter((device) => device?.id && device?.label)
+    : [];
+}
+
+async function getQobuzBrowserOutputDevices() {
+  const config = getRemoteProviderConfig("qobuz");
+  const win = getQobuzAutomationWindow();
+  const currentUrl = win.webContents.getURL();
+  if (!currentUrl || !/qobuz\.com/i.test(currentUrl)) {
+    await loadURLAndWait(win, config.libraryUrl, 20_000);
+    await sleep(900);
+  }
+
+  const result = (await win.webContents.executeJavaScript(
+    `(() => {
+      const supportsSetSinkId =
+        typeof HTMLMediaElement !== "undefined" &&
+        typeof HTMLMediaElement.prototype.setSinkId === "function";
+      const enumerate = navigator.mediaDevices?.enumerateDevices;
+      if (!enumerate) {
+        return {
+          supportsSetSinkId,
+          devices: [],
+        };
+      }
+      return navigator.mediaDevices
+        .enumerateDevices()
+        .then((devices) => ({
+          supportsSetSinkId,
+          devices: devices
+            .filter((device) => device.kind === "audiooutput")
+            .map((device) => ({
+              sinkId: device.deviceId,
+              label: device.label || "",
+            })),
+        }))
+        .catch((error) => ({
+          supportsSetSinkId,
+          devices: [],
+          error: String(error?.message || error || "Failed to enumerate audio outputs."),
+        }));
+    })()`,
+    true,
+  )) as {
+    supportsSetSinkId?: boolean;
+    devices?: Array<{ sinkId: string; label: string }>;
+    error?: string;
+  };
+
+  return {
+    supportsSetSinkId: !!result?.supportsSetSinkId,
+    devices: Array.isArray(result?.devices) ? result.devices : [],
+    error: result?.error || null,
+  };
+}
+
+async function refreshQobuzPlaybackDeviceMappings() {
+  const nativeDevices = await getNativePlaybackDevices();
+  qobuzSinkIdByPlaybackDeviceId.clear();
+
+  try {
+    const browserOutput = await getQobuzBrowserOutputDevices();
+    const browserDevices = browserOutput.devices || [];
+    const defaultBrowser = browserDevices.find(
+      (device) => device.sinkId === "default",
+    );
+
+    for (const nativeDevice of nativeDevices) {
+      const normalizedNative = normalizeDeviceLabel(nativeDevice.label);
+      let match =
+        browserDevices.find(
+          (device) =>
+            !!device.label &&
+            normalizeDeviceLabel(device.label) === normalizedNative,
+        ) ||
+        browserDevices.find((device) => {
+          const normalizedBrowser = normalizeDeviceLabel(device.label);
+          return (
+            !!normalizedNative &&
+            !!normalizedBrowser &&
+            (normalizedBrowser.includes(normalizedNative) ||
+              normalizedNative.includes(normalizedBrowser))
+          );
+        });
+
+      if (!match && nativeDevice.isDefault && defaultBrowser) {
+        match = defaultBrowser;
+      }
+
+      if (match?.sinkId) {
+        qobuzSinkIdByPlaybackDeviceId.set(nativeDevice.id, match.sinkId);
+      }
+    }
+
+    return {
+      devices: nativeDevices,
+      speakerSelectionAvailable:
+        browserOutput.supportsSetSinkId &&
+        qobuzSinkIdByPlaybackDeviceId.size > 0,
+      speakerSelectionError: browserOutput.error || null,
+    };
+  } catch (error: any) {
+    return {
+      devices: nativeDevices,
+      speakerSelectionAvailable: false,
+      speakerSelectionError: error?.message || String(error),
+    };
+  }
+}
+
+async function getCaptureEnvironmentStatusForQobuz(): Promise<CaptureEnvironmentStatus> {
+  const windowsSupported = process.platform === "win32";
+  const authenticated = await checkLibraryProviderAuthenticated("qobuz");
+  const selectedDeviceId = getStoredCaptureOutputDeviceId();
+
+  if (!windowsSupported) {
+    return {
+      windowsSupported,
+      provider: "qobuz",
+      authenticated,
+      selectedDeviceId,
+      selectedDeviceLabel: null,
+      selectedDeviceReady: false,
+      speakerSelectionAvailable: false,
+      message: "Hidden Qobuz lossless capture is only available on Windows.",
+    };
+  }
+
+  const deviceState = await refreshQobuzPlaybackDeviceMappings();
+  const selectedDevice =
+    deviceState.devices.find((device) => device.id === selectedDeviceId) || null;
+  const selectedDeviceReady = !!(
+    selectedDeviceId &&
+    selectedDevice &&
+    qobuzSinkIdByPlaybackDeviceId.has(selectedDeviceId)
+  );
+
+  return {
+    windowsSupported,
+    provider: "qobuz",
+    authenticated,
+    selectedDeviceId,
+    selectedDeviceLabel: selectedDevice?.label || null,
+    selectedDeviceReady,
+    speakerSelectionAvailable: deviceState.speakerSelectionAvailable,
+    message:
+      deviceState.speakerSelectionError ||
+      (selectedDeviceId && !selectedDeviceReady
+        ? "The saved silent output could not be routed from the hidden Qobuz player."
+        : undefined),
+  };
+}
+
+function makeRemoteTrackId(value: string) {
+  return createHash("sha1").update(String(value || "")).digest("hex").slice(0, 24);
+}
+
+function toPercent(progress: number) {
+  if (!Number.isFinite(progress)) return undefined;
+  return `${Math.max(0, Math.min(100, Math.round(progress)))}%`;
+}
+
+function inferRemoteFileExtension(url: string, fallback = ".flac") {
+  const normalized = String(url || "").split("?")[0];
+  const ext = path.extname(normalized).toLowerCase();
+  if (REMOTE_AUDIO_EXTENSIONS.has(ext) || ext === ".zip") return ext;
+  return fallback;
+}
+
+function findAudioFilesInDir(baseDir: string): string[] {
+  const files: string[] = [];
+  const walk = (dirPath: string) => {
+    let entries: fs.Dirent[] = [];
+    try {
+      entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (entry.isFile()) {
+        const ext = path.extname(entry.name).toLowerCase();
+        if (REMOTE_AUDIO_EXTENSIONS.has(ext)) {
+          files.push(full);
+        }
+      }
+    }
+  };
+  walk(baseDir);
+  return files;
+}
+
+function scoreExtractedAudioCandidate(filePath: string, title: string) {
+  const base = path.basename(filePath, path.extname(filePath)).toLowerCase();
+  const target = sanitizeForPathSegment(title).toLowerCase();
+  if (!target) return 0;
+  if (base === target) return 100;
+  if (base.includes(target)) return 70;
+  if (target.includes(base)) return 50;
+  const targetWords = target.split(/\s+/).filter(Boolean);
+  return targetWords.reduce((score, word) => (base.includes(word) ? score + 10 : score), 0);
+}
+
+async function extractArchiveForRemoteTrack(
+  provider: RemoteLibraryProvider,
+  archivePath: string,
+  title: string,
+): Promise<string | null> {
+  const outDir = path.join(
+    getRemoteProviderCacheDir(provider),
+    `${path.basename(archivePath, path.extname(archivePath))}_unzipped`,
+  );
+  safeMkdir(outDir);
+
+  try {
+    if (process.platform === "win32") {
+      await runProcessCapture("powershell", [
+        "-NoProfile",
+        "-Command",
+        `Expand-Archive -Path '${archivePath.replace(/'/g, "''")}' -DestinationPath '${outDir.replace(/'/g, "''")}' -Force`,
+      ]);
+    } else {
+      await runProcessCapture("unzip", ["-o", archivePath, "-d", outDir]);
+    }
+  } catch (error) {
+    log("[remote] archive extraction failed", {
+      provider,
+      archivePath,
+      error: (error as any)?.message || String(error),
+    });
+    return null;
+  }
+
+  const candidates = findAudioFilesInDir(outDir);
+  if (candidates.length === 0) return null;
+  candidates.sort(
+    (a, b) =>
+      scoreExtractedAudioCandidate(b, title) -
+      scoreExtractedAudioCandidate(a, title),
+  );
+  return candidates[0] || null;
+}
+
+function isPlaceholderRemoteCatalogItem(
+  provider: RemoteLibraryProvider,
+  item: Pick<
+    RemoteCatalogItem,
+    "title" | "artist" | "album" | "artworkUrl" | "durationSec" | "variantId" | "canonicalUrl" | "pageUrl" | "sourceUrl"
+  >,
+) {
+  const title = String(item.title || "").trim().toLowerCase();
+  const canonical = String(
+    item.canonicalUrl || item.pageUrl || item.sourceUrl || "",
+  )
+    .trim()
+    .toLowerCase();
+  const hasMetadataSignal = Boolean(
+    item.artist ||
+      item.album ||
+      item.artworkUrl ||
+      item.durationSec ||
+      item.variantId,
+  );
+
+  if (provider === "qobuz") {
+    if (title === "download store" || title === "my account") return true;
+    if (
+      !hasMetadataSignal &&
+      /\/(signin|login|shop|profile\/downloads|account)(\/|$)/i.test(canonical)
+    ) {
+      return true;
+    }
+    if (
+      !hasMetadataSignal &&
+      !/\.(flac|wav|aif|aiff|zip)(\?|$)/i.test(canonical)
+    ) {
+      return true;
+    }
+  }
+
+  if (provider === "bandcamp") {
+    if (title === "collection" || title === "discover") return true;
+  }
+
+  return false;
+}
+
+function getLibraryScrapeScript(provider: ActiveLibraryProvider) {
+  const common = String.raw`
+    const normalizeText = (value) => String(value || "").replace(/\s+/g, " ").trim();
+    const textOf = (el) => normalizeText(el && (el.innerText || el.textContent));
+    const durationFromText = (value) => {
+      const match = String(value || "").match(/(\d+):(\d{2})(?::(\d{2}))?/);
+      if (!match) return undefined;
+      if (match[3]) return (Number(match[1]) * 3600) + (Number(match[2]) * 60) + Number(match[3]);
+      return (Number(match[1]) * 60) + Number(match[2]);
+    };
+    const withOrigin = (href) => {
+      try { return new URL(href, window.location.origin).toString(); } catch { return String(href || ""); }
+    };
+  `;
+
+  if (provider === "spotify") {
+    return `(() => {
+      ${common}
+      const seen = new Set();
+      const items = [];
+      const rows = Array.from(document.querySelectorAll('[data-testid="tracklist-row"], div[role="row"]'));
+      const pushItem = (node) => {
+        const trackAnchor = Array.from(node.querySelectorAll('a[href]')).find((anchor) => /\\/track\\//i.test(anchor.getAttribute('href') || ''));
+        if (!trackAnchor) return;
+        const trackHref = withOrigin(trackAnchor.getAttribute('href') || trackAnchor.href || '');
+        const trackIdMatch = trackHref.match(/\\/track\\/([A-Za-z0-9]+)/i);
+        const trackId = trackIdMatch ? trackIdMatch[1] : '';
+        if (!trackId || seen.has(trackId)) return;
+        seen.add(trackId);
+        const artistAnchors = Array.from(node.querySelectorAll('a[href]')).filter((anchor) => /\\/artist\\//i.test(anchor.getAttribute('href') || ''));
+        const albumAnchor = Array.from(node.querySelectorAll('a[href]')).find((anchor) => /\\/album\\//i.test(anchor.getAttribute('href') || ''));
+        const img = node.querySelector('img');
+        const title = normalizeText(trackAnchor.textContent) || textOf(node.querySelector('[aria-colindex="2"], [data-encore-id="text"]'));
+        const artist = artistAnchors.map((anchor) => normalizeText(anchor.textContent)).filter(Boolean).join(', ');
+        const album = normalizeText(albumAnchor && albumAnchor.textContent);
+        const qualityLabel = "Best Available Capture";
+        const durationSec = durationFromText(textOf(node));
+        if (!title) return;
+        items.push({
+          provider: "spotify",
+          trackId,
+          title,
+          artist: artist || undefined,
+          album: album || undefined,
+          artworkUrl: img && img.src ? img.src : undefined,
+          durationSec,
+          canonicalUrl: trackHref,
+          qualityLabel,
+          isLossless: false,
+          playbackUrl: trackHref,
+          playbackUri: \`spotify:track:\${trackId}\`,
+          playbackSurface: "desktop_app",
+          ingestMode: "desktop_capture",
+          qualityMode: "best_available",
+          verifiedLossless: false,
+        });
+      };
+
+      rows.forEach(pushItem);
+      if (items.length === 0) {
+        Array.from(document.querySelectorAll('a[href*="/track/"]')).forEach((anchor) => {
+          const href = withOrigin(anchor.getAttribute('href') || anchor.href || '');
+          const trackIdMatch = href.match(/\\/track\\/([A-Za-z0-9]+)/i);
+          const trackId = trackIdMatch ? trackIdMatch[1] : '';
+          const title = normalizeText(anchor.textContent);
+          if (!trackId || !title || seen.has(trackId)) return;
+          seen.add(trackId);
+          const container = anchor.closest('section, article, div, li') || document;
+          const img = container.querySelector('img');
+          items.push({
+            provider: "spotify",
+            trackId,
+            title,
+            artworkUrl: img && img.src ? img.src : undefined,
+            canonicalUrl: href,
+            qualityLabel: "Best Available Capture",
+            isLossless: false,
+            playbackUrl: href,
+            playbackUri: \`spotify:track:\${trackId}\`,
+            playbackSurface: "desktop_app",
+            ingestMode: "desktop_capture",
+            qualityMode: "best_available",
+            verifiedLossless: false,
+          });
+        });
+      }
+      return items.slice(0, 200);
+    })()`;
+  }
+
+  return `(() => {
+    ${common}
+    const seen = new Set();
+    const items = [];
+    const nodes = Array.from(document.querySelectorAll('article, li, .track, .item, .album, [data-testid], [class*="track"], [class*="product"]'));
+    for (const node of nodes) {
+      const anchors = Array.from(node.querySelectorAll('a[href]'));
+      const trackAnchor = anchors.find((anchor) => /\\/track\\//i.test(anchor.getAttribute('href') || anchor.href || ''));
+      if (!trackAnchor) continue;
+      const canonicalUrl = withOrigin(trackAnchor.getAttribute('href') || trackAnchor.href || '');
+      const trackIdMatch = canonicalUrl.match(/\\/track\\/([^/?#]+)/i);
+      const trackId = trackIdMatch ? trackIdMatch[1] : '';
+      if (!trackId || seen.has(trackId)) continue;
+      const title = normalizeText(trackAnchor.textContent) || textOf(node.querySelector('h1, h2, h3, h4, [class*="title"]'));
+      if (!title) continue;
+      seen.add(trackId);
+      const text = textOf(node);
+      const artist = textOf(node.querySelector('[class*="artist"], [data-testid*="artist"], [class*="subtitle"], [class*="meta"]'));
+      const album = textOf(node.querySelector('[class*="album"], [data-testid*="album"]'));
+      const img = node.querySelector('img');
+      const hiResMatch = text.match(/(\\d+[- ]?bit[^\\d]{0,8}\\d+(?:[.,]\\d+)?\\s?k?hz)/i);
+      const qualityLabel = hiResMatch ? hiResMatch[1].replace(/\\s+/g, ' ') : (/lossless/i.test(text) ? "Lossless Capture" : "Best Available Capture");
+      items.push({
+        provider: "qobuz",
+        trackId,
+        title,
+        artist: artist || undefined,
+        album: album || undefined,
+        artworkUrl: img && img.src ? img.src : undefined,
+        durationSec: durationFromText(text),
+        canonicalUrl,
+        qualityLabel,
+        isLossless: /lossless|24[- ]?bit|flac|wav/i.test(text),
+        playbackUrl: canonicalUrl,
+        playbackSurface: "browser",
+        ingestMode: "desktop_capture",
+        qualityMode: "best_available",
+        verifiedLossless: false,
+      });
+    }
+    return items.slice(0, 200);
+  })()`;
+}
+
+function waitForDidFinishLoad(
+  win: BrowserWindow,
+  timeoutMs = 15_000,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error("Timed out while loading provider page."));
+    }, timeoutMs);
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      win.webContents.removeListener("did-finish-load", handleFinish);
+      win.webContents.removeListener("did-fail-load", handleFail);
+    };
+
+    const handleFinish = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve();
+    };
+
+    const handleFail = (_event: any, code: number, description: string) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error(`Provider page failed to load (${code}): ${description}`));
+    };
+
+    win.webContents.once("did-finish-load", handleFinish);
+    win.webContents.once("did-fail-load", handleFail);
+  });
+}
+
+async function loadURLAndWait(
+  win: BrowserWindow,
+  url: string,
+  timeoutMs = 20_000,
+) {
+  const waiter = waitForDidFinishLoad(win, timeoutMs);
+  await win.loadURL(url);
+  await waiter;
+}
+
+async function navigateRemoteWindow(
+  provider: RemoteLibraryProvider,
+  targetUrl: string,
+) {
+  const win =
+    provider === "qobuz"
+      ? getQobuzAutomationWindow()
+      : openRemoteSourceAuthWindow(provider);
+  const currentUrl = win.webContents.getURL();
+  if (currentUrl !== targetUrl) {
+    await loadURLAndWait(win, targetUrl);
+  } else {
+    await win.webContents.reloadIgnoringCache();
+    await waitForDidFinishLoad(win);
+  }
+  await sleep(1200);
+  return win;
+}
+
+function isLikelyUnauthedProviderUrl(
+  provider: ActiveLibraryProvider,
+  url: string,
+) {
+  const normalized = String(url || "").toLowerCase();
+  if (provider === "spotify") {
+    return (
+      normalized.includes("accounts.spotify.com") ||
+      normalized.includes("/login") ||
+      normalized.includes("/signup")
+    );
+  }
+  return normalized.includes("/signin") || normalized.includes("/login");
+}
+
+function getOpenProviderProbeWindows(provider: ActiveLibraryProvider) {
+  const windows: BrowserWindow[] = [];
+  const authWindow = remoteAuthWindows.get(provider);
+  if (authWindow && !authWindow.isDestroyed()) {
+    windows.push(authWindow);
+  }
+  if (
+    provider === "qobuz" &&
+    qobuzAutomationWindow &&
+    !qobuzAutomationWindow.isDestroyed() &&
+    qobuzAutomationWindow !== authWindow
+  ) {
+    windows.push(qobuzAutomationWindow);
+  }
+  return windows;
+}
+
+async function probeQobuzAuthenticatedFromWindow(
+  win: BrowserWindow,
+): Promise<boolean> {
+  try {
+    const currentUrl = String(win.webContents.getURL() || "");
+    if (!/qobuz\.com/i.test(currentUrl)) return false;
+    if (isLikelyUnauthedProviderUrl("qobuz", currentUrl)) return false;
+
+    if (/\/my\/account(\/|$)|\/account(\/|$)|\/profile(\/|$)/i.test(currentUrl)) {
+      return true;
+    }
+
+    const probe = (await win.webContents.executeJavaScript(
+      `(() => {
+        const normalize = (value) =>
+          String(value || "").replace(/\\s+/g, " ").trim().toLowerCase();
+        const bodyText = normalize(document.body?.innerText);
+        if (!bodyText) {
+          return { authenticated: false };
+        }
+
+        if (
+          /sign out|my streaming plan|my purchases|my wallet|my favourites|my favorites|my personal information|my invoices|my vouchers/.test(bodyText)
+        ) {
+          return { authenticated: true };
+        }
+
+        const publicNav = new Set([
+          "streaming plans",
+          "download store",
+          "magazine",
+          "qobuz club",
+          "our ecosystem",
+          "sign in",
+          "log in",
+          "login",
+          "try for free",
+          "discover music",
+          "home",
+        ]);
+
+        const headerTexts = Array.from(
+          document.querySelectorAll("header a, header button, nav a, nav button"),
+        )
+          .map((element) => normalize(element.textContent))
+          .filter(Boolean);
+
+        const hasAccountLabel = headerTexts.some((text) => {
+          if (publicNav.has(text)) return false;
+          if (text === "my account") return true;
+          if (text.includes("sign out")) return true;
+          return /[a-z]/.test(text) && text.includes(" ");
+        });
+
+        return { authenticated: hasAccountLabel };
+      })()`,
+      true,
+    )) as { authenticated?: boolean };
+
+    return !!probe?.authenticated;
+  } catch (error) {
+    log("[library] qobuz window auth probe failed", {
+      error: (error as any)?.message || String(error),
+    });
+    return false;
+  }
+}
+
+async function checkLibraryProviderAuthenticated(
+  provider: ActiveLibraryProvider,
+) {
+  try {
+    const sessionForProvider = getRemoteSession(provider);
+    const config = getRemoteProviderConfig(provider);
+    const providerUrl = new URL(config.libraryUrl);
+    const rootHostname =
+      provider === "qobuz"
+        ? "qobuz.com"
+        : providerUrl.hostname.replace(/^www\./i, "");
+    const cookies = await sessionForProvider.cookies.get({});
+    const providerCookies = cookies.filter((cookie) => {
+      const domain = String(cookie.domain || "")
+        .toLowerCase()
+        .replace(/^\./, "");
+      return (
+        domain === providerUrl.hostname.toLowerCase() ||
+        domain === rootHostname ||
+        domain.endsWith(`.${rootHostname}`)
+      );
+    });
+
+    if (provider === "spotify") {
+      return providerCookies.some((cookie) =>
+        ["sp_dc", "sp_key", "sp_t"].includes(String(cookie.name || "").toLowerCase()),
+      );
+    }
+
+    const hasAuthCookie = providerCookies.some((cookie) => {
+      const name = String(cookie.name || "").toLowerCase();
+      return (
+        name.includes("auth") ||
+        name.includes("token") ||
+        name.includes("session") ||
+        name.includes("user")
+      );
+    });
+
+    if (hasAuthCookie) {
+      return true;
+    }
+
+    if (provider === "qobuz") {
+      for (const win of getOpenProviderProbeWindows(provider)) {
+        if (await probeQobuzAuthenticatedFromWindow(win)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  } catch (error) {
+    log("[library] auth check dom probe failed", {
+      provider,
+      error: (error as any)?.message || String(error),
+    });
+    return false;
+  }
+}
+
+async function scrapeProviderItems(
+  provider: ActiveLibraryProvider,
+  targetUrl: string,
+): Promise<RemoteCatalogItem[]> {
+  const win = await navigateRemoteWindow(provider, targetUrl);
+  const rawItems = (await win.webContents.executeJavaScript(
+    getLibraryScrapeScript(provider),
+    true,
+  )) as RemoteCatalogItem[];
+  const items = Array.isArray(rawItems)
+    ? rawItems.filter((item) => item?.title && item?.trackId)
+    : [];
+  remoteCatalogCache.set(provider, items);
+  return items;
+}
+
+async function searchQobuzCatalogViaApi(
+  query: string,
+): Promise<RemoteCatalogItem[]> {
+  const win = getQobuzAutomationWindow();
+  const currentUrl = String(win.webContents.getURL() || "");
+  if (!/qobuz\.com/i.test(currentUrl)) {
+    await loadURLAndWait(win, getRemoteProviderConfig("qobuz").libraryUrl, 20_000);
+    await sleep(1200);
+  }
+
+  const result = (await win.webContents.executeJavaScript(
+    `(async () => {
+      const query = ${JSON.stringify(query)};
+      const env = String(window.__ENVIRONMENT__ || "production").toLowerCase();
+      const appIds = {
+        integration: "377257687",
+        nightly: "377257687",
+        recette: "724307056",
+        production: "798273057",
+      };
+      const appId = appIds[env] || appIds.production;
+
+      const findTokenInObject = (value, depth = 0, seen = new WeakSet()) => {
+        if (!value || depth > 5) return "";
+        if (typeof value === "string") {
+          const direct = value.match(/"user_auth_token"\\s*:\\s*"([^"]+)"/i);
+          if (direct) return direct[1];
+          const jsonToken = value.match(/"token"\\s*:\\s*"([^"]+)"/i);
+          if (jsonToken && /"infos"\\s*:/.test(value)) return jsonToken[1];
+          return "";
+        }
+        if (typeof value !== "object") return "";
+        if (seen.has(value)) return "";
+        seen.add(value);
+
+        if (typeof value.user_auth_token === "string" && value.user_auth_token) {
+          return value.user_auth_token;
+        }
+        if (
+          typeof value.token === "string" &&
+          value.token &&
+          (value.infos || value.user || value.session_id || value.expires_at)
+        ) {
+          return value.token;
+        }
+
+        for (const entry of Object.values(value)) {
+          const found = findTokenInObject(entry, depth + 1, seen);
+          if (found) return found;
+        }
+        return "";
+      };
+
+      const storagePayloads = [];
+      for (const storage of [window.localStorage, window.sessionStorage]) {
+        try {
+          for (let index = 0; index < storage.length; index += 1) {
+            const key = storage.key(index);
+            if (!key) continue;
+            const raw = storage.getItem(key);
+            if (!raw) continue;
+            storagePayloads.push(raw);
+            try {
+              storagePayloads.push(JSON.parse(raw));
+            } catch {
+              // Ignore non-JSON storage entries.
+            }
+          }
+        } catch {
+          // Ignore storage access failures.
+        }
+      }
+
+      const globalCandidates = [
+        window.__INITIAL_STATE__,
+        window.__PRELOADED_STATE__,
+        window.__STORE__?.getState?.(),
+        window.store?.getState?.(),
+        window.__NEXT_DATA__,
+        window.__NUXT__,
+      ];
+
+      let token = "";
+      for (const candidate of [...storagePayloads, ...globalCandidates]) {
+        token = findTokenInObject(candidate);
+        if (token) break;
+      }
+
+      const response = await fetch(
+        "https://www.qobuz.com/api.json/0.2/track/search?" +
+          new URLSearchParams({
+            query,
+            offset: "0",
+            limit: "25",
+          }).toString(),
+        {
+          method: "GET",
+          headers: token
+            ? {
+                "X-App-Id": appId,
+                "X-User-Auth-Token": token,
+              }
+            : {
+                "X-App-Id": appId,
+              },
+          credentials: "include",
+        },
+      );
+
+      const payload = await response.json().catch(() => ({}));
+      const rawTracks = Array.isArray(payload?.tracks?.items)
+        ? payload.tracks.items
+        : Array.isArray(payload?.tracks)
+          ? payload.tracks
+          : [];
+
+      const normalize = (value) =>
+        String(value || "").replace(/\\s+/g, " ").trim();
+
+      const items = rawTracks
+        .map((track) => {
+          const id = track?.id;
+          if (!id) return null;
+
+          const performer =
+            normalize(track?.performer?.name) ||
+            normalize(track?.artist?.name) ||
+            normalize(track?.album?.artist?.name);
+
+          const albumTitle =
+            normalize(track?.album?.title) ||
+            normalize(track?.release?.title);
+
+          const maximumSamplingRate = Number(
+            track?.maximum_sampling_rate ||
+              track?.maximumSamplingRate ||
+              track?.audio_info?.maximum_sampling_rate ||
+              0,
+          );
+          const maximumBitDepth = Number(
+            track?.maximum_bit_depth ||
+              track?.maximumBitDepth ||
+              track?.audio_info?.maximum_bit_depth ||
+              0,
+          );
+
+          const qualityLabel =
+            maximumSamplingRate && maximumBitDepth
+              ? \`\${maximumBitDepth}-bit / \${maximumSamplingRate} kHz\`
+              : track?.hires_streamable || track?.hires
+                ? "Hi-Res Capture"
+                : track?.lossless || track?.streamable
+                  ? "Lossless Capture"
+                  : "Best Available Capture";
+
+          return {
+            provider: "qobuz",
+            trackId: String(id),
+            title: normalize(track?.title),
+            artist: performer || undefined,
+            album: albumTitle || undefined,
+            artworkUrl:
+              track?.album?.image?.large ||
+              track?.album?.image?.extralarge ||
+              track?.album?.image?.small ||
+              track?.image?.large ||
+              track?.image?.small ||
+              undefined,
+            durationSec:
+              typeof track?.duration === "number" ? track.duration : undefined,
+            canonicalUrl: \`https://play.qobuz.com/track/\${id}\`,
+            qualityLabel,
+            isLossless: Boolean(
+              track?.lossless ||
+                track?.hires ||
+                track?.hires_streamable ||
+                maximumSamplingRate >= 44.1,
+            ),
+            playbackUrl: \`https://play.qobuz.com/track/\${id}\`,
+            playbackSurface: "browser",
+            ingestMode: "desktop_capture",
+            qualityMode: "best_available",
+            verifiedLossless: false,
+          };
+        })
+        .filter((item) => item && item.title);
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        env,
+        appId,
+        hasToken: Boolean(token),
+        count: items.length,
+        items,
+        payloadPreview: {
+          hasTracksArray: Array.isArray(payload?.tracks?.items) || Array.isArray(payload?.tracks),
+          keys: payload && typeof payload === "object" ? Object.keys(payload).slice(0, 12) : [],
+        },
+      };
+    })()`,
+    true,
+  )) as {
+    ok?: boolean;
+    status?: number;
+    env?: string;
+    appId?: string;
+    hasToken?: boolean;
+    count?: number;
+    items?: RemoteCatalogItem[];
+    payloadPreview?: {
+      hasTracksArray?: boolean;
+      keys?: string[];
+    };
+  };
+
+  log("[library] qobuz api search", {
+    query,
+    status: result?.status,
+    ok: result?.ok,
+    env: result?.env,
+    appId: result?.appId,
+    hasToken: result?.hasToken,
+    count: result?.count,
+    payloadPreview: result?.payloadPreview || null,
+  });
+
+  const items = Array.isArray(result?.items)
+    ? result.items.filter((item) => item?.title && item?.trackId)
+    : [];
+  remoteCatalogCache.set("qobuz", items);
+  return items;
+}
+
+function getCachedLibraryItem(
+  provider: ActiveLibraryProvider,
+  trackId: string,
+): RemoteCatalogItem | null {
+  const items = remoteCatalogCache.get(provider) || [];
+  return items.find((item) => item.trackId === trackId) || null;
+}
+
+function inferPlaybackSurface(
+  item: RemoteCatalogItem,
+  provider: ActiveLibraryProvider,
+): PlaybackSurface {
+  if (item.playbackSurface) return item.playbackSurface;
+  return provider === "spotify" ? "desktop_app" : "browser";
+}
+
+function computeCaptureQualityMode(
+  provider: ActiveLibraryProvider,
+  item: RemoteCatalogItem,
+  sampleRate?: number,
+  channels?: number,
+) {
+  const qualityText = String(item.qualityLabel || "").toLowerCase();
+  const isHiRes = /24\s*bit|48\s*k|88\.?2\s*k|96\s*k|176\.?4\s*k|192\s*k|hi-res/i.test(
+    qualityText,
+  );
+  const isCdLossless = provider === "qobuz" && item.isLossless !== false && !isHiRes;
+  const verified =
+    isCdLossless &&
+    Number(sampleRate) === 44100 &&
+    Number(channels || 0) === 2;
+  return {
+    verified,
+    qualityMode: verified
+      ? ("verified_lossless" as const)
+      : ("best_available" as const),
+  };
+}
+
+function resolveCaptureLaunchTarget(
+  provider: ActiveLibraryProvider,
+  item: RemoteCatalogItem,
+) {
+  if (provider === "spotify" && item.playbackUri) {
+    return {
+      launchTarget: item.playbackUri,
+      launchUrl: item.playbackUrl || item.canonicalUrl,
+      playbackSurface: "desktop_app" as const,
+    };
+  }
+
+  return {
+    launchTarget: item.playbackUrl || item.canonicalUrl || item.pageUrl,
+    launchUrl: item.playbackUrl || item.canonicalUrl || item.pageUrl,
+    playbackSurface: inferPlaybackSurface(item, provider),
+  };
+}
+
+function buildPlaybackCaptureOutputPath(captureId: string, item: RemoteCatalogItem) {
+  const providerDir = path.join(getPlaybackCaptureCacheDir(), item.provider);
+  safeMkdir(providerDir);
+  const baseName = sanitizeForPathSegment(
+    [item.artist, item.title].filter(Boolean).join(" - ") ||
+      item.title ||
+      captureId,
+  );
+  return path.join(providerDir, `${baseName || captureId}_${captureId}.wav`);
+}
+
+async function prepareHiddenQobuzPlayback(
+  item: RemoteCatalogItem,
+  playbackDeviceId: string,
+) {
+  const sinkId = qobuzSinkIdByPlaybackDeviceId.get(playbackDeviceId);
+  if (!sinkId) {
+    throw new Error(
+      "The selected silent output is not routable from the hidden Qobuz player yet. Re-run Capture Setup after authenticating.",
+    );
+  }
+
+  const targetUrl = item.playbackUrl || item.canonicalUrl || item.pageUrl;
+  if (!targetUrl) {
+    throw new Error("No Qobuz playback URL was found for this track.");
+  }
+
+  const win = getQobuzAutomationWindow();
+  const currentUrl = win.webContents.getURL();
+  if (currentUrl !== targetUrl) {
+    await loadURLAndWait(win, targetUrl, 20_000);
+  } else {
+    await win.webContents.reloadIgnoringCache();
+    await waitForDidFinishLoad(win, 20_000);
+  }
+  await sleep(1200);
+
+  const playbackResult = (await win.webContents.executeJavaScript(
+    `(async () => {
+      const desiredSinkId = ${JSON.stringify(sinkId)};
+      const ensureSink = async (media) => {
+        if (!media) return true;
+        if (typeof media.setSinkId !== "function") return false;
+        try {
+          if (media.sinkId !== desiredSinkId) {
+            await media.setSinkId(desiredSinkId);
+          }
+          return true;
+        } catch (error) {
+          window.__stemsepLastSinkError = String(error?.message || error || "Failed to set sink.");
+          return false;
+        }
+      };
+
+      window.__stemsepDesiredSinkId = desiredSinkId;
+      if (!window.__stemsepSinkPatchInstalled) {
+        const originalPlay = HTMLMediaElement.prototype.play;
+        HTMLMediaElement.prototype.play = async function(...args) {
+          await ensureSink(this);
+          return originalPlay.apply(this, args);
+        };
+        const observer = new MutationObserver(() => {
+          for (const media of Array.from(document.querySelectorAll("audio,video"))) {
+            void ensureSink(media);
+          }
+        });
+        observer.observe(document.documentElement || document.body, {
+          subtree: true,
+          childList: true,
+        });
+        window.__stemsepSinkPatchInstalled = true;
+      }
+
+      const mediaNodes = Array.from(document.querySelectorAll("audio,video"));
+      let sinkApplied = 0;
+      for (const media of mediaNodes) {
+        if (await ensureSink(media)) sinkApplied += 1;
+      }
+
+      const findPlayButton = () => {
+        const candidates = Array.from(document.querySelectorAll("button, [role='button'], a"));
+        return candidates.find((element) => {
+          const text = String(
+            element.getAttribute("aria-label") ||
+              element.getAttribute("title") ||
+              element.textContent ||
+              "",
+          ).toLowerCase();
+          return /play|lecture|reproducir|riproduci|spielen|ouvir|lyssna/i.test(text);
+        });
+      };
+
+      let playButtonClicked = false;
+      const playButton = findPlayButton();
+      if (playButton instanceof HTMLElement) {
+        playButton.click();
+        playButtonClicked = true;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 900));
+
+      let activeMedia = Array.from(document.querySelectorAll("audio,video")).find(
+        (media) => !media.paused && !media.ended,
+      );
+
+      if (!activeMedia) {
+        for (const media of Array.from(document.querySelectorAll("audio,video"))) {
+          try {
+            await ensureSink(media);
+            media.muted = false;
+            media.volume = 1;
+            await media.play();
+            activeMedia = media;
+            break;
+          } catch {
+            // ignore individual play failures
+          }
+        }
+      }
+
+      return {
+        activeMedia: !!activeMedia,
+        playButtonClicked,
+        sinkApplied,
+        sinkError: String(window.__stemsepLastSinkError || ""),
+        speakerSelectionSupported:
+          typeof HTMLMediaElement !== "undefined" &&
+          typeof HTMLMediaElement.prototype.setSinkId === "function",
+      };
+    })()`,
+    true,
+  )) as {
+    activeMedia?: boolean;
+    playButtonClicked?: boolean;
+    sinkApplied?: number;
+    sinkError?: string;
+    speakerSelectionSupported?: boolean;
+  };
+
+  if (!playbackResult?.speakerSelectionSupported) {
+    throw new Error(
+      "This Electron/Chromium build does not expose speaker selection for the hidden Qobuz player.",
+    );
+  }
+  if (playbackResult?.sinkError) {
+    throw new Error(playbackResult.sinkError);
+  }
+  if (!playbackResult?.activeMedia) {
+    throw new Error(
+      "Hidden Qobuz playback did not start. The provider page layout or player state may have changed.",
+    );
+  }
+
+  return {
+    sinkId,
+    playbackResult,
+  };
+}
+
+function getScrapeCollectionScript(provider: RemoteLibraryProvider) {
+  const common = String.raw`
+    const normalizeText = (value) => String(value || "").replace(/\s+/g, " ").trim();
+    const textOf = (el) => normalizeText(el && (el.innerText || el.textContent));
+    const idOf = (value) => {
+      const raw = String(value || "");
+      let hash = 0;
+      for (let i = 0; i < raw.length; i += 1) hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+      return Math.abs(hash).toString(16);
+    };
+    const resolveDuration = (text) => {
+      const match = String(text || "").match(/(\d+):(\d{2})/);
+      if (!match) return undefined;
+      return Number(match[1]) * 60 + Number(match[2]);
+    };
+  `;
+
+  if (provider === "qobuz") {
+    return `(() => {
+      ${common}
+      const seen = new Set();
+      const items = [];
+      const nodes = Array.from(document.querySelectorAll("article, li, .item, .product, .track, .album, [data-testid], .purchase"));
+      for (const node of nodes) {
+        const text = textOf(node);
+        if (!text || !/(download|flac|wav|lossless)/i.test(text)) continue;
+        const anchors = Array.from(node.querySelectorAll("a[href]"));
+        const pageAnchor = anchors.find((anchor) => /qobuz\\.com/i.test(anchor.href) && !/login/i.test(anchor.href));
+        const downloadAnchor = anchors.find((anchor) => /(download|\\.flac|\\.wav|\\.zip)/i.test(anchor.href));
+        const title = textOf(
+          node.querySelector("h1, h2, h3, h4, [class*='title'], [data-testid*='title']")
+        ) || normalizeText(pageAnchor && pageAnchor.textContent);
+        const artist = textOf(
+          node.querySelector("[class*='artist'], [data-testid*='artist'], [class*='subtitle'], [class*='meta']")
+        );
+        const album = textOf(
+          node.querySelector("[class*='album'], [data-testid*='album']")
+        );
+        const qualityLabel =
+          /wav/i.test(text) ? "WAV" : /flac/i.test(text) ? "FLAC" : "Lossless";
+        const canonicalUrl = (pageAnchor && pageAnchor.href) || (downloadAnchor && downloadAnchor.href) || "";
+        const key = canonicalUrl || [title, artist, album].filter(Boolean).join("|");
+        if (!title || !key || seen.has(key)) continue;
+        seen.add(key);
+        const img = node.querySelector("img");
+        items.push({
+          provider: "qobuz",
+          trackId: idOf(key),
+          title,
+          artist: artist || undefined,
+          album: album || undefined,
+          artworkUrl: img && img.src ? img.src : undefined,
+          durationSec: resolveDuration(text),
+          canonicalUrl: canonicalUrl || undefined,
+          qualityLabel,
+          isLossless: true,
+          downloadOrigin: "purchase",
+          pageUrl: (pageAnchor && pageAnchor.href) || undefined,
+          downloadUrlAvailable: !!downloadAnchor,
+          sourceUrl: (downloadAnchor && downloadAnchor.href) || (pageAnchor && pageAnchor.href) || undefined,
+        });
+      }
+      return items.slice(0, 250);
+    })()`;
+  }
+
+  return `(() => {
+    ${common}
+    const seen = new Set();
+    const items = [];
+    const attr = document.querySelector("[data-client-items]")?.getAttribute("data-client-items");
+    if (attr) {
+      try {
+        const parsed = JSON.parse(attr);
+        for (const item of Array.isArray(parsed) ? parsed : []) {
+          const key = item.item_url || item.tralbum_url || item.url || item.title;
+          if (!key || seen.has(key)) continue;
+          seen.add(key);
+          items.push({
+            provider: "bandcamp",
+            trackId: idOf(key),
+            title: normalizeText(item.item_title || item.title),
+            artist: normalizeText(item.band_name || item.artist),
+            album: normalizeText(item.album_title || item.package_title),
+            artworkUrl: item.item_art_url || item.art_url || undefined,
+            canonicalUrl: item.item_url || item.tralbum_url || item.url || undefined,
+            qualityLabel: "Lossless Download",
+            isLossless: true,
+            downloadOrigin: "purchase",
+            pageUrl: item.item_url || item.tralbum_url || item.url || undefined,
+            downloadUrlAvailable: false,
+            sourceUrl: item.item_url || item.tralbum_url || item.url || undefined,
+          });
+        }
+      } catch {}
+    }
+
+    const nodes = Array.from(document.querySelectorAll("li, article, .collection-item, [data-itemid], .trackTitle"));
+    for (const node of nodes) {
+      const text = textOf(node);
+      if (!text) continue;
+      const anchors = Array.from(node.querySelectorAll("a[href]"));
+      const pageAnchor = anchors.find((anchor) => /bandcamp\\.com/i.test(anchor.href));
+      const title = textOf(
+        node.querySelector(".collection-item-title, .trackTitle, h1, h2, h3, [class*='title']")
+      ) || normalizeText(pageAnchor && pageAnchor.textContent);
+      const artist = textOf(
+        node.querySelector(".collection-item-artist, [class*='artist'], .subhead")
+      );
+      const album = textOf(
+        node.querySelector(".collection-item-album, [class*='album']")
+      );
+      const key = (pageAnchor && pageAnchor.href) || [title, artist, album].filter(Boolean).join("|");
+      if (!title || !key || seen.has(key)) continue;
+      seen.add(key);
+      const img = node.querySelector("img");
+      items.push({
+        provider: "bandcamp",
+        trackId: idOf(key),
+        title,
+        artist: artist || undefined,
+        album: album || undefined,
+        artworkUrl: img && img.src ? img.src : undefined,
+        canonicalUrl: (pageAnchor && pageAnchor.href) || undefined,
+        qualityLabel: "Lossless Download",
+        isLossless: true,
+        downloadOrigin: "purchase",
+        pageUrl: (pageAnchor && pageAnchor.href) || undefined,
+        downloadUrlAvailable: false,
+        sourceUrl: (pageAnchor && pageAnchor.href) || undefined,
+      });
+    }
+    return items.slice(0, 250);
+  })()`;
+}
+
+function getResolveTrackScript(provider: RemoteLibraryProvider) {
+  if (provider === "qobuz") {
+    return `(() => {
+      const normalizeText = (value) => String(value || "").replace(/\\s+/g, " ").trim();
+      const anchors = Array.from(document.querySelectorAll("a[href]"));
+      const downloadAnchor = anchors.find((anchor) => /(download|\\.flac|\\.wav|\\.zip)/i.test(anchor.href));
+      const title = normalizeText(
+        document.querySelector("h1, h2, [class*='title'], [data-testid*='title']")?.textContent
+      );
+      const artist = normalizeText(
+        document.querySelector("[class*='artist'], [data-testid*='artist'], [class*='subtitle']")?.textContent
+      );
+      const album = normalizeText(
+        document.querySelector("[class*='album'], [data-testid*='album']")?.textContent
+      );
+      const artwork = document.querySelector("img")?.src;
+      const text = normalizeText(document.body?.innerText);
+      const qualityLabel = /wav/i.test(text) ? "WAV" : /flac/i.test(text) ? "FLAC" : "Lossless";
+      return {
+        downloadUrl: downloadAnchor?.href,
+        title: title || undefined,
+        artist: artist || undefined,
+        album: album || undefined,
+        artworkUrl: artwork || undefined,
+        qualityLabel,
+        canonicalUrl: location.href,
+      };
+    })()`;
+  }
+
+  return `(() => {
+    const normalizeText = (value) => String(value || "").replace(/\\s+/g, " ").trim();
+    const anchors = Array.from(document.querySelectorAll("a[href]"));
+    const downloadAnchor = anchors.find((anchor) => /download/i.test(anchor.href) || /download/i.test(anchor.textContent || ""));
+    const title = normalizeText(
+      document.querySelector("h1, h2, [class*='title'], .trackTitle")?.textContent
+    );
+    const artist = normalizeText(
+      document.querySelector("[class*='artist'], .subhead, .fromAlbum")?.textContent
+    );
+    const artwork = document.querySelector("img")?.src;
+    return {
+      downloadUrl: downloadAnchor?.href,
+      title: title || undefined,
+      artist: artist || undefined,
+      artworkUrl: artwork || undefined,
+      qualityLabel: "Lossless Download",
+      canonicalUrl: location.href,
+    };
+  })()`;
+}
+
+async function loadRemoteBrowserWindow(
+  provider: RemoteLibraryProvider,
+  url: string,
+  options: { visible?: boolean; reuseAuthWindow?: boolean } = {},
+): Promise<{ win: BrowserWindow; disposable: boolean }> {
+  const { visible = false, reuseAuthWindow = false } = options;
+  const existing = reuseAuthWindow ? remoteAuthWindows.get(provider) : null;
+  if (existing && !existing.isDestroyed()) {
+    await existing.loadURL(url);
+    await sleep(1800);
+    return { win: existing, disposable: false };
+  }
+
+  const win = new BrowserWindow({
+    width: visible ? 1180 : 1024,
+    height: visible ? 860 : 768,
+    show: visible,
+    title: `${getRemoteProviderConfig(provider).name} Browser`,
+    parent: visible ? mainWindow || undefined : undefined,
+    modal: false,
+    webPreferences: {
+      partition: getRemoteProviderConfig(provider).partition,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+    },
+  });
+
+  await win.loadURL(url);
+  await sleep(1800);
+  return { win, disposable: !visible };
+}
+
+async function scrapeRemoteCollection(
+  provider: RemoteLibraryProvider,
+): Promise<RemoteCatalogItem[]> {
+  const { win, disposable } = await loadRemoteBrowserWindow(
+    provider,
+    getRemoteProviderConfig(provider).libraryUrl,
+  );
+  try {
+    const rawItems = (await win.webContents.executeJavaScript(
+      getScrapeCollectionScript(provider),
+      true,
+    )) as RemoteCatalogItem[];
+
+    const normalized = (Array.isArray(rawItems) ? rawItems : [])
+      .map((item) => ({
+        provider,
+        trackId:
+          typeof item?.trackId === "string" && item.trackId.trim()
+            ? item.trackId
+            : makeRemoteTrackId(
+                `${item?.canonicalUrl || item?.pageUrl || item?.title || ""}|${item?.artist || ""}|${item?.album || ""}`,
+              ),
+        title: String(item?.title || "").trim(),
+        artist: String(item?.artist || "").trim() || undefined,
+        album: String(item?.album || "").trim() || undefined,
+        artworkUrl: String(item?.artworkUrl || "").trim() || undefined,
+        durationSec:
+          typeof item?.durationSec === "number" && Number.isFinite(item.durationSec)
+            ? item.durationSec
+            : undefined,
+        canonicalUrl: String(item?.canonicalUrl || "").trim() || undefined,
+        qualityLabel: String(item?.qualityLabel || "").trim() || undefined,
+        isLossless: item?.isLossless !== false,
+        downloadOrigin: String(item?.downloadOrigin || "purchase").trim(),
+        pageUrl: String(item?.pageUrl || "").trim() || undefined,
+        variantId: String(item?.variantId || "").trim() || undefined,
+        downloadUrlAvailable: Boolean(item?.downloadUrlAvailable),
+        sourceUrl: String(item?.sourceUrl || "").trim() || undefined,
+      }))
+      .filter(
+        (item) => item.title && !isPlaceholderRemoteCatalogItem(provider, item),
+      );
+
+    remoteCatalogCache.set(provider, normalized);
+    return normalized;
+  } finally {
+    if (disposable) {
+      try {
+        win.destroy();
+      } catch {
+        // ignore
+      }
+    }
+  }
+}
+
+async function resolveRemoteDownloadInfo(
+  provider: RemoteLibraryProvider,
+  pageUrl: string,
+): Promise<{
+  downloadUrl?: string;
+  title?: string;
+  artist?: string;
+  album?: string;
+  artworkUrl?: string;
+  qualityLabel?: string;
+  canonicalUrl?: string;
+}> {
+  const { win, disposable } = await loadRemoteBrowserWindow(provider, pageUrl);
+  try {
+    const result = (await win.webContents.executeJavaScript(
+      getResolveTrackScript(provider),
+      true,
+    )) as Record<string, any>;
+    return {
+      downloadUrl:
+        typeof result?.downloadUrl === "string" && result.downloadUrl.trim()
+          ? result.downloadUrl
+          : undefined,
+      title:
+        typeof result?.title === "string" && result.title.trim()
+          ? result.title.trim()
+          : undefined,
+      artist:
+        typeof result?.artist === "string" && result.artist.trim()
+          ? result.artist.trim()
+          : undefined,
+      album:
+        typeof result?.album === "string" && result.album.trim()
+          ? result.album.trim()
+          : undefined,
+      artworkUrl:
+        typeof result?.artworkUrl === "string" && result.artworkUrl.trim()
+          ? result.artworkUrl.trim()
+          : undefined,
+      qualityLabel:
+        typeof result?.qualityLabel === "string" && result.qualityLabel.trim()
+          ? result.qualityLabel.trim()
+          : undefined,
+      canonicalUrl:
+        typeof result?.canonicalUrl === "string" && result.canonicalUrl.trim()
+          ? result.canonicalUrl.trim()
+          : undefined,
+    };
+  } finally {
+    if (disposable) {
+      try {
+        win.destroy();
+      } catch {
+        // ignore
+      }
+    }
+  }
+}
+
+async function getCookieHeaderForUrl(
+  provider: RemoteLibraryProvider,
+  url: string,
+): Promise<string> {
+  const ses = getRemoteSession(provider);
+  const cookies = await ses.cookies.get({ url });
+  return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join("; ");
+}
+
+async function downloadRemoteFile(
+  provider: RemoteLibraryProvider,
+  url: string,
+  title: string,
+): Promise<string> {
+  const cookieHeader = await getCookieHeaderForUrl(provider, url);
+  const headers: Record<string, string> = {
+    "user-agent":
+      mainWindow?.webContents.getUserAgent() || "Mozilla/5.0 StemSep Desktop",
+  };
+  if (cookieHeader) headers.cookie = cookieHeader;
+
+  const response = await fetch(url, {
+    method: "GET",
+    redirect: "follow",
+    headers,
+  });
+  if (!response.ok || !response.body) {
+    throw new Error(`Download failed (${response.status} ${response.statusText})`);
+  }
+  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
+  if (contentType.includes("text/html")) {
+    throw new Error("Provider returned an HTML page instead of a downloadable audio file.");
+  }
+
+  const responseUrl = response.url || url;
+  const ext = inferRemoteFileExtension(responseUrl);
+  const baseName = sanitizeForPathSegment(title || `remote_${provider}`) || `remote_${provider}`;
+  const filePath = path.join(
+    getRemoteProviderCacheDir(provider),
+    `${baseName}_${randomUUID().slice(0, 6)}${ext}`,
+  );
+  safeMkdir(path.dirname(filePath));
+
+  const totalBytes = Number(response.headers.get("content-length") || NaN);
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let receivedBytes = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) {
+      chunks.push(value);
+      receivedBytes += value.byteLength;
+      const progress = Number.isFinite(totalBytes) && totalBytes > 0
+        ? receivedBytes / totalBytes
+        : NaN;
+      emitRemoteResolveProgress({
+        provider,
+        status: "downloading",
+        detail: `Downloading ${title}...`,
+        progress: Number.isFinite(progress) ? progress : undefined,
+        percent: Number.isFinite(progress) ? toPercent(progress * 100) : undefined,
+      });
+    }
+  }
+
+  const output = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
+  fs.writeFileSync(filePath, output);
+  return filePath;
 }
 
 function ensureWritableDirectory(dirPath: string) {
@@ -993,6 +2718,206 @@ function resolveMissingPreviewAudioPath(missingPath: string): string | null {
   }
 }
 
+const PLAYBACK_AUDIO_EXTENSIONS = new Set([
+  ".wav",
+  ".flac",
+  ".mp3",
+  ".ogg",
+  ".m4a",
+  ".aac",
+  ".wma",
+  ".aiff",
+]);
+
+type PlaybackResolveIssue = {
+  code: MissingAudioCode;
+  hint: string;
+  originalPath?: string;
+};
+
+type PlaybackMetadataLike = {
+  sourceKind?: string;
+  previewDir?: string;
+  savedDir?: string;
+};
+
+function listPlaybackAudioFiles(baseDir: string, maxFiles = 200): string[] {
+  const files: string[] = [];
+  const walk = (dir: string) => {
+    if (files.length >= maxFiles) return;
+
+    let entries: fs.Dirent[] = [];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      if (files.length >= maxFiles) return;
+
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+
+      if (
+        entry.isFile() &&
+        PLAYBACK_AUDIO_EXTENSIONS.has(path.extname(entry.name).toLowerCase())
+      ) {
+        files.push(full);
+      }
+    }
+  };
+
+  walk(baseDir);
+  return files;
+}
+
+function inferStemKeyFromPlaybackPath(filePath: string): string {
+  const base = path.basename(filePath, path.extname(filePath)).toLowerCase();
+  if (base.includes("instrumental") || base.includes("inst")) return "instrumental";
+  if (base.includes("vocal")) return "vocals";
+  if (base.includes("drum")) return "drums";
+  if (base.includes("bass")) return "bass";
+  if (base.includes("guitar")) return "guitar";
+  if (base.includes("piano") || base.includes("keys")) return "piano";
+  if (base.includes("other")) return "other";
+  return sanitizeForPathSegment(base) || "stem";
+}
+
+function scorePlaybackCandidate(
+  candidatePath: string,
+  {
+    stemName,
+    requestedName,
+    searchRoot,
+  }: { stemName?: string; requestedName?: string; searchRoot: string },
+): number {
+  const base = path.basename(candidatePath, path.extname(candidatePath)).toLowerCase();
+  const stem = String(stemName || "").trim().toLowerCase();
+  const requested = String(requestedName || "").trim().toLowerCase();
+
+  let score = 0;
+  if (requested && `${base}${path.extname(candidatePath).toLowerCase()}` === requested) {
+    score += 100;
+  }
+  if (requested && base === requested.replace(path.extname(requested), "")) {
+    score += 80;
+  }
+  if (stem && base === stem) {
+    score += 70;
+  }
+  if (stem && base.includes(stem)) {
+    score += 35;
+  }
+
+  if (stem === "instrumental" && base.includes("vocal")) score -= 40;
+  if (stem === "vocals" && base.includes("inst")) score -= 40;
+
+  const rel = path.relative(searchRoot, candidatePath);
+  const depth = rel.split(path.sep).length;
+  score += Math.max(0, 10 - depth);
+
+  return score;
+}
+
+function resolvePlaybackFilePath(
+  filePath: string | undefined,
+  options: { previewDir?: string; savedDir?: string; stemName?: string } = {},
+): string | null {
+  const requestedPath = String(filePath || "").trim();
+  if (requestedPath && fs.existsSync(requestedPath)) {
+    return requestedPath;
+  }
+
+  if (requestedPath) {
+    const fallback = resolveMissingPreviewAudioPath(requestedPath);
+    if (fallback && fs.existsSync(fallback)) {
+      return fallback;
+    }
+  }
+
+  const searchRoots = [options.previewDir, options.savedDir]
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter(Boolean)
+    .filter((value, index, self) => self.indexOf(value) === index)
+    .filter((value) => fs.existsSync(value));
+
+  const requestedName = requestedPath ? path.basename(requestedPath) : "";
+  let best: string | null = null;
+  let bestScore = -Infinity;
+
+  for (const searchRoot of searchRoots) {
+    const candidates = listPlaybackAudioFiles(searchRoot);
+    for (const candidatePath of candidates) {
+      const score = scorePlaybackCandidate(candidatePath, {
+        stemName: options.stemName,
+        requestedName,
+        searchRoot,
+      });
+      if (score > bestScore) {
+        bestScore = score;
+        best = candidatePath;
+      }
+    }
+  }
+
+  return best;
+}
+
+function resolvePlaybackStems(
+  outputFiles: Record<string, string> | undefined,
+  playback?: PlaybackMetadataLike,
+): {
+  stems: Record<string, string>;
+  issues: Record<string, PlaybackResolveIssue>;
+} {
+  const stems: Record<string, string> = {};
+  const issues: Record<string, PlaybackResolveIssue> = {};
+  const sourceEntries = Object.entries(outputFiles || {});
+
+  for (const [stemName, originalPath] of sourceEntries) {
+    const resolvedPath = resolvePlaybackFilePath(originalPath, {
+      previewDir: playback?.previewDir,
+      savedDir: playback?.savedDir,
+      stemName,
+    });
+
+    if (resolvedPath) {
+      stems[stemName] = resolvedPath;
+      continue;
+    }
+
+    const missing = classifyMissingAudioPath(
+      originalPath ||
+        path.join(playback?.previewDir || playback?.savedDir || "", `${stemName}.wav`),
+    );
+    issues[stemName] = {
+      code: missing.code,
+      hint: missing.hint,
+      originalPath,
+    };
+  }
+
+  if (
+    sourceEntries.length === 0 &&
+    typeof playback?.previewDir === "string" &&
+    playback.previewDir.trim() &&
+    fs.existsSync(playback.previewDir)
+  ) {
+    for (const candidatePath of listPlaybackAudioFiles(playback.previewDir)) {
+      const stemName = inferStemKeyFromPlaybackPath(candidatePath);
+      if (!stems[stemName]) {
+        stems[stemName] = candidatePath;
+      }
+    }
+  }
+
+  return { stems, issues };
+}
+
 function cleanupPreviewCache() {
   try {
     const base = getPreviewCacheBaseDir();
@@ -1235,6 +3160,100 @@ function resolveBundledPythonForRustBackend(): string | null {
 
 function ensureBackend() {
   return ensurePythonBridge();
+}
+
+function configureProviderSessionPermissions(provider: RemoteLibraryProvider) {
+  const ses = getRemoteSession(provider);
+  if ((ses as any).__stemsepPermissionsConfigured) return;
+
+  ses.setPermissionCheckHandler((_webContents, permission) => {
+    if (String(permission) === "speaker-selection") return true;
+    return false;
+  });
+
+  ses.setPermissionRequestHandler(
+    (_webContents, permission, callback) => {
+      if (String(permission) === "speaker-selection") {
+        callback(true);
+        return;
+      }
+      callback(false);
+    },
+  );
+
+  (ses as any).__stemsepPermissionsConfigured = true;
+}
+
+function getQobuzAutomationWindow() {
+  if (qobuzAutomationWindow && !qobuzAutomationWindow.isDestroyed()) {
+    return qobuzAutomationWindow;
+  }
+
+  configureProviderSessionPermissions("qobuz");
+  qobuzAutomationWindow = new BrowserWindow({
+    show: false,
+    width: 1280,
+    height: 900,
+    title: "Qobuz Automation",
+    webPreferences: {
+      partition: getRemoteProviderConfig("qobuz").partition,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      backgroundThrottling: false,
+    },
+  });
+
+  qobuzAutomationWindow.on("closed", () => {
+    qobuzAutomationWindow = null;
+    qobuzSinkIdByPlaybackDeviceId.clear();
+  });
+
+  return qobuzAutomationWindow;
+}
+
+function openRemoteSourceAuthWindow(provider: RemoteLibraryProvider) {
+  const existing = remoteAuthWindows.get(provider);
+  if (existing && !existing.isDestroyed()) {
+    existing.focus();
+    return existing;
+  }
+
+  const config = getRemoteProviderConfig(provider);
+  configureProviderSessionPermissions(provider);
+  const authWindow = new BrowserWindow({
+    width: 1180,
+    height: 860,
+    parent: mainWindow || undefined,
+    title: `${config.name} Sign In`,
+    webPreferences: {
+      partition: config.partition,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+    },
+  });
+
+  remoteAuthWindows.set(provider, authWindow);
+
+  authWindow.on("closed", () => {
+    remoteAuthWindows.delete(provider);
+  });
+
+  authWindow
+    .loadURL(config.loginUrl)
+    .catch(async () => {
+      try {
+        await authWindow.loadURL(config.libraryUrl);
+      } catch (error) {
+        log("[remote] failed to open auth window", {
+          provider,
+          error: (error as any)?.message || String(error),
+        });
+      }
+    });
+
+  return authWindow;
 }
 
 function openHuggingFaceAuthWindow() {
@@ -2080,9 +4099,31 @@ function createWindow() {
 
 // Suppress Autofill warnings
 app.commandLine.appendSwitch("disable-features", "AutofillServer");
+app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 
 app.whenReady().then(() => {
   cleanupPreviewCache();
+  session.defaultSession.setDisplayMediaRequestHandler(
+    async (_request, callback) => {
+      try {
+        const sources = await desktopCapturer.getSources({
+          types: ["screen"],
+          thumbnailSize: { width: 1, height: 1 },
+          fetchWindowIcons: false,
+        });
+        callback({
+          video: sources[0],
+          audio: "loopback",
+        });
+      } catch (error: any) {
+        log("[capture] failed to set display media handler", {
+          error: error?.message || String(error),
+        });
+        callback({ video: undefined, audio: undefined });
+      }
+    },
+    { useSystemPicker: false },
+  );
 
   // Register 'media' protocol to serve local files
   protocol.registerFileProtocol("media", (request, callback) => {
@@ -2336,6 +4377,21 @@ app.on("window-all-closed", () => {
 app.on("before-quit", () => {
   isAppQuitting = true;
   stopHealthChecks();
+  for (const win of Array.from(remoteAuthWindows.values())) {
+    try {
+      win.close();
+    } catch {
+      // ignore
+    }
+  }
+  if (qobuzAutomationWindow && !qobuzAutomationWindow.isDestroyed()) {
+    try {
+      qobuzAutomationWindow.close();
+    } catch {
+      // ignore
+    }
+    qobuzAutomationWindow = null;
+  }
   if (backendProcess) {
     log("Killing backend process before quit");
     backendProcess.kill();
@@ -2621,10 +4677,13 @@ function routeBackendMessage(msg: any) {
     mainWindow.webContents.send("download-progress", {
       modelId: msg.model_id,
       progress: msg.progress,
+      stage: msg.stage,
       artifactIndex: msg.artifactIndex,
       artifactCount: msg.artifactCount,
       currentFile: msg.currentFile,
       currentRelativePath: msg.currentRelativePath,
+      currentSource: msg.currentSource,
+      verified: msg.verified,
       message: msg.message,
     });
   } else if (
@@ -2636,6 +4695,8 @@ function routeBackendMessage(msg: any) {
     mainWindow.webContents.send("download-complete", {
       modelId: msg.model_id,
       artifactCount: msg.artifactCount,
+      stage: msg.stage,
+      verified: msg.verified,
     });
   } else if (
     msg?.type === "error" &&
@@ -2659,6 +4720,9 @@ function routeBackendMessage(msg: any) {
       artifactCount: msg.artifactCount,
       currentFile: msg.currentFile,
       currentRelativePath: msg.currentRelativePath,
+      currentSource: msg.currentSource,
+      stage: msg.stage,
+      verified: msg.verified,
       progress: msg.progress,
     });
   } else if (
@@ -2726,10 +4790,18 @@ function routeBackendMessage(msg: any) {
     mainWindow &&
     !mainWindow.isDestroyed()
   ) {
+    let normalizedOutputFiles = msg.output_files || {};
     if (msg?.job_id) {
       const state = modelInfoByJobId.get(msg.job_id);
       if (state) {
-        state.outputFiles = msg.output_files || {};
+        const resolved = resolvePlaybackStems(msg.output_files || {}, {
+          sourceKind: "preview_cache",
+          previewDir: state.previewDir,
+          savedDir: state.finalOutputDir,
+        });
+        normalizedOutputFiles =
+          Object.keys(resolved.stems).length > 0 ? resolved.stems : normalizedOutputFiles;
+        state.outputFiles = normalizedOutputFiles;
       }
     }
     emitNormalizedSeparationEvent(msg);
@@ -2737,8 +4809,32 @@ function routeBackendMessage(msg: any) {
       lastProgressByJobId.delete(msg.job_id);
     }
     mainWindow.webContents.send("separation-complete", {
-      outputFiles: msg.output_files,
+      outputFiles: normalizedOutputFiles,
       jobId: msg.job_id,
+    });
+  } else if (
+    msg?.type === "playback_capture_progress" &&
+    mainWindow &&
+    !mainWindow.isDestroyed()
+  ) {
+    const sessionInfo =
+      typeof msg?.capture_id === "string"
+        ? playbackCaptureSessions.get(msg.capture_id)
+        : null;
+    mainWindow.webContents.send("playback-capture-progress", {
+      provider: sessionInfo?.provider || "qobuz",
+      captureId: msg.capture_id,
+      status: msg.status,
+      detail: msg.detail,
+      progress:
+        typeof msg.progress === "number" ? msg.progress : undefined,
+      percent:
+        typeof msg.progress === "number"
+          ? `${Math.round(msg.progress * 100)}%`
+          : undefined,
+      elapsedSec:
+        typeof msg.elapsed_sec === "number" ? msg.elapsed_sec : undefined,
+      error: typeof msg.error === "string" ? msg.error : undefined,
     });
   } else if (
     msg?.type === "youtube_progress" &&
@@ -2746,6 +4842,10 @@ function routeBackendMessage(msg: any) {
     !mainWindow.isDestroyed()
   ) {
     mainWindow.webContents.send("youtube-progress", msg);
+    mainWindow.webContents.send("remote-resolve-progress", {
+      provider: "youtube",
+      ...msg,
+    });
   } else if (
     msg?.type === "quality_progress" &&
     mainWindow &&
@@ -3009,6 +5109,7 @@ ipcMain.handle(
       phaseParams,
       postProcessingSteps,
       volumeCompensation,
+      pipelineConfig,
       workflow,
       runtimePolicy,
       exportPolicy,
@@ -3037,6 +5138,7 @@ ipcMain.handle(
       };
       postProcessingSteps?: any[];
       volumeCompensation?: { enabled: boolean; stage?: "export" | "blend" | "both"; dbPerExtraModel?: number };
+      pipelineConfig?: any[];
       workflow?: Record<string, any>;
       runtimePolicy?: Record<string, any>;
       exportPolicy?: Record<string, any>;
@@ -3105,6 +5207,7 @@ ipcMain.handle(
         post_processing_steps: postProcessingSteps,
         export_mixes: exportMixes,
         volume_compensation: volumeCompensation,
+        pipeline_config: pipelineConfig,
         workflow,
         runtime_policy: runtimePolicy,
         export_policy: exportPolicy,
@@ -3114,9 +5217,18 @@ ipcMain.handle(
         if (!myJobId || msg?.job_id !== myJobId) return;
         log("[separate-audio] complete", { requestId, jobId: myJobId });
         cleanup();
+        const resolvedPlayback = resolvePlaybackStems(msg.output_files || {}, {
+          sourceKind: "preview_cache",
+          previewDir,
+          savedDir: outputDir,
+        });
+        const normalizedOutputFiles =
+          Object.keys(resolvedPlayback.stems).length > 0
+            ? resolvedPlayback.stems
+            : msg.output_files || {};
         resolve({
           success: true,
-          outputFiles: msg.output_files,
+          outputFiles: normalizedOutputFiles,
           jobId: msg.job_id,
           outputDir: previewDir,
           sourceAudioProfile: stagedInput.sourceAudioProfile,
@@ -3203,6 +5315,708 @@ ipcMain.handle(
   },
 );
 
+ipcMain.handle("detect-playback-devices", async () => {
+  const state = await refreshQobuzPlaybackDeviceMappings();
+  return state.devices;
+});
+
+ipcMain.handle("get-capture-environment-status", async () => {
+  return getCaptureEnvironmentStatusForQobuz();
+});
+
+ipcMain.handle(
+  "set-capture-output-device",
+  async (_event, { deviceId }: { deviceId: string }) => {
+    const trimmed = typeof deviceId === "string" ? deviceId.trim() : "";
+    if (!trimmed) {
+      return {
+        success: false,
+        error: "Select a silent output device first.",
+      };
+    }
+
+    const state = await refreshQobuzPlaybackDeviceMappings();
+    const device = state.devices.find((entry) => entry.id === trimmed);
+    if (!device) {
+      return {
+        success: false,
+        error: "The selected playback device is no longer available.",
+      };
+    }
+    if (!qobuzSinkIdByPlaybackDeviceId.has(trimmed)) {
+      return {
+        success: false,
+        error:
+          "Qobuz could not route playback to the selected silent output. Authenticate first, then try saving the device again.",
+      };
+    }
+
+    if (!writeAppConfig({ captureOutputDeviceId: trimmed })) {
+      return {
+        success: false,
+        error: "Failed to persist the selected silent output device.",
+      };
+    }
+
+    return {
+      success: true,
+      deviceId: trimmed,
+      label: device.label,
+    };
+  },
+);
+
+ipcMain.handle(
+  "auth-library-provider",
+  async (_event, { provider }: { provider: ActiveLibraryProvider }) => {
+    try {
+      const config = getRemoteProviderConfig(provider);
+      const authenticated = await checkLibraryProviderAuthenticated(provider);
+      if (authenticated) {
+        return {
+          success: true,
+          provider,
+          authenticated: true,
+          message: `${config.name} session already active. Opening your library view.`,
+        };
+      }
+
+      openRemoteSourceAuthWindow(provider);
+      return {
+        success: true,
+        provider,
+        authenticated: false,
+        message: `Sign in to ${config.name} in the opened window, then refresh your library.`,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        provider,
+        authenticated: false,
+        error: error?.message || String(error),
+      };
+    }
+  },
+);
+
+ipcMain.handle(
+  "get-library-auth-status",
+  async (_event, { provider }: { provider: ActiveLibraryProvider }) => {
+    try {
+      const config = getRemoteProviderConfig(provider);
+      const authenticated = await checkLibraryProviderAuthenticated(provider);
+      return {
+        success: true,
+        provider,
+        authenticated,
+        message: authenticated
+          ? `${config.name} session is active.`
+          : `${config.name} is not signed in in StemSep yet.`,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        provider,
+        authenticated: false,
+        error: error?.message || String(error),
+      };
+    }
+  },
+);
+
+ipcMain.handle(
+  "list-library-collection",
+  async (
+    _event,
+    { provider, scope }: { provider: ActiveLibraryProvider; scope?: string },
+  ) => {
+    try {
+      if (scope) {
+        log("[library] scope requested", { provider, scope });
+      }
+      const authenticated = await checkLibraryProviderAuthenticated(provider);
+      if (!authenticated) {
+        const config = getRemoteProviderConfig(provider);
+        return {
+          success: false,
+          provider,
+          authenticated: false,
+          error: `${config.name} is not signed in in StemSep yet.`,
+          hint: `Click Connect, finish the login in the provider window, then refresh ${config.name}.`,
+        };
+      }
+      const config = getRemoteProviderConfig(provider);
+      const items = await scrapeProviderItems(provider, config.libraryUrl);
+      return {
+        success: true,
+        provider,
+        authenticated: true,
+        items,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        provider,
+        authenticated: false,
+        error: error?.message || String(error),
+        hint:
+          provider === "spotify"
+            ? "Open Spotify sign-in, confirm your saved tracks are visible in the web player, then refresh."
+            : "Open Qobuz sign-in, confirm your favorites/library page is visible, then refresh.",
+      };
+    }
+  },
+);
+
+ipcMain.handle(
+  "search-library",
+  async (
+    _event,
+    { provider, query }: { provider: ActiveLibraryProvider; query: string },
+  ) => {
+    const trimmed = String(query || "").trim();
+    if (!trimmed) {
+      return {
+        success: false,
+        provider,
+        authenticated: false,
+        error: "Enter a search query first.",
+      };
+    }
+
+    try {
+      const config = getRemoteProviderConfig(provider);
+      const authenticated = await checkLibraryProviderAuthenticated(provider);
+      if (!authenticated) {
+        return {
+          success: false,
+          provider,
+          authenticated: false,
+          error: `${config.name} is not signed in in StemSep yet.`,
+          hint: `Click Connect, finish the login in the provider window, then retry the search.`,
+        };
+      }
+      const targetUrl = config.searchUrl?.(trimmed) || config.libraryUrl;
+      log("[library] search requested", { provider, query: trimmed, targetUrl });
+      const items =
+        provider === "qobuz"
+          ? await searchQobuzCatalogViaApi(trimmed)
+          : await scrapeProviderItems(provider, targetUrl);
+      const filtered = items.filter((item) =>
+        [item.title, item.artist, item.album]
+          .filter(Boolean)
+          .some((value) =>
+            String(value).toLowerCase().includes(trimmed.toLowerCase()),
+          ),
+      );
+      log("[library] search results", {
+        provider,
+        query: trimmed,
+        scraped: items.length,
+        filtered: filtered.length,
+      });
+      remoteCatalogCache.set(provider, filtered);
+      return {
+        success: true,
+        provider,
+        authenticated: true,
+        items: filtered,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        provider,
+        authenticated: false,
+        error: error?.message || String(error),
+        hint: "Sign in to the provider first, then retry the search.",
+      };
+    }
+  },
+);
+
+ipcMain.handle(
+  "prepare-playback-capture",
+  async (
+    _event,
+    { provider, trackId }: { provider: ActiveLibraryProvider; trackId: string },
+  ) => {
+    try {
+      const item = getCachedLibraryItem(provider, trackId);
+      if (!item) {
+        throw new Error("Track not found in the current provider list. Refresh and try again.");
+      }
+      const devices = await getNativePlaybackDevices();
+      if (devices.length === 0) {
+        throw new Error("No Windows playback device is available for hidden capture.");
+      }
+      const launch = resolveCaptureLaunchTarget(provider, item);
+      const quality = computeCaptureQualityMode(provider, item);
+      return {
+        success: true,
+        provider,
+        trackId: item.trackId,
+        displayName: [item.artist, item.title].filter(Boolean).join(" - ") || item.title,
+        launchUrl: launch.launchUrl,
+        launchUri:
+          provider === "spotify" ? item.playbackUri || undefined : undefined,
+        playbackSurface: launch.playbackSurface,
+        deviceRequired: true,
+        qualityLabel:
+          item.qualityLabel ||
+          (quality.verified
+            ? "Verified Lossless"
+            : provider === "qobuz"
+              ? "Lossless Source Capture"
+              : "Best Available Capture"),
+        qualityMode: quality.qualityMode,
+        verifiedLossless: quality.verified,
+        estimatedDurationSec: item.durationSec,
+        sourceMeta: {
+          provider,
+          providerTrackId: item.trackId,
+          title: item.title,
+          artist: item.artist,
+          album: item.album,
+          artworkUrl: item.artworkUrl,
+          durationSec: item.durationSec,
+          canonicalUrl: item.canonicalUrl || item.playbackUrl || item.pageUrl,
+          qualityLabel:
+            item.qualityLabel ||
+            (quality.verified
+              ? "Verified Lossless"
+              : provider === "qobuz"
+                ? "Lossless Source Capture"
+                : "Best Available Capture"),
+          isLossless: item.isLossless,
+          ingestMode: "desktop_capture",
+          playbackSurface: launch.playbackSurface,
+          qualityMode: quality.qualityMode,
+          verifiedLossless: quality.verified,
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        provider,
+        error: error?.message || String(error),
+        code: "CAPTURE_PREPARE_FAILED",
+      };
+    }
+  },
+);
+
+ipcMain.handle(
+  "start-playback-capture",
+  async (
+    _event,
+    {
+      provider,
+      trackId,
+      deviceId,
+    }: {
+      provider: ActiveLibraryProvider;
+      trackId: string;
+      deviceId: string;
+    },
+  ) => {
+    try {
+      const item = getCachedLibraryItem(provider, trackId);
+      if (!item) {
+        throw new Error("Track not found in the current provider list. Refresh and try again.");
+      }
+      if (provider !== "qobuz") {
+        throw new Error(
+          "Hidden library capture is only enabled for Qobuz in this build.",
+        );
+      }
+
+      const authenticated = await checkLibraryProviderAuthenticated(provider);
+      if (!authenticated) {
+        throw new Error("Authenticate Qobuz in StemSep before starting a hidden capture.");
+      }
+
+      const deviceState = await refreshQobuzPlaybackDeviceMappings();
+      const device = deviceState.devices.find((entry) => entry.id === deviceId);
+      if (!device) {
+        throw new Error("The selected playback device is no longer available.");
+      }
+      if (!qobuzSinkIdByPlaybackDeviceId.has(deviceId)) {
+        throw new Error(
+          "The selected silent output could not be routed from the hidden Qobuz player. Re-run Capture Setup and save the device again.",
+        );
+      }
+
+      const captureId = randomUUID();
+      const startedAt = new Date().toISOString();
+      const outputPath = buildPlaybackCaptureOutputPath(captureId, item);
+      playbackCaptureSessions.set(captureId, {
+        captureId,
+        provider,
+        trackId,
+        deviceId,
+        item,
+        startedAt,
+      });
+
+      emitPlaybackCaptureProgress({
+        provider,
+        captureId,
+        status: "launching",
+        detail: "Preparing hidden Qobuz playback...",
+      });
+      const capturePromise = sendPythonCommand(
+        "capture_playback_loopback",
+        {
+          capture_id: captureId,
+          device_id: deviceId,
+          output_path: outputPath,
+          expected_duration_sec: item.durationSec,
+          start_timeout_ms: 15_000,
+          trailing_silence_ms: 2_500,
+          min_active_rms: 0.003,
+        },
+        Math.max(300_000, Math.round(((item.durationSec || 180) + 30) * 1000)),
+      );
+
+      try {
+        await prepareHiddenQobuzPlayback(item, deviceId);
+        const captureResult = await capturePromise;
+        const profile = await probeAudioFile(captureResult.file_path);
+        const quality = computeCaptureQualityMode(
+          provider,
+          item,
+          captureResult.capture_sample_rate || profile.sampleRate || undefined,
+          captureResult.capture_channels || profile.channels || undefined,
+        );
+
+        return {
+          success: true,
+          provider,
+          file_path: captureResult.file_path,
+          display_name:
+            [item.artist, item.title].filter(Boolean).join(" - ") || item.title,
+          source_url:
+            item.playbackUrl || item.canonicalUrl || item.pageUrl || undefined,
+          canonical_url:
+            item.canonicalUrl || item.playbackUrl || item.pageUrl || undefined,
+          artist: item.artist,
+          album: item.album,
+          artwork_url: item.artworkUrl,
+          duration_sec:
+            captureResult.duration_sec ||
+            item.durationSec ||
+            profile.durationSeconds ||
+            undefined,
+          quality_label:
+            quality.verified
+              ? "Verified Lossless"
+              : item.qualityLabel || "Lossless Source Capture",
+          is_lossless: quality.verified,
+          provider_track_id: item.trackId,
+          ingest_mode: "desktop_capture",
+          playback_surface: "browser",
+          quality_mode: quality.qualityMode,
+          verified_lossless: quality.verified,
+          capture_device_id: deviceId,
+          capture_sample_rate:
+            captureResult.capture_sample_rate || profile.sampleRate || undefined,
+          capture_channels:
+            captureResult.capture_channels || profile.channels || undefined,
+          capture_start_at: captureResult.capture_start_at || startedAt,
+          capture_end_at:
+            captureResult.capture_end_at || new Date().toISOString(),
+        };
+      } catch (error) {
+        await sendPythonCommandWithRetry(
+          "cancel_playback_capture",
+          { capture_id: captureId },
+          10_000,
+          0,
+        ).catch(() => null);
+        throw error;
+      } finally {
+        playbackCaptureSessions.delete(captureId);
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        provider,
+        error: error?.message || String(error),
+        code: "CAPTURE_START_FAILED",
+      };
+    }
+  },
+);
+
+ipcMain.handle(
+  "cancel-playback-capture",
+  async (_event, { captureId }: { captureId?: string }) => {
+    await sendPythonCommandWithRetry(
+      "cancel_playback_capture",
+      captureId ? { capture_id: captureId } : {},
+      10_000,
+      0,
+    ).catch(() => null);
+
+    if (captureId) {
+      const existing = playbackCaptureSessions.get(captureId);
+      if (existing) {
+        emitPlaybackCaptureProgress({
+          provider: existing.provider,
+          captureId,
+          status: "cancelled",
+          detail: "Capture cancelled.",
+        });
+      }
+      playbackCaptureSessions.delete(captureId);
+    } else {
+      playbackCaptureSessions.clear();
+    }
+    return { success: true };
+  },
+);
+
+ipcMain.handle(
+  "auth-remote-source",
+  async (_event, { provider }: { provider: RemoteLibraryProvider }) => {
+    try {
+      openRemoteSourceAuthWindow(provider);
+      const config = getRemoteProviderConfig(provider);
+      return {
+        success: true,
+        provider,
+        authenticated: false,
+        message: `Sign in to ${config.name} in the opened window, then click Refresh Library.`,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        provider,
+        authenticated: false,
+        error: error?.message || String(error),
+      };
+    }
+  },
+);
+
+ipcMain.handle(
+  "list-remote-collection",
+  async (
+    _event,
+    {
+      provider,
+      scope,
+    }: { provider: RemoteLibraryProvider; scope?: string },
+  ) => {
+    try {
+      const items = await scrapeRemoteCollection(provider);
+      const authenticated = items.length > 0;
+      if (scope && scope.trim()) {
+        log("[remote] collection scope ignored", { provider, scope });
+      }
+      return {
+        success: true,
+        provider,
+        authenticated,
+        items,
+      };
+    } catch (error: any) {
+      const config = getRemoteProviderConfig(provider);
+      return {
+        success: false,
+        provider,
+        authenticated: false,
+        error: error?.message || String(error),
+        hint: `Open the ${config.name} sign-in window, log in, and make sure your purchases/downloads page is available.`,
+      };
+    }
+  },
+);
+
+ipcMain.handle(
+  "search-remote-catalog",
+  async (
+    _event,
+    {
+      provider,
+      query,
+    }: { provider: RemoteLibraryProvider; query: string },
+  ) => {
+    try {
+      const items =
+        remoteCatalogCache.get(provider) || (await scrapeRemoteCollection(provider));
+      const trimmed = String(query || "").trim().toLowerCase();
+      const filtered = !trimmed
+        ? items
+        : items.filter((item) =>
+            [item.title, item.artist, item.album]
+              .filter(Boolean)
+              .some((value) => String(value).toLowerCase().includes(trimmed)),
+          );
+      return {
+        success: true,
+        provider,
+        authenticated: items.length > 0,
+        items: filtered,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        provider,
+        authenticated: false,
+        error: error?.message || String(error),
+        hint: "Refresh the provider library first.",
+      };
+    }
+  },
+);
+
+ipcMain.handle(
+  "resolve-remote-track",
+  async (
+    _event,
+    {
+      provider,
+      trackId,
+      variantId,
+    }: {
+      provider: RemoteLibraryProvider;
+      trackId: string;
+      variantId?: string;
+    },
+  ) => {
+    emitRemoteResolveProgress({
+      provider,
+      status: "starting",
+      detail: "Preparing import...",
+    });
+
+    try {
+      const items =
+        remoteCatalogCache.get(provider) || (await scrapeRemoteCollection(provider));
+      const item = items.find((entry) => entry.trackId === trackId);
+      if (!item) {
+        throw new Error("Remote item not found. Refresh the provider library and try again.");
+      }
+      if (variantId && item.variantId && variantId !== item.variantId) {
+        throw new Error("Requested provider variant is no longer available.");
+      }
+
+      let downloadUrl = item.sourceUrl;
+      let resolvedTitle = item.title;
+      let resolvedArtist = item.artist;
+      let resolvedAlbum = item.album;
+      let resolvedArtwork = item.artworkUrl;
+      let resolvedQuality = item.qualityLabel || "Lossless";
+      let resolvedCanonicalUrl = item.canonicalUrl || item.pageUrl || item.sourceUrl;
+
+      if (!downloadUrl || !/\.(flac|wav|aif|aiff|zip)(\?|$)/i.test(downloadUrl)) {
+        if (!item.pageUrl) {
+          throw new Error("No downloadable source was found for this item.");
+        }
+        emitRemoteResolveProgress({
+          provider,
+          status: "resolving",
+          detail: "Resolving provider download link...",
+        });
+        const resolved = await resolveRemoteDownloadInfo(provider, item.pageUrl);
+        downloadUrl = resolved.downloadUrl || downloadUrl;
+        resolvedTitle = resolved.title || resolvedTitle;
+        resolvedArtist = resolved.artist || resolvedArtist;
+        resolvedAlbum = resolved.album || resolvedAlbum;
+        resolvedArtwork = resolved.artworkUrl || resolvedArtwork;
+        resolvedQuality = resolved.qualityLabel || resolvedQuality;
+        resolvedCanonicalUrl = resolved.canonicalUrl || resolvedCanonicalUrl;
+      }
+
+      if (!downloadUrl) {
+        throw new Error(
+          "The provider page did not expose a downloadable lossless file for this item.",
+        );
+      }
+
+      const downloadedPath = await downloadRemoteFile(
+        provider,
+        downloadUrl,
+        resolvedTitle || item.title,
+      );
+
+      let effectivePath = downloadedPath;
+      if (path.extname(downloadedPath).toLowerCase() === ".zip") {
+        emitRemoteResolveProgress({
+          provider,
+          status: "extracting",
+          detail: "Extracting downloaded archive...",
+        });
+        const extractedPath = await extractArchiveForRemoteTrack(
+          provider,
+          downloadedPath,
+          resolvedTitle || item.title,
+        );
+        if (!extractedPath) {
+          throw new Error(
+            "The provider returned an archive, but no matching audio track could be extracted.",
+          );
+        }
+        effectivePath = extractedPath;
+      }
+
+      emitRemoteResolveProgress({
+        provider,
+        status: "probing",
+        detail: "Verifying audio quality...",
+      });
+      const profile = await probeAudioFile(effectivePath);
+      if (!profile.isLossless) {
+        throw new Error(
+          "The resolved provider file is not lossless and cannot be used for true lossless ingest.",
+        );
+      }
+
+      emitRemoteResolveProgress({
+        provider,
+        status: "completed",
+        detail: "Import ready.",
+        percent: "100%",
+        progress: 1,
+      });
+
+      return {
+        success: true,
+        provider,
+        file_path: effectivePath,
+        display_name:
+          [resolvedArtist, resolvedTitle].filter(Boolean).join(" - ") ||
+          resolvedTitle ||
+          item.title,
+        source_url: downloadUrl,
+        canonical_url: resolvedCanonicalUrl,
+        artist: resolvedArtist,
+        album: resolvedAlbum,
+        artwork_url: resolvedArtwork,
+        duration_sec: item.durationSec,
+        quality_label: resolvedQuality,
+        is_lossless: true,
+        provider_track_id: item.trackId,
+        download_origin: item.downloadOrigin || "purchase",
+      };
+    } catch (error: any) {
+      emitRemoteResolveProgress({
+        provider,
+        status: "failed",
+        error: error?.message || String(error),
+      });
+      return {
+        success: false,
+        provider,
+        error: error?.message || String(error),
+        code: "REMOTE_RESOLVE_FAILED",
+        hint: "Refresh the provider library, then try the import again from a purchased/downloadable lossless item.",
+      };
+    }
+  },
+);
+
 // Resolve YouTube URL to a local temp audio file (WAV)
 ipcMain.handle("resolve-youtube-url", async (event, { url }: { url: string }) => {
   try {
@@ -3212,6 +6026,10 @@ ipcMain.handle("resolve-youtube-url", async (event, { url }: { url: string }) =>
       file_path: (result as any)?.file_path,
       title: (result as any)?.title,
       source_url: (result as any)?.source_url,
+      channel: (result as any)?.channel,
+      duration_sec: (result as any)?.duration_sec,
+      thumbnail_url: (result as any)?.thumbnail_url,
+      canonical_url: (result as any)?.canonical_url,
     };
   } catch (e: any) {
     const raw = e?.message || String(e);
@@ -3469,7 +6287,7 @@ ipcMain.handle("open-model-file-dialog", async () => {
   if (!mainWindow) return null;
   try {
     const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ["openFile"],
+      properties: ["openFile", "multiSelections"],
       filters: [
         {
           name: "Model Files",
@@ -3548,6 +6366,16 @@ ipcMain.handle("open-folder", async (event, folderPath: string) => {
   await shell.openPath(folderPath);
 });
 
+ipcMain.handle("check-file-exists", async (_event, filePath: string) => {
+  try {
+    if (!filePath || typeof filePath !== "string") return false;
+    const resolvedPath = resolvePlaybackFilePath(filePath) || filePath;
+    return fs.existsSync(resolvedPath);
+  } catch {
+    return false;
+  }
+});
+
 // Read audio file as base64 for use with Blob URLs
 // This works around browser security restrictions that block file:// URLs
 ipcMain.handle("read-audio-file", async (_event, filePath: string) => {
@@ -3571,14 +6399,7 @@ ipcMain.handle("read-audio-file", async (_event, filePath: string) => {
       );
     }
 
-    let resolvedPath = filePath;
-    if (!fs.existsSync(resolvedPath)) {
-      const fallback = resolveMissingPreviewAudioPath(resolvedPath);
-      if (fallback && fs.existsSync(fallback)) {
-        log("Resolved missing preview audio path", { from: filePath, to: fallback });
-        resolvedPath = fallback;
-      }
-    }
+    const resolvedPath = resolvePlaybackFilePath(filePath) || filePath;
 
     if (!fs.existsSync(resolvedPath)) {
       const missing = classifyMissingAudioPath(filePath);
@@ -3624,6 +6445,36 @@ ipcMain.handle("read-audio-file", async (_event, filePath: string) => {
     };
   }
 });
+
+ipcMain.handle(
+  "resolve-playback-stems",
+  async (
+    _event,
+    {
+      outputFiles,
+      playback,
+    }: {
+      outputFiles?: Record<string, string>;
+      playback?: PlaybackMetadataLike;
+    },
+  ) => {
+    try {
+      const resolved = resolvePlaybackStems(outputFiles, playback);
+      return {
+        success: true,
+        stems: resolved.stems,
+        issues: resolved.issues,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        stems: outputFiles || {},
+        issues: {},
+        error: error?.message || String(error),
+      };
+    }
+  },
+);
 
 // Check preset models
 ipcMain.handle(
@@ -3699,6 +6550,7 @@ ipcMain.handle(
       phaseParams,
       postProcessingSteps,
       volumeCompensation,
+      pipelineConfig,
       workflow,
       runtimePolicy,
       exportPolicy,
@@ -3727,6 +6579,7 @@ ipcMain.handle(
       };
       postProcessingSteps?: any[];
       volumeCompensation?: { enabled: boolean; stage?: "export" | "blend" | "both"; dbPerExtraModel?: number };
+      pipelineConfig?: any[];
       workflow?: Record<string, any>;
       runtimePolicy?: Record<string, any>;
       exportPolicy?: Record<string, any>;
@@ -3760,6 +6613,7 @@ ipcMain.handle(
         post_processing_steps: postProcessingSteps,
         export_mixes: exportMixes,
         volume_compensation: volumeCompensation,
+        pipeline_config: pipelineConfig,
         workflow,
         runtime_policy: runtimePolicy,
         export_policy: exportPolicy,
@@ -3861,6 +6715,24 @@ ipcMain.handle("resume-download", async (event, modelId: string) => {
   // Simple command, events handled globally
   return sendPythonCommand("resume_download", { model_id: modelId });
 });
+
+ipcMain.handle(
+  "import-model-files",
+  async (
+    _event,
+    {
+      modelId,
+      files,
+      allowCopy,
+    }: { modelId: string; files: Array<{ kind?: string; path: string }>; allowCopy?: boolean },
+  ) => {
+    return sendPythonCommandWithRetry(
+      "import_model_files",
+      { model_id: modelId, files, allow_copy: allowCopy !== false },
+      120000,
+    );
+  },
+);
 
 // Import custom model
 ipcMain.handle(

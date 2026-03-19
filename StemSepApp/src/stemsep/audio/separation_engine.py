@@ -1029,8 +1029,25 @@ class SeparationEngine:
             is_demucs = "demucs" in arch or "htdemucs" in arch
 
             bundle = self._resolve_model_bundle(model_id) if self.model_manager else None
+            availability = (
+                bundle.get("availability")
+                if isinstance(bundle, dict)
+                and isinstance(bundle.get("availability"), dict)
+                else {}
+            )
+            availability_class = str(availability.get("class") or "").strip().lower()
 
             if self.model_manager and not is_demucs:
+                if availability_class == "blocked_non_public":
+                    raise FileNotFoundError(
+                        availability.get("reason")
+                        or f"Model '{model_id}' is blocked and cannot be loaded."
+                    )
+                if availability_class == "manual_import" and not self.model_manager.is_model_installed(model_id):
+                    raise FileNotFoundError(
+                        availability.get("reason")
+                        or f"Model '{model_id}' requires manual asset import before it can run."
+                    )
                 if not self.model_manager.is_model_installed(model_id):
                     # IMPORTANT: Do not silently substitute a different model.
                     # Separation should be deterministic and UI-driven: model installs/downloads

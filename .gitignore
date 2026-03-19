@@ -76,6 +76,7 @@ gha-creds-*.json
 # IDE/assistant local state
 .opencode/
 .zed/
+.codex/
 
 # Nested repos / vendor workspaces
 rust-sdk/
@@ -132,6 +133,14 @@ docs/vendor/**/*.jpg
 docs/vendor/**/*.png
 docs/vendor/**/*.ico
 docs/vendor/**/__pycache__/
+
+# Local research / scratch artifacts
+_tmp_*/
+_tmp_*
+StemSepApp/.tmp-models-*/
+electron-poc/*-verification.png
+deep-research-report.md
+Instrumental_vocal_other_stems_separation_mix_master_guide.md
 
 # Local artifact backup folders (moved out of source-of-truth paths)
 StemSepApp/assets/_backups/

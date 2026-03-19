@@ -131,8 +131,10 @@ def _normalize_config(config: dict) -> dict:
       - phase_fix_enabled: bool
       - phase_params: {lowHz, highHz, highFreqWeight, enabled?}
 
-    Additionally, UI may send post-processing steps (auto pipeline). For now we
-    implement the most common one: phase_fix for instrumental.
+    Additionally, the UI may now send an explicit pipeline_config derived from the
+    resolved workflow plan. When present, that is authoritative and we avoid
+    rebuilding the executable pipeline from workflow metadata. Post-processing
+    steps remain additive.
     """
     if not isinstance(config, dict):
         return config
@@ -147,6 +149,7 @@ def _normalize_config(config: dict) -> dict:
         "outputFormat": "output_format",
         "bitDepth": "bit_depth",
         "exportMixes": "export_mixes",
+        "pipelineConfig": "pipeline_config",
         "postProcessingSteps": "post_processing_steps",
         "volumeCompensation": "volume_compensation",
     }

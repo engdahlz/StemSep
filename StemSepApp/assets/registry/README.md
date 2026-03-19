@@ -46,4 +46,4 @@ This writes:
 
 ## Notes
 
-The project treats the deton24 guide’s recommendations as **MUST** (strict-spec mode). The v2 registry exists specifically to encode those requirements in a deterministic, machine-checkable way, instead of relying on ad-hoc code paths or user guesswork.
+The project keeps external guide findings as manual research input, not as a synced runtime dependency. The v2 registry exists so vetted recommendations can be encoded locally in a deterministic, machine-checkable way, instead of relying on ad-hoc code paths or live external document sync.

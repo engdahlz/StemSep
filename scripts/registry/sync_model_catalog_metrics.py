@@ -17,8 +17,16 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_PATH = REPO_ROOT / "StemSepApp" / "assets" / "registry" / "models.v2.source.json"
 SCORES_PATH = REPO_ROOT / "StemSepApp" / "dev_vendor" / "audio_separator" / "models-scores.json"
 OUTPUT_DIR = REPO_ROOT / "reports" / "catalog_sync" / "latest"
-GUIDE_URL = "https://docs.google.com/document/d/1DuZkyucMLpCWfsjVNYxVOEr2s_mgRAhqUHRg2ndOFNs/export?format=txt"
-GUIDE_REVISION = "2026-03-04"
+
+
+def canonical_export_url(doc_id: str) -> str:
+    return f"https://docs.google.com/document/d/{doc_id}/export?format=txt"
+
+
+GUIDE_DOC_ID = "17fjNvJzj8ZGSer7c7OFe_CNfUKbAxEh_OBv94ZdRG5c"
+GUIDE_URL = canonical_export_url(GUIDE_DOC_ID)
+GUIDE_REVISION = "2026-03-14"
+GUIDE_SOURCE_NAME = f"Curated research {GUIDE_REVISION}"
 
 GUIDE_METRIC_RULES: dict[str, dict[str, Any]] = {
     "bs-roformer-large-inst": {"needle": "bs_large_v2_inst", "mode": "standard"},
@@ -56,7 +64,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "instrumental",
             "labels": ["SDR", "FULLNESS", "BLEED"],
             "values": [17.61, 32.06, 43.95],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": GUIDE_URL,
             "evidence_note": "BS-Roformer-Large-Inst / bs_large_v2_inst guide entry.",
             "last_verified": GUIDE_REVISION,
@@ -64,7 +72,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
         "metrics": {"sdr": 17.61, "fullness": 32.06, "bleedless": 43.95},
         "metrics_evidence": [
             {
-                "source": "Guide 2026-03-04",
+                "source": GUIDE_SOURCE_NAME,
                 "url": GUIDE_URL,
                 "note": "Guide lists Fullness 32.06, Bleedless 43.95, SDR 17.61.",
                 "verified_at": GUIDE_REVISION,
@@ -79,7 +87,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "vocals",
             "labels": ["SDR", "FULLNESS", "BLEED"],
             "values": [11.2, 16.2, 38.77],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": GUIDE_URL,
             "evidence_note": "Big Beta 7 vocal guide entry.",
             "last_verified": GUIDE_REVISION,
@@ -87,7 +95,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
         "metrics": {"sdr": 11.2, "fullness": 16.2, "bleedless": 38.77},
         "metrics_evidence": [
             {
-                "source": "Guide 2026-03-04",
+                "source": GUIDE_SOURCE_NAME,
                 "url": GUIDE_URL,
                 "note": "Guide lists Bleedless 38.77, Fullness 16.20, SDR 11.20.",
                 "verified_at": GUIDE_REVISION,
@@ -102,7 +110,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "instrumental",
             "labels": ["SDR", "FULLNESS", "BLEED"],
             "values": [17.6, 32.03, 42.87],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": GUIDE_URL,
             "evidence_note": "Unwa Inst FNO guide entry.",
             "last_verified": GUIDE_REVISION,
@@ -110,7 +118,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
         "metrics": {"sdr": 17.6, "fullness": 32.03, "bleedless": 42.87},
         "metrics_evidence": [
             {
-                "source": "Guide 2026-03-04",
+                "source": GUIDE_SOURCE_NAME,
                 "url": GUIDE_URL,
                 "note": "Guide lists Inst FNO with Fullness 32.03, Bleedless 42.87, SDR 17.60.",
                 "verified_at": GUIDE_REVISION,
@@ -125,7 +133,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "instrumental",
             "labels": ["SDR", "FULLNESS", "BLEED"],
             "values": [17.27, 36.91, 38.77],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": GUIDE_URL,
             "evidence_note": "Unwa HyperACE instrumental guide entry.",
             "last_verified": GUIDE_REVISION,
@@ -140,7 +148,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "instrumental",
             "labels": ["SDR", "FULLNESS", "BLEED"],
             "values": [17.4, 38.03, 37.87],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": GUIDE_URL,
             "evidence_note": "HyperACE v2 instrumental guide entry.",
             "last_verified": GUIDE_REVISION,
@@ -155,7 +163,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "vocals",
             "labels": ["VOC SDR", "FOCUS", "STATUS"],
             "values": [11.39, "Lead Vox", "Guide"],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": GUIDE_URL,
             "evidence_note": "Guide lists HyperACE v2 vocal SDR 11.39 but not the full triad nearby.",
             "last_verified": GUIDE_REVISION,
@@ -169,7 +177,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "vocals",
             "labels": ["SDR", "FULLNESS", "BLEED"],
             "values": [10.98, 21.43, 30.51],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": GUIDE_URL,
             "evidence_note": "Revive 3e guide entry.",
             "last_verified": GUIDE_REVISION,
@@ -184,7 +192,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "vocals",
             "labels": ["SDR", "FULLNESS", "BLEED"],
             "values": [10.97, 15.13, 40.07],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": GUIDE_URL,
             "evidence_note": "Revive 2 guide entry.",
             "last_verified": GUIDE_REVISION,
@@ -199,7 +207,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "vocals",
             "labels": ["SDR", "FULLNESS", "BLEED"],
             "values": [11.16, 17.99, 33.85],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": GUIDE_URL,
             "evidence_note": "voc_fv7 guide entry.",
             "last_verified": GUIDE_REVISION,
@@ -214,7 +222,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "vocals",
             "labels": ["SDR", "FULLNESS", "BLEED"],
             "values": [10.8, 21.82, 30.83],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": GUIDE_URL,
             "evidence_note": "vocfv7beta3 guide entry.",
             "last_verified": GUIDE_REVISION,
@@ -229,7 +237,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "drums",
             "labels": ["KICK SDR", "SNARE FULL", "HH BLEED"],
             "values": [16.66, 25.0361, 12.347],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": GUIDE_URL,
             "evidence_note": "Guide lists per-stem drumsep metrics for the public 5-stem release.",
             "last_verified": GUIDE_REVISION,
@@ -267,7 +275,7 @@ CURATED_CARD_OVERRIDES: dict[str, dict[str, Any]] = {
             "primary_target": "restoration",
             "labels": ["MODEL SDR", "BASE SDR", "CHANNELS"],
             "values": [22.505, 20.4029, "Mono"],
-            "source": "Guide 2026-03-04",
+            "source": GUIDE_SOURCE_NAME,
             "evidence_url": "https://huggingface.co/anvuew/dereverb_bs_roformer",
             "evidence_note": "New BS-Roformer dereverb variant highlighted in the live guide.",
             "last_verified": GUIDE_REVISION,
@@ -619,7 +627,9 @@ def add_or_replace_models(models: list[dict[str, Any]], additions: list[dict[str
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Sync model catalog metrics and candidate reports.")
+    ap = argparse.ArgumentParser(
+        description="Build manually curated catalog metrics and candidate reports."
+    )
     ap.add_argument("--registry", default=str(REGISTRY_PATH))
     ap.add_argument("--scores", default=str(SCORES_PATH))
     ap.add_argument("--output-dir", default=str(OUTPUT_DIR))
@@ -656,12 +666,12 @@ def main() -> int:
         if model["id"] in guide_metrics and "metrics" in guide_metrics[model["id"]]:
             metrics = guide_metrics[model["id"]]["metrics"]
             model["metrics"] = {**(model.get("metrics") or {}), **metrics}
-            model["card_metrics"] = standard_card(metrics, "Guide 2026-03-04", GUIDE_URL, f"Guide-extracted metrics for {model['id']}.")
+            model["card_metrics"] = standard_card(metrics, GUIDE_SOURCE_NAME, GUIDE_URL, f"Guide-extracted metrics for {model['id']}.")
             model["catalog_status"] = "verified"
             model["metrics_status"] = "guide_curated"
             model["metrics_evidence"] = [
                 {
-                    "source": "Guide 2026-03-04",
+                    "source": GUIDE_SOURCE_NAME,
                     "url": GUIDE_URL,
                     "note": f"Guide excerpt matched for {model['id']}.",
                     "verified_at": GUIDE_REVISION,

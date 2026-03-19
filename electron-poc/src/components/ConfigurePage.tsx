@@ -464,6 +464,10 @@ export function ConfigurePage({
       presets: presets as any,
       models: models as any,
       globalPhaseParams: phaseParams,
+      runtimeSupport: {
+        fnoSupported:
+          runtimeInfo?.runtimeFingerprint?.neuralop?.fno1d_import_ok !== false,
+      },
     });
   }, [
     mode,
@@ -480,6 +484,7 @@ export function ConfigurePage({
     usePhaseCorrection,
     enableAutoPipeline,
     phaseParams,
+    runtimeInfo?.runtimeFingerprint?.neuralop?.fno1d_import_ok,
   ]);
 
   // Canonical missing dependencies from the separation plan
@@ -843,7 +848,7 @@ export function ConfigurePage({
   ]);
 
   const handleConfirm = () => {
-    if (hasFnoRuntimeBlock) {
+    if (mode === "simple" && hasFnoRuntimeBlock) {
       toast.error("Selected model is blocked by environment", {
         description:
           "FNO-based model requires neuraloperator/neuralop with FNO1d support. " +
@@ -865,6 +870,11 @@ export function ConfigurePage({
     if (missingModels.length > 0) {
       setMissingDialogOpen(true);
       toast.error("Install the required model before saving this configuration.");
+      return;
+    }
+
+    if (separationPlan.blockingIssues.length > 0) {
+      toast.error(separationPlan.blockingIssues[0]);
       return;
     }
 
@@ -908,8 +918,8 @@ export function ConfigurePage({
 
   return (
     <PageShell scroll={false}>
-    <div className="flex h-full items-center justify-center px-5 py-6">
-    <div className="relative flex h-[min(920px,calc(100vh-3rem))] w-full max-w-[1180px] flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-[rgba(250,248,252,0.78)] text-slate-800 shadow-[0_40px_120px_rgba(141,150,179,0.22)] backdrop-blur-2xl">
+    <div className="flex h-full items-center justify-center px-6 py-6">
+    <div className="relative flex h-[min(980px,calc(100vh-2rem))] w-full max-w-[1360px] flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-[rgba(250,248,252,0.78)] text-slate-800 shadow-[0_40px_120px_rgba(141,150,179,0.22)] backdrop-blur-2xl">
       {/* Header */}
       <div className="border-b border-white/60 px-7 py-5">
         <div className="flex items-center gap-4">
@@ -937,18 +947,12 @@ export function ConfigurePage({
               <span className="truncate text-sm">{fileName}</span>
             </div>
           </div>
-          <div className="hidden rounded-[1.15rem] border border-white/70 bg-white/76 px-4 py-3 text-right shadow-[0_18px_36px_rgba(141,150,179,0.12)] md:block">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
-              Preview
-            </div>
-            <div className="mt-1 text-[13px] text-slate-700">Lossless WAV</div>
-          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="stemsep-config-scroll flex-1 min-h-0 overflow-y-auto px-7 py-6 pr-4">
-        <div className="max-w-6xl mx-auto space-y-6">
+        <div className="mx-auto max-w-[1240px] space-y-6">
           {/* Mode Tabs */}
           <div className="stemsep-config-segmented grid w-full grid-cols-2 rounded-[1.3rem] border border-white/70 bg-white/54 p-1.5">
             <button
@@ -973,7 +977,13 @@ export function ConfigurePage({
             </button>
           </div>
 
-          <RuntimeDoctorCard compact />
+          <CollapsibleSection
+            title="Model / Env Doctor"
+            defaultOpen={false}
+            className="border-white/55 bg-[rgba(255,255,255,0.5)]"
+          >
+            <RuntimeDoctorCard compact showHeader={false} />
+          </CollapsibleSection>
 
           {hasFnoRuntimeBlock && (
             <Card className="rounded-[1.5rem] border-rose-300/55 bg-rose-50/82 p-4 text-slate-800 backdrop-blur-xl">
@@ -981,11 +991,16 @@ export function ConfigurePage({
                 <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
                 <div className="space-y-1">
                   <div className="font-medium text-destructive">
-                    FNO model blocked by current environment
+                    {mode === "simple"
+                      ? "FNO model blocked in Simple mode"
+                      : "FNO runtime warning"}
                   </div>
                   <div className="text-sm text-rose-900/75">
-                    Install a neuraloperator/neuralop build that exposes{" "}
-                    <code>neuralop.models.FNO1d</code> and restart StemSep.
+                    {mode === "simple"
+                      ? "Install a neuraloperator/neuralop build that exposes "
+                      : "This model can still be sent from Advanced mode, but the current runtime does not expose "}
+                    <code>neuralop.models.FNO1d</code>
+                    {mode === "simple" ? " and restart StemSep." : "."}
                   </div>
                   <div className="text-xs text-rose-700/75">
                     Blocked model(s): {blockedFnoModels.join(", ")}
@@ -1007,11 +1022,41 @@ export function ConfigurePage({
             </Card>
           )}
 
-          <SeparationPlanCard
-            report={backendPreflight}
-            loading={isPreflightLoading}
-            mode={mode}
-          />
+          {mode === "simple" && separationPlan.blockingIssues.length > 0 && (
+            <Card className="rounded-[1.5rem] border-rose-300/55 bg-rose-50/82 p-4 text-slate-800 backdrop-blur-xl">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
+                <div className="space-y-1.5">
+                  <div className="font-medium text-destructive">
+                    Simple mode guardrails
+                  </div>
+                  <div className="space-y-1 text-sm text-rose-900/80">
+                    {separationPlan.blockingIssues.map((issue) => (
+                      <div key={issue}>{issue}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {separationPlan.warnings.length > 0 && (
+            <Card className="rounded-[1.5rem] border-amber-300/55 bg-amber-50/82 p-4 text-slate-800 backdrop-blur-xl">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-700" />
+                <div className="space-y-1.5">
+                  <div className="font-medium text-amber-800">
+                    Advanced mode warnings
+                  </div>
+                  <div className="space-y-1 text-sm text-amber-900/80">
+                    {separationPlan.warnings.map((warning) => (
+                      <div key={warning}>{warning}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
 
           {mode === "simple" ? (
             <div className="space-y-6">
@@ -1531,6 +1576,12 @@ export function ConfigurePage({
             </div>
           ) : (
             <div className="space-y-6">
+              <SeparationPlanCard
+                report={backendPreflight}
+                loading={isPreflightLoading}
+                mode={mode}
+              />
+
               <div className="rounded-[1.4rem] border border-amber-300/60 bg-amber-50/82 p-5 text-amber-900/80">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span className="rounded-full border border-amber-300/55 bg-amber-50/88 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-amber-700">

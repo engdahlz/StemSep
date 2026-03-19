@@ -122,6 +122,13 @@ ARCHITECTURE_ALIASES = {
 
 WEIGHT_EXTENSIONS = (".ckpt", ".pth", ".pt", ".safetensors", ".onnx", ".chpt")
 CONFIG_EXTENSIONS = (".yaml", ".yml")
+REPORT_COVERAGE_PATH = Path("StemSepApp/assets/registry/report_model_coverage.json")
+ALLOWED_COVERAGE_STATUSES = {
+    "direct",
+    "mirror_fallback",
+    "manual_import",
+    "blocked_non_public",
+}
 
 
 # ---- Results model ----
@@ -265,6 +272,30 @@ def _find_installed_files(models_dir: Path, model_id: str) -> List[Path]:
     return hits
 
 
+def _download_artifacts(entry: Dict[str, Any]) -> List[Dict[str, Any]]:
+    download = entry.get("download")
+    if not isinstance(download, dict):
+        return []
+    artifacts = download.get("artifacts")
+    if not isinstance(artifacts, list):
+        return []
+    return [artifact for artifact in artifacts if isinstance(artifact, dict)]
+
+
+def _availability_class(entry: Dict[str, Any]) -> str:
+    availability = entry.get("availability")
+    if isinstance(availability, dict):
+        value = availability.get("class")
+        if isinstance(value, str):
+            return value.strip()
+    download = entry.get("download")
+    if isinstance(download, dict):
+        value = download.get("strategy")
+        if isinstance(value, str):
+            return value.strip()
+    return ""
+
+
 def _detect_repo_root() -> Path:
     # This script lives in scripts/registry/, so repo root is two levels up.
     return Path(__file__).resolve().parents[2]
@@ -350,6 +381,78 @@ def validate_entry(
     links_cfg = _get_nested(entry, "links", "config")
     catalog_status = entry.get("catalog_status")
     card_metrics = entry.get("card_metrics")
+    availability_class = _availability_class(entry)
+    artifacts = _download_artifacts(entry)
+
+    if availability_class and availability_class not in ALLOWED_COVERAGE_STATUSES:
+        issues.append(
+            Issue(
+                "ERROR" if strict else "WARN",
+                model_id,
+                f"Unknown availability class {availability_class!r}",
+                entry_file,
+            )
+        )
+
+    if availability_class in {"direct", "mirror_fallback"}:
+        if not artifacts:
+            issues.append(
+                Issue(
+                    "ERROR",
+                    model_id,
+                    "Runnable model is missing download.artifacts entries",
+                    entry_file,
+                )
+            )
+        for artifact in artifacts:
+            if not artifact.get("required", True):
+                continue
+            source_urls: List[str] = []
+            if isinstance(artifact.get("sources"), list):
+                source_urls.extend(
+                    [
+                        str(source.get("url")).strip()
+                        for source in artifact["sources"]
+                        if isinstance(source, dict) and str(source.get("url") or "").strip()
+                    ]
+                )
+            direct_source = artifact.get("source")
+            if isinstance(direct_source, str) and direct_source.strip():
+                source_urls.append(direct_source.strip())
+            if not source_urls:
+                issues.append(
+                    Issue(
+                        "ERROR",
+                        model_id,
+                        f"Required artifact {artifact.get('relative_path') or artifact.get('filename')!r} is missing sources",
+                        entry_file,
+                    )
+                )
+            if strict and not artifact.get("sha256"):
+                issues.append(
+                    Issue(
+                        "ERROR",
+                        model_id,
+                        f"Required artifact {artifact.get('relative_path') or artifact.get('filename')!r} is missing sha256",
+                        entry_file,
+                    )
+                )
+    elif availability_class == "manual_import":
+        download = entry.get("download")
+        manual_instructions = (
+            download.get("manual_instructions")
+            if isinstance(download, dict)
+            else None
+        )
+        if not isinstance(manual_instructions, list) or not manual_instructions:
+            issues.append(
+                Issue(
+                    "ERROR" if strict else "WARN",
+                    model_id,
+                    "Manual-import model is missing manual_instructions",
+                    entry_file,
+                )
+            )
 
     if catalog_status == "verified":
         if not isinstance(card_metrics, dict):
@@ -580,6 +683,45 @@ def validate_registry(
                     check_verified_urls=check_verified_urls,
                 )
             )
+
+    coverage_path = repo_root / REPORT_COVERAGE_PATH
+    if coverage_path.exists():
+        try:
+            coverage = _read_json(coverage_path)
+            rows = coverage.get("rows") if isinstance(coverage.get("rows"), list) else []
+            missing_rows = [
+                row
+                for row in rows
+                if isinstance(row, dict)
+                and str(row.get("coverage_status") or "").strip() == "missing_research"
+            ]
+            for row in missing_rows:
+                issues.append(
+                    Issue(
+                        "ERROR",
+                        "<coverage>",
+                        f"Report coverage missing for {row.get('report')} / {row.get('display_name')}",
+                        coverage_path,
+                    )
+                )
+        except Exception as e:
+            issues.append(
+                Issue(
+                    "ERROR" if strict else "WARN",
+                    "<coverage>",
+                    f"Failed to read report coverage file: {e}",
+                    coverage_path,
+                )
+            )
+    else:
+        issues.append(
+            Issue(
+                "ERROR" if strict else "WARN",
+                "<coverage>",
+                f"Report coverage file not found: {coverage_path}",
+                coverage_path,
+            )
+        )
 
     return issues, files, entry_count
 

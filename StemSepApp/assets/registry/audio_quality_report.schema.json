@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stemsep.dev/schemas/audio_quality_report.schema.json",
+  "title": "StemSep Audio Quality Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "mode", "thresholds", "summary", "verdict", "pairs"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "mode": { "type": "string", "enum": ["pairwise_output_regression", "recombine_consistency"] },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_correlation",
+        "min_snr_db",
+        "min_si_sdr_db",
+        "max_gain_delta_db",
+        "max_clipped_samples"
+      ],
+      "properties": {
+        "min_correlation": { "type": "number" },
+        "min_snr_db": { "type": "number" },
+        "min_si_sdr_db": { "type": "number" },
+        "max_gain_delta_db": { "type": "number" },
+        "max_clipped_samples": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["compared_pairs", "failed_pairs", "skipped_pairs"],
+      "properties": {
+        "compared_pairs": { "type": "integer", "minimum": 0 },
+        "failed_pairs": { "type": "integer", "minimum": 0 },
+        "skipped_pairs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "verdict": { "type": "string", "enum": ["pass", "fail", "skipped"] },
+    "pairs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "verdict"],
+        "properties": {
+          "label": { "type": "string" },
+          "reference_path": { "type": "string" },
+          "candidate_path": { "type": "string" },
+          "sample_rate": { "type": "integer", "minimum": 1 },
+          "duration_seconds": { "type": "number", "minimum": 0 },
+          "correlation": { "type": ["number", "null"] },
+          "snr_db": { "type": ["number", "null"] },
+          "si_sdr_db": { "type": ["number", "null"] },
+          "gain_delta_db": { "type": ["number", "null"] },
+          "candidate_peak_abs": { "type": ["number", "null"] },
+          "candidate_clipped_samples": { "type": "integer", "minimum": 0 },
+          "verdict": { "type": "string", "enum": ["pass", "fail", "skipped"] },
+          "reason": { "type": "string" },
+          "regressions": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}
