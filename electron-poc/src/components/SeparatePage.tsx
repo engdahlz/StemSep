@@ -13,6 +13,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Upload,
+  X,
 } from "lucide-react";
 
 import { PresetBrowser } from "./PresetBrowser";
@@ -204,8 +205,10 @@ export default function SeparatePage({
     useState<ActiveLibraryProvider | null>(null);
   const [capturingProvider, setCapturingProvider] =
     useState<ActiveLibraryProvider | null>(null);
+  const [capturingTrackId, setCapturingTrackId] = useState<string | null>(null);
   const [captureProgress, setCaptureProgress] =
     useState<PlaybackCaptureProgressPayload | null>(null);
+  const [isCancellingCapture, setIsCancellingCapture] = useState(false);
   const [captureEnvironment, setCaptureEnvironment] =
     useState<CaptureEnvironmentStatus | null>(null);
   const [playbackDevices, setPlaybackDevices] = useState<PlaybackDevice[]>([]);
@@ -519,6 +522,7 @@ export default function SeparatePage({
   const processingPendingConfigRef = useRef(false);
   const dragDepthRef = useRef(0);
   const playbackDeviceMenuRef = useRef<HTMLDivElement | null>(null);
+  const authPollTimeoutRef = useRef<number | null>(null);
   const heroIcons = useMemo(() => {
     const orbitIcons = [Music2, Headphones, Mic2, Radio, Disc3, Upload];
     const circles = [80, 120, 160];
@@ -826,12 +830,15 @@ export default function SeparatePage({
   );
 
   const refreshCaptureEnvironment = useCallback(async () => {
+    if (capturingProvider || captureProgress) {
+      return;
+    }
     try {
-      const [devices, environment] = await Promise.all([
-        window.electronAPI?.detectPlaybackDevices?.() || Promise.resolve([]),
-        window.electronAPI?.getCaptureEnvironmentStatus?.() ||
-          Promise.resolve<CaptureEnvironmentStatus | null>(null),
-      ]);
+      const environment =
+        (await window.electronAPI?.getCaptureEnvironmentStatus?.()) ||
+        null;
+      const devices =
+        (await window.electronAPI?.detectPlaybackDevices?.()) || [];
 
       const resolvedDevices = Array.isArray(devices) ? devices : [];
       setPlaybackDevices(resolvedDevices);
@@ -854,7 +861,7 @@ export default function SeparatePage({
           : "Failed to refresh the Qobuz capture environment",
       );
     }
-  }, []);
+  }, [captureProgress, capturingProvider]);
 
   useEffect(() => {
     void refreshCaptureEnvironment();
@@ -878,6 +885,14 @@ export default function SeparatePage({
       document.removeEventListener("pointerdown", handlePointerDown);
     };
   }, [isPlaybackDeviceMenuOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (authPollTimeoutRef.current) {
+        window.clearTimeout(authPollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (activeImportTab === "youtube") return;
@@ -943,9 +958,53 @@ export default function SeparatePage({
           result.message || "Sign in, then refresh the library.",
       });
       toast.success(result.message || `Opened ${getProviderLabel(provider)} sign-in window`);
-      window.setTimeout(() => {
-        void refreshCaptureEnvironment();
-      }, 800);
+
+      if (authPollTimeoutRef.current) {
+        window.clearTimeout(authPollTimeoutRef.current);
+        authPollTimeoutRef.current = null;
+      }
+
+      if (!result.authenticated && window.electronAPI?.getLibraryAuthStatus) {
+        let attemptsRemaining = 30;
+        const poll = async () => {
+          try {
+            const status = await window.electronAPI?.getLibraryAuthStatus?.(provider);
+            if (status?.success) {
+              updateProviderLibrary(provider, {
+                authenticated: !!status.authenticated,
+                error: status.authenticated ? null : undefined,
+                message: status.authenticated
+                  ? `${getProviderLabel(provider)} connected.`
+                  : result.message || "Finish the sign-in in the provider window.",
+              });
+              await refreshCaptureEnvironment();
+              if (status.authenticated) {
+                authPollTimeoutRef.current = null;
+                return;
+              }
+            }
+          } catch {
+            // Ignore transient auth polling failures.
+          }
+
+          attemptsRemaining -= 1;
+          if (attemptsRemaining <= 0) {
+            authPollTimeoutRef.current = null;
+            return;
+          }
+          authPollTimeoutRef.current = window.setTimeout(() => {
+            void poll();
+          }, 2000);
+        };
+
+        authPollTimeoutRef.current = window.setTimeout(() => {
+          void poll();
+        }, 1200);
+      } else {
+        window.setTimeout(() => {
+          void refreshCaptureEnvironment();
+        }, 800);
+      }
     },
     [refreshCaptureEnvironment, updateProviderLibrary],
   );
@@ -1055,6 +1114,8 @@ export default function SeparatePage({
       }
 
       setCapturingProvider(item.provider as ActiveLibraryProvider);
+      setCapturingTrackId(item.trackId);
+      setIsCancellingCapture(false);
       setCaptureProgress({
         provider: item.provider as ActiveLibraryProvider,
         status: "starting",
@@ -1079,9 +1140,16 @@ export default function SeparatePage({
           selectedPlaybackDeviceId,
         );
         if (!started.success) {
-          toast.error(started.error, {
-            description: started.hint,
-          });
+          if (
+            started.code === "CAPTURE_CANCELLED" ||
+            /cancelled/i.test(started.error || "")
+          ) {
+            toast("Capture cancelled");
+          } else {
+            toast.error(started.error, {
+              description: started.hint,
+            });
+          }
           return;
         }
 
@@ -1131,13 +1199,21 @@ export default function SeparatePage({
         onNavigateToConfigure?.(displayName, started.file_path, selectedPreset);
       } catch (error) {
         await window.electronAPI?.cancelPlaybackCapture?.();
-        toast.error(
-          error instanceof Error ? error.message : "Playback capture failed",
-        );
+        const message =
+          error instanceof Error ? error.message : "Playback capture failed";
+        if (/cancelled/i.test(message)) {
+          toast("Capture cancelled");
+        } else {
+          toast.error(message);
+        }
       } finally {
         setCapturingProvider((current) =>
           current === item.provider ? null : current,
         );
+        setCapturingTrackId((current) =>
+          current === item.trackId ? null : current,
+        );
+        setIsCancellingCapture(false);
         setCaptureProgress(null);
       }
     },
@@ -1149,6 +1225,29 @@ export default function SeparatePage({
       selectedPreset,
     ],
   );
+
+  const handleCancelCapture = useCallback(async () => {
+    if (!window.electronAPI?.cancelPlaybackCapture || !captureProgress) return;
+
+    try {
+      setIsCancellingCapture(true);
+      setCaptureProgress((current) =>
+        current
+          ? {
+              ...current,
+              status: "cancelling",
+              detail: "Cancelling capture...",
+            }
+          : current,
+      );
+      await window.electronAPI.cancelPlaybackCapture(captureProgress.captureId);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to cancel capture",
+      );
+      setIsCancellingCapture(false);
+    }
+  }, [captureProgress]);
 
   const leadQueueItem = useMemo(() => {
     return (
@@ -1957,7 +2056,7 @@ export default function SeparatePage({
                       />
                     </button>
                     {isPlaybackDeviceMenuOpen && (
-                      <div className="absolute left-0 right-0 top-[calc(100%+0.55rem)] z-30 max-h-56 overflow-y-auto rounded-[1.1rem] border border-slate-200/16 bg-slate-950/96 p-1.5 shadow-2xl shadow-black/35 backdrop-blur-xl">
+                      <div className="stemsep-soft-scroll absolute left-0 right-0 top-[calc(100%+0.55rem)] z-30 max-h-56 overflow-y-auto rounded-[1.1rem] border border-slate-200/16 bg-slate-950/96 p-1.5 shadow-2xl shadow-black/35 backdrop-blur-xl">
                         {playbackDevices.length === 0 ? (
                           <div className="rounded-[0.9rem] px-3 py-2.5 text-[13px] text-white/55">
                             No outputs found
@@ -2076,22 +2175,42 @@ export default function SeparatePage({
               {captureProgress &&
                 captureProgress.provider === activeImportTab &&
                 (captureProgress.detail || captureProgress.error) && (
-                  <div className="mt-2 text-[12px] text-white/62">
-                    {captureProgress.error
-                      ? captureProgress.error
-                      : [
-                          captureProgress.detail || captureProgress.status,
-                          captureProgress.percent,
-                          typeof captureProgress.elapsedSec === "number"
-                            ? `${Math.round(captureProgress.elapsedSec)}s`
-                            : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <div className="min-w-0 text-[12px] text-white/62">
+                      {captureProgress.error
+                        ? captureProgress.error
+                        : [
+                            captureProgress.detail || captureProgress.status,
+                            captureProgress.percent,
+                            typeof captureProgress.elapsedSec === "number"
+                              ? `${Math.round(captureProgress.elapsedSec)}s`
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                    </div>
+                    {!captureProgress.error &&
+                      capturingProvider === activeImportTab && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleCancelCapture();
+                          }}
+                          disabled={isCancellingCapture}
+                          className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-white/16 bg-white/8 px-3 py-1.5 text-[11px] tracking-[0.02em] text-white/78 transition-all hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-55"
+                        >
+                          {isCancellingCapture ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <X className="h-3.5 w-3.5" />
+                          )}
+                          Cancel
+                        </button>
+                      )}
                   </div>
                 )}
 
-              <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1">
+              <div className="stemsep-soft-scroll mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1">
                 {remoteItems.length === 0 ? (
                   <div className="rounded-[1.2rem] border border-white/12 bg-white/8 px-4 py-4 text-[13px] text-white/52">
                     {!activeProviderLibrary?.authenticated
@@ -2104,58 +2223,67 @@ export default function SeparatePage({
                   </div>
                 ) : (
                   remoteItems.map((item) => (
-                    <div
-                      key={`${item.provider}-${item.trackId}`}
-                      className="flex items-center gap-3 rounded-[1.2rem] border border-white/12 bg-white/8 px-3 py-3"
-                    >
-                      {item.artworkUrl ? (
-                        <img
-                          src={item.artworkUrl}
-                          alt=""
-                          className="h-12 w-12 shrink-0 rounded-[0.9rem] object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[0.9rem] border border-white/10 bg-white/8 text-white/56">
-                          <Music2 className="h-4 w-4" />
+                    (() => {
+                      const isThisItemCapturing =
+                        capturingProvider === item.provider &&
+                        capturingTrackId === item.trackId;
+                      const anyCaptureActive = !!capturingProvider;
+
+                      return (
+                        <div
+                          key={`${item.provider}-${item.trackId}`}
+                          className="flex items-center gap-3 rounded-[1.2rem] border border-white/12 bg-white/8 px-3 py-3"
+                        >
+                          {item.artworkUrl ? (
+                            <img
+                              src={item.artworkUrl}
+                              alt=""
+                              className="h-12 w-12 shrink-0 rounded-[0.9rem] object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[0.9rem] border border-white/10 bg-white/8 text-white/56">
+                              <Music2 className="h-4 w-4" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-[14px] text-white">
+                              {item.title}
+                            </div>
+                            <div className="truncate text-[12px] text-white/54">
+                              {[
+                                item.artist,
+                                item.album,
+                                item.qualityLabel,
+                                item.playbackSurface === "desktop_app"
+                                  ? "Desktop app"
+                                  : "Browser player",
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void handleCaptureLibraryItem(item);
+                            }}
+                            disabled={
+                              anyCaptureActive ||
+                              !captureEnvironment?.selectedDeviceReady
+                            }
+                            className="inline-flex items-center justify-center gap-2 rounded-[1rem] border border-white/18 bg-white/12 px-3 py-2 text-[13px] tracking-[-0.2px] text-white transition-all hover:bg-white/18 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {isThisItemCapturing ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Radio className="h-4 w-4" />
+                            )}
+                            Capture & Separate
+                          </button>
                         </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[14px] text-white">
-                          {item.title}
-                        </div>
-                        <div className="truncate text-[12px] text-white/54">
-                          {[
-                            item.artist,
-                            item.album,
-                            item.qualityLabel,
-                            item.playbackSurface === "desktop_app"
-                              ? "Desktop app"
-                              : "Browser player",
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void handleCaptureLibraryItem(item);
-                        }}
-                        disabled={
-                          capturingProvider === item.provider ||
-                          !captureEnvironment?.selectedDeviceReady
-                        }
-                        className="inline-flex items-center justify-center gap-2 rounded-[1rem] border border-white/18 bg-white/12 px-3 py-2 text-[13px] tracking-[-0.2px] text-white transition-all hover:bg-white/18 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {capturingProvider === item.provider ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Radio className="h-4 w-4" />
-                        )}
-                        Capture & Separate
-                      </button>
-                    </div>
+                      );
+                    })()
                   ))
                 )}
               </div>

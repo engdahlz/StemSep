@@ -32,9 +32,12 @@ export interface CaptureEnvironmentStatus {
 export interface RemoteCatalogItem {
   provider: RemoteLibraryProvider;
   trackId: string;
+  albumId?: string;
   title: string;
   artist?: string;
   album?: string;
+  trackNumber?: number;
+  discNumber?: number;
   artworkUrl?: string;
   durationSec?: number;
   canonicalUrl?: string;

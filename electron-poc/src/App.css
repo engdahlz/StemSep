@@ -528,3 +528,60 @@
       rgba(181, 191, 216, 1)
     ) border-box;
 }
+
+.stemsep-soft-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(238, 231, 226, 0.96) rgba(255, 255, 255, 0.12);
+  scrollbar-gutter: stable;
+}
+
+.stemsep-soft-scroll::-webkit-scrollbar {
+  width: 14px;
+}
+
+.stemsep-soft-scroll::-webkit-scrollbar-track {
+  margin: 8px 0;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.16)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 8px 18px rgba(255, 255, 255, 0.05);
+}
+
+.stemsep-soft-scroll::-webkit-scrollbar-thumb {
+  min-height: 42px;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(246, 241, 237, 0.98),
+      rgba(229, 221, 215, 0.96)
+    ) padding-box,
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.62),
+      rgba(214, 203, 197, 0.42)
+    ) border-box;
+  box-shadow:
+    0 8px 18px rgba(105, 88, 83, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.stemsep-soft-scroll::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(250, 247, 244, 1),
+      rgba(235, 228, 223, 1)
+    ) padding-box,
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(219, 209, 202, 0.55)
+    ) border-box;
+}

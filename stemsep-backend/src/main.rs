@@ -2463,7 +2463,7 @@ fn capture_playback_loopback_native(
             buffer_duration_hns: min_period.max(0),
         };
         audio_client
-            .initialize_client(&desired_format, &Direction::Render, &mode)
+            .initialize_client(&desired_format, &Direction::Capture, &mode)
             .context("initialize render loopback capture")?;
         let event_handle = audio_client
             .set_get_eventhandle()
@@ -2481,8 +2481,8 @@ fn capture_playback_loopback_native(
         let wav_spec = hound::WavSpec {
             channels: channels as u16,
             sample_rate,
-            bits_per_sample: 16,
-            sample_format: hound::SampleFormat::Int,
+            bits_per_sample: 32,
+            sample_format: hound::SampleFormat::Float,
         };
         let writer = hound::WavWriter::create(output_path, wav_spec)
             .with_context(|| format!("create capture wav at {}", output_path.display()))?;
@@ -2546,8 +2546,7 @@ fn capture_playback_loopback_native(
                         ]);
                         rms_sum += f64::from(sample * sample);
                         rms_count += 1;
-                        let pcm = (sample.clamp(-1.0, 1.0) * f32::from(i16::MAX)).round() as i16;
-                        pcm_samples.push(pcm);
+                        pcm_samples.push(sample.clamp(-1.0, 1.0));
                     }
                 }
 

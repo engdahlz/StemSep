@@ -186,9 +186,12 @@ type RemoteResolveProgressPayload = {
 type RemoteCatalogItem = {
   provider: RemoteLibraryProvider;
   trackId: string;
+  albumId?: string;
   title: string;
   artist?: string;
   album?: string;
+  trackNumber?: number;
+  discNumber?: number;
   artworkUrl?: string;
   durationSec?: number;
   canonicalUrl?: string;
@@ -257,7 +260,7 @@ const REMOTE_PROVIDER_CONFIG: Record<RemoteLibraryProvider, RemoteProviderConfig
   qobuz: {
     name: "Qobuz",
     partition: "persist:stemsep-qobuz",
-    loginUrl: "https://www.qobuz.com/signin",
+    loginUrl: "https://play.qobuz.com/login",
     libraryUrl: "https://play.qobuz.com/user/library/favorites/tracks",
     searchUrl: (query) =>
       `https://play.qobuz.com/search/tracks?searchEntry=${encodeURIComponent(query)}`,
@@ -636,6 +639,11 @@ const remoteAuthWindows = new Map<RemoteLibraryProvider, BrowserWindow>();
 let qobuzAutomationWindow: BrowserWindow | null = null;
 const remoteCatalogCache = new Map<RemoteLibraryProvider, RemoteCatalogItem[]>();
 const qobuzSinkIdByPlaybackDeviceId = new Map<string, string>();
+let qobuzObservedPlaySession = false;
+const cancelledPlaybackCaptureIds = new Set<string>();
+let cachedNativePlaybackDevices: PlaybackDevice[] = [];
+let cachedQobuzSpeakerSelectionAvailable = false;
+let cachedQobuzSpeakerSelectionError: string | null = null;
 const playbackCaptureSessions = new Map<
   string,
   {
@@ -645,6 +653,7 @@ const playbackCaptureSessions = new Map<
     deviceId: string;
     item: RemoteCatalogItem;
     startedAt: string;
+    outputPath: string;
   }
 >();
 
@@ -656,6 +665,58 @@ function emitRemoteResolveProgress(payload: RemoteResolveProgressPayload) {
 function emitPlaybackCaptureProgress(payload: PlaybackCaptureProgressPayload) {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.webContents.send("playback-capture-progress", payload);
+}
+
+function isPlaybackCaptureActive() {
+  return playbackCaptureSessions.size > 0;
+}
+
+async function abortPlaybackCaptureSession(
+  captureId?: string,
+  detail = "Capture cancelled.",
+) {
+  const targetedSessions = captureId
+    ? Array.from(playbackCaptureSessions.values()).filter(
+        (session) => session.captureId === captureId,
+      )
+    : Array.from(playbackCaptureSessions.values());
+
+  for (const session of targetedSessions) {
+    cancelledPlaybackCaptureIds.add(session.captureId);
+    emitPlaybackCaptureProgress({
+      provider: session.provider,
+      captureId: session.captureId,
+      status: "cancelled",
+      detail,
+    });
+  }
+
+  await stopHiddenQobuzPlayback();
+
+  if (targetedSessions.length > 0) {
+    await restartBackendAndWait("Playback capture cancelled.", 30_000).catch(
+      () => null,
+    );
+    for (const session of targetedSessions) {
+      playbackCaptureSessions.delete(session.captureId);
+      try {
+        if (fs.existsSync(session.outputPath)) {
+          fs.unlinkSync(session.outputPath);
+        }
+      } catch {
+        // ignore partial capture cleanup failures
+      }
+    }
+    return { success: true };
+  }
+
+  await sendPythonCommandWithRetry(
+    "cancel_playback_capture",
+    captureId ? { capture_id: captureId } : {},
+    10_000,
+    0,
+  ).catch(() => null);
+  return { success: true };
 }
 
 function getRemoteProviderConfig(provider: RemoteLibraryProvider): RemoteProviderConfig {
@@ -692,15 +753,20 @@ function normalizeDeviceLabel(label: string | undefined | null) {
 }
 
 async function getNativePlaybackDevices(): Promise<PlaybackDevice[]> {
+  if (isPlaybackCaptureActive() && cachedNativePlaybackDevices.length > 0) {
+    return cachedNativePlaybackDevices;
+  }
   const devices = await sendPythonCommandWithRetry(
     "detect_playback_devices",
     {},
     20_000,
     1,
   );
-  return Array.isArray(devices)
+  const normalized = Array.isArray(devices)
     ? devices.filter((device) => device?.id && device?.label)
     : [];
+  cachedNativePlaybackDevices = normalized;
+  return normalized;
 }
 
 async function getQobuzBrowserOutputDevices() {
@@ -793,19 +859,79 @@ async function refreshQobuzPlaybackDeviceMappings() {
       }
     }
 
+    cachedQobuzSpeakerSelectionAvailable =
+      browserOutput.supportsSetSinkId &&
+      qobuzSinkIdByPlaybackDeviceId.size > 0;
+    cachedQobuzSpeakerSelectionError = browserOutput.error || null;
     return {
       devices: nativeDevices,
-      speakerSelectionAvailable:
-        browserOutput.supportsSetSinkId &&
-        qobuzSinkIdByPlaybackDeviceId.size > 0,
-      speakerSelectionError: browserOutput.error || null,
+      speakerSelectionAvailable: cachedQobuzSpeakerSelectionAvailable,
+      speakerSelectionError: cachedQobuzSpeakerSelectionError,
     };
   } catch (error: any) {
+    cachedQobuzSpeakerSelectionAvailable = false;
+    cachedQobuzSpeakerSelectionError = error?.message || String(error);
     return {
       devices: nativeDevices,
       speakerSelectionAvailable: false,
-      speakerSelectionError: error?.message || String(error),
+      speakerSelectionError: cachedQobuzSpeakerSelectionError,
     };
+  }
+}
+
+async function stopHiddenQobuzPlayback() {
+  const win = qobuzAutomationWindow;
+  if (!win || win.isDestroyed()) return;
+
+  try {
+    await win.webContents.executeJavaScript(
+      `(() => {
+        const normalize = (value) =>
+          String(value || "").replace(/\\s+/g, " ").trim().toLowerCase();
+        const isVisible = (element) => {
+          if (!(element instanceof HTMLElement)) return false;
+          const style = window.getComputedStyle(element);
+          return (
+            style.display !== "none" &&
+            style.visibility !== "hidden" &&
+            Number(style.opacity || "1") > 0 &&
+            !element.hasAttribute("disabled")
+          );
+        };
+
+        for (const media of Array.from(document.querySelectorAll("audio,video"))) {
+          try {
+            media.pause();
+          } catch {
+            // ignore
+          }
+        }
+
+        const pauseButton = Array.from(
+          document.querySelectorAll("button, [role='button']"),
+        ).find((element) => {
+          const label = normalize(
+            element?.getAttribute?.("aria-label") ||
+              element?.getAttribute?.("title") ||
+              element?.textContent,
+          );
+          return (
+            isVisible(element) &&
+            /\\b(pause|stop|paus|anhalten|arrêter|pause playback)\\b/i.test(label)
+          );
+        });
+
+        if (pauseButton instanceof HTMLElement) {
+          pauseButton.click();
+          return true;
+        }
+
+        return false;
+      })()`,
+      true,
+    );
+  } catch {
+    // ignore best-effort pause failures
   }
 }
 
@@ -827,7 +953,13 @@ async function getCaptureEnvironmentStatusForQobuz(): Promise<CaptureEnvironment
     };
   }
 
-  const deviceState = await refreshQobuzPlaybackDeviceMappings();
+  const deviceState = isPlaybackCaptureActive()
+    ? {
+        devices: cachedNativePlaybackDevices,
+        speakerSelectionAvailable: cachedQobuzSpeakerSelectionAvailable,
+        speakerSelectionError: cachedQobuzSpeakerSelectionError,
+      }
+    : await refreshQobuzPlaybackDeviceMappings();
   const selectedDevice =
     deviceState.devices.find((device) => device.id === selectedDeviceId) || null;
   const selectedDeviceReady = !!(
@@ -1148,7 +1280,19 @@ function waitForDidFinishLoad(
       resolve();
     };
 
-    const handleFail = (_event: any, code: number, description: string) => {
+    const handleFail = (
+      _event: any,
+      code: number,
+      description: string,
+      _validatedURL?: string,
+      isMainFrame?: boolean,
+    ) => {
+      if (isMainFrame === false) {
+        return;
+      }
+      if (code === -3) {
+        return;
+      }
       if (settled) return;
       settled = true;
       cleanup();
@@ -1166,7 +1310,14 @@ async function loadURLAndWait(
   timeoutMs = 20_000,
 ) {
   const waiter = waitForDidFinishLoad(win, timeoutMs);
-  await win.loadURL(url);
+  try {
+    await win.loadURL(url);
+  } catch (error: any) {
+    const message = String(error?.message || error || "");
+    if (!message.includes("ERR_ABORTED") && !message.includes("(-3)")) {
+      throw error;
+    }
+  }
   await waiter;
 }
 
@@ -1226,61 +1377,23 @@ async function probeQobuzAuthenticatedFromWindow(
 ): Promise<boolean> {
   try {
     const currentUrl = String(win.webContents.getURL() || "");
-    if (!/qobuz\.com/i.test(currentUrl)) return false;
-    if (isLikelyUnauthedProviderUrl("qobuz", currentUrl)) return false;
+    if (!/play\.qobuz\.com/i.test(currentUrl)) return false;
+    const currentPath = new URL(currentUrl).pathname || "";
+    const onLoginPath = /^\/(?:login|signin)(?:\/|$)/i.test(currentPath);
+    const authenticated = !onLoginPath;
 
-    if (/\/my\/account(\/|$)|\/account(\/|$)|\/profile(\/|$)/i.test(currentUrl)) {
-      return true;
+    if (authenticated) {
+      qobuzObservedPlaySession = true;
     }
 
-    const probe = (await win.webContents.executeJavaScript(
-      `(() => {
-        const normalize = (value) =>
-          String(value || "").replace(/\\s+/g, " ").trim().toLowerCase();
-        const bodyText = normalize(document.body?.innerText);
-        if (!bodyText) {
-          return { authenticated: false };
-        }
+    log("[library] qobuz auth probe", {
+      currentUrl,
+      currentPath,
+      authenticated,
+      observedSession: qobuzObservedPlaySession,
+    });
 
-        if (
-          /sign out|my streaming plan|my purchases|my wallet|my favourites|my favorites|my personal information|my invoices|my vouchers/.test(bodyText)
-        ) {
-          return { authenticated: true };
-        }
-
-        const publicNav = new Set([
-          "streaming plans",
-          "download store",
-          "magazine",
-          "qobuz club",
-          "our ecosystem",
-          "sign in",
-          "log in",
-          "login",
-          "try for free",
-          "discover music",
-          "home",
-        ]);
-
-        const headerTexts = Array.from(
-          document.querySelectorAll("header a, header button, nav a, nav button"),
-        )
-          .map((element) => normalize(element.textContent))
-          .filter(Boolean);
-
-        const hasAccountLabel = headerTexts.some((text) => {
-          if (publicNav.has(text)) return false;
-          if (text === "my account") return true;
-          if (text.includes("sign out")) return true;
-          return /[a-z]/.test(text) && text.includes(" ");
-        });
-
-        return { authenticated: hasAccountLabel };
-      })()`,
-      true,
-    )) as { authenticated?: boolean };
-
-    return !!probe?.authenticated;
+    return authenticated;
   } catch (error) {
     log("[library] qobuz window auth probe failed", {
       error: (error as any)?.message || String(error),
@@ -1293,13 +1406,41 @@ async function checkLibraryProviderAuthenticated(
   provider: ActiveLibraryProvider,
 ) {
   try {
+    if (provider === "qobuz") {
+      const windows = getOpenProviderProbeWindows(provider);
+      if (windows.length > 0) {
+        for (const win of windows) {
+          if (await probeQobuzAuthenticatedFromWindow(win)) {
+            return true;
+          }
+        }
+      }
+
+      if (qobuzObservedPlaySession) {
+        return true;
+      }
+
+      const automationWindow = getQobuzAutomationWindow();
+      const currentUrl = String(automationWindow.webContents.getURL() || "");
+      if (
+        !/play\.qobuz\.com/i.test(currentUrl) ||
+        /\/login(\/|$)|\/signin(\/|$)/i.test(currentUrl)
+      ) {
+        await loadURLAndWait(
+          automationWindow,
+          getRemoteProviderConfig("qobuz").libraryUrl,
+          20_000,
+        );
+        await sleep(900);
+      }
+
+      return probeQobuzAuthenticatedFromWindow(automationWindow);
+    }
+
     const sessionForProvider = getRemoteSession(provider);
     const config = getRemoteProviderConfig(provider);
     const providerUrl = new URL(config.libraryUrl);
-    const rootHostname =
-      provider === "qobuz"
-        ? "qobuz.com"
-        : providerUrl.hostname.replace(/^www\./i, "");
+    const rootHostname = providerUrl.hostname.replace(/^www\./i, "");
     const cookies = await sessionForProvider.cookies.get({});
     const providerCookies = cookies.filter((cookie) => {
       const domain = String(cookie.domain || "")
@@ -1316,28 +1457,6 @@ async function checkLibraryProviderAuthenticated(
       return providerCookies.some((cookie) =>
         ["sp_dc", "sp_key", "sp_t"].includes(String(cookie.name || "").toLowerCase()),
       );
-    }
-
-    const hasAuthCookie = providerCookies.some((cookie) => {
-      const name = String(cookie.name || "").toLowerCase();
-      return (
-        name.includes("auth") ||
-        name.includes("token") ||
-        name.includes("session") ||
-        name.includes("user")
-      );
-    });
-
-    if (hasAuthCookie) {
-      return true;
-    }
-
-    if (provider === "qobuz") {
-      for (const win of getOpenProviderProbeWindows(provider)) {
-        if (await probeQobuzAuthenticatedFromWindow(win)) {
-          return true;
-        }
-      }
     }
 
     return false;
@@ -1498,6 +1617,19 @@ async function searchQobuzCatalogViaApi(
           const albumTitle =
             normalize(track?.album?.title) ||
             normalize(track?.release?.title);
+          const albumId = track?.album?.id || track?.release?.id;
+          const trackNumber = Number(
+            track?.track_number ||
+              track?.trackNumber ||
+              track?.track_number_on_album ||
+              0,
+          );
+          const discNumber = Number(
+            track?.media_number ||
+              track?.disc_number ||
+              track?.discNumber ||
+              0,
+          );
 
           const maximumSamplingRate = Number(
             track?.maximum_sampling_rate ||
@@ -1524,9 +1656,18 @@ async function searchQobuzCatalogViaApi(
           return {
             provider: "qobuz",
             trackId: String(id),
+            albumId: albumId ? String(albumId) : undefined,
             title: normalize(track?.title),
             artist: performer || undefined,
             album: albumTitle || undefined,
+            trackNumber:
+              Number.isFinite(trackNumber) && trackNumber > 0
+                ? trackNumber
+                : undefined,
+            discNumber:
+              Number.isFinite(discNumber) && discNumber > 0
+                ? discNumber
+                : undefined,
             artworkUrl:
               track?.album?.image?.large ||
               track?.album?.image?.extralarge ||
@@ -1537,6 +1678,7 @@ async function searchQobuzCatalogViaApi(
             durationSec:
               typeof track?.duration === "number" ? track.duration : undefined,
             canonicalUrl: \`https://play.qobuz.com/track/\${id}\`,
+            pageUrl: albumId ? \`https://play.qobuz.com/album/\${albumId}\` : undefined,
             qualityLabel,
             isLossless: Boolean(
               track?.lossless ||
@@ -1561,6 +1703,19 @@ async function searchQobuzCatalogViaApi(
         hasToken: Boolean(token),
         count: items.length,
         items,
+        firstTrackPreview: rawTracks[0]
+          ? {
+              id: rawTracks[0]?.id,
+              url: rawTracks[0]?.url,
+              relative_url: rawTracks[0]?.relative_url,
+              permalink: rawTracks[0]?.permalink,
+              slug: rawTracks[0]?.slug,
+              albumId: rawTracks[0]?.album?.id,
+              albumUrl: rawTracks[0]?.album?.url,
+              albumRelativeUrl: rawTracks[0]?.album?.relative_url,
+              albumSlug: rawTracks[0]?.album?.slug,
+            }
+          : null,
         payloadPreview: {
           hasTracksArray: Array.isArray(payload?.tracks?.items) || Array.isArray(payload?.tracks),
           keys: payload && typeof payload === "object" ? Object.keys(payload).slice(0, 12) : [],
@@ -1576,6 +1731,17 @@ async function searchQobuzCatalogViaApi(
     hasToken?: boolean;
     count?: number;
     items?: RemoteCatalogItem[];
+    firstTrackPreview?: {
+      id?: string | number;
+      url?: string;
+      relative_url?: string;
+      permalink?: string;
+      slug?: string;
+      albumId?: string | number;
+      albumUrl?: string;
+      albumRelativeUrl?: string;
+      albumSlug?: string;
+    } | null;
     payloadPreview?: {
       hasTracksArray?: boolean;
       keys?: string[];
@@ -1590,6 +1756,7 @@ async function searchQobuzCatalogViaApi(
     appId: result?.appId,
     hasToken: result?.hasToken,
     count: result?.count,
+    firstTrackPreview: result?.firstTrackPreview || null,
     payloadPreview: result?.payloadPreview || null,
   });
 
@@ -1669,6 +1836,21 @@ function buildPlaybackCaptureOutputPath(captureId: string, item: RemoteCatalogIt
   return path.join(providerDir, `${baseName || captureId}_${captureId}.wav`);
 }
 
+function getCaptureDurationCapSec() {
+  const raw = String(process.env.STEMSEP_CAPTURE_DURATION_CAP_SEC || "").trim();
+  if (!raw) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function getExpectedCaptureDurationSec(item: RemoteCatalogItem) {
+  const capSec = getCaptureDurationCapSec();
+  if (typeof item.durationSec !== "number") {
+    return capSec ?? undefined;
+  }
+  return capSec ? Math.min(item.durationSec, capSec) : item.durationSec;
+}
+
 async function prepareHiddenQobuzPlayback(
   item: RemoteCatalogItem,
   playbackDeviceId: string,
@@ -1695,9 +1877,57 @@ async function prepareHiddenQobuzPlayback(
   }
   await sleep(1200);
 
+  const initialPath = (() => {
+    try {
+      return new URL(win.webContents.getURL()).pathname;
+    } catch {
+      return "";
+    }
+  })();
+  if (
+    initialPath === "/error/404" &&
+    item.pageUrl &&
+    item.pageUrl !== targetUrl
+  ) {
+      await loadURLAndWait(win, item.pageUrl, 20_000);
+      await sleep(1200);
+  }
+
   const playbackResult = (await win.webContents.executeJavaScript(
     `(async () => {
       const desiredSinkId = ${JSON.stringify(sinkId)};
+      const targetTrackId = ${JSON.stringify(item.trackId)};
+      const targetTitle = ${JSON.stringify(
+        String(item.title || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase(),
+      )};
+      const targetArtist = ${JSON.stringify(
+        String(item.artist || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase(),
+      )};
+      const targetAlbum = ${JSON.stringify(
+        String(item.album || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase(),
+      )};
+      const targetAlbumId = ${JSON.stringify(
+        item.albumId ? String(item.albumId) : "",
+      )};
+      const targetTrackNumber = ${
+        typeof item.trackNumber === "number" && Number.isFinite(item.trackNumber)
+          ? item.trackNumber
+          : "null"
+      };
+      const targetDiscNumber = ${
+        typeof item.discNumber === "number" && Number.isFinite(item.discNumber)
+          ? item.discNumber
+          : "null"
+      };
       const ensureSink = async (media) => {
         if (!media) return true;
         if (typeof media.setSinkId !== "function") return false;
@@ -1737,31 +1967,316 @@ async function prepareHiddenQobuzPlayback(
         if (await ensureSink(media)) sinkApplied += 1;
       }
 
-      const findPlayButton = () => {
-        const candidates = Array.from(document.querySelectorAll("button, [role='button'], a"));
-        return candidates.find((element) => {
-          const text = String(
-            element.getAttribute("aria-label") ||
-              element.getAttribute("title") ||
-              element.textContent ||
-              "",
-          ).toLowerCase();
-          return /play|lecture|reproducir|riproduci|spielen|ouvir|lyssna/i.test(text);
+      const normalize = (value) =>
+        String(value || "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+      const labelOf = (element) =>
+        normalize(
+          element?.getAttribute?.("aria-label") ||
+            element?.getAttribute?.("title") ||
+            element?.textContent ||
+            "",
+        );
+      const isVisible = (element) => {
+        if (!(element instanceof HTMLElement)) return false;
+        const style = window.getComputedStyle(element);
+        return (
+          style.display !== "none" &&
+          style.visibility !== "hidden" &&
+          Number(style.opacity || "1") > 0 &&
+          !element.hasAttribute("disabled")
+        );
+      };
+      const isPlaybackNavigationLabel = (label) =>
+        /\bplaylist(s)?\b|\bplayer\b|\bplay queue\b/.test(label);
+      const exactPlayLabel = (label) =>
+        /^(play|play track|lecture|reproducir|riproduci|spielen|ouvir|lyssna)$/i.test(label);
+      const isPlayLikeButton = (element) => {
+        const label = labelOf(element);
+        const className = String(element?.className || "");
+        return (
+          (!!label &&
+            !isPlaybackNavigationLabel(label) &&
+            (exactPlayLabel(label) ||
+              /\b(play|lecture|reproducir|riproduci|spielen|ouvir|lyssna)\b/i.test(
+                label,
+              ))) ||
+          /icon-play-arrow|play/i.test(className)
+        );
+      };
+      const findTransportButton = (matcher, classPattern) =>
+        Array.from(document.querySelectorAll("button, [role='button']")).find(
+          (element) => {
+            if (!isVisible(element)) return false;
+            const label = labelOf(element);
+            const className = String(element?.className || "");
+            return (
+              (!!label && matcher.test(label)) ||
+              (!!classPattern && classPattern.test(className))
+            );
+          },
+        ) || null;
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const waitForTargetText = async (timeoutMs) => {
+        const startedAt = Date.now();
+        while (Date.now() - startedAt < timeoutMs) {
+          const bodyText = normalize(document.body?.innerText || "");
+          if (targetTitle && bodyText.includes(targetTitle)) {
+            return true;
+          }
+          await wait(250);
+        }
+        return false;
+      };
+      const findActiveMedia = () =>
+        Array.from(document.querySelectorAll("audio,video")).find(
+          (media) => !media.paused && !media.ended,
+        ) || null;
+      const waitForActiveMedia = async (timeoutMs) => {
+        const startedAt = Date.now();
+        while (Date.now() - startedAt < timeoutMs) {
+          const active = findActiveMedia();
+          if (active) return active;
+          await wait(350);
+        }
+        return null;
+      };
+      const collectScopeCandidates = (seed) => {
+        const scopes = [];
+        let current = seed instanceof Element ? seed : null;
+        for (let depth = 0; current && depth < 14; depth += 1) {
+          if (
+            current instanceof HTMLElement &&
+            !scopes.includes(current) &&
+            isVisible(current)
+          ) {
+            scopes.push(current);
+          }
+          current = current.parentElement;
+        }
+        return scopes;
+      };
+      const scoreScope = (scope) => {
+        if (!(scope instanceof HTMLElement)) return -1_000_000;
+        const text = normalize(scope.innerText || scope.textContent || "");
+        if (!text) return -1_000_000;
+
+        let score = 0;
+        if (targetTitle && text.includes(targetTitle)) score += 90;
+        if (targetArtist && text.includes(targetArtist)) score += 28;
+        if (targetAlbum && text.includes(targetAlbum)) score += 10;
+        if (
+          Number.isFinite(targetTrackNumber) &&
+          targetTrackNumber > 0 &&
+          new RegExp("(^|\\\\s)" + targetTrackNumber + "(\\\\s|\\\\.|-)").test(
+            text.slice(0, 48),
+          )
+        ) {
+          score += 26;
+        }
+        if (
+          Number.isFinite(targetDiscNumber) &&
+          targetDiscNumber > 0 &&
+          /\bdisc\b|\bcd\b|\bmedia\b/.test(text)
+        ) {
+          score += 4;
+        }
+
+        const hrefs = Array.from(scope.querySelectorAll("a[href]"))
+          .map((anchor) => String(anchor.getAttribute("href") || ""))
+          .filter(Boolean)
+          .join(" ");
+        const ids = [
+          scope.getAttribute("data-track-id"),
+          scope.getAttribute("data-id"),
+          hrefs,
+        ]
+          .filter(Boolean)
+          .join(" ");
+        if (targetTrackId && ids.includes(targetTrackId)) score += 120;
+        if (targetAlbumId && ids.includes(targetAlbumId)) score += 12;
+
+        const playButtons = Array.from(
+          scope.querySelectorAll("button, [role='button']"),
+        ).filter((element) => isVisible(element) && isPlayLikeButton(element));
+
+        score += Math.min(playButtons.length, 2) * 8;
+        score -= Math.min(text.length, 480) / 18;
+        if (playButtons.length > 4) score -= 42;
+        if (scope === document.body || scope === document.documentElement) score -= 220;
+        return score;
+      };
+      const chooseBestPlayTarget = () => {
+        const exactTitleNodes = Array.from(
+          document.querySelectorAll("a, button, span, div, td, p"),
+        ).filter((element) => {
+          if (!(element instanceof HTMLElement) || !isVisible(element)) return false;
+          const text = normalize(element.textContent || "");
+          return (
+            !!targetTitle &&
+            text.includes(targetTitle) &&
+            text.length <= Math.max(targetTitle.length + 96, 180) &&
+            (!targetArtist || text.includes(targetArtist) || text.length <= targetTitle.length + 32)
+          );
         });
+        const directMatches = [
+          ...document.querySelectorAll(
+            '[data-track-id="' +
+              targetTrackId +
+              '"], [data-id="' +
+              targetTrackId +
+              '"], [href*="/track/' +
+              targetTrackId +
+              '"]',
+          ),
+        ].filter((element) => element instanceof HTMLElement && isVisible(element));
+        const seedNodes = [...directMatches, ...exactTitleNodes];
+        const candidates = [];
+
+        for (const seed of seedNodes) {
+          for (const scope of collectScopeCandidates(seed)) {
+            const playButtons = Array.from(
+              scope.querySelectorAll("button, [role='button']"),
+            ).filter((element) => isVisible(element) && isPlayLikeButton(element));
+            const titleClickTarget =
+              seed instanceof HTMLElement && isVisible(seed) ? seed : null;
+            if (playButtons.length === 0 && !titleClickTarget) continue;
+
+            const exact = playButtons.find((element) => exactPlayLabel(labelOf(element)));
+            const chosen = exact || playButtons[0] || titleClickTarget;
+            if (!chosen) continue;
+            candidates.push({
+              scope,
+              target: chosen,
+              score: scoreScope(scope),
+              scopeText: normalize(scope.innerText || scope.textContent || "").slice(0, 220),
+              targetLabel: labelOf(chosen),
+            });
+          }
+        }
+
+        candidates.sort((left, right) => right.score - left.score);
+        return candidates[0] || null;
+      };
+      const findTrackNumberButton = () => {
+        if (!Number.isFinite(targetTrackNumber) || targetTrackNumber <= 0) {
+          return null;
+        }
+        const numberCells = Array.from(
+          document.querySelectorAll(
+            '.ListItem__number[role="button"], [class*="ListItem__number"][role="button"]',
+          ),
+        ).filter(isVisible);
+
+        const matchedCell =
+          numberCells.find((element) => {
+            const text = normalize(element.textContent || "");
+            return text === String(targetTrackNumber);
+          }) || null;
+        if (!(matchedCell instanceof HTMLElement)) {
+          return null;
+        }
+        return (
+          matchedCell.querySelector(
+            '.ListItem__player[role="button"], [class*="ListItem__player"][role="button"]',
+          ) || matchedCell
+        );
+      };
+      const findTrackScopedPlayButton = () => {
+        return chooseBestPlayTarget();
+      };
+
+      const findPlayButton = () => {
+        const scopes = [
+          document.querySelector("main"),
+          document.querySelector('[data-testid="track-page"]'),
+          document.body,
+        ].filter(Boolean);
+
+        for (const scope of scopes) {
+          const candidates = Array.from(
+            scope.querySelectorAll("button, [role='button']"),
+          )
+            .filter(isVisible)
+            .map((element) => ({
+              element,
+              label: labelOf(element),
+            }))
+            .filter(({ label }) => !!label && !isPlaybackNavigationLabel(label));
+
+          const exact = candidates.find(({ label }) => exactPlayLabel(label));
+          if (exact?.element) return exact.element;
+
+          const fuzzy = candidates.find(({ label }) =>
+            /\b(play|lecture|reproducir|riproduci|spielen|ouvir|lyssna)\b/i.test(label),
+          );
+          if (fuzzy?.element) return fuzzy.element;
+        }
+
+        return null;
       };
 
       let playButtonClicked = false;
-      const playButton = findPlayButton();
+      let clickStrategy = "";
+      let clickedLabel = "";
+      let clickedHtml = "";
+      let clickedScopeText = "";
+      let candidateLabels = [];
+      await waitForTargetText(6_000);
+      const scopedTarget = findTrackScopedPlayButton();
+      const trackNumberTarget = findTrackNumberButton();
+      const playButton =
+        scopedTarget?.target ||
+        trackNumberTarget ||
+        findPlayButton();
       if (playButton instanceof HTMLElement) {
+        clickStrategy = scopedTarget?.target
+          ? scopedTarget.target.tagName === "BUTTON" ||
+            scopedTarget.target.getAttribute("role") === "button"
+            ? "track_scoped_play"
+            : "track_title_click"
+          : trackNumberTarget
+            ? "track_number_button"
+          : "generic_play";
+        clickedLabel = labelOf(playButton);
+        clickedHtml = String(playButton.outerHTML || "").slice(0, 240);
+        clickedScopeText = scopedTarget?.scopeText || "";
         playButton.click();
         playButtonClicked = true;
       }
+      candidateLabels = Array.from(
+        document.querySelectorAll("button, [role='button']"),
+      )
+        .filter(isVisible)
+        .map((element) => labelOf(element))
+        .filter(Boolean)
+        .slice(0, 18);
 
-      await new Promise((resolve) => setTimeout(resolve, 900));
+      await wait(1200);
 
-      let activeMedia = Array.from(document.querySelectorAll("audio,video")).find(
-        (media) => !media.paused && !media.ended,
-      );
+      if (
+        playButtonClicked &&
+        clickStrategy === "generic_play" &&
+        Number.isFinite(targetTrackNumber) &&
+        targetTrackNumber > 1 &&
+        /\\/album\\//.test(String(window.location?.pathname || ""))
+      ) {
+        const skipsNeeded = Math.max(0, targetTrackNumber - 1);
+        for (let index = 0; index < skipsNeeded; index += 1) {
+          const nextButton = findTransportButton(
+            /\b(next|skip|forward|suivant|nästa|weiter|próximo|seguinte)\b/i,
+            /next|skip-forward|forward/i,
+          );
+          if (!(nextButton instanceof HTMLElement)) break;
+          nextButton.click();
+          clickStrategy = "album_play_then_skip_" + targetTrackNumber;
+          await wait(900);
+        }
+      }
+
+      let activeMedia = await waitForActiveMedia(6_000);
 
       if (!activeMedia) {
         for (const media of Array.from(document.querySelectorAll("audio,video"))) {
@@ -1770,8 +2285,8 @@ async function prepareHiddenQobuzPlayback(
             media.muted = false;
             media.volume = 1;
             await media.play();
-            activeMedia = media;
-            break;
+            activeMedia = await waitForActiveMedia(2_500);
+            if (activeMedia) break;
           } catch {
             // ignore individual play failures
           }
@@ -1781,8 +2296,15 @@ async function prepareHiddenQobuzPlayback(
       return {
         activeMedia: !!activeMedia,
         playButtonClicked,
+        clickStrategy,
+        clickedLabel,
+        clickedHtml,
+        clickedScopeText,
+        candidateLabels,
+        mediaCount: document.querySelectorAll("audio,video").length,
         sinkApplied,
         sinkError: String(window.__stemsepLastSinkError || ""),
+        currentPath: String(window.location?.pathname || ""),
         speakerSelectionSupported:
           typeof HTMLMediaElement !== "undefined" &&
           typeof HTMLMediaElement.prototype.setSinkId === "function",
@@ -1792,29 +2314,250 @@ async function prepareHiddenQobuzPlayback(
   )) as {
     activeMedia?: boolean;
     playButtonClicked?: boolean;
+    clickStrategy?: string;
+    clickedLabel?: string;
+    clickedHtml?: string;
+    clickedScopeText?: string;
+    candidateLabels?: string[];
+    mediaCount?: number;
     sinkApplied?: number;
     sinkError?: string;
+    currentPath?: string;
     speakerSelectionSupported?: boolean;
   };
 
   if (!playbackResult?.speakerSelectionSupported) {
+    log("[capture] qobuz hidden playback failed", {
+      targetUrl,
+      currentUrl: win.webContents.getURL(),
+      reason: "speaker-selection-unsupported",
+      playbackResult: playbackResult || null,
+    });
     throw new Error(
       "This Electron/Chromium build does not expose speaker selection for the hidden Qobuz player.",
     );
   }
   if (playbackResult?.sinkError) {
+    log("[capture] qobuz hidden playback failed", {
+      targetUrl,
+      currentUrl: win.webContents.getURL(),
+      reason: "sink-error",
+      playbackResult,
+    });
     throw new Error(playbackResult.sinkError);
   }
   if (!playbackResult?.activeMedia) {
-    throw new Error(
-      "Hidden Qobuz playback did not start. The provider page layout or player state may have changed.",
-    );
+    if (!playbackResult?.playButtonClicked) {
+      log("[capture] qobuz hidden playback failed", {
+        targetUrl,
+        currentUrl: win.webContents.getURL(),
+        reason: "no-active-media",
+        playbackResult: playbackResult || null,
+      });
+      throw new Error(
+        "Hidden Qobuz playback did not start. The provider page layout or player state may have changed.",
+      );
+    }
+    log("[capture] qobuz hidden playback awaiting backend audio detection", {
+      targetUrl,
+      currentUrl: win.webContents.getURL(),
+      playbackResult: playbackResult || null,
+    });
   }
 
   return {
     sinkId,
     playbackResult,
   };
+}
+
+async function startQobuzPlaybackCaptureForItem(
+  item: RemoteCatalogItem,
+  deviceId: string,
+) {
+  const captureId = randomUUID();
+  const startedAt = new Date().toISOString();
+  const outputPath = buildPlaybackCaptureOutputPath(captureId, item);
+  playbackCaptureSessions.set(captureId, {
+    captureId,
+    provider: "qobuz",
+    trackId: item.trackId,
+    deviceId,
+    item,
+    startedAt,
+    outputPath,
+  });
+  const autoCancelAfterMs = Number(
+    process.env.STEMSEP_CAPTURE_CANCEL_AFTER_MS || "",
+  );
+  const autoCancelTimer =
+    Number.isFinite(autoCancelAfterMs) && autoCancelAfterMs > 0
+      ? setTimeout(() => {
+          void abortPlaybackCaptureSession(
+            captureId,
+            "Capture cancelled by smoketest.",
+          );
+        }, autoCancelAfterMs)
+      : null;
+
+  emitPlaybackCaptureProgress({
+    provider: "qobuz",
+    captureId,
+    status: "launching",
+    detail: "Preparing hidden Qobuz playback...",
+  });
+
+  const capturePromise: Promise<
+    | { ok: true; value: any }
+    | { ok: false; error: any }
+  > = sendPythonCommand(
+    "capture_playback_loopback",
+    {
+      capture_id: captureId,
+      device_id: deviceId,
+      output_path: outputPath,
+      expected_duration_sec: getExpectedCaptureDurationSec(item),
+      start_timeout_ms: 15_000,
+      trailing_silence_ms: 2_500,
+      min_active_rms: 0.003,
+    },
+    Math.max(300_000, Math.round(((item.durationSec || 180) + 30) * 1000)),
+  ).then(
+    (value) => ({ ok: true as const, value }),
+    (error) => ({ ok: false as const, error }),
+  );
+
+  try {
+    await prepareHiddenQobuzPlayback(item, deviceId);
+    const captureOutcome = await capturePromise;
+    if (!captureOutcome.ok) {
+      throw (captureOutcome as { ok: false; error: any }).error;
+    }
+    const captureResult = captureOutcome.value;
+    const profile = await probeAudioFile(captureResult.file_path);
+    const quality = computeCaptureQualityMode(
+      "qobuz",
+      item,
+      captureResult.capture_sample_rate || profile.sampleRate || undefined,
+      captureResult.capture_channels || profile.channels || undefined,
+    );
+
+    return {
+      success: true as const,
+      provider: "qobuz" as const,
+      file_path: captureResult.file_path,
+      display_name:
+        [item.artist, item.title].filter(Boolean).join(" - ") || item.title,
+      source_url:
+        item.playbackUrl || item.canonicalUrl || item.pageUrl || undefined,
+      canonical_url:
+        item.canonicalUrl || item.playbackUrl || item.pageUrl || undefined,
+      artist: item.artist,
+      album: item.album,
+      artwork_url: item.artworkUrl,
+      duration_sec:
+        captureResult.duration_sec ||
+        item.durationSec ||
+        profile.durationSeconds ||
+        undefined,
+      quality_label:
+        quality.verified
+          ? "Verified Lossless"
+          : item.qualityLabel || "Lossless Source Capture",
+      is_lossless: quality.verified,
+      provider_track_id: item.trackId,
+      ingest_mode: "desktop_capture" as const,
+      playback_surface: "browser" as const,
+      quality_mode: quality.qualityMode,
+      verified_lossless: quality.verified,
+      capture_device_id: deviceId,
+      capture_sample_rate:
+        captureResult.capture_sample_rate || profile.sampleRate || undefined,
+      capture_channels:
+        captureResult.capture_channels || profile.channels || undefined,
+      capture_start_at: captureResult.capture_start_at || startedAt,
+      capture_end_at: captureResult.capture_end_at || new Date().toISOString(),
+    };
+  } catch (error) {
+    await sendPythonCommandWithRetry(
+      "cancel_playback_capture",
+      { capture_id: captureId },
+      10_000,
+      0,
+    ).catch(() => null);
+    await capturePromise;
+    if (cancelledPlaybackCaptureIds.has(captureId)) {
+      throw new Error("Capture cancelled");
+    }
+    throw error;
+  } finally {
+    if (autoCancelTimer) {
+      clearTimeout(autoCancelTimer);
+    }
+    await stopHiddenQobuzPlayback();
+    playbackCaptureSessions.delete(captureId);
+    cancelledPlaybackCaptureIds.delete(captureId);
+  }
+}
+
+async function maybeRunQobuzCaptureSmokeTest() {
+  const query = String(process.env.STEMSEP_QOBUZ_CAPTURE_SMOKETEST_QUERY || "").trim();
+  if (!query) return;
+
+  log("[smoketest] qobuz capture requested", {
+    query,
+    durationCapSec: getCaptureDurationCapSec(),
+  });
+
+  try {
+    const authenticated = await checkLibraryProviderAuthenticated("qobuz");
+    if (!authenticated) {
+      throw new Error("Qobuz is not authenticated in the persisted StemSep session.");
+    }
+
+    const deviceId = getStoredCaptureOutputDeviceId();
+    if (!deviceId) {
+      throw new Error("No saved silent output device is configured.");
+    }
+
+    await refreshQobuzPlaybackDeviceMappings();
+    if (!qobuzSinkIdByPlaybackDeviceId.has(deviceId)) {
+      throw new Error(
+        "The saved silent output could not be routed from the hidden Qobuz player.",
+      );
+    }
+
+    const items = await searchQobuzCatalogViaApi(query);
+    const item = items.find((entry) => !!entry.trackId) || null;
+    if (!item) {
+      throw new Error(`No Qobuz tracks were returned for query '${query}'.`);
+    }
+
+    log("[smoketest] qobuz capture target", {
+      trackId: item.trackId,
+      title: item.title,
+      artist: item.artist,
+      trackNumber: item.trackNumber,
+      discNumber: item.discNumber,
+      durationSec: item.durationSec,
+      qualityLabel: item.qualityLabel,
+    });
+
+    const result = await startQobuzPlaybackCaptureForItem(item, deviceId);
+    log("[smoketest] qobuz capture success", result);
+  } catch (error: any) {
+    log("[smoketest] qobuz capture failed", {
+      error: error?.message || String(error),
+    });
+  } finally {
+    setTimeout(() => {
+      try {
+        app.quit();
+      } catch {
+        // ignore
+      }
+    }, 1000);
+  }
 }
 
 function getScrapeCollectionScript(provider: RemoteLibraryProvider) {
@@ -3190,11 +3933,31 @@ function getQobuzAutomationWindow() {
   }
 
   configureProviderSessionPermissions("qobuz");
+  const displays = screen.getAllDisplays();
+  const virtualBounds = displays.reduce(
+    (acc, display) => {
+      acc.minX = Math.min(acc.minX, display.bounds.x);
+      acc.minY = Math.min(acc.minY, display.bounds.y);
+      acc.maxX = Math.max(acc.maxX, display.bounds.x + display.bounds.width);
+      acc.maxY = Math.max(acc.maxY, display.bounds.y + display.bounds.height);
+      return acc;
+    },
+    {
+      minX: 0,
+      minY: 0,
+      maxX: 0,
+      maxY: 0,
+    },
+  );
   qobuzAutomationWindow = new BrowserWindow({
-    show: false,
-    width: 1280,
-    height: 900,
+    show: true,
+    x: virtualBounds.maxX + 1200,
+    y: virtualBounds.maxY + 1200,
+    width: 360,
+    height: 240,
     title: "Qobuz Automation",
+    skipTaskbar: true,
+    focusable: false,
     webPreferences: {
       partition: getRemoteProviderConfig("qobuz").partition,
       nodeIntegration: false,
@@ -3203,6 +3966,7 @@ function getQobuzAutomationWindow() {
       backgroundThrottling: false,
     },
   });
+  qobuzAutomationWindow.setAlwaysOnTop(false);
 
   qobuzAutomationWindow.on("closed", () => {
     qobuzAutomationWindow = null;
@@ -3235,6 +3999,26 @@ function openRemoteSourceAuthWindow(provider: RemoteLibraryProvider) {
   });
 
   remoteAuthWindows.set(provider, authWindow);
+
+  if (provider === "qobuz") {
+    const observeQobuzUrl = (url: string) => {
+      const normalized = String(url || "");
+      if (!/play\.qobuz\.com/i.test(normalized)) return;
+      if (/\/login(\/|$)|\/signin(\/|$)/i.test(normalized)) return;
+      qobuzObservedPlaySession = true;
+      log("[library] qobuz observed authenticated url", { url: normalized });
+    };
+
+    authWindow.webContents.on("did-navigate", (_event, url) => {
+      observeQobuzUrl(url);
+    });
+    authWindow.webContents.on("did-redirect-navigation", (_event, url) => {
+      observeQobuzUrl(url);
+    });
+    authWindow.webContents.on("did-navigate-in-page", (_event, url) => {
+      observeQobuzUrl(url);
+    });
+  }
 
   authWindow.on("closed", () => {
     remoteAuthWindows.delete(provider);
@@ -3836,6 +4620,10 @@ function startHealthChecks() {
 
   healthCheckInterval = setInterval(async () => {
     if (isAppQuitting || !backendProcess) return;
+    if (playbackCaptureSessions.size > 0) {
+      consecutiveHealthCheckFailures = 0;
+      return;
+    }
 
     try {
       // Send ping with short timeout
@@ -4148,6 +4936,11 @@ app.whenReady().then(() => {
 
   log("App is ready, creating window.");
   createWindow();
+  if (process.env.STEMSEP_QOBUZ_CAPTURE_SMOKETEST_QUERY) {
+    setTimeout(() => {
+      void maybeRunQobuzCaptureSmokeTest();
+    }, 2500);
+  }
 
   // Minimal app menu with optional Hugging Face authorization (no React UI changes).
   try {
@@ -5016,6 +5809,9 @@ async function getGpuDevicesCached(): Promise<{ data: any; fromCache: boolean }>
   if (gpuDevicesCache && gpuDevicesCache.expiresAt > Date.now()) {
     return { data: gpuDevicesCache.value, fromCache: true };
   }
+  if (isPlaybackCaptureActive()) {
+    return { data: gpuDevicesCache?.value || [], fromCache: true };
+  }
   const data = await getGpuDevicesDeduped();
   gpuDevicesCache = {
     value: data,
@@ -5031,6 +5827,13 @@ async function getRuntimeFingerprintCached(): Promise<{
 }> {
   if (runtimeFingerprintCache && runtimeFingerprintCache.expiresAt > Date.now()) {
     return { data: runtimeFingerprintCache.value, fromCache: true, error: null };
+  }
+  if (isPlaybackCaptureActive()) {
+    return {
+      data: runtimeFingerprintCache?.value || null,
+      fromCache: true,
+      error: runtimeFingerprintCache ? null : "Runtime fingerprint paused during playback capture.",
+    };
   }
 
   try {
@@ -5386,7 +6189,10 @@ ipcMain.handle(
         success: true,
         provider,
         authenticated: false,
-        message: `Sign in to ${config.name} in the opened window, then refresh your library.`,
+        message:
+          provider === "qobuz"
+            ? "Sign in to the Qobuz web player in the opened window, then refresh your library."
+            : `Sign in to ${config.name} in the opened window, then refresh your library.`,
       };
     } catch (error: any) {
       return {
@@ -5442,7 +6248,10 @@ ipcMain.handle(
           provider,
           authenticated: false,
           error: `${config.name} is not signed in in StemSep yet.`,
-          hint: `Click Connect, finish the login in the provider window, then refresh ${config.name}.`,
+          hint:
+            provider === "qobuz"
+              ? "Click Authenticate, finish the Qobuz web player login in the opened window, then refresh Qobuz."
+              : `Click Connect, finish the login in the provider window, then refresh ${config.name}.`,
         };
       }
       const config = getRemoteProviderConfig(provider);
@@ -5646,103 +6455,17 @@ ipcMain.handle(
         );
       }
 
-      const captureId = randomUUID();
-      const startedAt = new Date().toISOString();
-      const outputPath = buildPlaybackCaptureOutputPath(captureId, item);
-      playbackCaptureSessions.set(captureId, {
-        captureId,
-        provider,
-        trackId,
-        deviceId,
-        item,
-        startedAt,
-      });
-
-      emitPlaybackCaptureProgress({
-        provider,
-        captureId,
-        status: "launching",
-        detail: "Preparing hidden Qobuz playback...",
-      });
-      const capturePromise = sendPythonCommand(
-        "capture_playback_loopback",
-        {
-          capture_id: captureId,
-          device_id: deviceId,
-          output_path: outputPath,
-          expected_duration_sec: item.durationSec,
-          start_timeout_ms: 15_000,
-          trailing_silence_ms: 2_500,
-          min_active_rms: 0.003,
-        },
-        Math.max(300_000, Math.round(((item.durationSec || 180) + 30) * 1000)),
-      );
-
-      try {
-        await prepareHiddenQobuzPlayback(item, deviceId);
-        const captureResult = await capturePromise;
-        const profile = await probeAudioFile(captureResult.file_path);
-        const quality = computeCaptureQualityMode(
-          provider,
-          item,
-          captureResult.capture_sample_rate || profile.sampleRate || undefined,
-          captureResult.capture_channels || profile.channels || undefined,
-        );
-
-        return {
-          success: true,
-          provider,
-          file_path: captureResult.file_path,
-          display_name:
-            [item.artist, item.title].filter(Boolean).join(" - ") || item.title,
-          source_url:
-            item.playbackUrl || item.canonicalUrl || item.pageUrl || undefined,
-          canonical_url:
-            item.canonicalUrl || item.playbackUrl || item.pageUrl || undefined,
-          artist: item.artist,
-          album: item.album,
-          artwork_url: item.artworkUrl,
-          duration_sec:
-            captureResult.duration_sec ||
-            item.durationSec ||
-            profile.durationSeconds ||
-            undefined,
-          quality_label:
-            quality.verified
-              ? "Verified Lossless"
-              : item.qualityLabel || "Lossless Source Capture",
-          is_lossless: quality.verified,
-          provider_track_id: item.trackId,
-          ingest_mode: "desktop_capture",
-          playback_surface: "browser",
-          quality_mode: quality.qualityMode,
-          verified_lossless: quality.verified,
-          capture_device_id: deviceId,
-          capture_sample_rate:
-            captureResult.capture_sample_rate || profile.sampleRate || undefined,
-          capture_channels:
-            captureResult.capture_channels || profile.channels || undefined,
-          capture_start_at: captureResult.capture_start_at || startedAt,
-          capture_end_at:
-            captureResult.capture_end_at || new Date().toISOString(),
-        };
-      } catch (error) {
-        await sendPythonCommandWithRetry(
-          "cancel_playback_capture",
-          { capture_id: captureId },
-          10_000,
-          0,
-        ).catch(() => null);
-        throw error;
-      } finally {
-        playbackCaptureSessions.delete(captureId);
-      }
+      return await startQobuzPlaybackCaptureForItem(item, deviceId);
     } catch (error: any) {
+      const message = error?.message || String(error);
+      const cancelled =
+        /cancelled/i.test(message) ||
+        Array.from(cancelledPlaybackCaptureIds).length > 0;
       return {
         success: false,
         provider,
-        error: error?.message || String(error),
-        code: "CAPTURE_START_FAILED",
+        error: cancelled ? "Capture cancelled" : message,
+        code: cancelled ? "CAPTURE_CANCELLED" : "CAPTURE_START_FAILED",
       };
     }
   },
@@ -5751,28 +6474,7 @@ ipcMain.handle(
 ipcMain.handle(
   "cancel-playback-capture",
   async (_event, { captureId }: { captureId?: string }) => {
-    await sendPythonCommandWithRetry(
-      "cancel_playback_capture",
-      captureId ? { capture_id: captureId } : {},
-      10_000,
-      0,
-    ).catch(() => null);
-
-    if (captureId) {
-      const existing = playbackCaptureSessions.get(captureId);
-      if (existing) {
-        emitPlaybackCaptureProgress({
-          provider: existing.provider,
-          captureId,
-          status: "cancelled",
-          detail: "Capture cancelled.",
-        });
-      }
-      playbackCaptureSessions.delete(captureId);
-    } else {
-      playbackCaptureSessions.clear();
-    }
-    return { success: true };
+    return abortPlaybackCaptureSession(captureId, "Capture cancelled.");
   },
 );
 

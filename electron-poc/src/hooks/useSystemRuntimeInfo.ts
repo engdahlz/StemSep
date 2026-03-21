@@ -21,6 +21,8 @@ let snapshot: RuntimeSnapshot = {
 let consumers = 0
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let inflight: Promise<void> | null = null
+let playbackCaptureBusy = false
+let playbackCaptureListenerCleanup: (() => void) | null = null
 const listeners = new Set<() => void>()
 
 const notify = () => {
@@ -35,6 +37,16 @@ const setSnapshot = (next: Partial<RuntimeSnapshot>) => {
 }
 
 const fetchRuntimeInfo = async (force = false): Promise<void> => {
+  if (playbackCaptureBusy) {
+    if (!snapshot.info) {
+      setSnapshot({
+        loading: false,
+        error: null,
+      })
+    }
+    return
+  }
+
   if (!force) {
     const cached = runtimeInfoCache.get()
     if (cached) {
@@ -115,6 +127,20 @@ const getSnapshot = () => snapshot
 
 const startPolling = () => {
   if (pollTimer) return
+  if (!playbackCaptureListenerCleanup && window.electronAPI?.onPlaybackCaptureProgress) {
+    playbackCaptureListenerCleanup = window.electronAPI.onPlaybackCaptureProgress((data) => {
+      const status = String(data?.status || "").toLowerCase()
+      playbackCaptureBusy =
+        status === "launching" ||
+        status === "awaiting_audio" ||
+        status === "capturing" ||
+        status === "saving" ||
+        status === "cancelling"
+      if (!playbackCaptureBusy) {
+        void fetchRuntimeInfo(true)
+      }
+    })
+  }
   runtimeInfoCache.clear()
   void fetchRuntimeInfo()
   pollTimer = setInterval(() => {
@@ -126,6 +152,11 @@ const stopPolling = () => {
   if (!pollTimer) return
   clearInterval(pollTimer)
   pollTimer = null
+  if (playbackCaptureListenerCleanup) {
+    playbackCaptureListenerCleanup()
+    playbackCaptureListenerCleanup = null
+  }
+  playbackCaptureBusy = false
 }
 
 export function useSystemRuntimeInfo() {
