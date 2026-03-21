@@ -58,6 +58,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ) => ipcRenderer.invoke('start-playback-capture', { provider, trackId, deviceId }),
   cancelPlaybackCapture: (captureId?: string) =>
     ipcRenderer.invoke('cancel-playback-capture', { captureId }),
+  getPlaybackCaptureStatus: (captureId?: string) =>
+    ipcRenderer.invoke('get-playback-capture-status', { captureId }),
   onPlaybackCaptureProgress: (callback: (data: any) => void) => {
     const handler = (_event: any, data: any) => callback(data)
     ipcRenderer.on('playback-capture-progress', handler)

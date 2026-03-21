@@ -641,21 +641,65 @@ const remoteCatalogCache = new Map<RemoteLibraryProvider, RemoteCatalogItem[]>()
 const qobuzSinkIdByPlaybackDeviceId = new Map<string, string>();
 let qobuzObservedPlaySession = false;
 const cancelledPlaybackCaptureIds = new Set<string>();
+const lastPlaybackCaptureProgressById = new Map<
+  string,
+  PlaybackCaptureProgressPayload
+>();
 let cachedNativePlaybackDevices: PlaybackDevice[] = [];
 let cachedQobuzSpeakerSelectionAvailable = false;
 let cachedQobuzSpeakerSelectionError: string | null = null;
-const playbackCaptureSessions = new Map<
-  string,
-  {
-    captureId: string;
-    provider: ActiveLibraryProvider;
-    trackId: string;
-    deviceId: string;
-    item: RemoteCatalogItem;
-    startedAt: string;
-    outputPath: string;
-  }
->();
+type QobuzPlaybackVerification = {
+  targetTrackId?: string;
+  targetAlbumId?: string;
+  targetTrackNumber?: number | null;
+  initialPath?: string;
+  finalPath?: string;
+  clickStrategy?: string;
+  clickedLabel?: string;
+  clickedHtml?: string;
+  clickedScopeText?: string;
+  candidateLabels?: string[];
+  candidateTrackRows?: Array<{
+    title?: string;
+    artist?: string;
+    trackNumber?: number | null;
+    trackId?: string;
+    albumId?: string;
+    href?: string;
+    rowState?: string;
+  }>;
+  verificationMatched?: boolean;
+  verificationReason?: string;
+  currentTitle?: string;
+  currentArtist?: string;
+  currentTrackHref?: string;
+  currentAlbumHref?: string;
+  currentTrackId?: string;
+  currentAlbumId?: string;
+  rowMatched?: boolean;
+  rowState?: string;
+  activeMedia?: boolean;
+  playButtonClicked?: boolean;
+  mediaCount?: number;
+  sinkApplied?: number;
+  sinkError?: string;
+  speakerSelectionSupported?: boolean;
+};
+
+type PlaybackCaptureSession = {
+  captureId: string;
+  provider: ActiveLibraryProvider;
+  trackId: string;
+  deviceId: string;
+  item: RemoteCatalogItem;
+  startedAt: string;
+  outputPath: string;
+  diagnosticsPath: string;
+  backendCaptureStarted: boolean;
+  verification?: QobuzPlaybackVerification | null;
+};
+
+const playbackCaptureSessions = new Map<string, PlaybackCaptureSession>();
 
 function emitRemoteResolveProgress(payload: RemoteResolveProgressPayload) {
   if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -663,12 +707,28 @@ function emitRemoteResolveProgress(payload: RemoteResolveProgressPayload) {
 }
 
 function emitPlaybackCaptureProgress(payload: PlaybackCaptureProgressPayload) {
+  if (payload.captureId) {
+    lastPlaybackCaptureProgressById.set(payload.captureId, payload);
+    if (
+      /completed|cancelled|error|failed/i.test(String(payload.status || ""))
+    ) {
+      setTimeout(() => {
+        lastPlaybackCaptureProgressById.delete(payload.captureId!);
+      }, 60_000);
+    }
+  }
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.webContents.send("playback-capture-progress", payload);
 }
 
 function isPlaybackCaptureActive() {
   return playbackCaptureSessions.size > 0;
+}
+
+function isQobuzPlaybackCaptureActive() {
+  return Array.from(playbackCaptureSessions.values()).some(
+    (session) => session.provider === "qobuz",
+  );
 }
 
 async function abortPlaybackCaptureSession(
@@ -686,7 +746,7 @@ async function abortPlaybackCaptureSession(
     emitPlaybackCaptureProgress({
       provider: session.provider,
       captureId: session.captureId,
-      status: "cancelled",
+      status: "cancelling",
       detail,
     });
   }
@@ -694,19 +754,23 @@ async function abortPlaybackCaptureSession(
   await stopHiddenQobuzPlayback();
 
   if (targetedSessions.length > 0) {
-    await restartBackendAndWait("Playback capture cancelled.", 30_000).catch(
-      () => null,
-    );
     for (const session of targetedSessions) {
-      playbackCaptureSessions.delete(session.captureId);
-      try {
-        if (fs.existsSync(session.outputPath)) {
-          fs.unlinkSync(session.outputPath);
+      if (!session.backendCaptureStarted) {
+        try {
+          if (fs.existsSync(session.outputPath)) {
+            fs.unlinkSync(session.outputPath);
+          }
+        } catch {
+          // ignore partial cleanup failures before backend capture begins
         }
-      } catch {
-        // ignore partial capture cleanup failures
       }
     }
+    await sendPythonCommandWithRetry(
+      "cancel_playback_capture",
+      captureId ? { capture_id: captureId } : {},
+      10_000,
+      0,
+    ).catch(() => null);
     return { success: true };
   }
 
@@ -937,7 +1001,9 @@ async function stopHiddenQobuzPlayback() {
 
 async function getCaptureEnvironmentStatusForQobuz(): Promise<CaptureEnvironmentStatus> {
   const windowsSupported = process.platform === "win32";
-  const authenticated = await checkLibraryProviderAuthenticated("qobuz");
+  const authenticated = isQobuzPlaybackCaptureActive()
+    ? true
+    : await checkLibraryProviderAuthenticated("qobuz");
   const selectedDeviceId = getStoredCaptureOutputDeviceId();
 
   if (!windowsSupported) {
@@ -1407,6 +1473,10 @@ async function checkLibraryProviderAuthenticated(
 ) {
   try {
     if (provider === "qobuz") {
+      if (isQobuzPlaybackCaptureActive()) {
+        return true;
+      }
+
       const windows = getOpenProviderProbeWindows(provider);
       if (windows.length > 0) {
         for (const win of windows) {
@@ -1617,7 +1687,16 @@ async function searchQobuzCatalogViaApi(
           const albumTitle =
             normalize(track?.album?.title) ||
             normalize(track?.release?.title);
+          const albumArtist =
+            normalize(track?.album?.artist?.name) ||
+            normalize(track?.release?.artist?.name);
           const albumId = track?.album?.id || track?.release?.id;
+          const releaseYear = Number(
+            track?.album?.release_date_original?.slice?.(0, 4) ||
+              track?.album?.released_at?.slice?.(0, 4) ||
+              track?.release?.released_at?.slice?.(0, 4) ||
+              0,
+          );
           const trackNumber = Number(
             track?.track_number ||
               track?.trackNumber ||
@@ -1660,6 +1739,7 @@ async function searchQobuzCatalogViaApi(
             title: normalize(track?.title),
             artist: performer || undefined,
             album: albumTitle || undefined,
+            albumArtist: albumArtist || undefined,
             trackNumber:
               Number.isFinite(trackNumber) && trackNumber > 0
                 ? trackNumber
@@ -1677,6 +1757,10 @@ async function searchQobuzCatalogViaApi(
               undefined,
             durationSec:
               typeof track?.duration === "number" ? track.duration : undefined,
+            releaseYear:
+              Number.isFinite(releaseYear) && releaseYear > 0
+                ? releaseYear
+                : undefined,
             canonicalUrl: \`https://play.qobuz.com/track/\${id}\`,
             pageUrl: albumId ? \`https://play.qobuz.com/album/\${albumId}\` : undefined,
             qualityLabel,
@@ -1834,6 +1918,52 @@ function buildPlaybackCaptureOutputPath(captureId: string, item: RemoteCatalogIt
       captureId,
   );
   return path.join(providerDir, `${baseName || captureId}_${captureId}.wav`);
+}
+
+function buildPlaybackCaptureDiagnosticsPath(outputPath: string) {
+  const parsed = path.parse(outputPath);
+  return path.join(parsed.dir, `${parsed.name}.diagnostics.json`);
+}
+
+function normalizeCompareText(value: string | undefined | null) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function writePlaybackCaptureDiagnostics(
+  session: PlaybackCaptureSession,
+  payload: Record<string, any>,
+) {
+  try {
+    safeMkdir(path.dirname(session.diagnosticsPath));
+    fs.writeFileSync(
+      session.diagnosticsPath,
+      JSON.stringify(
+        {
+          captureId: session.captureId,
+          provider: session.provider,
+          deviceId: session.deviceId,
+          outputPath: session.outputPath,
+          selectedItem: session.item,
+          startedAt: session.startedAt,
+          ...payload,
+        },
+        null,
+        2,
+      ),
+      "utf-8",
+    );
+  } catch (error: any) {
+    log("[capture] failed to write diagnostics", {
+      captureId: session.captureId,
+      diagnosticsPath: session.diagnosticsPath,
+      error: error?.message || String(error),
+    });
+  }
 }
 
 function getCaptureDurationCapSec() {
@@ -2005,6 +2135,222 @@ async function prepareHiddenQobuzPlayback(
               ))) ||
           /icon-play-arrow|play/i.test(className)
         );
+      };
+      const extractIdFromHref = (href, kind) => {
+        const match = String(href || "").match(
+          new RegExp("/" + kind + "/([^/?#]+)", "i"),
+        );
+        return match?.[1] || "";
+      };
+      const getTrackRowSummary = (row) => {
+        if (!(row instanceof HTMLElement) || !isVisible(row)) return null;
+        const text = normalize(row.innerText || row.textContent || "");
+        if (!text) return null;
+
+        const titleAnchor =
+          row.querySelector('a[href*="/track/"]') ||
+          row.querySelector('[class*="ListItem__title"] a[href]');
+        const artistAnchor =
+          row.querySelector('a[href*="/artist/"]') ||
+          row.querySelector('[class*="ListItem__artist"] a[href]');
+        const albumAnchor = row.querySelector('a[href*="/album/"]');
+        const numberNode = row.querySelector(
+          '.ListItem__number, [class*="ListItem__number"]',
+        );
+        const playerButton = row.querySelector(
+          '.ListItem__player[role="button"], [class*="ListItem__player"][role="button"]',
+        );
+        const title = normalize(
+          titleAnchor?.textContent ||
+            row.querySelector('[class*="ListItem__title"]')?.textContent ||
+            "",
+        );
+        const artist = normalize(
+          artistAnchor?.textContent ||
+            row.querySelector('[class*="ListItem__artist"]')?.textContent ||
+            "",
+        );
+        const trackHref = String(titleAnchor?.getAttribute?.("href") || "");
+        const albumHref = String(albumAnchor?.getAttribute?.("href") || "");
+        const trackId =
+          row.getAttribute("data-track-id") ||
+          row.getAttribute("data-id") ||
+          extractIdFromHref(trackHref, "track") ||
+          "";
+        const albumId =
+          row.getAttribute("data-album-id") ||
+          extractIdFromHref(albumHref, "album") ||
+          "";
+        const parsedTrackNumber = Number.parseInt(
+          normalize(numberNode?.textContent || "").replace(/[^\d]/g, ""),
+          10,
+        );
+        const rowState = normalize(
+          playerButton?.getAttribute?.("aria-label") ||
+            row.getAttribute("data-state") ||
+            row.className ||
+            "",
+        );
+        let score = 0;
+        if (targetTrackId && trackId && trackId === targetTrackId) score += 220;
+        if (targetAlbumId && albumId && albumId === targetAlbumId) score += 32;
+        if (targetTitle && title && (title === targetTitle || title.includes(targetTitle)))
+          score += 100;
+        if (
+          targetArtist &&
+          artist &&
+          (artist === targetArtist || artist.includes(targetArtist) || targetArtist.includes(artist))
+        ) {
+          score += 40;
+        }
+        if (
+          Number.isFinite(targetTrackNumber) &&
+          Number.isFinite(parsedTrackNumber) &&
+          targetTrackNumber === parsedTrackNumber
+        ) {
+          score += 70;
+        }
+        if (playerButton) score += 12;
+        if (/pause|playing|active/.test(rowState)) score += 8;
+        return {
+          row,
+          playerButton:
+            playerButton instanceof HTMLElement ? playerButton : null,
+          title,
+          artist,
+          trackId,
+          albumId,
+          trackHref,
+          albumHref,
+          trackNumber: Number.isFinite(parsedTrackNumber)
+            ? parsedTrackNumber
+            : null,
+          rowState,
+          score,
+        };
+      };
+      const collectTrackRows = (limit = 12) => {
+        const rows = Array.from(
+          document.querySelectorAll(
+            '[class*="ListItem"], [data-testid*="track"], tr, li',
+          ),
+        )
+          .map((row) => getTrackRowSummary(row))
+          .filter(Boolean)
+          .sort((left, right) => right.score - left.score)
+          .slice(0, limit);
+        return rows;
+      };
+      const findExactTrackRowButton = () => {
+        const rows = collectTrackRows(16);
+        return rows.find((row) => row.playerButton && row.score >= 120) || null;
+      };
+      const readPlayerSnapshot = () => {
+        const playerScopes = [
+          ...document.querySelectorAll(
+            'footer, [class*="Player"], [class*="NowPlaying"], [data-testid*="player"]',
+          ),
+        ].filter((scope) => scope instanceof HTMLElement && isVisible(scope));
+        for (const scope of playerScopes) {
+          const trackAnchor =
+            scope.querySelector('a[href*="/track/"]') ||
+            scope.querySelector('[class*="title"] a[href]');
+          const albumAnchor = scope.querySelector('a[href*="/album/"]');
+          const artistAnchor =
+            scope.querySelector('a[href*="/artist/"]') ||
+            scope.querySelector('[class*="artist"] a[href]');
+          const currentTitle = normalize(
+            trackAnchor?.textContent ||
+              scope.querySelector('[class*="title"]')?.textContent ||
+              "",
+          );
+          const currentArtist = normalize(
+            artistAnchor?.textContent ||
+              scope.querySelector('[class*="artist"]')?.textContent ||
+              "",
+          );
+          const currentTrackHref = String(trackAnchor?.getAttribute?.("href") || "");
+          const currentAlbumHref = String(albumAnchor?.getAttribute?.("href") || "");
+          const currentTrackId = extractIdFromHref(currentTrackHref, "track");
+          const currentAlbumId = extractIdFromHref(currentAlbumHref, "album");
+          if (
+            currentTitle ||
+            currentArtist ||
+            currentTrackHref ||
+            currentAlbumHref ||
+            currentTrackId ||
+            currentAlbumId
+          ) {
+            return {
+              currentTitle,
+              currentArtist,
+              currentTrackHref,
+              currentAlbumHref,
+              currentTrackId,
+              currentAlbumId,
+            };
+          }
+        }
+        return {
+          currentTitle: "",
+          currentArtist: "",
+          currentTrackHref: "",
+          currentAlbumHref: "",
+          currentTrackId: "",
+          currentAlbumId: "",
+        };
+      };
+      const verifyPlayerSnapshot = (snapshot) => {
+        const trackIdMatched =
+          !!targetTrackId &&
+          !!snapshot.currentTrackId &&
+          snapshot.currentTrackId === targetTrackId;
+        const hrefMatched =
+          !!targetTrackId &&
+          String(snapshot.currentTrackHref || "").includes("/track/" + targetTrackId);
+        const titleMatched =
+          !!targetTitle &&
+          !!snapshot.currentTitle &&
+          (snapshot.currentTitle === targetTitle ||
+            snapshot.currentTitle.includes(targetTitle) ||
+            targetTitle.includes(snapshot.currentTitle));
+        const artistMatched =
+          !targetArtist ||
+          !snapshot.currentArtist ||
+          snapshot.currentArtist === targetArtist ||
+          snapshot.currentArtist.includes(targetArtist) ||
+          targetArtist.includes(snapshot.currentArtist);
+        if (trackIdMatched) return { matched: true, reason: "track_id" };
+        if (hrefMatched) return { matched: true, reason: "track_href" };
+        if (titleMatched && artistMatched) {
+          return { matched: true, reason: "title_artist" };
+        }
+        return { matched: false, reason: "failed" };
+      };
+      const waitForPlaybackVerification = async (timeoutMs) => {
+        const startedAt = Date.now();
+        let snapshot = readPlayerSnapshot();
+        let verification = verifyPlayerSnapshot(snapshot);
+        while (Date.now() - startedAt < timeoutMs) {
+          if (verification.matched) {
+            return {
+              ...snapshot,
+              verificationMatched: true,
+              verificationReason: verification.reason,
+            };
+          }
+          await wait(350);
+          snapshot = readPlayerSnapshot();
+          verification = verifyPlayerSnapshot(snapshot);
+        }
+        const targetRow = findExactTrackRowButton();
+        return {
+          ...snapshot,
+          verificationMatched: false,
+          verificationReason: verification.reason,
+          rowMatched: !!targetRow,
+          rowState: targetRow?.rowState || "",
+        };
       };
       const findTransportButton = (matcher, classPattern) =>
         Array.from(document.querySelectorAll("button, [role='button']")).find(
@@ -2224,15 +2570,20 @@ async function prepareHiddenQobuzPlayback(
       let clickedHtml = "";
       let clickedScopeText = "";
       let candidateLabels = [];
+      let candidateTrackRows = [];
       await waitForTargetText(6_000);
+      const exactTrackRow = findExactTrackRowButton();
       const scopedTarget = findTrackScopedPlayButton();
       const trackNumberTarget = findTrackNumberButton();
       const playButton =
+        exactTrackRow?.playerButton ||
         scopedTarget?.target ||
         trackNumberTarget ||
         findPlayButton();
       if (playButton instanceof HTMLElement) {
-        clickStrategy = scopedTarget?.target
+        clickStrategy = exactTrackRow?.playerButton
+          ? "exact_track_row_button"
+          : scopedTarget?.target
           ? scopedTarget.target.tagName === "BUTTON" ||
             scopedTarget.target.getAttribute("role") === "button"
             ? "track_scoped_play"
@@ -2253,6 +2604,15 @@ async function prepareHiddenQobuzPlayback(
         .map((element) => labelOf(element))
         .filter(Boolean)
         .slice(0, 18);
+      candidateTrackRows = collectTrackRows(8).map((row) => ({
+        title: row.title,
+        artist: row.artist,
+        trackNumber: row.trackNumber,
+        trackId: row.trackId,
+        albumId: row.albumId,
+        href: row.trackHref,
+        rowState: row.rowState,
+      }));
 
       await wait(1200);
 
@@ -2274,6 +2634,14 @@ async function prepareHiddenQobuzPlayback(
           clickStrategy = "album_play_then_skip_" + targetTrackNumber;
           await wait(900);
         }
+      }
+
+      let verificationSnapshot = await waitForPlaybackVerification(6_500);
+      if (!verificationSnapshot.verificationMatched && !exactTrackRow?.playerButton && trackNumberTarget instanceof HTMLElement) {
+        trackNumberTarget.click();
+        clickStrategy = "track_number_retry";
+        await wait(1200);
+        verificationSnapshot = await waitForPlaybackVerification(4_000);
       }
 
       let activeMedia = await waitForActiveMedia(6_000);
@@ -2301,6 +2669,22 @@ async function prepareHiddenQobuzPlayback(
         clickedHtml,
         clickedScopeText,
         candidateLabels,
+        candidateTrackRows,
+        targetTrackId,
+        targetAlbumId,
+        targetTrackNumber,
+        initialPath: String(window.location?.pathname || ""),
+        finalPath: String(window.location?.pathname || ""),
+        verificationMatched: !!verificationSnapshot?.verificationMatched,
+        verificationReason: String(verificationSnapshot?.verificationReason || ""),
+        currentTitle: String(verificationSnapshot?.currentTitle || ""),
+        currentArtist: String(verificationSnapshot?.currentArtist || ""),
+        currentTrackHref: String(verificationSnapshot?.currentTrackHref || ""),
+        currentAlbumHref: String(verificationSnapshot?.currentAlbumHref || ""),
+        currentTrackId: String(verificationSnapshot?.currentTrackId || ""),
+        currentAlbumId: String(verificationSnapshot?.currentAlbumId || ""),
+        rowMatched: !!verificationSnapshot?.rowMatched,
+        rowState: String(verificationSnapshot?.rowState || ""),
         mediaCount: document.querySelectorAll("audio,video").length,
         sinkApplied,
         sinkError: String(window.__stemsepLastSinkError || ""),
@@ -2319,6 +2703,30 @@ async function prepareHiddenQobuzPlayback(
     clickedHtml?: string;
     clickedScopeText?: string;
     candidateLabels?: string[];
+    candidateTrackRows?: Array<{
+      title?: string;
+      artist?: string;
+      trackNumber?: number | null;
+      trackId?: string;
+      albumId?: string;
+      href?: string;
+      rowState?: string;
+    }>;
+    targetTrackId?: string;
+    targetAlbumId?: string;
+    targetTrackNumber?: number | null;
+    initialPath?: string;
+    finalPath?: string;
+    verificationMatched?: boolean;
+    verificationReason?: string;
+    currentTitle?: string;
+    currentArtist?: string;
+    currentTrackHref?: string;
+    currentAlbumHref?: string;
+    currentTrackId?: string;
+    currentAlbumId?: string;
+    rowMatched?: boolean;
+    rowState?: string;
     mediaCount?: number;
     sinkApplied?: number;
     sinkError?: string;
@@ -2333,9 +2741,11 @@ async function prepareHiddenQobuzPlayback(
       reason: "speaker-selection-unsupported",
       playbackResult: playbackResult || null,
     });
-    throw new Error(
+    const error: any = new Error(
       "This Electron/Chromium build does not expose speaker selection for the hidden Qobuz player.",
     );
+    error.details = { targetUrl, playbackResult };
+    throw error;
   }
   if (playbackResult?.sinkError) {
     log("[capture] qobuz hidden playback failed", {
@@ -2344,7 +2754,40 @@ async function prepareHiddenQobuzPlayback(
       reason: "sink-error",
       playbackResult,
     });
-    throw new Error(playbackResult.sinkError);
+    const error: any = new Error(playbackResult.sinkError);
+    error.details = { targetUrl, playbackResult };
+    throw error;
+  }
+  if (!playbackResult?.verificationMatched) {
+    log("[capture] qobuz hidden playback failed", {
+      targetUrl,
+      currentUrl: win.webContents.getURL(),
+      reason: "playback-verification-failed",
+      playbackResult: {
+        ...playbackResult,
+        initialPath,
+      },
+    });
+    const expectedTrack = [item.artist, item.title].filter(Boolean).join(" - ");
+    const detectedTrack = [
+      playbackResult?.currentArtist,
+      playbackResult?.currentTitle,
+    ]
+      .filter(Boolean)
+      .join(" - ");
+    const error: any = new Error(
+      detectedTrack
+        ? `Hidden Qobuz playback did not lock onto the selected track. Expected ${expectedTrack || item.title}, but detected ${detectedTrack}.`
+        : "Hidden Qobuz playback could not be verified against the selected track. Try again or refresh the Qobuz search results.",
+    );
+    error.details = {
+      targetUrl,
+      playbackResult: {
+        ...playbackResult,
+        initialPath,
+      },
+    };
+    throw error;
   }
   if (!playbackResult?.activeMedia) {
     if (!playbackResult?.playButtonClicked) {
@@ -2354,9 +2797,11 @@ async function prepareHiddenQobuzPlayback(
         reason: "no-active-media",
         playbackResult: playbackResult || null,
       });
-      throw new Error(
+      const error: any = new Error(
         "Hidden Qobuz playback did not start. The provider page layout or player state may have changed.",
       );
+      error.details = { targetUrl, playbackResult };
+      throw error;
     }
     log("[capture] qobuz hidden playback awaiting backend audio detection", {
       targetUrl,
@@ -2367,7 +2812,10 @@ async function prepareHiddenQobuzPlayback(
 
   return {
     sinkId,
-    playbackResult,
+    playbackResult: {
+      ...playbackResult,
+      initialPath,
+    },
   };
 }
 
@@ -2378,6 +2826,7 @@ async function startQobuzPlaybackCaptureForItem(
   const captureId = randomUUID();
   const startedAt = new Date().toISOString();
   const outputPath = buildPlaybackCaptureOutputPath(captureId, item);
+  const diagnosticsPath = buildPlaybackCaptureDiagnosticsPath(outputPath);
   playbackCaptureSessions.set(captureId, {
     captureId,
     provider: "qobuz",
@@ -2386,6 +2835,9 @@ async function startQobuzPlaybackCaptureForItem(
     item,
     startedAt,
     outputPath,
+    diagnosticsPath,
+    backendCaptureStarted: false,
+    verification: null,
   });
   const autoCancelAfterMs = Number(
     process.env.STEMSEP_CAPTURE_CANCEL_AFTER_MS || "",
@@ -2407,28 +2859,59 @@ async function startQobuzPlaybackCaptureForItem(
     detail: "Preparing hidden Qobuz playback...",
   });
 
-  const capturePromise: Promise<
-    | { ok: true; value: any }
-    | { ok: false; error: any }
-  > = sendPythonCommand(
-    "capture_playback_loopback",
-    {
-      capture_id: captureId,
-      device_id: deviceId,
-      output_path: outputPath,
-      expected_duration_sec: getExpectedCaptureDurationSec(item),
-      start_timeout_ms: 15_000,
-      trailing_silence_ms: 2_500,
-      min_active_rms: 0.003,
-    },
-    Math.max(300_000, Math.round(((item.durationSec || 180) + 30) * 1000)),
-  ).then(
-    (value) => ({ ok: true as const, value }),
-    (error) => ({ ok: false as const, error }),
-  );
-
   try {
-    await prepareHiddenQobuzPlayback(item, deviceId);
+    await stopHiddenQobuzPlayback();
+
+    emitPlaybackCaptureProgress({
+      provider: "qobuz",
+      captureId,
+      status: "verifying",
+      detail: "Verifying hidden Qobuz playback...",
+    });
+    const playbackReady = await prepareHiddenQobuzPlayback(item, deviceId);
+    const session = playbackCaptureSessions.get(captureId);
+    if (session) {
+      session.verification = playbackReady.playbackResult || null;
+      writePlaybackCaptureDiagnostics(session, {
+        stage: "playback_verified",
+        verification: playbackReady.playbackResult || null,
+        sinkId: playbackReady.sinkId || null,
+      });
+    }
+
+    if (cancelledPlaybackCaptureIds.has(captureId)) {
+      throw new Error("Capture cancelled");
+    }
+
+    emitPlaybackCaptureProgress({
+      provider: "qobuz",
+      captureId,
+      status: "awaiting_audio",
+      detail: "Verified target track. Starting capture...",
+    });
+    if (session) {
+      session.backendCaptureStarted = true;
+    }
+    const capturePromise: Promise<
+      | { ok: true; value: any }
+      | { ok: false; error: any }
+    > = sendPythonCommand(
+      "capture_playback_loopback",
+      {
+        capture_id: captureId,
+        device_id: deviceId,
+        output_path: outputPath,
+        expected_duration_sec: getExpectedCaptureDurationSec(item),
+        start_timeout_ms: 15_000,
+        trailing_silence_ms: 2_500,
+        min_active_rms: 0.003,
+      },
+      Math.max(300_000, Math.round(((item.durationSec || 180) + 30) * 1000)),
+    ).then(
+      (value) => ({ ok: true as const, value }),
+      (error) => ({ ok: false as const, error }),
+    );
+
     const captureOutcome = await capturePromise;
     if (!captureOutcome.ok) {
       throw (captureOutcome as { ok: false; error: any }).error;
@@ -2441,6 +2924,15 @@ async function startQobuzPlaybackCaptureForItem(
       captureResult.capture_sample_rate || profile.sampleRate || undefined,
       captureResult.capture_channels || profile.channels || undefined,
     );
+    if (session) {
+      writePlaybackCaptureDiagnostics(session, {
+        stage: "completed",
+        verification: session.verification || null,
+        captureResult,
+        probedFile: profile,
+        quality,
+      });
+    }
 
     return {
       success: true as const,
@@ -2475,17 +2967,35 @@ async function startQobuzPlaybackCaptureForItem(
         captureResult.capture_sample_rate || profile.sampleRate || undefined,
       capture_channels:
         captureResult.capture_channels || profile.channels || undefined,
+      capture_bits_per_sample:
+        captureResult.capture_bits_per_sample || undefined,
+      capture_sample_format:
+        captureResult.capture_sample_format || undefined,
       capture_start_at: captureResult.capture_start_at || startedAt,
       capture_end_at: captureResult.capture_end_at || new Date().toISOString(),
     };
   } catch (error) {
-    await sendPythonCommandWithRetry(
-      "cancel_playback_capture",
-      { capture_id: captureId },
-      10_000,
-      0,
-    ).catch(() => null);
-    await capturePromise;
+    const session = playbackCaptureSessions.get(captureId);
+    if (session?.backendCaptureStarted) {
+      await sendPythonCommandWithRetry(
+        "cancel_playback_capture",
+        { capture_id: captureId },
+        10_000,
+        0,
+      ).catch(() => null);
+    }
+    if (session) {
+      writePlaybackCaptureDiagnostics(session, {
+        stage: cancelledPlaybackCaptureIds.has(captureId) ? "cancelled" : "failed",
+        verification: session.verification || null,
+        error:
+          error instanceof Error ? error.message : String(error || "Playback capture failed"),
+        details:
+          error && typeof error === "object" && "details" in error
+            ? (error as any).details
+            : null,
+      });
+    }
     if (cancelledPlaybackCaptureIds.has(captureId)) {
       throw new Error("Capture cancelled");
     }
@@ -5614,7 +6124,7 @@ function routeBackendMessage(msg: any) {
       typeof msg?.capture_id === "string"
         ? playbackCaptureSessions.get(msg.capture_id)
         : null;
-    mainWindow.webContents.send("playback-capture-progress", {
+    emitPlaybackCaptureProgress({
       provider: sessionInfo?.provider || "qobuz",
       captureId: msg.capture_id,
       status: msg.status,
@@ -6210,7 +6720,10 @@ ipcMain.handle(
   async (_event, { provider }: { provider: ActiveLibraryProvider }) => {
     try {
       const config = getRemoteProviderConfig(provider);
-      const authenticated = await checkLibraryProviderAuthenticated(provider);
+      const authenticated =
+        provider === "qobuz" && isQobuzPlaybackCaptureActive()
+          ? true
+          : await checkLibraryProviderAuthenticated(provider);
       return {
         success: true,
         provider,
@@ -6350,6 +6863,12 @@ ipcMain.handle(
     { provider, trackId }: { provider: ActiveLibraryProvider; trackId: string },
   ) => {
     try {
+      if (isPlaybackCaptureActive()) {
+        throw new Error(
+          "Another playback capture is already running. Wait for it to finish or cancel it first.",
+        );
+      }
+
       const item = getCachedLibraryItem(provider, trackId);
       if (!item) {
         throw new Error("Track not found in the current provider list. Refresh and try again.");
@@ -6475,6 +6994,46 @@ ipcMain.handle(
   "cancel-playback-capture",
   async (_event, { captureId }: { captureId?: string }) => {
     return abortPlaybackCaptureSession(captureId, "Capture cancelled.");
+  },
+);
+
+ipcMain.handle(
+  "get-playback-capture-status",
+  async (_event, { captureId }: { captureId?: string } = {}) => {
+    const localSessions = (captureId
+      ? Array.from(playbackCaptureSessions.values()).filter(
+          (session) => session.captureId === captureId,
+        )
+      : Array.from(playbackCaptureSessions.values())
+    ).map((session) => ({
+      captureId: session.captureId,
+      provider: session.provider,
+      trackId: session.trackId,
+      item: session.item,
+      startedAt: session.startedAt,
+      backendCaptureStarted: session.backendCaptureStarted,
+      progress: lastPlaybackCaptureProgressById.get(session.captureId) || null,
+    }));
+
+    try {
+      const backendStatus = await sendPythonCommandWithRetry(
+        "get_playback_capture_status",
+        captureId ? { capture_id: captureId } : {},
+        10_000,
+        0,
+      ).catch(() => null);
+      return {
+        success: true,
+        sessions: localSessions,
+        backend: backendStatus,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error?.message || String(error),
+        sessions: localSessions,
+      };
+    }
   },
 );
 

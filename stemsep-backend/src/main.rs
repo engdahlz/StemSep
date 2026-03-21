@@ -89,42 +89,118 @@ struct PlaybackCaptureResultData {
     file_path: String,
     capture_sample_rate: u32,
     capture_channels: u16,
+    capture_bits_per_sample: u16,
+    capture_sample_format: String,
     capture_start_at: String,
     capture_end_at: String,
     duration_sec: f64,
 }
 
-static PLAYBACK_CAPTURE_CANCELS: OnceLock<Mutex<HashMap<String, Arc<AtomicBool>>>> = OnceLock::new();
-
-fn playback_capture_cancels() -> &'static Mutex<HashMap<String, Arc<AtomicBool>>> {
-    PLAYBACK_CAPTURE_CANCELS.get_or_init(|| Mutex::new(HashMap::new()))
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PlaybackCaptureJobState {
+    capture_id: String,
+    device_id: String,
+    output_path: String,
+    status: String,
+    requested_at: String,
+    started_at: Option<String>,
+    finished_at: Option<String>,
+    error: Option<String>,
 }
 
-fn register_playback_capture(capture_id: &str) -> Arc<AtomicBool> {
+#[derive(Debug)]
+struct PlaybackCaptureJob {
+    cancel: Arc<AtomicBool>,
+    state: Arc<Mutex<PlaybackCaptureJobState>>,
+}
+
+static PLAYBACK_CAPTURE_JOBS: OnceLock<Mutex<HashMap<String, PlaybackCaptureJob>>> = OnceLock::new();
+
+fn playback_capture_jobs() -> &'static Mutex<HashMap<String, PlaybackCaptureJob>> {
+    PLAYBACK_CAPTURE_JOBS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn register_playback_capture_job(
+    capture_id: &str,
+    device_id: &str,
+    output_path: &Path,
+) -> Arc<AtomicBool> {
     let cancel_flag = Arc::new(AtomicBool::new(false));
-    let mut registry = playback_capture_cancels().lock().expect("capture cancel registry");
-    registry.insert(capture_id.to_string(), cancel_flag.clone());
+    let mut registry = playback_capture_jobs().lock().expect("capture job registry");
+    registry.insert(
+        capture_id.to_string(),
+        PlaybackCaptureJob {
+            cancel: cancel_flag.clone(),
+            state: Arc::new(Mutex::new(PlaybackCaptureJobState {
+                capture_id: capture_id.to_string(),
+                device_id: device_id.to_string(),
+                output_path: output_path.display().to_string(),
+                status: "queued".to_string(),
+                requested_at: Utc::now().to_rfc3339(),
+                started_at: None,
+                finished_at: None,
+                error: None,
+            })),
+        },
+    );
     cancel_flag
 }
 
-fn finish_playback_capture(capture_id: &str) {
-    let mut registry = playback_capture_cancels().lock().expect("capture cancel registry");
+fn set_playback_capture_job_status(capture_id: &str, status: &str, error: Option<String>) {
+    let registry = playback_capture_jobs().lock().expect("capture job registry");
+    if let Some(job) = registry.get(capture_id) {
+        if let Ok(mut state) = job.state.lock() {
+            state.status = status.to_string();
+            if state.started_at.is_none()
+                && matches!(status, "awaiting_audio" | "capturing" | "saving")
+            {
+                state.started_at = Some(Utc::now().to_rfc3339());
+            }
+            if matches!(status, "completed" | "cancelled" | "failed") {
+                state.finished_at = Some(Utc::now().to_rfc3339());
+            }
+            state.error = error;
+        }
+    }
+}
+
+fn snapshot_playback_capture_jobs(capture_id: Option<&str>) -> Value {
+    let registry = playback_capture_jobs().lock().expect("capture job registry");
+    match capture_id {
+        Some(id) => registry
+            .get(id)
+            .and_then(|job| job.state.lock().ok().map(|state| state.clone()))
+            .map(|state| serde_json::to_value(state).unwrap_or(Value::Null))
+            .unwrap_or(Value::Null),
+        None => serde_json::to_value(
+            registry
+                .values()
+                .filter_map(|job| job.state.lock().ok().map(|state| state.clone()))
+                .collect::<Vec<_>>(),
+        )
+        .unwrap_or(Value::Array(vec![])),
+    }
+}
+
+fn finish_playback_capture_job(capture_id: &str) {
+    let mut registry = playback_capture_jobs().lock().expect("capture job registry");
     registry.remove(capture_id);
 }
 
 fn cancel_playback_capture_request(capture_id: Option<&str>) -> bool {
-    let registry = playback_capture_cancels().lock().expect("capture cancel registry");
+    let registry = playback_capture_jobs().lock().expect("capture job registry");
     match capture_id {
         Some(id) => registry
             .get(id)
-            .map(|flag| {
-                flag.store(true, Ordering::SeqCst);
+            .map(|job| {
+                job.cancel.store(true, Ordering::SeqCst);
                 true
             })
             .unwrap_or(false),
         None => {
-            for flag in registry.values() {
-                flag.store(true, Ordering::SeqCst);
+            for job in registry.values() {
+                job.cancel.store(true, Ordering::SeqCst);
             }
             !registry.is_empty()
         }
@@ -2405,6 +2481,7 @@ fn detect_playback_devices_native() -> Result<Vec<PlaybackDeviceInfo>> {
 fn capture_playback_loopback_native(
     stdout: &Arc<Mutex<io::Stdout>>,
     capture_id: &str,
+    cancel_flag: Arc<AtomicBool>,
     device_id: &str,
     output_path: &Path,
     expected_duration_sec: Option<f64>,
@@ -2413,7 +2490,6 @@ fn capture_playback_loopback_native(
     min_active_rms: f64,
 ) -> Result<PlaybackCaptureResultData> {
     let _ = initialize_mta().ok();
-    let cancel_flag = register_playback_capture(capture_id);
     let capture_start_at = Utc::now().to_rfc3339();
     let start_instant = std::time::Instant::now();
 
@@ -2497,6 +2573,7 @@ fn capture_playback_loopback_native(
             Some(0.0),
             None,
         )?;
+        set_playback_capture_job_status(capture_id, "awaiting_audio", None);
 
         audio_client.start_stream().context("start loopback stream")?;
 
@@ -2570,6 +2647,7 @@ fn capture_playback_loopback_native(
                             Some(0.0),
                             None,
                         )?;
+                        set_playback_capture_job_status(capture_id, "capturing", None);
                     }
                 }
 
@@ -2658,6 +2736,7 @@ fn capture_playback_loopback_native(
             first_active_at.map(|started| started.elapsed().as_secs_f64()),
             None,
         )?;
+        set_playback_capture_job_status(capture_id, "saving", None);
 
         finalize_with_cleanup(writer, true)?;
 
@@ -2670,13 +2749,14 @@ fn capture_playback_loopback_native(
             file_path: output_path.to_string_lossy().to_string(),
             capture_sample_rate: sample_rate,
             capture_channels: channels as u16,
+            capture_bits_per_sample: 32,
+            capture_sample_format: "float32".to_string(),
             capture_start_at,
             capture_end_at,
             duration_sec,
         })
     })();
 
-    finish_playback_capture(capture_id);
     capture_result
 }
 
@@ -2684,6 +2764,7 @@ fn capture_playback_loopback_native(
 fn capture_playback_loopback_native(
     _stdout: &Arc<Mutex<io::Stdout>>,
     _capture_id: &str,
+    _cancel_flag: Arc<AtomicBool>,
     _device_id: &str,
     _output_path: &Path,
     _expected_duration_sec: Option<f64>,
@@ -7238,61 +7319,126 @@ fn main() -> Result<()> {
                     .and_then(|v| v.as_f64())
                     .filter(|value| value.is_finite() && *value > 0.0)
                     .unwrap_or(0.003);
+                let capture_id = capture_id.unwrap().to_string();
+                let device_id = device_id.unwrap().to_string();
+                let output_path = output_path.unwrap().to_string();
 
-                match capture_playback_loopback_native(
-                    &stdout,
-                    capture_id.unwrap(),
-                    device_id.unwrap(),
-                    Path::new(output_path.unwrap()),
-                    expected_duration_sec,
-                    start_timeout_ms,
-                    trailing_silence_ms,
-                    min_active_rms,
-                ) {
-                    Ok(result) => {
-                        send_playback_capture_progress(
-                            &stdout,
-                            capture_id.unwrap(),
-                            "completed",
-                            Some("Captured WAV is ready for separation."),
-                            Some(1.0),
-                            Some(result.duration_sec),
-                            None,
-                        )?;
-                        send_ok(
-                            &stdout,
-                            req.id,
-                            serde_json::to_value(result).unwrap_or(Value::Null),
-                        )?;
-                    }
-                    Err(error) => {
-                        let error_text = format!("{error:#}");
-                        let cancelled = error_text.to_lowercase().contains("cancelled");
-                        let _ = send_playback_capture_progress(
-                            &stdout,
-                            capture_id.unwrap(),
-                            if cancelled { "cancelled" } else { "error" },
-                            if cancelled {
-                                Some("Capture cancelled.")
-                            } else {
-                                Some("Playback capture failed.")
-                            },
-                            None,
-                            None,
-                            Some(&error_text),
-                        );
-                        send_err(
-                            &stdout,
-                            req.id,
-                            if cancelled {
-                                "CAPTURE_CANCELLED"
-                            } else {
-                                "CAPTURE_FAILED"
-                            },
-                            &error_text,
-                        )?;
-                    }
+                if playback_capture_jobs()
+                    .lock()
+                    .expect("capture job registry")
+                    .contains_key(&capture_id)
+                {
+                    send_err(
+                        &stdout,
+                        req.id,
+                        "CAPTURE_ALREADY_RUNNING",
+                        "A playback capture with this id is already running.",
+                    )?;
+                    continue;
                 }
+
+                let cancel_flag = register_playback_capture_job(
+                    &capture_id,
+                    &device_id,
+                    Path::new(&output_path),
+                );
+                let stdout_clone = stdout.clone();
+                let response_id = req.id.clone();
+
+                thread::spawn(move || {
+                    let run_result = capture_playback_loopback_native(
+                        &stdout_clone,
+                        &capture_id,
+                        cancel_flag.clone(),
+                        &device_id,
+                        Path::new(&output_path),
+                        expected_duration_sec,
+                        start_timeout_ms,
+                        trailing_silence_ms,
+                        min_active_rms,
+                    );
+
+                    match run_result {
+                        Ok(result) => {
+                            if cancel_flag.load(Ordering::SeqCst) {
+                                let _ = std::fs::remove_file(&output_path);
+                                set_playback_capture_job_status(
+                                    &capture_id,
+                                    "cancelled",
+                                    Some("Capture cancelled.".to_string()),
+                                );
+                                let _ = send_playback_capture_progress(
+                                    &stdout_clone,
+                                    &capture_id,
+                                    "cancelled",
+                                    Some("Capture cancelled."),
+                                    None,
+                                    None,
+                                    Some("Capture cancelled."),
+                                );
+                                let _ = send_err(
+                                    &stdout_clone,
+                                    response_id,
+                                    "CAPTURE_CANCELLED",
+                                    "Capture cancelled.",
+                                );
+                            } else {
+                                set_playback_capture_job_status(&capture_id, "completed", None);
+                                let _ = send_playback_capture_progress(
+                                    &stdout_clone,
+                                    &capture_id,
+                                    "completed",
+                                    Some("Captured WAV is ready for separation."),
+                                    Some(1.0),
+                                    Some(result.duration_sec),
+                                    None,
+                                );
+                                let _ = send_ok(
+                                    &stdout_clone,
+                                    response_id,
+                                    serde_json::to_value(result).unwrap_or(Value::Null),
+                                );
+                            }
+                        }
+                        Err(error) => {
+                            let error_text = format!("{error:#}");
+                            let cancelled = error_text.to_lowercase().contains("cancelled")
+                                || cancel_flag.load(Ordering::SeqCst);
+                            set_playback_capture_job_status(
+                                &capture_id,
+                                if cancelled { "cancelled" } else { "failed" },
+                                Some(error_text.clone()),
+                            );
+                            let _ = send_playback_capture_progress(
+                                &stdout_clone,
+                                &capture_id,
+                                if cancelled { "cancelled" } else { "error" },
+                                if cancelled {
+                                    Some("Capture cancelled.")
+                                } else {
+                                    Some("Playback capture failed.")
+                                },
+                                None,
+                                None,
+                                Some(&error_text),
+                            );
+                            let _ = send_err(
+                                &stdout_clone,
+                                response_id,
+                                if cancelled {
+                                    "CAPTURE_CANCELLED"
+                                } else {
+                                    "CAPTURE_FAILED"
+                                },
+                                &error_text,
+                            );
+                        }
+                    }
+
+                    finish_playback_capture_job(&capture_id);
+                });
+
+                continue;
             }
             "cancel_playback_capture" => {
                 let capture_id = req.extra.get("capture_id").and_then(|v| v.as_str());
@@ -7305,6 +7451,10 @@ fn main() -> Result<()> {
                         "capture_id": capture_id,
                     }),
                 )?;
+            }
+            "get_playback_capture_status" => {
+                let capture_id = req.extra.get("capture_id").and_then(|v| v.as_str());
+                send_ok(&stdout, req.id, snapshot_playback_capture_jobs(capture_id))?;
             }
             "get_workflows" => {
                 // Minimal parity: keep shape similar to Python ({workflows: [...]})

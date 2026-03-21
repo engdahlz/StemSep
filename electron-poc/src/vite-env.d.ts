@@ -221,6 +221,7 @@ interface ElectronAPI {
         deviceId: string
     ) => Promise<PlaybackCaptureCompleteResult>
     cancelPlaybackCapture: (captureId?: string) => Promise<{ success: boolean; error?: string }>
+    getPlaybackCaptureStatus: (captureId?: string) => Promise<any>
     onPlaybackCaptureProgress: (
         callback: (data: PlaybackCaptureProgressPayload) => void
     ) => () => void

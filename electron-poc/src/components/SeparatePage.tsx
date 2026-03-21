@@ -867,6 +867,52 @@ export default function SeparatePage({
     void refreshCaptureEnvironment();
   }, [refreshCaptureEnvironment]);
 
+  const recoverPlaybackCaptureState = useCallback(async () => {
+    if (captureProgress) return;
+    if (!window.electronAPI?.getPlaybackCaptureStatus) return;
+
+    try {
+      const status = await window.electronAPI.getPlaybackCaptureStatus();
+      const sessions = Array.isArray(status?.sessions) ? status.sessions : [];
+      const activeSession = sessions.find((session: any) => {
+        const currentStatus = String(
+          session?.progress?.status || session?.backend?.status || "",
+        ).toLowerCase();
+        return !/completed|cancelled|error|failed/.test(currentStatus);
+      });
+
+      if (!activeSession) return;
+
+      if (activeSession.provider === "qobuz" || activeSession.provider === "spotify") {
+        setCapturingProvider(activeSession.provider);
+      }
+      if (typeof activeSession.trackId === "string") {
+        setCapturingTrackId(activeSession.trackId);
+      }
+      if (activeSession.progress) {
+        setCaptureProgress(activeSession.progress);
+      }
+    } catch {
+      // Ignore state recovery failures; normal progress events will still drive the UI.
+    }
+  }, [captureProgress]);
+
+  useEffect(() => {
+    if (activeImportTab !== "qobuz") return;
+    void recoverPlaybackCaptureState();
+  }, [activeImportTab, recoverPlaybackCaptureState]);
+
+  useEffect(() => {
+    if (!captureProgress) return;
+    const terminal = /completed|cancelled|error|failed/i.test(
+      String(captureProgress.status || ""),
+    );
+    if (!terminal) return;
+    setIsCancellingCapture(false);
+    setCapturingProvider(null);
+    setCapturingTrackId(null);
+  }, [captureProgress]);
+
   useEffect(() => {
     if (!isPlaybackDeviceMenuOpen) return;
 

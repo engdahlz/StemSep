@@ -733,6 +733,7 @@ export function installBrowserElectronApi() {
       hint: "Use the Electron desktop app for native library browsing and capture.",
     }),
     cancelPlaybackCapture: async () => ({ success: true }),
+    getPlaybackCaptureStatus: async () => ({ success: true, sessions: [], backend: [] }),
     onPlaybackCaptureProgress: (callback) => youTubeProgressEmitter.subscribe(callback as any),
     resolveYouTubeUrl: async () => {
       youTubeProgressEmitter.emit({

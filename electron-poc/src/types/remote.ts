@@ -36,8 +36,10 @@ export interface RemoteCatalogItem {
   title: string;
   artist?: string;
   album?: string;
+  albumArtist?: string;
   trackNumber?: number;
   discNumber?: number;
+  releaseYear?: number;
   artworkUrl?: string;
   durationSec?: number;
   canonicalUrl?: string;
@@ -174,6 +176,8 @@ export type PlaybackCaptureCompleteResult =
       capture_device_id?: string;
       capture_sample_rate?: number;
       capture_channels?: number;
+      capture_bits_per_sample?: number;
+      capture_sample_format?: string;
       capture_start_at?: string;
       capture_end_at?: string;
     }
