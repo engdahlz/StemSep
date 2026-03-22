@@ -244,6 +244,9 @@ struct ResolvedArtifact {
     required: bool,
     manual: bool,
     exists: bool,
+    canonical_present: bool,
+    legacy_present: bool,
+    resolved_path: Option<String>,
     source: Option<String>,
     source_host: Option<String>,
     sha256: Option<String>,
@@ -259,6 +262,9 @@ struct ResolvedArtifactInstallation {
     relative_path: String,
     present: bool,
     verified: bool,
+    canonical_present: bool,
+    legacy_present: bool,
+    resolved_path: Option<String>,
     required: bool,
     selected_source: Option<String>,
 }
@@ -266,6 +272,8 @@ struct ResolvedArtifactInstallation {
 #[derive(Debug, Clone, Serialize)]
 struct ResolvedInstallationStatus {
     installed: bool,
+    canonical_ready: bool,
+    legacy_fallback_used: bool,
     missing_artifacts: Vec<String>,
     relative_paths: Vec<String>,
     artifacts: Vec<ResolvedArtifactInstallation>,
@@ -385,52 +393,396 @@ fn read_json_file(path: &Path) -> Result<Value> {
     serde_json::from_slice(&bytes).with_context(|| format!("parse {}", path.display()))
 }
 
-fn merge_json_value(base: &mut Value, overlay: &Value) {
-    match (base, overlay) {
-        (Value::Object(base_obj), Value::Object(overlay_obj)) => {
-            for (key, value) in overlay_obj {
-                if let Some(existing) = base_obj.get_mut(key) {
-                    merge_json_value(existing, value);
-                } else {
-                    base_obj.insert(key.clone(), value.clone());
-                }
-            }
-        }
-        (base_slot, overlay_value) => {
-            *base_slot = overlay_value.clone();
-        }
+fn load_models_with_guide_overrides(cfg: &BackendConfig) -> Result<Value> {
+    load_catalog_runtime(cfg)
+}
+
+fn load_catalog_runtime(cfg: &BackendConfig) -> Result<Value> {
+    let runtime_path = cfg.assets_dir.join("catalog.runtime.json");
+    if !runtime_path.exists() {
+        return Err(anyhow!(
+            "catalog.runtime.json is required for v3 catalog commands ({})",
+            runtime_path.display()
+        ));
+    }
+    read_json_file(&runtime_path)
+}
+
+fn load_catalog_recipes(cfg: &BackendConfig) -> Result<Value> {
+    let runtime = load_catalog_runtime(cfg)?;
+    if let Some(recipes) = runtime.get("recipes").and_then(|v| v.as_array()) {
+        return Ok(serde_json::json!({ "recipes": recipes.clone() }));
+    }
+    Err(anyhow!("catalog.runtime.json does not contain recipes[]"))
+}
+
+fn load_catalog_workflows(cfg: &BackendConfig) -> Result<Value> {
+    let runtime = load_catalog_runtime(cfg)?;
+    if let Some(workflows) = runtime.get("workflows").and_then(|v| v.as_array()) {
+        return Ok(serde_json::json!({ "workflows": workflows.clone() }));
+    }
+    Err(anyhow!("catalog.runtime.json does not contain workflows[]"))
+}
+
+fn normalize_selection_type(value: &str) -> Option<String> {
+    let normalized = value.trim().to_lowercase();
+    match normalized.as_str() {
+        "model" | "recipe" | "workflow" => Some(normalized),
+        _ => None,
     }
 }
 
-fn append_or_merge_registry_models(models_json: &mut Value, overlay_json: &Value) {
-    let Some(models) = models_json.get_mut("models").and_then(|v| v.as_array_mut()) else {
-        return;
+fn selection_descriptor_from_extra(extra: &Map<String, Value>) -> (Option<String>, Option<String>) {
+    let envelope = extra
+        .get("selection_envelope")
+        .or_else(|| extra.get("selectionEnvelope"))
+        .and_then(|v| v.as_object());
+    let selection_type = extra
+        .get("selection_type")
+        .or_else(|| extra.get("selectionType"))
+        .and_then(|v| v.as_str())
+        .or_else(|| envelope.and_then(|v| v.get("selectionType").and_then(|v| v.as_str())))
+        .and_then(normalize_selection_type);
+    let selection_id = extra
+        .get("selection_id")
+        .or_else(|| extra.get("selectionId"))
+        .and_then(|v| v.as_str())
+        .or_else(|| envelope.and_then(|v| v.get("selectionId").and_then(|v| v.as_str())))
+        .or_else(|| extra.get("model_id").and_then(|v| v.as_str()))
+        .or_else(|| extra.get("recipe_id").and_then(|v| v.as_str()))
+        .or_else(|| extra.get("workflow_id").and_then(|v| v.as_str()))
+        .map(|s| s.to_string());
+    (selection_type, selection_id)
+}
+
+fn selection_envelope_from_entry(entry: &Value, selection_type: &str, selection_id: &str) -> Value {
+    entry
+        .get("selection_envelope")
+        .cloned()
+        .unwrap_or_else(|| {
+            serde_json::json!({
+                "selectionType": selection_type,
+                "selectionId": selection_id,
+                "catalogTier": entry.get("catalog_tier").cloned().unwrap_or(Value::Null),
+                "sourceKind": entry.get("source_kind").cloned().unwrap_or(Value::Null),
+                "installPolicy": entry.get("install_policy").cloned().unwrap_or(Value::Null),
+                "verification": entry.get("verification").cloned().unwrap_or(Value::Null)
+            })
+        })
+}
+
+fn catalog_selection_entry(
+    runtime: &Value,
+    selection_type: &str,
+    selection_id: &str,
+) -> Option<Value> {
+    let key = match selection_type {
+        "model" => "models",
+        "recipe" => "recipes",
+        "workflow" => "workflows",
+        _ => return None,
     };
 
-    let overlay_models = overlay_json
-        .get("models")
+    runtime
+        .get(key)
+        .and_then(|v| v.as_array())
+        .and_then(|entries| {
+            entries
+                .iter()
+                .find(|entry| {
+                    entry.get("selection_id").and_then(|v| v.as_str()) == Some(selection_id)
+                        || entry.get("id").and_then(|v| v.as_str()) == Some(selection_id)
+                        || entry.get("model_id").and_then(|v| v.as_str()) == Some(selection_id)
+                })
+        })
+        .cloned()
+}
+
+fn catalog_selection_required_model_ids(selection_type: &str, selection: &Value) -> Vec<String> {
+    let mut ids: Vec<String> = Vec::new();
+    let mut push_id = |candidate: Option<&str>| {
+        if let Some(id) = candidate {
+            let trimmed = id.trim();
+            if !trimmed.is_empty() && !ids.iter().any(|existing| existing == trimmed) {
+                ids.push(trimmed.to_string());
+            }
+        }
+    };
+
+    if let Some(explicit) = selection.get("required_model_ids").and_then(|v| v.as_array()) {
+        for value in explicit {
+            push_id(value.as_str());
+        }
+    }
+
+    match selection_type {
+        "model" => {
+            push_id(selection.get("model_id").and_then(|v| v.as_str()));
+            push_id(selection.get("id").and_then(|v| v.as_str()));
+        }
+        "recipe" => {
+            if ids.is_empty() {
+                ids.extend(collect_recipe_model_ids(selection));
+            }
+        }
+        "workflow" => {
+            if ids.is_empty() {
+                ids.extend(collect_workflow_model_ids(selection));
+            }
+        }
+        _ => {}
+    }
+
+    ids
+}
+
+fn catalog_selection_bundle(
+    cfg: &BackendConfig,
+    runtime: &Value,
+    selection_type: &str,
+    selection_id: &str,
+) -> Result<Value> {
+    let selection = catalog_selection_entry(runtime, selection_type, selection_id)
+        .ok_or_else(|| anyhow!("Unknown {selection_type}: {selection_id}"))?;
+
+    let selection_envelope = selection_envelope_from_entry(&selection, selection_type, selection_id);
+    let required_model_ids = catalog_selection_required_model_ids(selection_type, &selection);
+    let mut required_models: Vec<Value> = Vec::new();
+    let mut required_model_installations: Vec<Value> = Vec::new();
+    let mut missing_model_ids: Vec<String> = Vec::new();
+    let mut missing_artifacts: Vec<String> = Vec::new();
+    let mut verified_model_ids: Vec<String> = Vec::new();
+
+    for model_id in required_model_ids.iter() {
+        if let Some(model_obj) = find_model_object(runtime, model_id) {
+            let manifest = resolve_model_download_manifest(cfg, model_id, &model_obj);
+            let installation = resolve_installation_status(cfg, &manifest);
+            if installation.installed {
+                verified_model_ids.push(model_id.clone());
+            } else {
+                missing_artifacts.extend(installation.missing_artifacts.clone());
+            }
+            required_models.push(serde_json::json!({
+                "model_id": model_id,
+                "model": model_obj,
+                "download": manifest,
+                "installation": installation,
+            }));
+            required_model_installations.push(serde_json::json!({
+                "model_id": model_id,
+                "installed": installation.installed,
+                "missing_artifacts": installation.missing_artifacts,
+                "relative_paths": installation.relative_paths,
+                "artifacts": installation.artifacts,
+            }));
+        } else {
+            missing_model_ids.push(model_id.clone());
+            required_models.push(serde_json::json!({
+                "model_id": model_id,
+                "error": "NOT_FOUND"
+            }));
+            required_model_installations.push(serde_json::json!({
+                "model_id": model_id,
+                "installed": false,
+                "error": "NOT_FOUND"
+            }));
+        }
+    }
+
+    let installed = missing_model_ids.is_empty()
+        && required_models
+            .iter()
+            .all(|entry| entry.get("installation").and_then(|v| v.get("installed")).and_then(|v| v.as_bool()) == Some(true));
+    let canonical_ready = missing_model_ids.is_empty()
+        && required_models.iter().all(|entry| {
+            entry.get("installation")
+                .and_then(|v| v.get("canonical_ready"))
+                .and_then(|v| v.as_bool())
+                == Some(true)
+        });
+    let legacy_fallback_used = required_models.iter().any(|entry| {
+        entry.get("installation")
+            .and_then(|v| v.get("legacy_fallback_used"))
+            .and_then(|v| v.as_bool())
+            == Some(true)
+    });
+
+    Ok(serde_json::json!({
+        "selection_type": selection_type,
+        "selection_id": selection_id,
+        "selection": selection,
+        "selection_envelope": selection_envelope,
+        "catalog_tier": selection.get("catalog_tier").cloned().unwrap_or(Value::Null),
+        "source_kind": selection.get("source_kind").cloned().unwrap_or(Value::Null),
+        "install_policy": selection.get("install_policy").cloned().unwrap_or(Value::Null),
+        "runtime_adapter": selection.get("runtime_adapter").cloned().unwrap_or(Value::Null),
+        "verification": selection.get("verification").cloned().unwrap_or(Value::Null),
+        "required_model_ids": required_model_ids,
+        "required_models": required_models,
+        "required_model_installations": required_model_installations,
+        "missing_model_ids": missing_model_ids,
+        "missing_artifacts": missing_artifacts,
+        "verified_model_ids": verified_model_ids,
+        "installed": installed,
+        "canonical_ready": canonical_ready,
+        "legacy_fallback_used": legacy_fallback_used,
+    }))
+}
+
+fn catalog_selection_installation(cfg: &BackendConfig, runtime: &Value, selection_type: &str, selection_id: &str) -> Result<Value> {
+    let bundle = catalog_selection_bundle(cfg, runtime, selection_type, selection_id)?;
+    let required_model_installations = bundle
+        .get("required_model_installations")
+        .cloned()
+        .unwrap_or(Value::Array(vec![]));
+    let installed = bundle
+        .get("installed")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    Ok(serde_json::json!({
+        "selection_type": bundle.get("selection_type").cloned().unwrap_or(Value::Null),
+        "selection_id": bundle.get("selection_id").cloned().unwrap_or(Value::Null),
+        "selection_envelope": bundle.get("selection_envelope").cloned().unwrap_or(Value::Null),
+        "catalog_tier": bundle.get("catalog_tier").cloned().unwrap_or(Value::Null),
+        "source_kind": bundle.get("source_kind").cloned().unwrap_or(Value::Null),
+        "install_policy": bundle.get("install_policy").cloned().unwrap_or(Value::Null),
+        "runtime_adapter": bundle.get("runtime_adapter").cloned().unwrap_or(Value::Null),
+        "verification": bundle.get("verification").cloned().unwrap_or(Value::Null),
+        "required_model_ids": bundle.get("required_model_ids").cloned().unwrap_or(Value::Null),
+        "required_model_installations": required_model_installations,
+        "missing_model_ids": bundle.get("missing_model_ids").cloned().unwrap_or(Value::Null),
+        "missing_artifacts": bundle.get("missing_artifacts").cloned().unwrap_or(Value::Null),
+        "installed": installed,
+        "canonical_ready": bundle.get("canonical_ready").cloned().unwrap_or(Value::Bool(false)),
+        "legacy_fallback_used": bundle.get("legacy_fallback_used").cloned().unwrap_or(Value::Bool(false)),
+    }))
+}
+
+fn catalog_selection_install_plan(
+    cfg: &BackendConfig,
+    runtime: &Value,
+    selection_type: &str,
+    selection_id: &str,
+) -> Result<Value> {
+    let bundle = catalog_selection_bundle(cfg, runtime, selection_type, selection_id)?;
+    Ok(serde_json::json!({
+        "selection_type": bundle.get("selection_type").cloned().unwrap_or(Value::Null),
+        "selection_id": bundle.get("selection_id").cloned().unwrap_or(Value::Null),
+        "selection": bundle.get("selection").cloned().unwrap_or(Value::Null),
+        "selection_envelope": bundle.get("selection_envelope").cloned().unwrap_or(Value::Null),
+        "catalog_tier": bundle.get("catalog_tier").cloned().unwrap_or(Value::Null),
+        "source_kind": bundle.get("source_kind").cloned().unwrap_or(Value::Null),
+        "install_policy": bundle.get("install_policy").cloned().unwrap_or(Value::Null),
+        "runtime_adapter": bundle.get("runtime_adapter").cloned().unwrap_or(Value::Null),
+        "verification": bundle.get("verification").cloned().unwrap_or(Value::Null),
+        "required_model_ids": bundle.get("required_model_ids").cloned().unwrap_or(Value::Null),
+        "required_models": bundle.get("required_models").cloned().unwrap_or(Value::Null),
+        "installations": bundle.get("required_model_installations").cloned().unwrap_or(Value::Null),
+        "missing_model_ids": bundle.get("missing_model_ids").cloned().unwrap_or(Value::Null),
+        "missing_artifacts": bundle.get("missing_artifacts").cloned().unwrap_or(Value::Null),
+        "installed": bundle.get("installed").cloned().unwrap_or(Value::Bool(false)),
+        "canonical_ready": bundle.get("canonical_ready").cloned().unwrap_or(Value::Bool(false)),
+        "legacy_fallback_used": bundle.get("legacy_fallback_used").cloned().unwrap_or(Value::Bool(false)),
+    }))
+}
+
+fn catalog_selection_verification(
+    cfg: &BackendConfig,
+    runtime: &Value,
+    selection_type: &str,
+    selection_id: &str,
+) -> Result<Value> {
+    let bundle = catalog_selection_bundle(cfg, runtime, selection_type, selection_id)?;
+    let mut artifact_checks: Vec<Value> = Vec::new();
+    for required_model in bundle
+        .get("required_models")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default()
+    {
+        let model_id = required_model
+            .get("model_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let installation = required_model.get("installation").cloned().unwrap_or(Value::Null);
+        let download = required_model.get("download").cloned().unwrap_or(Value::Null);
+        let mut per_artifact: Vec<Value> = Vec::new();
+        if let Some(manifest_artifacts) = download.get("artifacts").and_then(|v| v.as_array()) {
+            for artifact in manifest_artifacts {
+                per_artifact.push(serde_json::json!({
+                    "kind": artifact.get("kind").cloned().unwrap_or(Value::Null),
+                    "filename": artifact.get("filename").cloned().unwrap_or(Value::Null),
+                    "relative_path": artifact.get("relative_path").cloned().unwrap_or(Value::Null),
+                    "exists": artifact.get("exists").cloned().unwrap_or(Value::Null),
+                    "verified": artifact.get("verified").cloned().unwrap_or(Value::Null),
+                    "canonical_present": artifact.get("canonical_present").cloned().unwrap_or(Value::Null),
+                    "legacy_present": artifact.get("legacy_present").cloned().unwrap_or(Value::Null),
+                    "resolved_path": artifact.get("resolved_path").cloned().unwrap_or(Value::Null),
+                    "manual": artifact.get("manual").cloned().unwrap_or(Value::Null),
+                    "source": artifact.get("source").cloned().unwrap_or(Value::Null),
+                }));
+            }
+        }
+        artifact_checks.push(serde_json::json!({
+            "model_id": model_id,
+            "installed": installation.get("installed").cloned().unwrap_or(Value::Bool(false)),
+            "canonical_ready": installation.get("canonical_ready").cloned().unwrap_or(Value::Bool(false)),
+            "legacy_fallback_used": installation.get("legacy_fallback_used").cloned().unwrap_or(Value::Bool(false)),
+            "missing_artifacts": installation.get("missing_artifacts").cloned().unwrap_or(Value::Null),
+            "artifacts": per_artifact,
+        }));
+    }
+
+    Ok(serde_json::json!({
+        "selection_type": bundle.get("selection_type").cloned().unwrap_or(Value::Null),
+        "selection_id": bundle.get("selection_id").cloned().unwrap_or(Value::Null),
+        "selection_envelope": bundle.get("selection_envelope").cloned().unwrap_or(Value::Null),
+        "required_model_ids": bundle.get("required_model_ids").cloned().unwrap_or(Value::Null),
+        "artifact_checks": artifact_checks,
+        "installed": bundle.get("installed").cloned().unwrap_or(Value::Bool(false)),
+        "canonical_ready": bundle.get("canonical_ready").cloned().unwrap_or(Value::Bool(false)),
+        "legacy_fallback_used": bundle.get("legacy_fallback_used").cloned().unwrap_or(Value::Bool(false)),
+        "missing_model_ids": bundle.get("missing_model_ids").cloned().unwrap_or(Value::Null),
+        "missing_artifacts": bundle.get("missing_artifacts").cloned().unwrap_or(Value::Null),
+        "verification": bundle.get("verification").cloned().unwrap_or(Value::Null),
+    }))
+}
+
+fn catalog_execution_plan(
+    cfg: &BackendConfig,
+    runtime: &Value,
+    selection_type: &str,
+    selection_id: &str,
+) -> Result<Value> {
+    let bundle = catalog_selection_bundle(cfg, runtime, selection_type, selection_id)?;
+    let selection = bundle.get("selection").cloned().unwrap_or(Value::Null);
+    let required_model_ids = bundle
+        .get("required_model_ids")
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
+    let runtime_adapter = bundle.get("runtime_adapter").cloned().unwrap_or(Value::Null);
 
-    for overlay_model in overlay_models {
-        let Some(id) = overlay_model.get("id").and_then(|v| v.as_str()) else {
-            continue;
-        };
-
-        if let Some(existing) = models
-            .iter_mut()
-            .find(|model| model.get("id").and_then(|v| v.as_str()) == Some(id))
-        {
-            merge_json_value(existing, &overlay_model);
-        } else {
-            models.push(overlay_model);
-        }
-    }
-}
-
-fn load_models_with_guide_overrides(cfg: &BackendConfig) -> Result<Value> {
-    read_json_file(&cfg.assets_dir.join("models.json.bak"))
+    Ok(serde_json::json!({
+        "selection_type": bundle.get("selection_type").cloned().unwrap_or(Value::Null),
+        "selection_id": bundle.get("selection_id").cloned().unwrap_or(Value::Null),
+        "selection_envelope": bundle.get("selection_envelope").cloned().unwrap_or(Value::Null),
+        "selection": selection,
+        "required_model_ids": required_model_ids,
+        "required_models": bundle.get("required_models").cloned().unwrap_or(Value::Null),
+        "install_plan": catalog_selection_install_plan(cfg, runtime, selection_type, selection_id)?,
+        "verification": bundle.get("verification").cloned().unwrap_or(Value::Null),
+        "runtime_adapter": runtime_adapter,
+        "execution_constraints": serde_json::json!({
+            "manual_install": bundle.get("install_policy").and_then(|v| v.as_str()).map(|v| v != "direct").unwrap_or(false),
+            "catalog_tier": bundle.get("catalog_tier").cloned().unwrap_or(Value::Null),
+            "source_kind": bundle.get("source_kind").cloned().unwrap_or(Value::Null),
+            "canonical_ready": bundle.get("canonical_ready").cloned().unwrap_or(Value::Bool(false)),
+            "legacy_fallback_used": bundle.get("legacy_fallback_used").cloned().unwrap_or(Value::Bool(false)),
+        }),
+        "resolved_bundle": bundle,
+    }))
 }
 
 fn detect_runtime_adapter(model_obj: &Value) -> Option<String> {
@@ -751,34 +1103,6 @@ fn legacy_artifact_paths(
     candidates
 }
 
-fn artifact_exists_anywhere(
-    models_dir: &Path,
-    model_id: &str,
-    artifact: &ResolvedArtifact,
-) -> bool {
-    let canonical = models_dir.join(artifact.relative_path.replace('/', "\\"));
-    if canonical.exists() {
-        return true;
-    }
-    legacy_artifact_paths(models_dir, model_id, &artifact.kind, &artifact.filename)
-        .iter()
-        .any(|path| path.exists())
-}
-
-fn find_existing_artifact_path(
-    models_dir: &Path,
-    model_id: &str,
-    artifact: &ResolvedArtifact,
-) -> Option<PathBuf> {
-    let canonical = models_dir.join(artifact.relative_path.replace('/', "\\"));
-    if canonical.exists() {
-        return Some(canonical);
-    }
-    legacy_artifact_paths(models_dir, model_id, &artifact.kind, &artifact.filename)
-        .into_iter()
-        .find(|path| path.exists())
-}
-
 fn verify_local_artifact_hash(path: &Path, expected_sha256: &str) -> Result<bool> {
     let mut file = std::fs::File::open(path)
         .with_context(|| format!("open {} for sha256", path.display()))?;
@@ -990,6 +1314,7 @@ fn resolve_model_download_manifest(
             .map(is_stale_legacy_mirror_url)
             .unwrap_or(false);
         let effective_sources = artifact_sources;
+        let canonical_path = models_dir.join(relative_path.replace('/', "\\"));
         let probe = ResolvedArtifact {
             kind: kind.to_string(),
             filename: trimmed.to_string(),
@@ -997,6 +1322,9 @@ fn resolve_model_download_manifest(
             required,
             manual: manual || stale_legacy_mirror,
             exists: false,
+            canonical_present: false,
+            legacy_present: false,
+            resolved_path: None,
             source: source.clone(),
             source_host: source_host.clone(),
             sha256: sha256.clone(),
@@ -1004,12 +1332,23 @@ fn resolve_model_download_manifest(
             sources: effective_sources.clone(),
             verified: false,
         };
-        let existing_path = find_existing_artifact_path(models_dir, model_id, &probe);
-        let exists = existing_path.is_some();
-        let verified = if let (Some(path), Some(expected_sha256)) = (existing_path.as_ref(), sha256.as_deref()) {
-            verify_local_artifact_hash(path, expected_sha256).unwrap_or(false)
+        let canonical_exists = canonical_path.exists();
+        let legacy_path = legacy_artifact_paths(models_dir, model_id, &probe.kind, &probe.filename)
+            .into_iter()
+            .find(|path| path.exists());
+        let legacy_present = legacy_path.is_some();
+        let existing_path = if canonical_exists {
+            Some(canonical_path.clone())
         } else {
-            exists
+            legacy_path.clone()
+        };
+        let exists = canonical_exists;
+        let verified = if let (true, Some(expected_sha256)) = (canonical_exists, sha256.as_deref()) {
+            verify_local_artifact_hash(&canonical_path, expected_sha256).unwrap_or(false)
+        } else if canonical_exists {
+            true
+        } else {
+            false
         };
         artifacts.push(ResolvedArtifact {
             kind: kind.to_string(),
@@ -1018,6 +1357,9 @@ fn resolve_model_download_manifest(
             required,
             manual: manual || stale_legacy_mirror,
             exists,
+            canonical_present: canonical_exists,
+            legacy_present,
+            resolved_path: existing_path.as_ref().map(|path| path.display().to_string()),
             source,
             source_host,
             sha256,
@@ -1468,6 +1810,9 @@ fn resolve_installation_status(
             relative_path: artifact.relative_path.clone(),
             present: artifact.exists,
             verified: artifact.verified,
+            canonical_present: artifact.canonical_present,
+            legacy_present: artifact.legacy_present,
+            resolved_path: artifact.resolved_path.clone(),
             required: artifact.required,
             selected_source: artifact.source.clone(),
         })
@@ -1478,8 +1823,20 @@ fn resolve_installation_status(
         .filter(|artifact| artifact.required && (!artifact.exists || !artifact.verified))
         .map(|artifact| artifact.relative_path.clone())
         .collect::<Vec<_>>();
+    let canonical_ready = manifest
+        .artifacts
+        .iter()
+        .filter(|artifact| artifact.required)
+        .all(|artifact| artifact.canonical_present && artifact.verified)
+        && !manifest.artifacts.is_empty();
+    let legacy_fallback_used = manifest
+        .artifacts
+        .iter()
+        .any(|artifact| artifact.required && artifact.legacy_present && !artifact.canonical_present);
     ResolvedInstallationStatus {
         installed: missing_artifacts.is_empty() && !manifest.artifacts.is_empty(),
+        canonical_ready,
+        legacy_fallback_used,
         missing_artifacts,
         relative_paths,
         artifacts,
@@ -2112,14 +2469,14 @@ fn copy_or_link_file(src: &Path, dest: &Path, allow_copy: bool) -> Result<()> {
     }
 }
 
-fn import_model_artifacts(
+fn import_model_artifacts_from_registry(
     cfg: &BackendConfig,
+    registry: &Value,
     model_id: &str,
     files: &[Value],
     allow_copy: bool,
 ) -> Result<(ResolvedDownloadManifest, ResolvedInstallationStatus)> {
-    let models_json = load_models_with_guide_overrides(cfg)?;
-    let model_obj = find_model_object(&models_json, model_id)
+    let model_obj = find_model_object(registry, model_id)
         .ok_or_else(|| anyhow!("Unknown model_id: {model_id}"))?;
     let manifest = resolve_model_download_manifest(cfg, model_id, &model_obj);
     if manifest.availability.class_name == "blocked_non_public" {
@@ -2231,6 +2588,306 @@ fn import_model_artifacts(
     let refreshed_manifest = resolve_model_download_manifest(cfg, model_id, &model_obj);
     let installation = resolve_installation_status(cfg, &refreshed_manifest);
     Ok((refreshed_manifest, installation))
+}
+
+fn import_model_artifacts(
+    cfg: &BackendConfig,
+    model_id: &str,
+    files: &[Value],
+    allow_copy: bool,
+) -> Result<(ResolvedDownloadManifest, ResolvedInstallationStatus)> {
+    let models_json = load_models_with_guide_overrides(cfg)?;
+    import_model_artifacts_from_registry(cfg, &models_json, model_id, files, allow_copy)
+}
+
+fn resolve_selection_request(runtime: &Value, extra: &Map<String, Value>) -> Result<(String, String)> {
+    let (selection_type, selection_id) = selection_descriptor_from_extra(extra);
+    let selection_type = selection_type
+        .or_else(|| {
+            selection_id.as_ref().and_then(|id| {
+                runtime
+                    .get("selection_index")
+                    .and_then(|v| v.as_array())
+                    .and_then(|entries| {
+                        entries.iter().find(|entry| {
+                            entry.get("selection_id").and_then(|v| v.as_str()) == Some(id.as_str())
+                        })
+                    })
+                    .and_then(|entry| entry.get("selection_type").and_then(|v| v.as_str()))
+                    .and_then(normalize_selection_type)
+            })
+        })
+        .or_else(|| {
+            extra.get("model_id")
+                .and_then(|v| v.as_str())
+                .map(|_| "model".to_string())
+        })
+        .ok_or_else(|| anyhow!("selection_type is required"))?;
+    let selection_id = selection_id.ok_or_else(|| anyhow!("selection_id is required"))?;
+    Ok((selection_type, selection_id))
+}
+
+fn schedule_model_download_for_object(
+    cfg: &BackendConfig,
+    downloads: &DownloadManager,
+    stdout: Arc<Mutex<io::Stdout>>,
+    model_id: &str,
+    model_obj: &Value,
+) -> Result<Value> {
+    let manifest = resolve_model_download_manifest(cfg, model_id, model_obj);
+    let installation = resolve_installation_status(cfg, &manifest);
+    let files: Vec<DownloadFile> = manifest
+        .artifacts
+        .iter()
+        .filter(|artifact| {
+            artifact.required && !artifact.manual && artifact.source.is_some() && !artifact.exists
+        })
+        .map(|artifact| DownloadFile {
+            dest_path: cfg.models_dir.join(artifact.relative_path.replace('/', "\\")),
+            relative_path: artifact.relative_path.clone(),
+            filename: artifact.filename.clone(),
+            sources: artifact_download_sources(artifact),
+            sha256: artifact.sha256.clone(),
+            size_bytes: artifact.size_bytes,
+        })
+        .collect();
+
+    if files.is_empty() {
+        if installation.installed {
+            return Ok(serde_json::json!({
+                "scheduled": false,
+                "model_id": model_id,
+                "already_installed": true,
+                "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
+                "installation": serde_json::to_value(&installation).unwrap_or(Value::Null)
+            }));
+        }
+        if manifest.mode == "manual" {
+            return Err(anyhow!(
+                "Model {model_id} requires manual setup. Open Model Details for required files and source links."
+            ));
+        }
+        return Err(anyhow!("No downloadable artifacts found for model_id: {model_id}"));
+    }
+
+    let primary_path = files
+        .first()
+        .map(|file| file.dest_path.to_string_lossy().to_string());
+    let scheduled = downloads.start(model_id, files.clone(), stdout);
+
+    Ok(serde_json::json!({
+        "scheduled": scheduled,
+        "model_id": model_id,
+        "dest": primary_path,
+        "files": files
+            .iter()
+            .map(|f| f.dest_path.to_string_lossy().to_string())
+            .collect::<Vec<_>>(),
+        "already_in_flight": !scheduled,
+        "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
+        "installation": serde_json::to_value(&installation).unwrap_or(Value::Null)
+    }))
+}
+
+fn install_selection(
+    cfg: &BackendConfig,
+    downloads: &DownloadManager,
+    stdout: Arc<Mutex<io::Stdout>>,
+    extra: &Map<String, Value>,
+) -> Result<Value> {
+    let runtime = load_catalog_runtime(cfg)?;
+    let (selection_type, selection_id) = resolve_selection_request(&runtime, extra)?;
+    let plan = catalog_selection_install_plan(cfg, &runtime, &selection_type, &selection_id)?;
+    let bundle = catalog_selection_bundle(cfg, &runtime, &selection_type, &selection_id)?;
+    let required_models = bundle
+        .get("required_models")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let mut results: Vec<Value> = Vec::new();
+    let mut skipped: Vec<Value> = Vec::new();
+    let mut failures: Vec<Value> = Vec::new();
+
+    for required_model in required_models {
+        let model_id = required_model
+            .get("model_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if model_id.is_empty() {
+            continue;
+        }
+
+        let model_obj = required_model.get("model").cloned().unwrap_or(Value::Null);
+        let installation = required_model
+            .get("installation")
+            .cloned()
+            .unwrap_or(Value::Null);
+        let download = required_model.get("download").cloned().unwrap_or(Value::Null);
+        let install_mode = download
+            .get("install_mode")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let mode = download.get("mode").and_then(|v| v.as_str()).unwrap_or("");
+        let availability_class = download
+            .get("availability")
+            .and_then(|v| v.get("class"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+
+        if required_model.get("error").and_then(|v| v.as_str()) == Some("NOT_FOUND") {
+            failures.push(serde_json::json!({
+                "model_id": model_id,
+                "error": "NOT_FOUND",
+                "reason": "Model is required by the selection but missing from the runtime catalog."
+            }));
+            continue;
+        }
+
+        if installation.get("installed").and_then(|v| v.as_bool()) == Some(true) {
+            skipped.push(serde_json::json!({
+                "model_id": model_id,
+                "reason": "Model is already installed.",
+                "installation": installation,
+            }));
+            continue;
+        }
+
+        if matches!(install_mode, "manual" | "custom_runtime")
+            || matches!(mode, "manual" | "unavailable")
+            || availability_class == "blocked_non_public"
+        {
+            skipped.push(serde_json::json!({
+                "model_id": model_id,
+                "reason": if availability_class == "blocked_non_public" {
+                    "Model is blocked and cannot be installed automatically."
+                } else if matches!(install_mode, "manual" | "custom_runtime") {
+                    "Model requires manual or custom-runtime setup."
+                } else {
+                    "Model does not expose downloadable artifacts."
+                },
+                "download": download,
+                "installation": installation,
+            }));
+            continue;
+        }
+
+        match schedule_model_download_for_object(cfg, downloads, stdout.clone(), &model_id, &model_obj) {
+            Ok(result) => results.push(result),
+            Err(error) => failures.push(serde_json::json!({
+                "model_id": model_id,
+                "error": "DOWNLOAD_FAILED",
+                "reason": format!("{error:#}"),
+            })),
+        }
+    }
+
+    let installation = catalog_selection_installation(cfg, &runtime, &selection_type, &selection_id)?;
+    Ok(serde_json::json!({
+        "success": failures.is_empty(),
+        "selection_type": selection_type,
+        "selection_id": selection_id,
+        "plan": plan,
+        "results": results,
+        "skipped": skipped,
+        "failures": failures,
+        "installation": installation,
+    }))
+}
+
+fn import_selection_artifacts(
+    cfg: &BackendConfig,
+    extra: &Map<String, Value>,
+) -> Result<Value> {
+    let runtime = load_catalog_runtime(cfg)?;
+    let (selection_type, selection_id) = resolve_selection_request(&runtime, extra)?;
+    let plan = catalog_selection_install_plan(cfg, &runtime, &selection_type, &selection_id)?;
+    let bundle = catalog_selection_bundle(cfg, &runtime, &selection_type, &selection_id)?;
+    let required_model_ids = bundle
+        .get("required_model_ids")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|value| value.as_str().map(|entry| entry.trim().to_string()))
+        .filter(|entry| !entry.is_empty())
+        .collect::<Vec<_>>();
+    if required_model_ids.is_empty() {
+        return Err(anyhow!("Selection does not resolve to any importable models."));
+    }
+
+    let files = extra
+        .get("files")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| anyhow!("files[] is required"))?;
+    let allow_copy = extra
+        .get("allow_copy")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+
+    let mut grouped: HashMap<String, Vec<Value>> = HashMap::new();
+    for file in files {
+        let model_id = file
+            .get("model_id")
+            .or_else(|| file.get("modelId"))
+            .and_then(|v| v.as_str())
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty());
+        let resolved_model_id = match (&model_id, required_model_ids.len()) {
+            (Some(model_id), _) => {
+                if !required_model_ids.iter().any(|candidate| candidate == model_id) {
+                    return Err(anyhow!(
+                        "Import file targets model_id '{}' which is not part of selection {}:{}",
+                        model_id,
+                        selection_type,
+                        selection_id
+                    ));
+                }
+                model_id.clone()
+            }
+            (None, 1) => required_model_ids[0].clone(),
+            (None, _) => {
+                return Err(anyhow!(
+                    "Selection {}:{} requires multiple models; each import file must include model_id",
+                    selection_type,
+                    selection_id
+                ));
+            }
+        };
+        grouped.entry(resolved_model_id).or_default().push(file.clone());
+    }
+
+    let mut model_results: Vec<Value> = Vec::new();
+    for model_id in required_model_ids.iter() {
+        if let Some(model_files) = grouped.get(model_id) {
+            let (manifest, installation) =
+                import_model_artifacts_from_registry(cfg, &runtime, model_id, model_files, allow_copy)?;
+            model_results.push(serde_json::json!({
+                "model_id": model_id,
+                "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
+                "installation": serde_json::to_value(&installation).unwrap_or(Value::Null),
+                "artifacts": serde_json::to_value(&installation.artifacts).unwrap_or(Value::Null),
+            }));
+        }
+    }
+
+    if model_results.is_empty() {
+        return Err(anyhow!("No import files were matched to the selection."));
+    }
+
+    let installation = catalog_selection_installation(cfg, &runtime, &selection_type, &selection_id)?;
+    let verification = catalog_selection_verification(cfg, &runtime, &selection_type, &selection_id)?;
+    Ok(serde_json::json!({
+        "success": installation.get("installed").and_then(|v| v.as_bool()).unwrap_or(false),
+        "selection_type": selection_type,
+        "selection_id": selection_id,
+        "plan": plan,
+        "model_results": model_results,
+        "installation": installation,
+        "verification": verification,
+    }))
 }
 
 fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -> bool {
@@ -4305,8 +4962,38 @@ fn spawn_python_proxy(cfg: &BackendConfig, stdout: Arc<Mutex<io::Stdout>>) -> Re
     })
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SelectionJobSnapshot {
+    job_id: String,
+    status: String,
+    requested_at: String,
+    started_at: Option<String>,
+    finished_at: Option<String>,
+    progress: Option<f64>,
+    message: Option<String>,
+    error: Option<String>,
+    model_id: Option<String>,
+    selection_type: Option<String>,
+    selection_id: Option<String>,
+    file_path: Option<String>,
+    output_dir: Option<String>,
+    output_files: Option<Value>,
+}
+
 struct SeparationJob {
     process: Child,
+    state: Arc<Mutex<SelectionJobSnapshot>>,
+    signature: String,
+}
+
+struct PendingSelectionJob {
+    job_id: String,
+    config: Value,
+    cfg: BackendConfig,
+    stdout: Arc<Mutex<io::Stdout>>,
+    state: Arc<Mutex<SelectionJobSnapshot>>,
+    signature: String,
 }
 
 #[derive(Debug, Clone)]
@@ -4582,15 +5269,370 @@ impl StepSynthesizer {
 #[derive(Clone, Default)]
 struct SeparationManager {
     jobs: Arc<Mutex<HashMap<String, SeparationJob>>>,
+    pending_jobs: Arc<Mutex<VecDeque<PendingSelectionJob>>>,
+    finished_jobs: Arc<Mutex<VecDeque<SelectionJobSnapshot>>>,
 }
 
 impl SeparationManager {
-    fn start(
+    fn build_snapshot(job_id: &str, config: &Value) -> SelectionJobSnapshot {
+        let obj = config.as_object();
+        let string_field = |key: &str, fallback: &str| -> Option<String> {
+            obj.and_then(|map| {
+                map.get(key)
+                    .or_else(|| map.get(fallback))
+                    .and_then(|v| v.as_str())
+                    .map(|v| v.trim().to_string())
+                    .filter(|v| !v.is_empty())
+            })
+        };
+
+        SelectionJobSnapshot {
+            job_id: job_id.to_string(),
+            status: "requested".to_string(),
+            requested_at: Utc::now().to_rfc3339(),
+            started_at: None,
+            finished_at: None,
+            progress: Some(0.0),
+            message: Some("Selection job requested.".to_string()),
+            error: None,
+            model_id: string_field("model_id", "modelId"),
+            selection_type: string_field("selection_type", "selectionType"),
+            selection_id: string_field("selection_id", "selectionId"),
+            file_path: string_field("file_path", "filePath"),
+            output_dir: string_field("output_dir", "outputDir"),
+            output_files: None,
+        }
+    }
+
+    fn with_active_state<F>(&self, job_id: &str, mutator: F)
+    where
+        F: FnOnce(&mut SelectionJobSnapshot),
+    {
+        let state_arc = {
+            let map = self.jobs.lock().expect("jobs lock");
+            map.get(job_id).map(|job| job.state.clone())
+        };
+        if let Some(state) = state_arc {
+            if let Ok(mut guard) = state.lock() {
+                mutator(&mut guard);
+            }
+        }
+    }
+
+    fn store_finished_snapshot(&self, snapshot: SelectionJobSnapshot) {
+        let mut finished = self.finished_jobs.lock().expect("finished_jobs lock");
+        if let Some(existing) = finished.iter().position(|entry| entry.job_id == snapshot.job_id) {
+            finished.remove(existing);
+        }
+        finished.push_front(snapshot);
+        while finished.len() > 200 {
+            finished.pop_back();
+        }
+    }
+
+    fn max_concurrent_jobs(&self) -> usize {
+        1
+    }
+
+    fn build_signature(config: &Value) -> String {
+        let obj = config.as_object();
+        let field = |key: &str, fallback: &str| -> String {
+            obj.and_then(|map| {
+                map.get(key)
+                    .or_else(|| map.get(fallback))
+                    .and_then(|v| v.as_str())
+                    .map(|v| v.trim().to_string())
+                    .filter(|v| !v.is_empty())
+            })
+            .unwrap_or_default()
+        };
+        format!(
+            "{}|{}|{}|{}|{}",
+            field("selection_type", "selectionType"),
+            field("selection_id", "selectionId"),
+            field("model_id", "modelId"),
+            field("file_path", "filePath"),
+            field("output_dir", "outputDir")
+        )
+    }
+
+    fn find_existing_by_signature(&self, signature: &str) -> Option<SelectionJobSnapshot> {
+        if signature.trim().is_empty() {
+            return None;
+        }
+        if let Some(snapshot) = {
+            let jobs = self.jobs.lock().expect("jobs lock");
+            jobs.values()
+                .find(|job| job.signature == signature)
+                .and_then(|job| job.state.lock().ok().map(|state| state.clone()))
+        } {
+            return Some(snapshot);
+        }
+        let pending = self.pending_jobs.lock().expect("pending_jobs lock");
+        pending
+            .iter()
+            .find(|job| job.signature == signature)
+            .and_then(|job| job.state.lock().ok().map(|state| state.clone()))
+    }
+
+    fn snapshot(&self, job_id: &str) -> Option<SelectionJobSnapshot> {
+        if let Some(snapshot) = {
+            let map = self.jobs.lock().expect("jobs lock");
+            map.get(job_id)
+                .and_then(|job| job.state.lock().ok().map(|state| state.clone()))
+        } {
+            return Some(snapshot);
+        }
+        if let Some(snapshot) = {
+            let pending = self.pending_jobs.lock().expect("pending_jobs lock");
+            pending
+                .iter()
+                .find(|job| job.job_id == job_id)
+                .and_then(|job| job.state.lock().ok().map(|state| state.clone()))
+        } {
+            return Some(snapshot);
+        }
+        self.finished_jobs
+            .lock()
+            .expect("finished_jobs lock")
+            .iter()
+            .find(|entry| entry.job_id == job_id)
+            .cloned()
+    }
+
+    fn list(&self) -> Vec<SelectionJobSnapshot> {
+        let mut snapshots: Vec<SelectionJobSnapshot> = {
+            let map = self.jobs.lock().expect("jobs lock");
+            map.values()
+                .filter_map(|job| job.state.lock().ok().map(|state| state.clone()))
+                .collect()
+        };
+        let pending = self.pending_jobs.lock().expect("pending_jobs lock");
+        snapshots.extend(
+            pending
+                .iter()
+                .filter_map(|job| job.state.lock().ok().map(|state| state.clone())),
+        );
+        let finished = self.finished_jobs.lock().expect("finished_jobs lock");
+        snapshots.extend(finished.iter().cloned());
+        snapshots.sort_by(|a, b| b.requested_at.cmp(&a.requested_at));
+        snapshots
+    }
+
+    fn discard(&self, job_id: &str) -> Result<SelectionJobSnapshot> {
+        if let Some(snapshot) = {
+            let map = self.jobs.lock().expect("jobs lock");
+            map.get(job_id)
+                .and_then(|job| job.state.lock().ok().map(|state| state.clone()))
+        } {
+            if matches!(snapshot.status.as_str(), "starting" | "running" | "cancelling") {
+                return Err(anyhow!(
+                    "Selection job {job_id} is still active and cannot be discarded"
+                ));
+            }
+        }
+
+        let mut finished_jobs = self.finished_jobs.lock().expect("finished_jobs lock");
+        let position = finished_jobs
+            .iter()
+            .position(|snapshot| snapshot.job_id == job_id)
+            .ok_or_else(|| anyhow!("Selection job not found: {job_id}"))?;
+        let snapshot = finished_jobs
+            .remove(position)
+            .ok_or_else(|| anyhow!("Selection job not found: {job_id}"))?;
+
+        if let Some(output_files) = snapshot.output_files.as_ref().and_then(|v| v.as_object()) {
+            for value in output_files.values() {
+                if let Some(path_str) = value.as_str() {
+                    let path = PathBuf::from(path_str);
+                    if path.is_file() {
+                        let _ = std::fs::remove_file(&path);
+                    }
+                }
+            }
+        }
+
+        Ok(snapshot)
+    }
+
+    fn start_next_pending(&self) {
+        loop {
+            let active_jobs = self.jobs.lock().expect("jobs lock").len();
+            if active_jobs >= self.max_concurrent_jobs() {
+                return;
+            }
+            let queued = {
+                let mut pending = self.pending_jobs.lock().expect("pending_jobs lock");
+                pending.pop_front()
+            };
+
+            let Some(queued) = queued else {
+                return;
+            };
+
+            let PendingSelectionJob {
+                job_id,
+                config,
+                cfg,
+                stdout,
+                state,
+                signature,
+            } = queued;
+
+            if let Ok(mut state) = state.lock() {
+                state.status = "starting".to_string();
+                state.message = Some("Starting queued separation worker...".to_string());
+                state.error = None;
+            }
+
+            let stdout_for_error = stdout.clone();
+            let state_for_error = state.clone();
+
+            match self.spawn_job_process(job_id.clone(), config, &cfg, stdout, state, signature) {
+                Ok(()) => return,
+                Err(error) => {
+                    let now = Utc::now().to_rfc3339();
+                    if let Ok(mut state) = state_for_error.lock() {
+                        state.status = "failed".to_string();
+                        state.finished_at = Some(now);
+                        state.message = Some("Failed to start queued worker.".to_string());
+                        state.error = Some(format!("{error:#}"));
+                        self.store_finished_snapshot(state.clone());
+                        send_event(
+                            &stdout_for_error,
+                            serde_json::json!({
+                                "type": "separation_error",
+                                "job_id": job_id,
+                                "error": format!("{error:#}"),
+                                "message": "Failed to start queued worker."
+                            }),
+                        );
+                    }
+                    continue;
+                }
+            }
+        }
+    }
+
+    fn update_from_event(&self, job_id: &str, event: &Value) {
+        let event_type = event.get("type").and_then(|v| v.as_str()).unwrap_or("");
+        self.with_active_state(job_id, |state| {
+            match event_type {
+                "separation_started" => {
+                    state.status = "running".to_string();
+                    if state.started_at.is_none() {
+                        state.started_at = Some(Utc::now().to_rfc3339());
+                    }
+                    state.message = Some("Separation started.".to_string());
+                    state.error = None;
+                }
+                "separation_progress" => {
+                    state.status = "running".to_string();
+                    if state.started_at.is_none() {
+                        state.started_at = Some(Utc::now().to_rfc3339());
+                    }
+                    state.progress = event
+                        .get("progress")
+                        .and_then(|v| v.as_f64())
+                        .map(|v| v.clamp(0.0, 100.0));
+                    state.message = event
+                        .get("message")
+                        .and_then(|v| v.as_str())
+                        .map(|v| v.to_string());
+                }
+                "separation_complete" => {
+                    state.status = "completed".to_string();
+                    state.finished_at = Some(Utc::now().to_rfc3339());
+                    state.progress = Some(100.0);
+                    state.message = Some("Separation completed.".to_string());
+                    state.output_files = event.get("output_files").cloned();
+                    state.error = None;
+                }
+                "separation_error" => {
+                    state.status = "failed".to_string();
+                    state.finished_at = Some(Utc::now().to_rfc3339());
+                    state.message = event
+                        .get("message")
+                        .and_then(|v| v.as_str())
+                        .map(|v| v.to_string())
+                        .or_else(|| Some("Separation failed.".to_string()));
+                    state.error = event
+                        .get("error")
+                        .and_then(|v| v.as_str())
+                        .map(|v| v.to_string());
+                }
+                "separation_cancelled" => {
+                    state.status = "cancelled".to_string();
+                    state.finished_at = Some(Utc::now().to_rfc3339());
+                    state.message = Some("Separation cancelled.".to_string());
+                    state.error = None;
+                }
+                _ => {}
+            }
+        });
+    }
+
+    fn submit(
         &self,
         job_id: String,
         config: Value,
         cfg: &BackendConfig,
         stdout: Arc<Mutex<io::Stdout>>,
+    ) -> Result<SelectionJobSnapshot> {
+        let signature = Self::build_signature(&config);
+        if let Some(existing) = self.find_existing_by_signature(&signature) {
+            return Ok(existing);
+        }
+
+        let state = Arc::new(Mutex::new(Self::build_snapshot(&job_id, &config)));
+        let snapshot = state.lock().ok().map(|guard| guard.clone()).unwrap_or_else(|| {
+            Self::build_snapshot(&job_id, &config)
+        });
+
+        let active_jobs = self.jobs.lock().expect("jobs lock").len();
+        if active_jobs >= self.max_concurrent_jobs() {
+            if let Ok(mut guard) = state.lock() {
+                guard.status = "pending".to_string();
+                guard.message = Some("Queued for separation.".to_string());
+                guard.error = None;
+            }
+            self.pending_jobs
+                .lock()
+                .expect("pending_jobs lock")
+                .push_back(PendingSelectionJob {
+                    job_id,
+                    config,
+                    cfg: cfg.clone(),
+                    stdout,
+                    state,
+                    signature,
+                });
+            return Ok(self
+                .pending_jobs
+                .lock()
+                .expect("pending_jobs lock")
+                .back()
+                .and_then(|job| job.state.lock().ok().map(|state| state.clone()))
+                .unwrap_or(snapshot));
+        }
+
+        if let Ok(mut guard) = state.lock() {
+            guard.status = "starting".to_string();
+            guard.message = Some("Starting separation worker...".to_string());
+            guard.error = None;
+        }
+        self.spawn_job_process(job_id.clone(), config, cfg, stdout, state.clone(), signature)?;
+        Ok(state.lock().ok().map(|state| state.clone()).unwrap_or(snapshot))
+    }
+
+    fn spawn_job_process(
+        &self,
+        job_id: String,
+        config: Value,
+        cfg: &BackendConfig,
+        stdout: Arc<Mutex<io::Stdout>>,
+        state: Arc<Mutex<SelectionJobSnapshot>>,
+        signature: String,
     ) -> Result<()> {
         let script = locate_inference_script()
             .ok_or_else(|| anyhow!("inference.py not found (set STEMSEP_INFERENCE_SCRIPT)"))?;
@@ -4619,10 +5661,17 @@ impl SeparationManager {
             .take()
             .ok_or_else(|| anyhow!("inference stderr missing"))?;
 
-        // Store job process for cancellation
+        // Store job process for cancellation and state inspection
         {
             let mut map = self.jobs.lock().expect("jobs lock");
-            map.insert(job_id.clone(), SeparationJob { process: child });
+            map.insert(
+                job_id.clone(),
+                SeparationJob {
+                    process: child,
+                    state: state.clone(),
+                    signature,
+                },
+            );
         }
 
         let mgr = self.clone();
@@ -4859,6 +5908,7 @@ impl SeparationManager {
                         }
                         _ => {}
                     }
+                    mgr.update_from_event(&job_id_clone, &event);
                     send_event(&stdout_clone, event);
                 } else {
                     // Fallback: log raw lines as debug/verbose progress
@@ -4885,8 +5935,39 @@ impl SeparationManager {
     }
 
     fn cancel(&self, job_id: &str) -> bool {
+        let pending_cancelled = {
+            let mut pending = self.pending_jobs.lock().expect("pending_jobs lock");
+            pending
+                .iter()
+                .position(|job| job.job_id == job_id)
+                .and_then(|index| pending.remove(index))
+        };
+        if let Some(pending_job) = pending_cancelled {
+            if let Ok(mut state) = pending_job.state.lock() {
+                state.status = "cancelled".to_string();
+                state.finished_at = Some(Utc::now().to_rfc3339());
+                state.message = Some("Queued separation cancelled.".to_string());
+                state.error = None;
+                self.store_finished_snapshot(state.clone());
+            }
+            send_event(
+                &pending_job.stdout,
+                serde_json::json!({
+                    "type": "separation_cancelled",
+                    "job_id": job_id,
+                    "message": "Queued separation cancelled."
+                }),
+            );
+            return true;
+        }
+
         let mut map = self.jobs.lock().expect("jobs lock");
         if let Some(job) = map.get_mut(job_id) {
+            if let Ok(mut state) = job.state.lock() {
+                state.status = "cancelling".to_string();
+                state.message = Some("Cancellation requested.".to_string());
+                state.error = None;
+            }
             let _ = job.process.kill();
             // We don't remove it here immediately; the stdout reader will detect exit and call clear_job.
             // But to be safe/responsive, we can assume it's gone.
@@ -4900,8 +5981,279 @@ impl SeparationManager {
 
     fn clear_job(&self, job_id: &str) {
         let mut map = self.jobs.lock().expect("jobs lock");
-        map.remove(job_id);
+        if let Some(job) = map.remove(job_id) {
+            if let Ok(mut state) = job.state.lock() {
+                if state.finished_at.is_none()
+                    && matches!(state.status.as_str(), "running" | "starting" | "cancelling")
+                {
+                    if state.status == "cancelling" {
+                        state.status = "cancelled".to_string();
+                        state.message = Some("Separation cancelled.".to_string());
+                    } else {
+                        state.status = "failed".to_string();
+                        state.message = Some("Worker exited before completion.".to_string());
+                        if state.error.is_none() {
+                            state.error = Some("Worker exited before completion.".to_string());
+                        }
+                    }
+                    state.finished_at = Some(Utc::now().to_rfc3339());
+                }
+                self.store_finished_snapshot(state.clone());
+            }
+        }
+        drop(map);
+        self.start_next_pending();
     }
+}
+
+fn emit_recipe_plan_event_if_needed(
+    cfg: &BackendConfig,
+    stdout: &Arc<Mutex<io::Stdout>>,
+    extra: &Map<String, Value>,
+    job_id: &str,
+) {
+    if let Some(model_id) = extra.get("model_id").and_then(|v| v.as_str()) {
+        let recipes_json = read_json_file(&cfg.assets_dir.join("recipes.json")).unwrap_or(Value::Null);
+        if let Some(recipe) = recipes_json
+            .get("recipes")
+            .and_then(|v| v.as_array())
+            .and_then(|arr| {
+                arr.iter()
+                    .find(|r| r.get("id").and_then(|v| v.as_str()) == Some(model_id))
+            })
+        {
+            let mut plan = Map::new();
+            plan.insert("id".to_string(), Value::String(model_id.to_string()));
+            if let Some(t) = recipe.get("type").and_then(|v| v.as_str()) {
+                plan.insert("type".to_string(), Value::String(t.to_string()));
+            }
+            if let Some(defaults) = recipe.get("defaults") {
+                plan.insert("defaults".to_string(), defaults.clone());
+            }
+            if let Some(pp) = recipe.get("post_processing") {
+                plan.insert("post_processing".to_string(), pp.clone());
+            }
+            if let Some(steps) = recipe.get("steps").and_then(|v| v.as_array()) {
+                let mut steps_out: Vec<Value> = Vec::new();
+                for step in steps {
+                    let step_name = step
+                        .get("step_name")
+                        .and_then(|v| v.as_str())
+                        .or_else(|| step.get("name").and_then(|v| v.as_str()))
+                        .unwrap_or("step");
+                    let input_source = step
+                        .get("input_source")
+                        .and_then(|v| v.as_str())
+                        .or_else(|| step.get("input_from").and_then(|v| v.as_str()));
+                    let output = step.get("output").cloned().unwrap_or(Value::Null);
+
+                    if let Some(mid) = step.get("model_id").and_then(|v| v.as_str()) {
+                        let mut obj = Map::new();
+                        obj.insert(
+                            "step_name".to_string(),
+                            Value::String(step_name.to_string()),
+                        );
+                        obj.insert(
+                            "model_id".to_string(),
+                            Value::String(mid.to_string()),
+                        );
+                        if let Some(src) = input_source {
+                            obj.insert(
+                                "input_source".to_string(),
+                                Value::String(src.to_string()),
+                            );
+                        }
+                        if !output.is_null() {
+                            obj.insert("output".to_string(), output);
+                        }
+                        steps_out.push(Value::Object(obj));
+                    }
+                }
+                if !steps_out.is_empty() {
+                    plan.insert("steps".to_string(), Value::Array(steps_out));
+                }
+            }
+
+            send_event(
+                stdout,
+                serde_json::json!({
+                    "type": "recipe_plan",
+                    "job_id": job_id,
+                    "recipe": Value::Object(plan)
+                }),
+            );
+        }
+    }
+}
+
+fn build_selection_job_config(
+    cfg: &BackendConfig,
+    extra: &Map<String, Value>,
+    gpu_info: &Value,
+    job_id: &str,
+) -> Value {
+    let mut config_obj = Value::Object(extra.clone());
+    if let Some(obj) = config_obj.as_object_mut() {
+        obj.insert(
+            "models_dir".to_string(),
+            Value::String(cfg.models_dir.to_string_lossy().to_string()),
+        );
+        obj.insert("job_id".to_string(), Value::String(job_id.to_string()));
+        let runtime_catalog = load_catalog_runtime(cfg).ok();
+        let (selection_type, selection_id) = selection_descriptor_from_extra(extra);
+        if let (Some(runtime_catalog), Some(selection_type), Some(selection_id)) =
+            (runtime_catalog.as_ref(), selection_type, selection_id)
+        {
+            if let Ok(execution_plan) =
+                catalog_execution_plan(cfg, runtime_catalog, &selection_type, &selection_id)
+            {
+                obj.insert(
+                    "selection_type".to_string(),
+                    Value::String(selection_type.clone()),
+                );
+                obj.insert(
+                    "selection_id".to_string(),
+                    Value::String(selection_id.clone()),
+                );
+                obj.insert(
+                    "selection_envelope".to_string(),
+                    execution_plan
+                        .get("selection_envelope")
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                );
+                obj.insert(
+                    "resolved_bundle".to_string(),
+                    execution_plan
+                        .get("resolved_bundle")
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                );
+                obj.insert("execution_plan".to_string(), execution_plan);
+                let resolved_step = obj
+                    .get("execution_plan")
+                    .and_then(|v| v.get("steps"))
+                    .and_then(|v| v.as_array())
+                    .and_then(|steps| steps.iter().find(|step| step.is_object()))
+                    .cloned()
+                    .unwrap_or(Value::Null);
+                obj.insert("resolved_step".to_string(), resolved_step);
+            }
+        }
+        obj.insert(
+            "worker_protocol".to_string(),
+            serde_json::json!({
+                "kind": "selection_step",
+                "version": 1
+            }),
+        );
+
+        let gpus = gpu_info
+            .get("gpus")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
+        let default_device = if !gpus.is_empty() { "cuda:0" } else { "cpu" };
+
+        let incoming = obj
+            .get("device")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let mut resolved = if incoming.is_empty() || incoming.eq_ignore_ascii_case("auto") {
+            default_device.to_string()
+        } else {
+            incoming
+        };
+
+        if resolved.eq_ignore_ascii_case("cuda") {
+            resolved = "cuda:0".to_string();
+        }
+
+        obj.insert("device".to_string(), Value::String(resolved));
+    }
+    config_obj
+}
+
+fn export_selection_job_outputs(
+    separation_manager: &SeparationManager,
+    job_id: &str,
+    export_dir: &Path,
+) -> Result<Value> {
+    let snapshot = separation_manager
+        .snapshot(job_id)
+        .ok_or_else(|| anyhow!("Selection job not found: {job_id}"))?;
+    if snapshot.status != "completed" {
+        return Err(anyhow!(
+            "Selection job {job_id} is not completed (current status: {})",
+            snapshot.status
+        ));
+    }
+    let output_files = snapshot
+        .output_files
+        .as_ref()
+        .and_then(|v| v.as_object())
+        .ok_or_else(|| anyhow!("Selection job {job_id} has no output files to export"))?;
+
+    std::fs::create_dir_all(export_dir)
+        .with_context(|| format!("create export dir {}", export_dir.display()))?;
+
+    let mut exported = Map::new();
+    for (stem, value) in output_files {
+        let source = value
+            .as_str()
+            .ok_or_else(|| anyhow!("Output file entry for {stem} is not a string path"))?;
+        let source_path = PathBuf::from(source);
+        if !source_path.is_file() {
+            return Err(anyhow!(
+                "Output file for {stem} does not exist: {}",
+                source_path.display()
+            ));
+        }
+        let file_name = source_path.file_name().ok_or_else(|| {
+            anyhow!(
+                "Invalid output filename for {stem}: {}",
+                source_path.display()
+            )
+        })?;
+        let destination = export_dir.join(file_name);
+        std::fs::copy(&source_path, &destination).with_context(|| {
+            format!(
+                "copy exported output {} -> {}",
+                source_path.display(),
+                destination.display()
+            )
+        })?;
+        exported.insert(
+            stem.clone(),
+            Value::String(destination.to_string_lossy().to_string()),
+        );
+    }
+
+    Ok(serde_json::json!({
+        "job_id": job_id,
+        "export_path": export_dir.to_string_lossy().to_string(),
+        "output_files": Value::Object(exported),
+    }))
+}
+
+fn start_selection_job_request(
+    separation_manager: &SeparationManager,
+    cfg: &BackendConfig,
+    stdout: &Arc<Mutex<io::Stdout>>,
+    gpu_info: &Value,
+    extra: &Map<String, Value>,
+) -> Result<Value> {
+    let job_id = Uuid::new_v4().to_string();
+    emit_recipe_plan_event_if_needed(cfg, stdout, extra, &job_id);
+    let config_obj = build_selection_job_config(cfg, extra, gpu_info, &job_id);
+    let snapshot = separation_manager.submit(job_id.clone(), config_obj, cfg, stdout.clone())?;
+    Ok(serde_json::json!({
+        "job_id": snapshot.job_id,
+        "status": snapshot.status,
+        "job": snapshot,
+    }))
 }
 
 fn main() -> Result<()> {
@@ -4927,12 +6279,11 @@ fn main() -> Result<()> {
 
     // Emit a bridge_ready event immediately so the Electron main process can
     // treat this as a drop-in replacement (even while separation is stubbed).
-    let recipes_path = cfg.assets_dir.join("recipes.json");
     let models_count = load_models_with_guide_overrides(&cfg)
         .ok()
         .and_then(|v| v.get("models").and_then(|m| m.as_array()).map(|a| a.len()))
         .unwrap_or(0);
-    let recipes_count = read_json_file(&recipes_path)
+    let recipes_count = load_catalog_recipes(&cfg)
         .ok()
         .and_then(|v| v.get("recipes").and_then(|m| m.as_array()).map(|a| a.len()))
         .unwrap_or(0);
@@ -5079,8 +6430,205 @@ fn main() -> Result<()> {
                     }),
                 )?;
             }
+            "get_backend_status" => {
+                let active_snapshots: Vec<SelectionJobSnapshot> = {
+                    let jobs = separation_manager.jobs.lock().expect("jobs lock");
+                    jobs.values()
+                        .filter_map(|job| job.state.lock().ok().map(|state| state.clone()))
+                        .collect()
+                };
+                let queued_snapshots: Vec<SelectionJobSnapshot> = {
+                    let pending = separation_manager
+                        .pending_jobs
+                        .lock()
+                        .expect("pending_jobs lock");
+                    pending
+                        .iter()
+                        .filter_map(|job| job.state.lock().ok().map(|state| state.clone()))
+                        .collect()
+                };
+                let active_job_id = active_snapshots
+                    .iter()
+                    .find(|snapshot| {
+                        matches!(
+                            snapshot.status.as_str(),
+                            "starting" | "running" | "validating" | "cancelling"
+                        )
+                    })
+                    .map(|snapshot| snapshot.job_id.clone());
+                send_ok(
+                    &stdout,
+                    req.id,
+                    serde_json::json!({
+                        "backend_ready": true,
+                        "worker_busy": active_job_id.is_some(),
+                        "active_job_id": active_job_id,
+                        "active_jobs": active_snapshots,
+                        "queue_depth": queued_snapshots.len(),
+                        "queued_jobs": queued_snapshots,
+                        "rust_backend": true,
+                        "has_gpu": has_gpu,
+                    }),
+                )?;
+            }
             "get_runtime_fingerprint" => {
                 send_ok(&stdout, req.id, runtime_fingerprint.clone())?;
+            }
+            "get_catalog" => {
+                let catalog = load_catalog_runtime(&cfg)?;
+                send_ok(&stdout, req.id, catalog)?;
+            }
+            "get_selection_installation" => {
+                let runtime = load_catalog_runtime(&cfg)?;
+                let (selection_type, selection_id) = selection_descriptor_from_extra(&req.extra);
+                let selection_type = selection_type
+                    .or_else(|| {
+                        selection_id
+                            .as_ref()
+                            .and_then(|id| {
+                                runtime
+                                    .get("selection_index")
+                                    .and_then(|v| v.as_array())
+                                    .and_then(|entries| {
+                                        entries.iter().find(|entry| {
+                                            entry.get("selection_id").and_then(|v| v.as_str()) == Some(id.as_str())
+                                        })
+                                    })
+                                    .and_then(|entry| entry.get("selection_type").and_then(|v| v.as_str()))
+                                    .and_then(normalize_selection_type)
+                            })
+                    })
+                    .or_else(|| {
+                        req.extra
+                            .get("model_id")
+                            .and_then(|v| v.as_str())
+                            .map(|_| "model".to_string())
+                    })
+                    .ok_or_else(|| anyhow!("selection_type is required"))?;
+                let selection_id = selection_id.ok_or_else(|| anyhow!("selection_id is required"))?;
+                let installation = catalog_selection_installation(&cfg, &runtime, &selection_type, &selection_id)?;
+                send_ok(&stdout, req.id, installation)?;
+            }
+            "resolve_install_plan" => {
+                let runtime = load_catalog_runtime(&cfg)?;
+                let (selection_type, selection_id) = selection_descriptor_from_extra(&req.extra);
+                let selection_type = selection_type
+                    .or_else(|| {
+                        selection_id
+                            .as_ref()
+                            .and_then(|id| {
+                                runtime
+                                    .get("selection_index")
+                                    .and_then(|v| v.as_array())
+                                    .and_then(|entries| {
+                                        entries.iter().find(|entry| {
+                                            entry.get("selection_id").and_then(|v| v.as_str()) == Some(id.as_str())
+                                        })
+                                    })
+                                    .and_then(|entry| entry.get("selection_type").and_then(|v| v.as_str()))
+                                    .and_then(normalize_selection_type)
+                            })
+                    })
+                    .or_else(|| {
+                        req.extra
+                            .get("model_id")
+                            .and_then(|v| v.as_str())
+                            .map(|_| "model".to_string())
+                    })
+                    .ok_or_else(|| anyhow!("selection_type is required"))?;
+                let selection_id = selection_id.ok_or_else(|| anyhow!("selection_id is required"))?;
+                let plan = catalog_selection_install_plan(&cfg, &runtime, &selection_type, &selection_id)?;
+                send_ok(&stdout, req.id, plan)?;
+            }
+            "verify_selection_artifacts" => {
+                let runtime = load_catalog_runtime(&cfg)?;
+                let (selection_type, selection_id) = selection_descriptor_from_extra(&req.extra);
+                let selection_type = selection_type
+                    .or_else(|| {
+                        selection_id
+                            .as_ref()
+                            .and_then(|id| {
+                                runtime
+                                    .get("selection_index")
+                                    .and_then(|v| v.as_array())
+                                    .and_then(|entries| {
+                                        entries.iter().find(|entry| {
+                                            entry.get("selection_id").and_then(|v| v.as_str()) == Some(id.as_str())
+                                        })
+                                    })
+                                    .and_then(|entry| entry.get("selection_type").and_then(|v| v.as_str()))
+                                    .and_then(normalize_selection_type)
+                            })
+                    })
+                    .or_else(|| {
+                        req.extra
+                            .get("model_id")
+                            .and_then(|v| v.as_str())
+                            .map(|_| "model".to_string())
+                    })
+                    .ok_or_else(|| anyhow!("selection_type is required"))?;
+                let selection_id = selection_id.ok_or_else(|| anyhow!("selection_id is required"))?;
+                let verification = catalog_selection_verification(&cfg, &runtime, &selection_type, &selection_id)?;
+                send_ok(&stdout, req.id, verification)?;
+            }
+            "resolve_execution_plan" => {
+                let runtime = load_catalog_runtime(&cfg)?;
+                let (selection_type, selection_id) = selection_descriptor_from_extra(&req.extra);
+                let selection_type = selection_type
+                    .or_else(|| {
+                        selection_id
+                            .as_ref()
+                            .and_then(|id| {
+                                runtime
+                                    .get("selection_index")
+                                    .and_then(|v| v.as_array())
+                                    .and_then(|entries| {
+                                        entries.iter().find(|entry| {
+                                            entry.get("selection_id").and_then(|v| v.as_str()) == Some(id.as_str())
+                                        })
+                                    })
+                                    .and_then(|entry| entry.get("selection_type").and_then(|v| v.as_str()))
+                                    .and_then(normalize_selection_type)
+                            })
+                    })
+                    .or_else(|| {
+                        req.extra
+                            .get("model_id")
+                            .and_then(|v| v.as_str())
+                            .map(|_| "model".to_string())
+                    })
+                    .ok_or_else(|| anyhow!("selection_type is required"))?;
+                let selection_id = selection_id.ok_or_else(|| anyhow!("selection_id is required"))?;
+                let execution = catalog_execution_plan(&cfg, &runtime, &selection_type, &selection_id)?;
+                send_ok(&stdout, req.id, execution)?;
+            }
+            "install_selection" | "install-selection" => {
+                let result = install_selection(&cfg, &downloads, stdout.clone(), &req.extra);
+                match result {
+                    Ok(payload) => send_ok(&stdout, req.id, payload)?,
+                    Err(error) => {
+                        let _ = send_err(
+                            &stdout,
+                            req.id,
+                            "INSTALL_SELECTION_FAILED",
+                            &format!("{error:#}"),
+                        );
+                    }
+                }
+            }
+            "import_selection_artifacts" | "import-selection-artifacts" => {
+                let result = import_selection_artifacts(&cfg, &req.extra);
+                match result {
+                    Ok(payload) => send_ok(&stdout, req.id, payload)?,
+                    Err(error) => {
+                        let _ = send_err(
+                            &stdout,
+                            req.id,
+                            "IMPORT_SELECTION_FAILED",
+                            &format!("{error:#}"),
+                        );
+                    }
+                }
             }
             "get_models" => {
                 let models_json = load_models_with_guide_overrides(&cfg)?;
@@ -5114,15 +6662,22 @@ fn main() -> Result<()> {
                 send_ok(&stdout, req.id, Value::Array(out))?;
             }
             "get_recipes" => {
-                let recipes_json = read_json_file(&cfg.assets_dir.join("recipes.json"))?;
+                let recipes_json = load_catalog_recipes(&cfg)?;
+                let workflows_json = load_catalog_workflows(&cfg).unwrap_or(Value::Null);
                 let recipes = recipes_json
                     .get("recipes")
                     .cloned()
                     .unwrap_or(Value::Array(vec![]));
+                let workflows = workflows_json
+                    .get("workflows")
+                    .cloned()
+                    .unwrap_or(Value::Array(vec![]));
                 let models_json = load_models_with_guide_overrides(&cfg).unwrap_or(Value::Null);
                 let mut out: Vec<Value> = Vec::new();
+                let mut entries = recipes.as_array().cloned().unwrap_or_default();
+                entries.extend(workflows.as_array().cloned().unwrap_or_default());
 
-                for recipe in recipes.as_array().cloned().unwrap_or_default() {
+                for recipe in entries {
                     let mut obj = recipe.as_object().cloned().unwrap_or_default();
                     let required_model_ids = collect_recipe_model_ids(&recipe);
                     let simple_requested = obj
@@ -5579,73 +7134,14 @@ fn main() -> Result<()> {
                     let models_json = load_models_with_guide_overrides(&cfg)?;
                     let model_obj = find_model_object(&models_json, &model_id)
                         .ok_or_else(|| anyhow!("Unknown model_id: {model_id}"))?;
-                    let manifest = resolve_model_download_manifest(&cfg, &model_id, &model_obj);
-                    let installation = resolve_installation_status(&cfg, &manifest);
-                    let files: Vec<DownloadFile> = manifest
-                        .artifacts
-                        .iter()
-                        .filter(|artifact| {
-                            artifact.required
-                                && !artifact.manual
-                                && artifact.source.is_some()
-                                && !artifact.exists
-                        })
-                        .map(|artifact| DownloadFile {
-                            dest_path: cfg.models_dir.join(artifact.relative_path.replace('/', "\\")),
-                            relative_path: artifact.relative_path.clone(),
-                            filename: artifact.filename.clone(),
-                            sources: artifact_download_sources(artifact),
-                            sha256: artifact.sha256.clone(),
-                            size_bytes: artifact.size_bytes,
-                        })
-                        .collect();
-
-                    if files.is_empty() {
-                        if installation.installed {
-                            send_ok(
-                                &stdout,
-                                req_id,
-                                serde_json::json!({
-                                    "scheduled": false,
-                                    "model_id": model_id,
-                                    "already_installed": true,
-                                    "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
-                                    "installation": serde_json::to_value(&installation).unwrap_or(Value::Null)
-                                }),
-                            )?;
-                            return Ok(());
-                        }
-                        if manifest.mode == "manual" {
-                            return Err(anyhow!(
-                                "Model {model_id} requires manual setup. Open Model Details for required files and source links."
-                            ));
-                        }
-                        return Err(anyhow!("No downloadable artifacts found for model_id: {model_id}"));
-                    }
-
-                    let primary_path = files
-                        .first()
-                        .map(|file| file.dest_path.to_string_lossy().to_string());
-
-                    let scheduled = downloads.start(&model_id, files.clone(), stdout.clone());
-
-                    // Respond immediately so Electron IPC resolves; events continue in background.
-                    send_ok(
-                        &stdout,
-                        req_id,
-                        serde_json::json!({
-                            "scheduled": scheduled,
-                            "model_id": model_id,
-                            "dest": primary_path,
-                            "files": files
-                                .iter()
-                                .map(|f| f.dest_path.to_string_lossy().to_string())
-                                .collect::<Vec<_>>(),
-                            "already_in_flight": !scheduled,
-                            "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
-                            "installation": serde_json::to_value(&installation).unwrap_or(Value::Null)
-                        }),
+                    let response = schedule_model_download_for_object(
+                        &cfg,
+                        &downloads,
+                        stdout.clone(),
+                        &model_id,
+                        &model_obj,
                     )?;
+                    send_ok(&stdout, req_id, response)?;
                     Ok(())
                 })();
 
@@ -7103,142 +8599,37 @@ fn main() -> Result<()> {
                 send_ok(&stdout, req.id, report)?;
             }
             "separate_audio" => {
-                let job_id = Uuid::new_v4().to_string();
-
-                // If this is a recipe, emit a lightweight plan event for UI/debugging.
-                if let Some(model_id) = req.extra.get("model_id").and_then(|v| v.as_str()) {
-                    let recipes_json =
-                        read_json_file(&cfg.assets_dir.join("recipes.json")).unwrap_or(Value::Null);
-                    if let Some(recipe) = recipes_json
-                        .get("recipes")
-                        .and_then(|v| v.as_array())
-                        .and_then(|arr| {
-                            arr.iter()
-                                .find(|r| r.get("id").and_then(|v| v.as_str()) == Some(model_id))
-                        })
-                    {
-                        let mut plan = Map::new();
-                        plan.insert("id".to_string(), Value::String(model_id.to_string()));
-                        if let Some(t) = recipe.get("type").and_then(|v| v.as_str()) {
-                            plan.insert("type".to_string(), Value::String(t.to_string()));
-                        }
-                        if let Some(defaults) = recipe.get("defaults") {
-                            plan.insert("defaults".to_string(), defaults.clone());
-                        }
-                        if let Some(pp) = recipe.get("post_processing") {
-                            plan.insert("post_processing".to_string(), pp.clone());
-                        }
-                        if let Some(steps) = recipe.get("steps").and_then(|v| v.as_array()) {
-                            let mut steps_out: Vec<Value> = Vec::new();
-                            for step in steps {
-                                let step_name = step
-                                    .get("step_name")
-                                    .and_then(|v| v.as_str())
-                                    .or_else(|| step.get("name").and_then(|v| v.as_str()))
-                                    .unwrap_or("step");
-                                let input_source = step
-                                    .get("input_source")
-                                    .and_then(|v| v.as_str())
-                                    .or_else(|| step.get("input_from").and_then(|v| v.as_str()));
-                                let output = step.get("output").cloned().unwrap_or(Value::Null);
-
-                                if let Some(mid) = step.get("model_id").and_then(|v| v.as_str()) {
-                                    let mut obj = Map::new();
-                                    obj.insert(
-                                        "step_name".to_string(),
-                                        Value::String(step_name.to_string()),
-                                    );
-                                    obj.insert(
-                                        "model_id".to_string(),
-                                        Value::String(mid.to_string()),
-                                    );
-                                    if let Some(src) = input_source {
-                                        obj.insert(
-                                            "input_source".to_string(),
-                                            Value::String(src.to_string()),
-                                        );
-                                    }
-                                    if !output.is_null() {
-                                        obj.insert("output".to_string(), output);
-                                    }
-                                    steps_out.push(Value::Object(obj));
-                                }
-                            }
-                            if !steps_out.is_empty() {
-                                plan.insert("steps".to_string(), Value::Array(steps_out));
-                            }
-                        }
-
-                        send_event(
-                            &stdout,
-                            serde_json::json!({
-                                "type": "recipe_plan",
-                                "job_id": job_id,
-                                "recipe": Value::Object(plan)
-                            }),
-                        );
-                    }
+                match start_selection_job_request(
+                    &separation_manager,
+                    &cfg,
+                    &stdout,
+                    &gpu_info,
+                    &req.extra,
+                ) {
+                    Ok(payload) => send_ok(&stdout, req.id, payload)?,
+                    Err(e) => send_err(
+                        &stdout,
+                        req.id,
+                        "START_FAILED",
+                        &format!("Failed to start separation: {e:#}"),
+                    )?,
                 }
-
-                // Prepare config object for inference script
-                // We forward the entire `extra` map, plus ensure models_dir is set
-                let mut config_obj = Value::Object(req.extra.clone());
-                if let Some(obj) = config_obj.as_object_mut() {
-                    obj.insert(
-                        "models_dir".to_string(),
-                        Value::String(cfg.models_dir.to_string_lossy().to_string()),
-                    );
-                    obj.insert("job_id".to_string(), Value::String(job_id.clone()));
-
-                    // Resolve device server-side when the client does not specify one.
-                    // This makes "auto" actually use CUDA when available.
-                    let gpus = gpu_info
-                        .get("gpus")
-                        .and_then(|v| v.as_array())
-                        .cloned()
-                        .unwrap_or_default();
-                    let default_device = if !gpus.is_empty() { "cuda:0" } else { "cpu" };
-
-                    let incoming = obj
-                        .get("device")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .trim()
-                        .to_string();
-                    let mut resolved =
-                        if incoming.is_empty() || incoming.eq_ignore_ascii_case("auto") {
-                            default_device.to_string()
-                        } else {
-                            incoming
-                        };
-
-                    if resolved.eq_ignore_ascii_case("cuda") {
-                        resolved = "cuda:0".to_string();
-                    }
-
-                    obj.insert("device".to_string(), Value::String(resolved));
-                }
-
-                // Start background job
-                match separation_manager.start(job_id.clone(), config_obj, &cfg, stdout.clone()) {
-                    Ok(_) => {
-                        send_ok(
-                            &stdout,
-                            req.id,
-                            serde_json::json!({
-                                "job_id": job_id,
-                                "status": "started"
-                            }),
-                        )?;
-                    }
-                    Err(e) => {
-                        send_err(
-                            &stdout,
-                            req.id,
-                            "START_FAILED",
-                            &format!("Failed to start separation: {e:#}"),
-                        )?;
-                    }
+            }
+            "run_selection_job" => {
+                match start_selection_job_request(
+                    &separation_manager,
+                    &cfg,
+                    &stdout,
+                    &gpu_info,
+                    &req.extra,
+                ) {
+                    Ok(payload) => send_ok(&stdout, req.id, payload)?,
+                    Err(e) => send_err(
+                        &stdout,
+                        req.id,
+                        "START_FAILED",
+                        &format!("Failed to start separation: {e:#}"),
+                    )?,
                 }
             }
             "cancel_job" => {
@@ -7259,6 +8650,124 @@ fn main() -> Result<()> {
                         // Or just report not found.
                         // Since we are taking over, we assume all valid jobs are in our manager.
                         send_err(&stdout, req.id, "NOT_FOUND", "Job not found or not running")?;
+                    }
+                } else {
+                    send_err(&stdout, req.id, "INVALID", "job_id is required")?;
+                }
+            }
+            "cancel_selection_job" => {
+                let job_id = req
+                    .extra
+                    .get("job_id")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| req.extra.get("selection_job_id").and_then(|v| v.as_str()));
+                if let Some(id) = job_id {
+                    let cancelled = separation_manager.cancel(id);
+                    if cancelled {
+                        send_ok(
+                            &stdout,
+                            req.id,
+                            serde_json::json!({
+                                "job_id": id,
+                                "status": "cancelled"
+                            }),
+                        )?;
+                    } else {
+                        send_err(&stdout, req.id, "NOT_FOUND", "Job not found or not running")?;
+                    }
+                } else {
+                    send_err(&stdout, req.id, "INVALID", "job_id is required")?;
+                }
+            }
+            "get_selection_job" => {
+                let job_id = req
+                    .extra
+                    .get("job_id")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| req.extra.get("selection_job_id").and_then(|v| v.as_str()));
+                if let Some(id) = job_id {
+                    if let Some(snapshot) = separation_manager.snapshot(id) {
+                        send_ok(&stdout, req.id, serde_json::to_value(snapshot).unwrap_or(Value::Null))?;
+                    } else {
+                        send_err(&stdout, req.id, "NOT_FOUND", "Selection job not found")?;
+                    }
+                } else {
+                    send_err(&stdout, req.id, "INVALID", "job_id is required")?;
+                }
+            }
+            "list_selection_jobs" => {
+                let snapshots = separation_manager.list();
+                send_ok(
+                    &stdout,
+                    req.id,
+                    serde_json::to_value(snapshots).unwrap_or(Value::Array(vec![])),
+                )?;
+            }
+            "export_selection_job" => {
+                let job_id = req
+                    .extra
+                    .get("job_id")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| req.extra.get("selection_job_id").and_then(|v| v.as_str()));
+                let export_path = req
+                    .extra
+                    .get("export_path")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| req.extra.get("destination_dir").and_then(|v| v.as_str()));
+                match (job_id, export_path) {
+                    (Some(id), Some(path_str)) if !path_str.trim().is_empty() => {
+                        match export_selection_job_outputs(
+                            &separation_manager,
+                            id,
+                            &PathBuf::from(path_str),
+                        ) {
+                            Ok(payload) => send_ok(&stdout, req.id, payload)?,
+                            Err(error) => send_err(
+                                &stdout,
+                                req.id,
+                                "EXPORT_FAILED",
+                                &format!("{error:#}"),
+                            )?,
+                        }
+                    }
+                    (None, _) => send_err(&stdout, req.id, "INVALID", "job_id is required")?,
+                    (_, None) => send_err(
+                        &stdout,
+                        req.id,
+                        "INVALID",
+                        "export_path is required",
+                    )?,
+                    (_, Some(_)) => send_err(
+                        &stdout,
+                        req.id,
+                        "INVALID",
+                        "export_path is required",
+                    )?,
+                }
+            }
+            "discard_selection_job" => {
+                let job_id = req
+                    .extra
+                    .get("job_id")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| req.extra.get("selection_job_id").and_then(|v| v.as_str()));
+                if let Some(id) = job_id {
+                    match separation_manager.discard(id) {
+                        Ok(snapshot) => send_ok(
+                            &stdout,
+                            req.id,
+                            serde_json::json!({
+                                "job_id": id,
+                                "status": "discarded",
+                                "selection_job": snapshot,
+                            }),
+                        )?,
+                        Err(error) => send_err(
+                            &stdout,
+                            req.id,
+                            "DISCARD_FAILED",
+                            &format!("{error:#}"),
+                        )?,
                     }
                 } else {
                     send_err(&stdout, req.id, "INVALID", "job_id is required")?;
@@ -7457,12 +8966,8 @@ fn main() -> Result<()> {
                 send_ok(&stdout, req.id, snapshot_playback_capture_jobs(capture_id))?;
             }
             "get_workflows" => {
-                // Minimal parity: keep shape similar to Python ({workflows: [...]})
-                send_ok(
-                    &stdout,
-                    req.id,
-                    serde_json::json!({"workflows": ["live", "studio"]}),
-                )?;
+                let workflows_json = load_catalog_workflows(&cfg)?;
+                send_ok(&stdout, req.id, workflows_json)?;
             }
             "check-preset-models" => {
                 let preset_mappings = req

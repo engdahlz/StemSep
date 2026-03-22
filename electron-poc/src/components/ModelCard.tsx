@@ -14,6 +14,12 @@ import {
 
 import { Model } from "../stores/useStore";
 import type { ModelMachineFit } from "../lib/systemRuntime/machineAnalysis";
+import {
+  formatCatalogTierLabel,
+  formatModelSourceKind,
+  getModelCatalogTier,
+  isManualCatalogModel,
+} from "../lib/models/catalog";
 
 interface ModelCardProps {
   model: Model;
@@ -83,6 +89,11 @@ const roleBadgeMap: Record<string, string> = {
 
 function getModelBadges(model: Model): string[] {
   const badges = new Set<string>()
+  const tierLabel = formatCatalogTierLabel(model)
+  if (tierLabel !== "Catalog") badges.add(tierLabel)
+  const sourceKind = formatModelSourceKind(model)
+  if (sourceKind) badges.add(sourceKind)
+  if (isManualCatalogModel(model)) badges.add("Manual")
   const roles = Array.isArray(model.quality_role)
     ? model.quality_role
     : model.quality_role
@@ -101,15 +112,18 @@ function getModelBadges(model: Model): string[] {
   if (model.content_fit?.some((fit) => String(fit).toLowerCase().includes("harmon"))) {
     badges.add("Harmonies")
   }
-  if (model.install?.mode === "manual") badges.add("Manual")
-  if (model.status?.curated) badges.add("Curated")
   if (model.status?.support_tier === "supported_advanced") badges.add("Advanced")
   if (model.status?.readiness === "experimental") badges.add("Experimental")
   return Array.from(badges).slice(0, 4)
 }
 
 const getPrimaryIntent = (model: Model) => {
-  if (model.status?.curated) return "Curated pick";
+  if (model.status?.curated) return "Verified pick";
+  const catalogTier = getModelCatalogTier(model);
+  if (catalogTier === "verified") return "Verified pick";
+  if (catalogTier === "advanced_manual") return "Advanced / Manual";
+  if (catalogTier === "advanced") return "Advanced pick";
+  if (catalogTier === "manual") return "Manual setup";
   if (model.best_for?.length) return normalizeLabel(model.best_for[0]);
   if (model.quality_role) {
     const firstRole = Array.isArray(model.quality_role)
@@ -140,7 +154,7 @@ const getToneClasses = (model: Model) => {
       badge: "bg-emerald-50 text-emerald-700",
     };
   }
-  if (model.download?.mode === "manual") {
+  if (isManualCatalogModel(model)) {
     return {
       iconWrap: "bg-amber-50 text-amber-700",
       accent: "from-amber-100/80 via-white to-white",
@@ -210,6 +224,54 @@ const getAction = (
       onClick: () => onDetails(model),
     };
   }
+  const catalogTier = getModelCatalogTier(model);
+  if (isManualCatalogModel(model)) {
+    return {
+      label: "Manual Setup",
+      icon: Download,
+      className: "bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-900",
+      disabled: false,
+      onClick: () => onDetails(model),
+    };
+  }
+  if (catalogTier === "blocked") {
+    return {
+      label: "Unavailable",
+      icon: Download,
+      className: "bg-gray-100 text-gray-400 cursor-not-allowed",
+      disabled: false,
+      onClick: () => onDetails(model),
+    };
+  }
+  if (catalogTier === "verified") {
+    return {
+      label: "Verified",
+      icon: Download,
+      className: "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900",
+      disabled: false,
+      onClick: () => onDownload(model.id),
+    };
+  }
+  if (catalogTier === "advanced") {
+    return {
+      label: "Advanced",
+      icon: Download,
+      className: "border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-900",
+      disabled: false,
+      onClick: () => onDownload(model.id),
+    };
+  }
+  if (catalogTier === "advanced_manual") {
+    return {
+      label: "Advanced / Manual",
+      icon: Download,
+      className:
+        "border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-900",
+      disabled: false,
+      onClick: () =>
+        isManualCatalogModel(model) ? onDetails(model) : onDownload(model.id),
+    };
+  }
   return {
     label:
       model.download?.artifact_count && model.download.artifact_count > 1
@@ -254,8 +316,9 @@ const getStatusChip = (model: Model) => {
       className: "bg-gray-100 text-gray-500",
     };
   }
+  const tierLabel = formatCatalogTierLabel(model);
   return {
-    label: "Not Installed",
+    label: tierLabel === "Catalog" ? "Not Installed" : tierLabel,
     className: "bg-rose-50 text-rose-600",
   };
 };
@@ -345,7 +408,7 @@ export function ModelCard({
                 </h3>
                 {(model.recommended || model.status?.curated) && (
                   <span className={`rounded-full px-2.5 py-1 text-[11px] tracking-[-0.15px] ${tones.badge}`}>
-                    {model.status?.curated ? "Curated" : "Recommended"}
+                    {model.status?.curated ? "Verified" : "Recommended"}
                   </span>
                 )}
               </div>

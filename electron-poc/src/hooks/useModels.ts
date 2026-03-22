@@ -9,15 +9,19 @@ export function useModels() {
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        const loadModels = async () => {
-            if (!window.electronAPI?.getModels) {
+    const loadModels = async () => {
+            if (!window.electronAPI?.getModels && !window.electronAPI?.getCatalog) {
                 console.log('Electron API not available')
                 setLoading(false)
                 return
             }
 
             try {
-                const backendModels = await window.electronAPI.getModels()
+                const backendModels = window.electronAPI?.getModels
+                    ? await window.electronAPI.getModels()
+                    : window.electronAPI?.getCatalog
+                        ? await window.electronAPI.getCatalog()
+                        : []
 
                 // Convert backend models to store format
                 // We assume backendModels is an array based on usage in other files

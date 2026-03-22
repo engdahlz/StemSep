@@ -11,6 +11,24 @@ describe('recipe presets', () => {
       description: 'Demo',
       type: 'pipeline',
       target: 'vocals',
+      selection_envelope: {
+        catalogTier: 'verified',
+        sourceKind: 'guide',
+        installPolicy: 'direct',
+      },
+      required_model_statuses: [
+        {
+          id: 'bs-roformer-viperx-1297',
+          catalog_tier: 'verified',
+          source_kind: 'guide',
+          install_policy: 'direct',
+          selection_envelope: {
+            catalogTier: 'verified',
+            sourceKind: 'guide',
+            installPolicy: 'direct',
+          },
+        },
+      ],
       steps: [
         { step_name: 'separate', model_id: 'bs-roformer-viperx-1297' },
         { action: 'phase_fix', source_model: 'becruily-vocal' },
@@ -21,6 +39,9 @@ describe('recipe presets', () => {
     expect(preset.isRecipe).toBe(true)
     expect(preset.modelId).toBe('pipeline_demo')
     expect(preset.stems).toEqual(['vocals', 'instrumental'])
+    expect(preset.selectionEnvelope?.catalogTier).toBe('verified')
+    expect(preset.recipe?.selection_envelope?.sourceKind).toBe('guide')
+    expect(preset.recipe?.required_model_statuses?.[0]?.catalog_tier).toBe('verified')
 
     const required = getRequiredModels(preset)
     expect(required).toContain('bs-roformer-viperx-1297')

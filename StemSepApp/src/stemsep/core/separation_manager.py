@@ -165,6 +165,68 @@ class SeparationManager:
 
         return out_overlap, out_segment_size, out_batch_size, out_tta
 
+    def _extract_resolved_model_bundle(
+        self,
+        bundle_like: Optional[Dict[str, Any]],
+        model_id: Optional[str],
+    ) -> Optional[Dict[str, Any]]:
+        if not isinstance(bundle_like, dict) or not model_id:
+            return None
+
+        normalized_model_id = str(model_id).strip()
+        if not normalized_model_id:
+            return None
+
+        direct_model_id = str(bundle_like.get("model_id") or "").strip()
+        if direct_model_id == normalized_model_id:
+            return bundle_like
+
+        selection_type = str(
+            bundle_like.get("selection_type") or bundle_like.get("selectionType") or ""
+        ).strip().lower()
+        selection_id = str(
+            bundle_like.get("selection_id") or bundle_like.get("selectionId") or ""
+        ).strip()
+        if selection_type == "model" and selection_id == normalized_model_id:
+            return bundle_like
+
+        for container in (
+            bundle_like.get("required_models"),
+            (bundle_like.get("install_plan") or {}).get("required_models")
+            if isinstance(bundle_like.get("install_plan"), dict)
+            else None,
+        ):
+            if not isinstance(container, list):
+                continue
+            for entry in container:
+                if not isinstance(entry, dict):
+                    continue
+                entry_model_id = str(entry.get("model_id") or "").strip()
+                if entry_model_id != normalized_model_id:
+                    continue
+                download = entry.get("download") if isinstance(entry.get("download"), dict) else {}
+                return {
+                    **entry,
+                    "model_id": normalized_model_id,
+                    "download": download,
+                    "availability": (
+                        entry.get("availability")
+                        if isinstance(entry.get("availability"), dict)
+                        else download.get("availability")
+                    ),
+                    "artifacts": (
+                        entry.get("artifacts")
+                        if isinstance(entry.get("artifacts"), list)
+                        else download.get("artifacts")
+                    ),
+                    "installation": (
+                        entry.get("installation")
+                        if isinstance(entry.get("installation"), dict)
+                        else {}
+                    ),
+                }
+        return None
+
     def _cleanup_old_temp_dirs(self):
         """Delete stale temp directories/checkpoints older than 24 hours.
 
@@ -419,6 +481,7 @@ class SeparationManager:
         export_mixes: List[str] = None,
         shifts: int = 1,
         bitrate: str = "320k",
+        pipeline_config: Optional[List[Dict[str, Any]]] = None,
         ensemble_config: List[Dict] = None,
         ensemble_algorithm: str = "average",
         invert: bool = False,
@@ -431,6 +494,10 @@ class SeparationManager:
         phase_params: Dict = None,
         phase_fix_enabled: bool = False,
         stem_algorithms: Dict[str, str] = None,
+        selection_type: Optional[str] = None,
+        selection_id: Optional[str] = None,
+        execution_plan: Optional[Dict[str, Any]] = None,
+        resolved_bundle: Optional[Dict[str, Any]] = None,
         on_complete: Optional[Callable] = None,
     ) -> str:
         """Create a new separation job
@@ -439,8 +506,120 @@ class SeparationManager:
             phase_params: Optional override for phase swap settings from UI
                           { 'enabled': True, 'lowHz': 500, 'highHz': 5000, 'highFreqWeight': 0.8 }
         """
+        normalized_selection_type = (
+            str(selection_type or "").strip().lower() or None
+        )
+        normalized_selection_id = (
+            str(selection_id or "").strip() or None
+        )
+        plan = execution_plan if isinstance(execution_plan, dict) else None
+        if plan:
+            if not normalized_selection_type:
+                raw = plan.get("selection_type") or plan.get("selectionType")
+                if isinstance(raw, str) and raw.strip():
+                    normalized_selection_type = raw.strip().lower()
+            if not normalized_selection_id:
+                raw = plan.get("selection_id") or plan.get("selectionId")
+                if isinstance(raw, str) and raw.strip():
+                    normalized_selection_id = raw.strip()
 
-        # Handle explicit ensemble config passed from API
+            if not isinstance(resolved_bundle, dict):
+                candidate_bundle = plan.get("resolved_bundle") or plan.get(
+                    "resolvedBundle"
+                )
+                if isinstance(candidate_bundle, dict):
+                    resolved_bundle = candidate_bundle
+                else:
+                    candidate_bundle = plan.get("resolved")
+                    if isinstance(candidate_bundle, dict):
+                        if any(
+                            key in candidate_bundle
+                            for key in (
+                                "checkpoint_path",
+                                "config_path",
+                                "installation",
+                                "download",
+                                "availability",
+                                "artifacts",
+                            )
+                        ):
+                            resolved_bundle = candidate_bundle
+
+            plan_model_id = plan.get("model_id") or plan.get("effective_model_id")
+            if not model_id and isinstance(plan_model_id, str) and plan_model_id.strip():
+                model_id = plan_model_id.strip()
+
+            if pipeline_config is None and isinstance(plan.get("pipeline_config"), list):
+                pipeline_config = plan.get("pipeline_config")
+            if ensemble_config is None and isinstance(plan.get("ensemble_config"), list):
+                ensemble_config = plan.get("ensemble_config")
+            if isinstance(plan.get("ensemble_algorithm"), str) and plan.get("ensemble_algorithm").strip():
+                ensemble_algorithm = plan.get("ensemble_algorithm")
+            if stems is None and isinstance(plan.get("stems"), list):
+                stems = plan.get("stems")
+            if plan.get("overlap") is not None:
+                overlap = plan.get("overlap")
+            if plan.get("segment_size") is not None:
+                segment_size = plan.get("segment_size")
+            if plan.get("batch_size") is not None:
+                batch_size = plan.get("batch_size")
+            if plan.get("tta") is not None:
+                tta = plan.get("tta")
+            if plan.get("output_format") is not None:
+                output_format = plan.get("output_format")
+            if plan.get("shifts") is not None:
+                shifts = plan.get("shifts")
+            if plan.get("bitrate") is not None:
+                bitrate = plan.get("bitrate")
+            if plan.get("invert") is not None:
+                invert = plan.get("invert")
+            if plan.get("split_freq") is not None:
+                split_freq = plan.get("split_freq")
+            if plan.get("normalize") is not None:
+                normalize = plan.get("normalize")
+            if plan.get("bit_depth") is not None:
+                bit_depth = plan.get("bit_depth")
+            if plan.get("vc_enabled") is not None:
+                vc_enabled = plan.get("vc_enabled")
+            if plan.get("vc_stage") is not None:
+                vc_stage = plan.get("vc_stage")
+            if plan.get("vc_db_per_extra_model") is not None:
+                vc_db_per_extra_model = plan.get("vc_db_per_extra_model")
+            if phase_params is None and isinstance(plan.get("phase_params"), dict):
+                phase_params = plan.get("phase_params")
+            if plan.get("phase_fix_enabled") is not None:
+                phase_fix_enabled = plan.get("phase_fix_enabled")
+            if stem_algorithms is None and isinstance(plan.get("stem_algorithms"), dict):
+                stem_algorithms = plan.get("stem_algorithms")
+
+        if normalized_selection_type == "model" and normalized_selection_id:
+            model_id = normalized_selection_id
+
+        # Handle explicit pipeline config or backend-resolved workflow plan first.
+        if pipeline_config:
+            return self.create_pipeline_job(
+                file_path=file_path,
+                pipeline_config=pipeline_config,
+                output_dir=output_dir,
+                stems=stems,
+                device=device,
+                overlap=overlap,
+                segment_size=segment_size,
+                tta=tta,
+                output_format=output_format,
+                export_mixes=export_mixes,
+                shifts=shifts,
+                bitrate=bitrate,
+                normalize=normalize,
+                bit_depth=bit_depth,
+                selection_type=normalized_selection_type,
+                selection_id=normalized_selection_id,
+                execution_plan=plan,
+                resolved_bundle=resolved_bundle,
+                on_complete=on_complete,
+            )
+
+        # Handle explicit ensemble config passed from API or execution plan.
         if ensemble_config:
             return self.create_ensemble_job(
                 file_path=file_path,
@@ -467,14 +646,23 @@ class SeparationManager:
                 vc_enabled=vc_enabled,
                 vc_stage=vc_stage,
                 vc_db_per_extra_model=vc_db_per_extra_model,
+                selection_type=normalized_selection_type,
+                selection_id=normalized_selection_id,
+                execution_plan=plan,
+                resolved_bundle=resolved_bundle,
                 on_complete=on_complete,
             )
 
-        # Check if model_id is a Recipe
-        recipe_def = self.recipe_manager.get_recipe(model_id)
+        # Check if the selected item is a Recipe
+        recipe_lookup_id = (
+            normalized_selection_id
+            if normalized_selection_type == "recipe" and normalized_selection_id
+            else model_id
+        )
+        recipe_def = self.recipe_manager.get_recipe(recipe_lookup_id)
         if recipe_def:
             self.logger.info(
-                f"Resolved model_id '{model_id}' to Recipe (Type: {recipe_def.get('type', 'ensemble')})"
+                f"Resolved selection '{recipe_lookup_id}' to Recipe (Type: {recipe_def.get('type', 'ensemble')})"
             )
 
             # Use recipe defaults if user didn't override
@@ -569,11 +757,15 @@ class SeparationManager:
                     bitrate=bitrate,
                     normalize=normalize,
                     bit_depth=bit_depth,
+                    selection_type=normalized_selection_type,
+                    selection_id=normalized_selection_id,
+                    execution_plan=plan,
+                    resolved_bundle=resolved_bundle,
                     on_complete=on_complete,
                 )
 
             # Standard Ensemble Recipe
-            recipe_cfg = self.recipe_manager.recipe_to_ensemble_config(model_id)
+            recipe_cfg = self.recipe_manager.recipe_to_ensemble_config(recipe_lookup_id)
             return self.create_ensemble_job(
                 file_path=file_path,
                 ensemble_config=recipe_cfg["ensemble_config"],
@@ -594,13 +786,22 @@ class SeparationManager:
                 normalize=normalize,
                 bit_depth=bit_depth,
                 post_processing=recipe_def.get("post_processing"),
+                selection_type=normalized_selection_type,
+                selection_id=normalized_selection_id,
+                execution_plan=plan,
+                resolved_bundle=resolved_bundle,
                 on_complete=on_complete,
             )
 
-        # Check if model_id is a preset
-        preset = self.model_manager.get_preset(model_id)
+        # Check if the selected item is a preset
+        preset_lookup_id = (
+            normalized_selection_id
+            if normalized_selection_type == "preset" and normalized_selection_id
+            else model_id
+        )
+        preset = self.model_manager.get_preset(preset_lookup_id)
         if preset:
-            self.logger.info(f"Resolved preset {model_id}")
+            self.logger.info(f"Resolved preset {preset_lookup_id}")
 
             # Check for 'models' list (V3 format)
             if "models" in preset and preset["models"]:
@@ -608,7 +809,7 @@ class SeparationManager:
                 if len(models) > 1:
                     # Treat as ensemble
                     self.logger.info(
-                        f"Preset {model_id} is an ensemble with {len(models)} models."
+                        f"Preset {preset_lookup_id} is an ensemble with {len(models)} models."
                     )
                     ensemble_cfg = []
                     for m in models:
@@ -637,6 +838,10 @@ class SeparationManager:
                         bitrate=bitrate,
                         normalize=normalize,
                         bit_depth=bit_depth,
+                        selection_type=normalized_selection_type,
+                        selection_id=normalized_selection_id,
+                        execution_plan=plan,
+                        resolved_bundle=resolved_bundle,
                         on_complete=on_complete,
                     )
                 else:
@@ -675,6 +880,10 @@ class SeparationManager:
                 vc_enabled=vc_enabled,
                 vc_stage=vc_stage,
                 vc_db_per_extra_model=vc_db_per_extra_model,
+                selection_type=normalized_selection_type,
+                selection_id=normalized_selection_id,
+                execution_plan=plan,
+                resolved_bundle=resolved_bundle,
                 on_complete=on_complete,
             )
 
@@ -702,6 +911,10 @@ class SeparationManager:
             vc_enabled=vc_enabled,
             vc_stage=vc_stage,
             vc_db_per_extra_model=vc_db_per_extra_model,
+            selection_type=normalized_selection_type,
+            selection_id=normalized_selection_id,
+            execution_plan=plan,
+            resolved_bundle=resolved_bundle,
             on_complete=on_complete,
         )
 
@@ -714,6 +927,10 @@ class SeparationManager:
         job.export_mixes = export_mixes or []
         job.shifts = shifts
         job.bitrate = bitrate
+        job.selection_type = normalized_selection_type
+        job.selection_id = normalized_selection_id
+        job.execution_plan = plan
+        job.resolved_bundle = resolved_bundle
 
         with self.job_lock:
             self.jobs[job_id] = job
@@ -764,6 +981,10 @@ class SeparationManager:
         vc_stage: str = "export",
         vc_db_per_extra_model: float = 3.0,
         post_processing: Optional[str] = None,
+        selection_type: Optional[str] = None,
+        selection_id: Optional[str] = None,
+        execution_plan: Optional[Dict[str, Any]] = None,
+        resolved_bundle: Optional[Dict[str, Any]] = None,
         on_complete: Optional[Callable] = None,
     ) -> str:
         """
@@ -773,10 +994,18 @@ class SeparationManager:
         # Pre-flight check for model availability
         valid_config = []
         missing_models = []
+        bundle_source = (
+            execution_plan
+            if isinstance(execution_plan, dict)
+            else resolved_bundle
+            if isinstance(resolved_bundle, dict)
+            else None
+        )
 
         for cfg in ensemble_config:
             mid = cfg["model_id"]
-            if self.model_manager.is_model_installed(mid):
+            model_bundle = self._extract_resolved_model_bundle(bundle_source, mid)
+            if self.model_manager.is_model_installed(mid, resolved_bundle=model_bundle):
                 valid_config.append(cfg)
             else:
                 missing_models.append(mid)
@@ -834,6 +1063,10 @@ class SeparationManager:
         job.vc_enabled = bool(vc_enabled)
         job.vc_stage = vc_stage
         job.vc_db_per_extra_model = vc_db_per_extra_model
+        job.selection_type = selection_type
+        job.selection_id = selection_id
+        job.execution_plan = execution_plan
+        job.resolved_bundle = resolved_bundle
 
         with self.job_lock:
             self.jobs[job_id] = job
@@ -1001,6 +1234,10 @@ class SeparationManager:
         export_mixes: List[str] = None,
         normalize: bool = False,
         bit_depth: str = "16",
+        selection_type: Optional[str] = None,
+        selection_id: Optional[str] = None,
+        execution_plan: Optional[Dict[str, Any]] = None,
+        resolved_bundle: Optional[Dict[str, Any]] = None,
         on_complete: Optional[Callable] = None,
     ) -> str:
         """Create a new pipeline separation job"""
@@ -1025,6 +1262,10 @@ class SeparationManager:
         job.shifts = shifts
         job.bitrate = bitrate
         job.export_mixes = export_mixes or []
+        job.selection_type = selection_type
+        job.selection_id = selection_id
+        job.execution_plan = execution_plan
+        job.resolved_bundle = resolved_bundle
 
         with self.job_lock:
             self.jobs[job_id] = job
@@ -1067,6 +1308,20 @@ class SeparationManager:
 
             def check_cancelled():
                 return job.status == "cancelled"
+
+            bundle_source = (
+                getattr(job, "execution_plan", None)
+                if isinstance(getattr(job, "execution_plan", None), dict)
+                else getattr(job, "resolved_bundle", None)
+                if isinstance(getattr(job, "resolved_bundle", None), dict)
+                else None
+            )
+
+            engine_kwargs = {
+                "selection_type": getattr(job, "selection_type", None),
+                "selection_id": getattr(job, "selection_id", None),
+                "execution_plan": getattr(job, "execution_plan", None),
+            }
 
             # Validate audio
             if check_cancelled():
@@ -1214,7 +1469,11 @@ class SeparationManager:
                             f"{step_name} (ref): {m}",
                         ),
                         check_cancelled=check_cancelled,
-                    )
+                        resolved_bundle=self._extract_resolved_model_bundle(
+                            bundle_source, source_model
+                        ),
+                    **engine_kwargs,
+                )
 
                     ref_outputs = self._canonicalize_stem_keys(ref_outputs) or {}
 
@@ -1367,6 +1626,10 @@ class SeparationManager:
                         f"{step_name}: {m}",
                     ),
                     check_cancelled=check_cancelled,
+                    resolved_bundle=self._extract_resolved_model_bundle(
+                        bundle_source, model_id
+                    ),
+                    **engine_kwargs,
                 )
 
                 outputs = self._canonicalize_stem_keys(outputs) or {}
@@ -1556,6 +1819,19 @@ class SeparationManager:
             def check_cancelled():
                 return job.status == "cancelled"
 
+            bundle_source = (
+                getattr(job, "execution_plan", None)
+                if isinstance(getattr(job, "execution_plan", None), dict)
+                else getattr(job, "resolved_bundle", None)
+                if isinstance(getattr(job, "resolved_bundle", None), dict)
+                else None
+            )
+            engine_kwargs = {
+                "selection_type": getattr(job, "selection_type", None),
+                "selection_id": getattr(job, "selection_id", None),
+                "execution_plan": getattr(job, "execution_plan", None),
+            }
+
             # Validate audio file
             job.status = "validating"
             self.logger.info(f"Validating audio file: {job.file_path}")
@@ -1597,6 +1873,11 @@ class SeparationManager:
                     job.id, p, m, device=d
                 ),
                 check_cancelled=check_cancelled,
+                resolved_bundle=self._extract_resolved_model_bundle(
+                    bundle_source, job.model_id
+                )
+                or bundle_source,
+                **engine_kwargs,
             )
             job.actual_device = used_device
             self.logger.info(
@@ -1701,6 +1982,20 @@ class SeparationManager:
             def check_cancelled():
                 return job.status == "cancelled"
 
+            bundle_source = (
+                getattr(job, "execution_plan", None)
+                if isinstance(getattr(job, "execution_plan", None), dict)
+                else getattr(job, "resolved_bundle", None)
+                if isinstance(getattr(job, "resolved_bundle", None), dict)
+                else None
+            )
+
+            engine_kwargs = {
+                "selection_type": getattr(job, "selection_type", None),
+                "selection_id": getattr(job, "selection_id", None),
+                "execution_plan": getattr(job, "execution_plan", None),
+            }
+
             # Validate audio
             job.status = "validating"
             if check_cancelled():
@@ -1791,6 +2086,10 @@ class SeparationManager:
                         f"{model_id}: {m}",
                     ),
                     check_cancelled=check_cancelled,
+                    resolved_bundle=self._extract_resolved_model_bundle(
+                        bundle_source, model_id
+                    ),
+                    **engine_kwargs,
                 )
                 job.actual_device = used_device  # Update with latest used device
 
@@ -2176,6 +2475,10 @@ class SeparationManager:
                             f"Post-processing ({model_id}): {m}",
                         ),
                         check_cancelled=check_cancelled,
+                        resolved_bundle=self._extract_resolved_model_bundle(
+                            bundle_source, model_id
+                        ),
+                        **engine_kwargs,
                     )
                     job.actual_device = used_device
                     return out_files

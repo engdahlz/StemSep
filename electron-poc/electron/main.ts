@@ -14,7 +14,17 @@ import path from "path";
 import { spawn } from "child_process";
 import fs from "fs";
 import { randomUUID, createHash } from "crypto";
-import chokidar, { FSWatcher } from "chokidar";
+import { registerSelectionIpcHandlers } from "./backend/ipc-selection";
+import { registerSeparationIpcHandlers } from "./backend/ipc-separation";
+import { registerSelectionJobIpcHandlers } from "./backend/ipc-selection-jobs";
+import { registerQueueIpcHandlers } from "./backend/ipc-queue";
+import { registerRuntimeIpcHandlers } from "./backend/ipc-runtime";
+import { registerModelIpcHandlers } from "./backend/ipc-models";
+import { registerQualityIpcHandlers } from "./backend/ipc-quality";
+import { registerDownloadIpcHandlers } from "./backend/ipc-downloads";
+import { registerDialogIpcHandlers } from "./system/dialogs";
+import { registerConfigIpcHandlers } from "./system/config";
+import { registerWatchIpcHandlers } from "./system/watch";
 // const __filename = fileURLToPath(import.meta.url)
 // const __dirname = path.dirname(__filename)
 
@@ -5037,6 +5047,104 @@ function resolveAssetsDirForLocalOps(): string | null {
   return null;
 }
 
+type CatalogSelectionType = "model" | "recipe" | "workflow";
+
+function resolveCatalogRuntimePath(): string | null {
+  const assetsDir = resolveAssetsDirForLocalOps();
+  if (!assetsDir) return null;
+
+  const runtimePath = path.join(assetsDir, "catalog.runtime.json");
+  try {
+    return fs.existsSync(runtimePath) ? runtimePath : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeSelectionType(value: unknown): CatalogSelectionType | null {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "model" || normalized === "recipe" || normalized === "workflow") {
+    return normalized;
+  }
+  return null;
+}
+
+function normalizeSelectionEnvelope(
+  value: any,
+): {
+  selectionType: CatalogSelectionType;
+  selectionId: string;
+  selectionEnvelope: Record<string, any>;
+} | null {
+  const selectionType = normalizeSelectionType(
+    value?.selectionType ?? value?.selection_type,
+  );
+  const selectionId = String(
+    value?.selectionId ?? value?.selection_id ?? "",
+  ).trim();
+  if (!selectionType || !selectionId) {
+    return null;
+  }
+  return {
+    selectionType,
+    selectionId,
+    selectionEnvelope: {
+      ...(typeof value === "object" && value !== null ? value : {}),
+      selectionType,
+      selectionId,
+      selection_type: selectionType,
+      selection_id: selectionId,
+    },
+  };
+}
+
+async function resolveSelectionExecutionPlan(
+  selectionEnvelope: any,
+  config?: Record<string, any>,
+) {
+  const normalized =
+    normalizeSelectionEnvelope(selectionEnvelope) ||
+    normalizeSelectionEnvelope({
+      selectionType: config?.selectionType ?? config?.selection_type,
+      selectionId: config?.selectionId ?? config?.selection_id,
+    });
+  if (!normalized) {
+    return null;
+  }
+  const executionPlan = await sendPythonCommandWithRetry(
+    "resolve_execution_plan",
+    {
+      selection_type: normalized.selectionType,
+      selection_id: normalized.selectionId,
+      config: config || {},
+    },
+    30000,
+  );
+  return executionPlan
+    ? {
+        ...executionPlan,
+        config: config || {},
+        selectionType:
+          executionPlan.selectionType ??
+          executionPlan.selection_type ??
+          normalized.selectionType,
+        selectionId:
+          executionPlan.selectionId ??
+          executionPlan.selection_id ??
+          normalized.selectionId,
+        selectionEnvelope:
+          executionPlan.selectionEnvelope ??
+          executionPlan.selection_envelope ??
+          normalized.selectionEnvelope ??
+          null,
+        resolvedBundle:
+          executionPlan.resolvedBundle ??
+          executionPlan.resolved_bundle ??
+          null,
+      }
+    : null;
+}
+
 function urlBasename(url: unknown): string | null {
   if (typeof url !== "string") return null;
   const u = url.split("?")[0].replace(/\/+$/, "");
@@ -5056,21 +5164,23 @@ function removeModelLocal(modelId: string): { success: true; removedFiles: strin
     throw new Error("Assets directory not found (cannot resolve model registry).");
   }
 
-  const registryPath = path.join(assetsDir, "models.json.bak");
+  const registryPath = resolveCatalogRuntimePath();
   let model: any = null;
   try {
+    if (!registryPath) {
+      throw new Error("No catalog runtime manifest found.");
+    }
     const raw = fs.readFileSync(registryPath, "utf-8");
     const json = JSON.parse(raw);
     const models = Array.isArray(json?.models) ? json.models : [];
     model = models.find((m: any) => m && m.id === modelId) || null;
   } catch (e: any) {
     throw new Error(
-      `Failed to read model registry at ${registryPath}: ${e?.message || String(e)}`,
+      `Failed to read model registry at ${registryPath || "<missing>"}: ${e?.message || String(e)}`,
     );
   }
 
   const removed: string[] = [];
-
   const links = model?.links && typeof model.links === "object" ? model.links : null;
   const ckptBase = urlBasename(links?.checkpoint);
   const cfgBase = urlBasename(links?.config);
@@ -5082,6 +5192,28 @@ function removeModelLocal(modelId: string): { success: true; removedFiles: strin
 
   if (ckptBase) candidateNames.add(ckptBase);
   if (cfgBase && !genericConfig.has(cfgBase.toLowerCase())) candidateNames.add(cfgBase);
+
+  const addArtifactNames = (artifacts: any) => {
+    for (const artifact of Array.isArray(artifacts) ? artifacts : []) {
+      const filenames = [
+        artifact?.filename,
+        artifact?.relative_path,
+        artifact?.relativePath,
+        artifact?.canonical_path,
+        artifact?.canonicalPath,
+      ];
+      for (const filename of filenames) {
+        const basename = urlBasename(filename);
+        if (!basename) continue;
+        if (genericConfig.has(basename.toLowerCase())) continue;
+        candidateNames.add(basename);
+      }
+    }
+  };
+
+  addArtifactNames(model?.download?.artifacts);
+  addArtifactNames(model?.installation?.artifacts);
+  addArtifactNames(model?.legacy_artifacts);
 
   // Per-model aliases we create / accept
   for (const ext of [
@@ -5130,14 +5262,20 @@ function startHealthChecks() {
 
   healthCheckInterval = setInterval(async () => {
     if (isAppQuitting || !backendProcess) return;
-    if (playbackCaptureSessions.size > 0) {
+    if (playbackCaptureSessions.size > 0 || activeSelectionJobIds.size > 0) {
       consecutiveHealthCheckFailures = 0;
       return;
     }
 
     try {
-      // Send ping with short timeout
-      await sendPythonCommand("ping", {}, 5000);
+      try {
+        const status = await sendPythonCommand("get_backend_status", {}, 5000);
+        if (status && status.backend_ready === false) {
+          throw new Error("Backend reported not ready");
+        }
+      } catch {
+        await sendPythonCommand("ping", {}, 5000);
+      }
       consecutiveHealthCheckFailures = 0;
     } catch (error) {
       consecutiveHealthCheckFailures++;
@@ -5169,6 +5307,7 @@ let mainWindow: InstanceType<typeof BrowserWindow> | null = null;
 let isCreatingMainWindow = false;
 
 const lastProgressByJobId = new Map<string, number>();
+const activeSelectionJobIds = new Set<string>();
 const modelInfoByJobId = new Map<
   string,
   {
@@ -5929,7 +6068,14 @@ async function restartBackendAndWait(
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       try {
-        await sendPythonCommand("ping", {}, 4000);
+        try {
+          const status = await sendPythonCommand("get_backend_status", {}, 4000);
+          if (status && status.backend_ready === false) {
+            throw new Error("Backend reported not ready");
+          }
+        } catch {
+          await sendPythonCommand("ping", {}, 4000);
+        }
         return;
       } catch (error) {
         lastError = error;
@@ -6035,6 +6181,7 @@ function routeBackendMessage(msg: any) {
     !mainWindow.isDestroyed()
   ) {
     const jobId = msg.job_id;
+    activeSelectionJobIds.add(jobId);
     const next = Number(msg.progress);
     const prev = lastProgressByJobId.get(jobId) ?? 0;
     const clamped = Number.isFinite(next)
@@ -6060,6 +6207,7 @@ function routeBackendMessage(msg: any) {
     mainWindow &&
     !mainWindow.isDestroyed()
   ) {
+    activeSelectionJobIds.add(msg.job_id);
     emitNormalizedSeparationEvent(msg);
   } else if (
     msg?.type === "separation_error" &&
@@ -6068,6 +6216,7 @@ function routeBackendMessage(msg: any) {
   ) {
     emitNormalizedSeparationEvent(msg);
     if (msg?.job_id) {
+      activeSelectionJobIds.delete(msg.job_id);
       lastProgressByJobId.delete(msg.job_id);
       modelInfoByJobId.delete(msg.job_id);
     }
@@ -6085,6 +6234,7 @@ function routeBackendMessage(msg: any) {
       type: "separation_cancelled",
     });
     if (msg?.job_id) {
+      activeSelectionJobIds.delete(msg.job_id);
       lastProgressByJobId.delete(msg.job_id);
       modelInfoByJobId.delete(msg.job_id);
     }
@@ -6095,6 +6245,7 @@ function routeBackendMessage(msg: any) {
   ) {
     let normalizedOutputFiles = msg.output_files || {};
     if (msg?.job_id) {
+      activeSelectionJobIds.delete(msg.job_id);
       const state = modelInfoByJobId.get(msg.job_id);
       if (state) {
         const resolved = resolvePlaybackStems(msg.output_files || {}, {
@@ -6319,7 +6470,7 @@ async function getGpuDevicesCached(): Promise<{ data: any; fromCache: boolean }>
   if (gpuDevicesCache && gpuDevicesCache.expiresAt > Date.now()) {
     return { data: gpuDevicesCache.value, fromCache: true };
   }
-  if (isPlaybackCaptureActive()) {
+  if (isPlaybackCaptureActive() || activeSelectionJobIds.size > 0) {
     return { data: gpuDevicesCache?.value || [], fromCache: true };
   }
   const data = await getGpuDevicesDeduped();
@@ -6338,11 +6489,15 @@ async function getRuntimeFingerprintCached(): Promise<{
   if (runtimeFingerprintCache && runtimeFingerprintCache.expiresAt > Date.now()) {
     return { data: runtimeFingerprintCache.value, fromCache: true, error: null };
   }
-  if (isPlaybackCaptureActive()) {
+  if (isPlaybackCaptureActive() || activeSelectionJobIds.size > 0) {
     return {
       data: runtimeFingerprintCache?.value || null,
       fromCache: true,
-      error: runtimeFingerprintCache ? null : "Runtime fingerprint paused during playback capture.",
+      error: runtimeFingerprintCache
+        ? null
+        : activeSelectionJobIds.size > 0
+          ? "Runtime fingerprint paused during active separation."
+          : "Runtime fingerprint paused during playback capture.",
     };
   }
 
@@ -6396,237 +6551,6 @@ async function getSystemRuntimeInfoCached(): Promise<any> {
 
   return getSystemRuntimeInfoInflight;
 }
-
-// IPC handler for audio separation
-ipcMain.handle(
-  "separate-audio",
-  async (
-    event,
-    {
-      inputFile,
-      modelId,
-      outputDir,
-      stems,
-      device,
-      overlap,
-      segmentSize,
-      tta,
-      outputFormat,
-      exportMixes,
-      shifts,
-      bitrate,
-      ensembleConfig,
-      ensembleAlgorithm,
-      invert,
-      splitFreq,
-      phaseParams,
-      postProcessingSteps,
-      volumeCompensation,
-      pipelineConfig,
-      workflow,
-      runtimePolicy,
-      exportPolicy,
-    }: {
-      inputFile: string;
-      modelId: string;
-      outputDir: string;
-      stems?: string[];
-      device?: string;
-      overlap?: number;
-      segmentSize?: number;
-      tta?: boolean;
-      outputFormat?: string;
-      exportMixes?: string[];
-      shifts?: number;
-      bitrate?: string;
-      ensembleConfig?: any;
-      ensembleAlgorithm?: string;
-      invert?: boolean;
-      splitFreq?: number;
-      phaseParams?: {
-        enabled: boolean;
-        lowHz: number;
-        highHz: number;
-        highFreqWeight: number;
-      };
-      postProcessingSteps?: any[];
-      volumeCompensation?: { enabled: boolean; stage?: "export" | "blend" | "both"; dbPerExtraModel?: number };
-      pipelineConfig?: any[];
-      workflow?: Record<string, any>;
-      runtimePolicy?: Record<string, any>;
-      exportPolicy?: Record<string, any>;
-    },
-  ) => {
-    const requestId = randomUUID().slice(0, 8);
-    log("[separate-audio] request", {
-      requestId,
-      inputFile,
-      modelId,
-      splitFreq,
-      hasEnsemble: Boolean(
-        ensembleConfig &&
-          Array.isArray(ensembleConfig.models) &&
-          ensembleConfig.models.length > 0,
-      ),
-    });
-    const process = ensureBackend();
-    if (!process)
-      return Promise.reject(new Error("Backend not available."));
-
-    // Always stage outputs into a stable preview cache for playback/preview.
-    // Export is handled separately (Results -> Export).
-    const previewDir = createPreviewDirForInput(inputFile);
-
-    // Ensure model id is always valid (never null/undefined), and normalize ensembles.
-    const effectiveModelId = resolveEffectiveModelId(modelId, ensembleConfig);
-
-    // Ensure backend receives WAV input even if user dropped MP3/FLAC/M4A,
-    // while preserving lossless precision when possible.
-    const stagedInput = await ensureWavInput(inputFile, previewDir);
-    const effectiveInputFile = stagedInput.effectiveInputFile;
-    log("[separate-audio] staging-ready", {
-      requestId,
-      effectiveModelId,
-      previewDir,
-      effectiveInputFile,
-      sourceAudioProfile: stagedInput.sourceAudioProfile,
-      stagingDecision: stagedInput.stagingDecision,
-    });
-
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        cleanup();
-        reject(new Error("Separation timeout (60 minutes)"));
-      }, 60 * 60 * 1000);
-
-      let myJobId: string | null = null;
-      const payload = {
-        file_path: effectiveInputFile,
-        model_id: effectiveModelId,
-        output_dir: previewDir,
-        stems,
-        device,
-        shifts: shifts || 0,
-        overlap,
-        segment_size: segmentSize,
-        tta,
-        output_format: outputFormat,
-        bitrate,
-        ensemble_config: ensembleConfig,
-        ensemble_algorithm: ensembleAlgorithm,
-        invert,
-        split_freq: splitFreq,
-        phase_params: phaseParams,
-        post_processing_steps: postProcessingSteps,
-        export_mixes: exportMixes,
-        volume_compensation: volumeCompensation,
-        pipeline_config: pipelineConfig,
-        workflow,
-        runtime_policy: runtimePolicy,
-        export_policy: exportPolicy,
-      };
-
-      const onDone = (msg: any) => {
-        if (!myJobId || msg?.job_id !== myJobId) return;
-        log("[separate-audio] complete", { requestId, jobId: myJobId });
-        cleanup();
-        const resolvedPlayback = resolvePlaybackStems(msg.output_files || {}, {
-          sourceKind: "preview_cache",
-          previewDir,
-          savedDir: outputDir,
-        });
-        const normalizedOutputFiles =
-          Object.keys(resolvedPlayback.stems).length > 0
-            ? resolvedPlayback.stems
-            : msg.output_files || {};
-        resolve({
-          success: true,
-          outputFiles: normalizedOutputFiles,
-          jobId: msg.job_id,
-          outputDir: previewDir,
-          sourceAudioProfile: stagedInput.sourceAudioProfile,
-          stagingDecision: stagedInput.stagingDecision,
-          playbackSourceKind: "preview_cache",
-        });
-      };
-
-      const onError = (msg: any) => {
-        if (!myJobId || msg?.job_id !== myJobId) return;
-        log("[separate-audio] backend-error", {
-          requestId,
-          jobId: myJobId,
-          error: msg?.error || "Separation failed",
-        });
-        cleanup();
-        reject(new Error(msg.error || "Separation failed"));
-      };
-
-      const onCancelled = (msg: any) => {
-        if (!myJobId || msg?.job_id !== myJobId) return;
-        log("[separate-audio] cancelled", { requestId, jobId: myJobId });
-        cleanup();
-        reject(new Error("Separation cancelled"));
-      };
-
-      const unsubComplete = subscribeBackendEvent("separation_complete", onDone);
-      const unsubError = subscribeBackendEvent("separation_error", onError);
-      const unsubCancelled = subscribeBackendEvent(
-        "separation_cancelled",
-        onCancelled,
-      );
-
-      const cleanup = () => {
-        clearTimeout(timeout);
-        unsubComplete();
-        unsubError();
-        unsubCancelled();
-      };
-
-      sendPythonCommand("separate_audio", payload)
-        .then((response) => {
-          if (!response?.job_id) {
-            cleanup();
-            reject(new Error("Backend did not return a job ID"));
-            return;
-          }
-          myJobId = String(response.job_id);
-          log("[separate-audio] job-started", {
-            requestId,
-            jobId: myJobId,
-            effectiveModelId,
-          });
-          modelInfoByJobId.set(myJobId, {
-            requestedModelId: String(modelId || ""),
-            effectiveModelId: String(effectiveModelId || ""),
-            inputFile: String(inputFile || ""),
-            finalOutputDir: String(outputDir || ""),
-            previewDir,
-            sourceAudioProfile: stagedInput.sourceAudioProfile,
-            stagingDecision: stagedInput.stagingDecision,
-          });
-          lastProgressByJobId.set(myJobId, 0);
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send("separation-started", {
-              jobId: myJobId,
-            });
-            mainWindow.webContents.send("separation-progress", {
-              jobId: myJobId,
-              progress: 1,
-              message: "Starting separation...",
-            });
-          }
-        })
-        .catch((err) => {
-          log("[separate-audio] dispatch-failed", {
-            requestId,
-            error: err?.message || String(err),
-          });
-          cleanup();
-          reject(err);
-        });
-    });
-  },
-);
 
 ipcMain.handle("detect-playback-devices", async () => {
   const state = await refreshQobuzPlaybackDeviceMappings();
@@ -7317,127 +7241,13 @@ ipcMain.handle("resolve-youtube-url", async (event, { url }: { url: string }) =>
   }
 });
 
-// Cancel separation
-ipcMain.handle("cancel-separation", async (event, jobId: string) => {
-  return sendPythonCommand("cancel_job", { job_id: jobId });
-});
-
-// Save/Discard output
-ipcMain.handle("save-job-output", async (event, jobId: string) => {
-  const jobState = modelInfoByJobId.get(jobId);
-  if (!jobState?.outputFiles || Object.keys(jobState.outputFiles).length === 0) {
-    return sendPythonCommand("save_output", { job_id: jobId });
-  }
-  if (!jobState.finalOutputDir) {
-    return {
-      success: false,
-      error: "No final output directory is configured for this separation.",
-    };
-  }
-
-  const requestId = `save-${jobId}`;
-  try {
-    const res = await exportFilesLocal({
-      sourceFiles: jobState.outputFiles,
-      exportPath: jobState.finalOutputDir,
-      format: "wav",
-      bitrate: "320k",
-      requestId,
-    });
-    jobState.outputFiles = res.exported;
-    return {
-      success: true,
-      outputFiles: res.exported,
-      sourceAudioProfile: jobState.sourceAudioProfile,
-      stagingDecision: jobState.stagingDecision,
-    };
-  } catch (error: any) {
-    emitExportProgress({
-      requestId,
-      status: "failed",
-      error: error?.message || String(error),
-      totalProgress: 0,
-    });
-    return {
-      success: false,
-      error: error?.message || String(error),
-    };
-  }
-});
-
-ipcMain.handle(
-  "export-output",
-  async (
-    event,
-    {
-      jobId,
-      exportPath,
-      format,
-      bitrate,
-      requestId,
-    }: {
-      jobId: string;
-      exportPath: string;
-      format: string;
-      bitrate: string;
-      requestId?: string;
-    },
-  ) => {
-    const jobState = modelInfoByJobId.get(jobId);
-    const sourceFiles = jobState?.outputFiles;
-    if (!sourceFiles || Object.keys(sourceFiles).length === 0) {
-      return sendPythonCommand("export_output", {
-        job_id: jobId,
-        export_path: exportPath,
-        format,
-        bitrate,
-      });
-    }
-
-    const resolvedRequestId = requestId || randomUUID().slice(0, 8);
-    try {
-      const res = await exportFilesLocal({
-        sourceFiles,
-        exportPath,
-        format,
-        bitrate,
-        requestId: resolvedRequestId,
-      });
-      return {
-        success: true,
-        exported: res.exported,
-        requestId: resolvedRequestId,
-        sourceAudioProfile: jobState.sourceAudioProfile,
-        stagingDecision: jobState.stagingDecision,
-      };
-    } catch (error: any) {
-      emitExportProgress({
-        requestId: resolvedRequestId,
-        status: "failed",
-        error: error?.message || String(error),
-      });
-      return {
-        success: false,
-        error: error?.message || String(error),
-        requestId: resolvedRequestId,
-      };
-    }
-  },
-);
-
-ipcMain.handle("discard-job-output", async (event, jobId: string) => {
-  try {
-    const result = await sendPythonCommand("discard_output", { job_id: jobId });
-    if (result?.success !== false) {
-      modelInfoByJobId.delete(jobId);
-      lastProgressByJobId.delete(jobId);
-    }
-    return result;
-  } catch (error) {
-    modelInfoByJobId.delete(jobId);
-    lastProgressByJobId.delete(jobId);
-    throw error;
-  }
+registerSelectionJobIpcHandlers({
+  ipcMain,
+  sendBackendCommand: sendPythonCommand,
+  modelInfoByJobId,
+  lastProgressByJobId,
+  emitExportProgress,
+  exportFilesLocal,
 });
 
 // Export files directly from paths (bypasses job registry - for historical exports)
@@ -7509,676 +7319,81 @@ ipcMain.handle(
   },
 );
 
-// Queue Management
-ipcMain.handle("pause-queue", async () => sendPythonCommand("pause_queue"));
-ipcMain.handle("resume-queue", async () => sendPythonCommand("resume_queue"));
-ipcMain.handle("reorder-queue", async (event, jobIds: string[]) =>
-  sendPythonCommand("reorder_queue", { job_ids: jobIds }),
-);
-
-ipcMain.handle("open-audio-file-dialog", async () => {
-  if (!mainWindow) return null;
-  try {
-    const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ["openFile", "multiSelections"],
-      filters: [
-        {
-          name: "Audio Files",
-          extensions: [
-            "mp3",
-            "wav",
-            "flac",
-            "m4a",
-            "ogg",
-            "aac",
-            "wma",
-            "aiff",
-          ],
-        },
-      ],
-    });
-    return result.filePaths || [];
-  } catch (error) {
-    log("Error opening file dialog:", error);
-    throw new Error("Failed to open file dialog");
-  }
+registerQueueIpcHandlers({
+  ipcMain,
+  sendBackendCommand: sendPythonCommand,
 });
 
-ipcMain.handle("open-model-file-dialog", async () => {
-  if (!mainWindow) return null;
-  try {
-    const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ["openFile", "multiSelections"],
-      filters: [
-        {
-          name: "Model Files",
-          extensions: ["ckpt", "pth", "pt", "onnx", "safetensors"],
-        },
-      ],
-    });
-    return result.filePaths || [];
-  } catch (error) {
-    log("Error opening model file dialog:", error);
-    throw new Error("Failed to open model file dialog");
-  }
+registerRuntimeIpcHandlers({
+  ipcMain,
+  getGpuDevicesCached,
+  getSystemRuntimeInfoCached,
 });
 
-ipcMain.handle("select-output-directory", async () => {
-  if (!mainWindow) return null;
-  try {
-    const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ["openDirectory"],
-    });
-    return result.filePaths[0] || null;
-  } catch (error) {
-    log("Error selecting output directory:", error);
-    throw new Error("Failed to open directory dialog");
-  }
+registerSeparationIpcHandlers({
+  ipcMain,
+  log,
+  ensureBackend,
+  createPreviewDirForInput,
+  resolveEffectiveModelId,
+  resolveSelectionExecutionPlan,
+  ensureWavInput,
+  normalizeSelectionType,
+  sendBackendCommand: sendPythonCommand,
+  subscribeBackendEvent,
+  resolvePlaybackStems,
+  modelInfoByJobId,
+  lastProgressByJobId,
+  activeSelectionJobIds,
+  getMainWindow: () => mainWindow,
 });
 
-ipcMain.handle("select-models-directory", async () => {
-  if (!mainWindow) return null;
-  try {
-    const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ["openDirectory", "createDirectory"],
-      title: "Choose Models Directory",
-    });
-    return result.filePaths[0] || null;
-  } catch (error) {
-    log("Error selecting models directory:", error);
-    throw new Error("Failed to open models directory dialog");
-  }
+registerSelectionIpcHandlers({
+  ipcMain,
+  sendBackendCommand: sendPythonCommandWithRetry,
 });
 
-// Scan directory for audio files
-ipcMain.handle("scan-directory", async (event, folderPath: string) => {
-  const audioExtensions = new Set([".mp3", ".wav", ".flac", ".ogg", ".m4a"]);
-  const audioFiles: string[] = [];
-
-  async function scan(dir: string) {
-    const entries = await fs.promises.readdir(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        await scan(fullPath);
-      } else if (entry.isFile()) {
-        const ext = path.extname(entry.name).toLowerCase();
-        if (audioExtensions.has(ext)) {
-          audioFiles.push(fullPath);
-        }
-      }
-    }
-  }
-
-  try {
-    await scan(folderPath);
-    return audioFiles;
-  } catch (error) {
-    console.error("Error scanning directory:", error);
-    log("Error scanning directory:", error);
-    throw new Error(
-      `Failed to scan directory: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
+registerModelIpcHandlers({
+  ipcMain,
+  sendBackendCommandWithRetry: sendPythonCommandWithRetry,
 });
 
-// Open folder
-ipcMain.handle("open-folder", async (event, folderPath: string) => {
-  await shell.openPath(folderPath);
+registerDownloadIpcHandlers({
+  ipcMain,
+  sendBackendCommand: sendPythonCommand,
+  sendBackendCommandWithRetry: sendPythonCommandWithRetry,
+  removeModelLocal,
+  log,
 });
 
-ipcMain.handle("check-file-exists", async (_event, filePath: string) => {
-  try {
-    if (!filePath || typeof filePath !== "string") return false;
-    const resolvedPath = resolvePlaybackFilePath(filePath) || filePath;
-    return fs.existsSync(resolvedPath);
-  } catch {
-    return false;
-  }
+registerQualityIpcHandlers({
+  ipcMain,
+  sendBackendCommandWithRetry: sendPythonCommandWithRetry,
 });
 
-// Read audio file as base64 for use with Blob URLs
-// This works around browser security restrictions that block file:// URLs
-ipcMain.handle("read-audio-file", async (_event, filePath: string) => {
-  try {
-    // Security: block arbitrary file reads if renderer is compromised.
-    // Only allow a strict list of audio extensions.
-    const ext = filePath.split(".").pop()?.toLowerCase();
-    const allowedExtensions = new Set([
-      "mp3",
-      "wav",
-      "flac",
-      "ogg",
-      "m4a",
-      "aac",
-      "wma",
-      "aiff",
-    ]);
-    if (!ext || !allowedExtensions.has(ext)) {
-      throw new Error(
-        `Security violation: Attempted to read non-audio file extension '.${ext || ""}'`,
-      );
-    }
-
-    const resolvedPath = resolvePlaybackFilePath(filePath) || filePath;
-
-    if (!fs.existsSync(resolvedPath)) {
-      const missing = classifyMissingAudioPath(filePath);
-      return {
-        success: false,
-        error: "Audio file not found",
-        code: missing.code,
-        hint: missing.hint,
-      };
-    }
-
-    const data = fs.readFileSync(resolvedPath);
-    const base64 = data.toString("base64");
-    // Determine MIME type from extension
-    const mimeTypes: Record<string, string> = {
-      mp3: "audio/mpeg",
-      wav: "audio/wav",
-      flac: "audio/flac",
-      ogg: "audio/ogg",
-      m4a: "audio/mp4",
-      aac: "audio/aac",
-      wma: "audio/x-ms-wma",
-      aiff: "audio/aiff",
-    };
-    const mimeType = mimeTypes[ext] || "audio/mpeg";
-    return { success: true, data: base64, mimeType, resolvedPath };
-  } catch (error: any) {
-    log(`Failed to read audio file: ${filePath}`, error);
-    if (error?.code === "ENOENT") {
-      const missing = classifyMissingAudioPath(filePath);
-      return {
-        success: false,
-        error: "Audio file not found",
-        code: missing.code,
-        hint: missing.hint,
-      };
-    }
-    return {
-      success: false,
-      error: error?.message || String(error),
-      code: "MISSING_SOURCE_FILE",
-      hint: "Unable to read the audio file. Verify the file exists and retry.",
-    };
-  }
+registerDialogIpcHandlers({
+  ipcMain,
+  getMainWindow: () => mainWindow,
+  log,
+  resolvePlaybackFilePath,
+  classifyMissingAudioPath,
+  resolvePlaybackStems,
 });
 
-ipcMain.handle(
-  "resolve-playback-stems",
-  async (
-    _event,
-    {
-      outputFiles,
-      playback,
-    }: {
-      outputFiles?: Record<string, string>;
-      playback?: PlaybackMetadataLike;
-    },
-  ) => {
-    try {
-      const resolved = resolvePlaybackStems(outputFiles, playback);
-      return {
-        success: true,
-        stems: resolved.stems,
-        issues: resolved.issues,
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        stems: outputFiles || {},
-        issues: {},
-        error: error?.message || String(error),
-      };
-    }
-  },
-);
-
-// Check preset models
-ipcMain.handle(
-  "check-preset-models",
-  async (event, presetMappings: Record<string, string>) => {
-    return sendPythonCommandWithRetry("check-preset-models", {
-      preset_mappings: presetMappings,
-    });
-  },
-);
-
-// Get GPU devices
-ipcMain.handle("get-gpu-devices", async () => {
-  const gpu = await getGpuDevicesCached();
-  return gpu.data;
+registerConfigIpcHandlers({
+  ipcMain,
+  log,
+  writeAppConfig,
+  getStoredHuggingFaceToken,
+  setStoredHuggingFaceToken,
+  requestBridgeRestart,
+  restartBackendAndWait,
+  sendBackendCommandWithRetry: sendPythonCommandWithRetry,
 });
 
-ipcMain.handle("get-system-runtime-info", async () => {
-  return getSystemRuntimeInfoCached();
+registerWatchIpcHandlers({
+  ipcMain,
+  getMainWindow: () => mainWindow,
+  log,
 });
 
-// Get workflow types (Live vs Studio)
-ipcMain.handle("get-workflows", async () => {
-  return sendPythonCommandWithRetry("get_workflows", {}, 10000);
-});
-
-// Get all available models
-ipcMain.handle("get-models", async () => {
-  return sendPythonCommandWithRetry("get_models", {}, 120000);
-});
-
-ipcMain.handle("get-model-tech", async (_event, modelId: string) => {
-  return sendPythonCommandWithRetry("get_model_tech", { model_id: modelId }, 20000);
-});
-
-ipcMain.handle("resolve-model-download", async (_event, modelId: string) => {
-  return sendPythonCommandWithRetry(
-    "resolve_model_download",
-    { model_id: modelId },
-    20000,
-  );
-});
-
-ipcMain.handle("get-model-installation", async (_event, modelId: string) => {
-  return sendPythonCommandWithRetry(
-    "get_model_installation",
-    { model_id: modelId },
-    20000,
-  );
-});
-
-ipcMain.handle(
-  "separation-preflight",
-  async (
-    _event,
-    {
-      inputFile,
-      modelId,
-      outputDir,
-      stems,
-      device,
-      overlap,
-      segmentSize,
-      tta,
-      outputFormat,
-      exportMixes,
-      shifts,
-      bitrate,
-      ensembleConfig,
-      ensembleAlgorithm,
-      invert,
-      splitFreq,
-      phaseParams,
-      postProcessingSteps,
-      volumeCompensation,
-      pipelineConfig,
-      workflow,
-      runtimePolicy,
-      exportPolicy,
-    }: {
-      inputFile: string;
-      modelId: string;
-      outputDir: string;
-      stems?: string[];
-      device?: string;
-      overlap?: number;
-      segmentSize?: number;
-      tta?: boolean;
-      outputFormat?: string;
-      exportMixes?: string[];
-      shifts?: number;
-      bitrate?: string;
-      ensembleConfig?: any;
-      ensembleAlgorithm?: string;
-      invert?: boolean;
-      splitFreq?: number;
-      phaseParams?: {
-        enabled: boolean;
-        lowHz: number;
-        highHz: number;
-        highFreqWeight: number;
-      };
-      postProcessingSteps?: any[];
-      volumeCompensation?: { enabled: boolean; stage?: "export" | "blend" | "both"; dbPerExtraModel?: number };
-      pipelineConfig?: any[];
-      workflow?: Record<string, any>;
-      runtimePolicy?: Record<string, any>;
-      exportPolicy?: Record<string, any>;
-    },
-  ) => {
-    // Preflight should mirror the real run: normalize model id and stage non-WAV inputs to WAV.
-    const previewDir = createPreviewDirForInput(inputFile);
-    const effectiveModelId = resolveEffectiveModelId(modelId, ensembleConfig);
-    const stagedInput = await ensureWavInput(inputFile, previewDir);
-    const effectiveInputFile = stagedInput.effectiveInputFile;
-
-    const result = await sendPythonCommandWithRetry(
-      "separation_preflight",
-      {
-        file_path: effectiveInputFile,
-        model_id: effectiveModelId,
-        output_dir: outputDir,
-        stems,
-        device,
-        shifts: shifts || 0,
-        overlap,
-        segment_size: segmentSize,
-        tta,
-        output_format: outputFormat,
-        bitrate,
-        ensemble_config: ensembleConfig,
-        ensemble_algorithm: ensembleAlgorithm,
-        invert,
-        split_freq: splitFreq,
-        phase_params: phaseParams,
-        post_processing_steps: postProcessingSteps,
-        export_mixes: exportMixes,
-        volume_compensation: volumeCompensation,
-        pipeline_config: pipelineConfig,
-        workflow,
-        runtime_policy: runtimePolicy,
-        export_policy: exportPolicy,
-      },
-      30000,
-    );
-
-    return {
-      ...result,
-      sourceAudioProfile: stagedInput.sourceAudioProfile,
-      stagingDecision: stagedInput.stagingDecision,
-    };
-  },
-);
-
-// Get recipes
-ipcMain.handle("get-recipes", async () => {
-  return sendPythonCommandWithRetry("get_recipes", {}, 10000);
-});
-
-ipcMain.handle("quality-baseline-create", async (_event, payload: Record<string, any>) => {
-  return sendPythonCommandWithRetry(
-    "quality_baseline_create",
-    payload || {},
-    5 * 60 * 1000,
-  );
-});
-
-ipcMain.handle("quality-compare", async (_event, payload: Record<string, any>) => {
-  return sendPythonCommandWithRetry(
-    "quality_compare",
-    payload || {},
-    5 * 60 * 1000,
-  );
-});
-
-// Download model
-ipcMain.handle("download-model", async (event, modelId: string) => {
-  const process = ensureBackend();
-  if (!process) throw new Error("Backend not available");
-
-  // Similar to YouTube: Rust backend handles download in background and emits events.
-  // We trigger it with a command that returns immediately (scheduled: true).
-  
-  // Note: Rust backend emits global events for progress. We don't need a specific listener attached here
-  // because `globalDownloadHandler` in `ensureBackend` already forwards them to the window!
-  
-  // We just need to send the command.
-  return sendPythonCommand("download_model", { model_id: modelId });
-});
-
-// Remove model
-ipcMain.handle("remove-model", async (event, modelId: string) => {
-  try {
-    const res = await sendPythonCommandWithRetry("remove_model", { model_id: modelId }, 60000);
-    log("remove-model completed", { modelId, res });
-    return res;
-  } catch (e: any) {
-    const msg = (e?.message || String(e) || "").toLowerCase();
-    log("remove-model failed", { modelId, error: e?.message || String(e) });
-
-    // Fallback: allow uninstall even if python proxy is missing.
-    if (
-      msg.includes("python proxy unavailable") ||
-      msg.includes("python-bridge.py") ||
-      msg.includes("backend_unavailable") ||
-      msg.includes("backend not available")
-    ) {
-      try {
-        const local = removeModelLocal(modelId);
-        log("remove-model local fallback succeeded", {
-          modelId,
-          removed: local.removedFiles.length,
-        });
-        return local;
-      } catch (localErr: any) {
-        log("remove-model local fallback FAILED", {
-          modelId,
-          error: localErr?.message || String(localErr),
-        });
-        throw new Error(
-          `BACKEND_UNAVAILABLE: ${e?.message || String(e)}\n\nLocal delete failed: ${localErr?.message || String(localErr)}`,
-        );
-      }
-    }
-
-    throw e;
-  }
-});
-
-// Pause download
-ipcMain.handle("pause-download", async (event, modelId: string) => {
-  // Simple command, events handled globally
-  return sendPythonCommand("pause_download", { model_id: modelId });
-});
-
-// Resume download
-ipcMain.handle("resume-download", async (event, modelId: string) => {
-  // Simple command, events handled globally
-  return sendPythonCommand("resume_download", { model_id: modelId });
-});
-
-ipcMain.handle(
-  "import-model-files",
-  async (
-    _event,
-    {
-      modelId,
-      files,
-      allowCopy,
-    }: { modelId: string; files: Array<{ kind?: string; path: string }>; allowCopy?: boolean },
-  ) => {
-    return sendPythonCommandWithRetry(
-      "import_model_files",
-      { model_id: modelId, files, allow_copy: allowCopy !== false },
-      120000,
-    );
-  },
-);
-
-// Import custom model
-ipcMain.handle(
-  "import-custom-model",
-  async (
-    event,
-    {
-      filePath,
-      modelName,
-      architecture,
-    }: { filePath: string; modelName: string; architecture?: string },
-  ) => {
-    return sendPythonCommand("import_custom_model", {
-      file_path: filePath,
-      model_name: modelName,
-      architecture: architecture || "Custom",
-    });
-  },
-);
-
-// Queue Persistence
-const getQueuePath = () =>
-  path.join(app.getPath("userData"), "queue_state.json");
-
-ipcMain.handle("save-queue", async (event, queueData: any) => {
-  try {
-    await fs.promises.writeFile(
-      getQueuePath(),
-      JSON.stringify(queueData),
-      "utf-8",
-    );
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to save queue:", error);
-    return { success: false, error: String(error) };
-  }
-});
-
-ipcMain.handle("load-queue", async () => {
-  try {
-    const queuePath = getQueuePath();
-    if (!fs.existsSync(queuePath)) {
-      return null;
-    }
-    const data = await fs.promises.readFile(queuePath, "utf-8");
-    return JSON.parse(data);
-  } catch (error) {
-    console.error("Failed to load queue:", error);
-    return null;
-  }
-});
-
-// Watch Folder Logic
-let watcher: FSWatcher | null = null;
-
-ipcMain.handle("start-watch-mode", async (event, folderPath: string) => {
-  if (watcher) {
-    await watcher.close();
-  }
-
-  log("Starting watch mode on:", folderPath);
-
-  watcher = chokidar.watch(folderPath, {
-    ignored: /(^|[\/\\])\../, // ignore dotfiles
-    persistent: true,
-    ignoreInitial: true, // Don't process existing files immediately
-    awaitWriteFinish: {
-      stabilityThreshold: 2000, // Wait 2s for file write to finish
-      pollInterval: 100,
-    },
-  });
-
-  watcher.on("add", (filePath) => {
-    const ext = path.extname(filePath).toLowerCase();
-    if ([".wav", ".mp3", ".flac", ".m4a", ".ogg"].includes(ext)) {
-      log("New file detected:", filePath);
-      mainWindow?.webContents.send("watch-file-detected", filePath);
-    }
-  });
-
-  return true;
-});
-
-ipcMain.handle("stop-watch-mode", async () => {
-  if (watcher) {
-    await watcher.close();
-    watcher = null;
-    log("Watch mode stopped");
-  }
-  return true;
-});
-
-// App config persistence for main process settings (like modelsDir)
-ipcMain.handle("set-models-dir", async (_event, modelsDir: string) => {
-  const normalized = typeof modelsDir === "string" ? modelsDir.trim() : "";
-  if (!normalized) {
-    throw new Error("Models directory is required.");
-  }
-
-  fs.mkdirSync(normalized, { recursive: true });
-  const saved = writeAppConfig({ modelsDir: normalized });
-  if (!saved) {
-    throw new Error("Failed to persist models directory.");
-  }
-
-  await restartBackendAndWait("updated models directory");
-  const models = await sendPythonCommandWithRetry("get_models", {}, 120000);
-
-  return {
-    success: true,
-    modelsDir: normalized,
-    models,
-  };
-});
-
-ipcMain.handle(
-  "save-app-config",
-  async (_event, config: Record<string, any>) => {
-    try {
-      const configPath = path.join(app.getPath("userData"), "app-config.json");
-      let existingConfig: Record<string, any> = {};
-
-      if (fs.existsSync(configPath)) {
-        existingConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-      }
-
-      // Never allow saving secrets through the generic config endpoint.
-      const { hfToken: _ignoredHfToken, ...safeConfig } = config || {};
-      const newConfig = { ...existingConfig, ...safeConfig };
-      fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2));
-      log("Saved app config:", Object.keys(safeConfig).join(", "));
-      return true;
-    } catch (error) {
-      log("Failed to save app config:", error);
-      return false;
-    }
-  },
-);
-
-ipcMain.handle("get-app-config", async () => {
-  try {
-    const configPath = path.join(app.getPath("userData"), "app-config.json");
-    if (fs.existsSync(configPath)) {
-      const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-      if (config && typeof config === "object") {
-        delete config.hfToken;
-      }
-      return config;
-    }
-  } catch (error) {
-    log("Failed to read app config:", error);
-  }
-  return {};
-});
-
-// Hugging Face auth (optional): store token in app-config.json and restart backend
-ipcMain.handle("get-huggingface-auth-status", async () => {
-  return { configured: !!getStoredHuggingFaceToken() };
-});
-
-ipcMain.handle("set-huggingface-token", async (_event, token: string) => {
-  const res = setStoredHuggingFaceToken(token);
-  if (res.success) {
-    requestBridgeRestart("updated huggingface token");
-  }
-  return res;
-});
-
-ipcMain.handle("clear-huggingface-token", async () => {
-  const res = setStoredHuggingFaceToken(null);
-  if (res.success) {
-    requestBridgeRestart("cleared huggingface token");
-  }
-  return res;
-});
-
-ipcMain.handle("open-external-url", async (_event, url: string) => {
-  try {
-    if (typeof url !== "string" || !url.trim()) return false;
-    const u = new URL(url);
-    if (u.protocol !== "https:" && u.protocol !== "http:") return false;
-    await shell.openExternal(url);
-    return true;
-  } catch (e) {
-    log("Failed to open external url:", e);
-    return false;
-  }
-});

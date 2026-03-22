@@ -1,3 +1,11 @@
+import type {
+  ModelCatalogMetadata,
+  ModelInstallPolicy,
+  ModelSelectionEnvelope,
+  ModelSourceKind,
+  ModelVerificationMetadata,
+} from "./modelCatalog";
+
 export type ModelAvailabilityClass =
   | "direct"
   | "mirror_fallback"
@@ -83,6 +91,14 @@ export interface Model {
   availability?: ModelAvailability;
   artifactStatuses?: ModelArtifactStatus[];
   manualInstructions?: string[];
+  catalog?: ModelCatalogMetadata;
+  catalog_tier?: ModelCatalogMetadata["tier"];
+  source_kind?: ModelSourceKind;
+  install_policy?: ModelInstallPolicy;
+  verification?: ModelVerificationMetadata;
+  selection_type?: import("./modelCatalog").CatalogSelectionType;
+  selection_id?: string;
+  selection_envelope?: ModelSelectionEnvelope;
   recommended_settings?: {
     overlap?: number;
     segment_size?: number;

@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+from typing import Any
+
+from registry.catalog_v3_common import (
+    DEFAULT_CATALOG_RUNTIME,
+    DEFAULT_CATALOG_V3_SOURCE,
+    DEFAULT_LEGACY_RUNTIME,
+    coerce_dict,
+    coerce_list,
+    deep_copy_json,
+    load_json,
+    now_rfc3339,
+    selection_envelope,
+    write_json,
+)
+
+
+def _source_generated_at(source: dict[str, Any]) -> str:
+    value = str(source.get("generated_at") or "").strip()
+    return value or now_rfc3339()
+
+
+def _availability_class(model: dict[str, Any]) -> str:
+    policy = str(model.get("install_policy") or "").strip().lower()
+    if policy == "manual":
+        return "manual_import"
+    if policy == "custom_runtime":
+        return "custom_runtime"
+    if policy == "unavailable":
+        return "blocked_non_public"
+    return "direct"
+
+
+def _catalog_status(model: dict[str, Any]) -> str:
+    tier = str(model.get("catalog_tier") or "").strip().lower()
+    policy = str(model.get("install_policy") or "").strip().lower()
+    if tier == "verified" and policy == "direct":
+        return "verified"
+    if policy == "unavailable":
+        return "blocked"
+    if policy in {"manual", "custom_runtime"}:
+        return "manual_only"
+    return "candidate"
+
+
+def _legacy_artifacts_from_array(artifacts: list[dict[str, Any]]) -> dict[str, Any]:
+    primary = None
+    config = None
+    additional = []
+    for artifact in artifacts:
+        kind = str(artifact.get("kind") or "").strip().lower()
+        legacy = {
+            "kind": artifact.get("kind"),
+            "filename": artifact.get("filename"),
+            "sha256": artifact.get("sha256"),
+        }
+        if kind in {"checkpoint", "weights", "model"} and primary is None:
+            primary = legacy
+        elif kind == "config" and config is None:
+            config = legacy
+        else:
+            additional.append(legacy)
+    return {
+        "primary": primary,
+        "config": config,
+        "additional": additional,
+    }
+
+
+def _compile_model(model: dict[str, Any]) -> dict[str, Any]:
+    compiled = deep_copy_json(model)
+    model_id = str(compiled.get("model_id") or compiled.get("id") or "").strip()
+    compiled["id"] = model_id
+    compiled["model_id"] = model_id
+    compiled["selection_type"] = "model"
+    compiled["selection_id"] = model_id
+    compiled["catalog_status"] = _catalog_status(compiled)
+    compiled["availability"] = {
+        "class": _availability_class(compiled),
+        "reason": coerce_dict(compiled.get("verification")).get("notes", [None])[0],
+    }
+    compiled["selection_envelope"] = selection_envelope(
+        selection_type="model",
+        selection_id=model_id,
+        catalog_tier=compiled.get("catalog_tier"),
+        source_kind=compiled.get("source_kind"),
+        install_policy=compiled.get("install_policy"),
+        verification=compiled.get("verification"),
+    )
+    compiled["catalog"] = {
+        "tier": compiled.get("catalog_tier"),
+        "sourceKind": compiled.get("source_kind"),
+        "installPolicy": compiled.get("install_policy"),
+        "verification": compiled.get("verification"),
+    }
+
+    artifacts = []
+    for artifact in coerce_list(compiled.get("artifacts")):
+        if not isinstance(artifact, dict):
+            continue
+        entry = deep_copy_json(artifact)
+        relative_path = str(entry.get("canonical_path") or entry.get("relative_path") or "")
+        entry["relative_path"] = relative_path
+        entry["canonical_path"] = relative_path
+        entry["source"] = next(
+            (
+                source.get("url")
+                for source in coerce_list(entry.get("sources"))
+                if isinstance(source, dict) and source.get("url")
+            ),
+            None,
+        )
+        entry["source_host"] = next(
+            (
+                source.get("host")
+                for source in coerce_list(entry.get("sources"))
+                if isinstance(source, dict) and source.get("host")
+            ),
+            None,
+        )
+        artifacts.append(entry)
+
+    download = coerce_dict(compiled.get("download"))
+    download["mode"] = compiled.get("install_policy") or download.get("mode") or "direct"
+    download["strategy"] = download.get("strategy") or ("direct" if download["mode"] == "direct" else "manual")
+    download["artifacts"] = artifacts
+    if "manual_instructions" not in download:
+        download["manual_instructions"] = coerce_list(coerce_dict(compiled.get("install")).get("notes"))
+    compiled["download"] = download
+
+    legacy_artifacts = compiled.get("legacy_artifacts")
+    if not isinstance(legacy_artifacts, dict):
+        legacy_artifacts = _legacy_artifacts_from_array(artifacts)
+    compiled["artifacts"] = legacy_artifacts
+    return compiled
+
+
+def _compile_selection_entry(entry: dict[str, Any], selection_type: str) -> dict[str, Any]:
+    compiled = deep_copy_json(entry)
+    selection_id = str(compiled.get("selection_id") or compiled.get("id") or "").strip()
+    compiled["selection_type"] = selection_type
+    compiled["selection_id"] = selection_id
+    compiled["selection_envelope"] = selection_envelope(
+        selection_type=selection_type,
+        selection_id=selection_id,
+        catalog_tier=compiled.get("catalog_tier"),
+        source_kind=compiled.get("source_kind"),
+        install_policy=compiled.get("install_policy"),
+        verification=compiled.get("verification"),
+    )
+    return compiled
+
+
+def compile_catalog_v3(
+    *,
+    source_path: Path,
+    runtime_path: Path,
+    legacy_runtime_path: Path,
+) -> dict[str, Any]:
+    source = load_json(source_path)
+    compiled_at = _source_generated_at(source)
+    compiled_models = [
+        _compile_model(model)
+        for model in coerce_list(source.get("models"))
+        if isinstance(model, dict)
+    ]
+    compiled_recipes = [
+        _compile_selection_entry(recipe, "recipe")
+        for recipe in coerce_list(source.get("recipes"))
+        if isinstance(recipe, dict)
+    ]
+    compiled_workflows = [
+        _compile_selection_entry(workflow, "workflow")
+        for workflow in coerce_list(source.get("workflows"))
+        if isinstance(workflow, dict)
+    ]
+
+    selection_index = []
+    for model in compiled_models:
+        selection_index.append(
+            {
+                "selection_type": "model",
+                "selection_id": model["selection_id"],
+                "name": model.get("name"),
+                "catalog_tier": model.get("catalog_tier"),
+                "install_policy": model.get("install_policy"),
+                "runtime_adapter": model.get("runtime_adapter"),
+                "required_model_ids": [model["model_id"]],
+            }
+        )
+    for recipe in compiled_recipes:
+        selection_index.append(
+            {
+                "selection_type": "recipe",
+                "selection_id": recipe["selection_id"],
+                "name": recipe.get("name"),
+                "catalog_tier": recipe.get("catalog_tier"),
+                "install_policy": recipe.get("install_policy"),
+                "runtime_adapter": recipe.get("runtime_adapter"),
+                "required_model_ids": coerce_list(recipe.get("required_model_ids")),
+            }
+        )
+    for workflow in compiled_workflows:
+        selection_index.append(
+            {
+                "selection_type": "workflow",
+                "selection_id": workflow["selection_id"],
+                "name": workflow.get("name"),
+                "catalog_tier": workflow.get("catalog_tier"),
+                "install_policy": workflow.get("install_policy"),
+                "runtime_adapter": workflow.get("runtime_adapter"),
+                "required_model_ids": coerce_list(workflow.get("required_model_ids")),
+            }
+        )
+
+    runtime = {
+        "version": "3",
+        "schema_version": "catalog-runtime-v3",
+        "generated_at": compiled_at,
+        "source": {
+            "compiled_from": str(source_path),
+            "source_generated_at": source.get("generated_at"),
+        },
+        "summary": {
+            "models": len(compiled_models),
+            "recipes": len(compiled_recipes),
+            "workflows": len(compiled_workflows),
+            "external_records": len(coerce_list(source.get("external_records"))),
+            "verified_models": sum(1 for model in compiled_models if model.get("catalog_tier") == "verified"),
+            "advanced_manual_models": sum(1 for model in compiled_models if model.get("catalog_tier") != "verified"),
+        },
+        "models": compiled_models,
+        "recipes": compiled_recipes,
+        "workflows": compiled_workflows,
+        "external_records": coerce_list(source.get("external_records")),
+        "selection_index": selection_index,
+    }
+
+    legacy = {
+        "version": "3-legacy-compat",
+        "schema_version": "catalog-runtime-legacy-v3",
+        "generated_at": compiled_at,
+        "source": {
+            "compiled_from": str(source_path),
+            "compatibility_mode": "models_only",
+        },
+        "models": compiled_models,
+    }
+
+    write_json(runtime_path, runtime)
+    write_json(legacy_runtime_path, legacy)
+    return runtime
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Compile catalog.v3.source.json into runtime manifests.")
+    parser.add_argument("--source", default=str(DEFAULT_CATALOG_V3_SOURCE))
+    parser.add_argument("--runtime-out", default=str(DEFAULT_CATALOG_RUNTIME))
+    parser.add_argument("--legacy-out", default=str(DEFAULT_LEGACY_RUNTIME))
+    args = parser.parse_args()
+
+    runtime = compile_catalog_v3(
+        source_path=Path(args.source),
+        runtime_path=Path(args.runtime_out),
+        legacy_runtime_path=Path(args.legacy_out),
+    )
+    print(
+        f"Compiled catalog runtime with {runtime['summary']['models']} models, "
+        f"{runtime['summary']['workflows']} workflows, {runtime['summary']['recipes']} recipes -> {args.runtime_out}"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

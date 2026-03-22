@@ -28,6 +28,11 @@ describe("backendPayload", () => {
         presetId: "workflow_phase_fix_instrumental",
         device: "cuda:0",
         outputFormat: "wav",
+        selectionEnvelope: {
+          catalogTier: "verified",
+          sourceKind: "guide",
+          installPolicy: "direct",
+        },
         advancedParams: {
           overlap: 4,
           segmentSize: 352800,
@@ -90,6 +95,9 @@ describe("backendPayload", () => {
     expect(payload.overlap).toBeCloseTo(0.75)
     expect(payload.segmentSize).toBe(352800)
     expect(payload.outputFormat).toBe("wav")
+    expect(payload.selectionType).toBe("workflow")
+    expect(payload.selectionId).toBe("workflow_phase_fix_instrumental")
+    expect(payload.selectionEnvelope?.catalogTier).toBe("verified")
     expect(payload.pipelineConfig).toEqual(payload.workflow?.steps)
     expect(payload.workflow?.kind).toBe("pipeline")
     expect(payload.workflow?.steps?.[1]?.action).toBe("phase_fix")
@@ -119,8 +127,14 @@ describe("backendPayload", () => {
 
     expect(separationPreflight).toHaveBeenCalledTimes(1)
     const args = separationPreflight.mock.calls[0] as any[]
-    expect(args[18]).toEqual(payload.pipelineConfig)
-    expect(args[19]).toEqual(payload.workflow)
+    expect(args[3]).toBe("workflow")
+    expect(args[4]).toBe("workflow_phase_fix_instrumental")
+    expect(args[20]).toEqual(payload.pipelineConfig)
+    expect(args[21]).toEqual(payload.workflow)
+    expect(args[24]).toEqual({
+      selectionType: "workflow",
+      selectionId: "workflow_phase_fix_instrumental",
+    })
   })
 
   it("forwards explicit pipelineConfig for execution transport", async () => {
@@ -147,7 +161,13 @@ describe("backendPayload", () => {
 
     expect(separateAudio).toHaveBeenCalledTimes(1)
     const args = separateAudio.mock.calls[0] as any[]
-    expect(args[18]).toEqual(payload.pipelineConfig)
-    expect(args[19]).toEqual(payload.workflow)
+    expect(args[3]).toBe("workflow")
+    expect(args[4]).toBe("workflow_phase_fix_instrumental")
+    expect(args[20]).toEqual(payload.pipelineConfig)
+    expect(args[21]).toEqual(payload.workflow)
+    expect(args[24]).toEqual({
+      selectionType: "workflow",
+      selectionId: "workflow_phase_fix_instrumental",
+    })
   })
 })

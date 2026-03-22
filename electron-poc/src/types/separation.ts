@@ -1,3 +1,4 @@
+import type { ModelSelectionEnvelope } from "./modelCatalog"
 import type { PostProcessingStep } from '../presets'
 
 export type VolumeCompensationStage = 'export' | 'blend' | 'both'
@@ -99,6 +100,7 @@ export interface SeparationWorkflow {
     id?: string
     name?: string
     kind: WorkflowKind
+    selectionEnvelope?: ModelSelectionEnvelope
     surface?: WorkflowSurface
     family?: string
     description?: string
@@ -125,6 +127,7 @@ export interface SeparationConfig {
     presetId?: string
     workflowId?: string
     modelId?: string
+    selectionEnvelope?: ModelSelectionEnvelope
     device: string
     outputFormat: 'wav' | 'mp3' | 'flac'
     exportMixes?: string[]

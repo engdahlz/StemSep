@@ -22,6 +22,14 @@ type CaptureEnvironmentStatus = import('./types/remote').CaptureEnvironmentStatu
 type PlaybackCapturePrepareResult = import('./types/remote').PlaybackCapturePrepareResult
 type PlaybackCaptureCompleteResult = import('./types/remote').PlaybackCaptureCompleteResult
 type PlaybackCaptureProgressPayload = import('./types/remote').PlaybackCaptureProgressPayload
+type CatalogRuntimeManifest = import('./types/modelCatalog').CatalogRuntimeManifest
+type CatalogSelectionType = import('./types/modelCatalog').CatalogSelectionType
+type SelectionInstallPlan = import('./types/modelCatalog').SelectionInstallPlan
+type ModelSelectionEnvelope = import('./types/modelCatalog').ModelSelectionEnvelope
+type CatalogRuntimeManifest = import('./types/modelCatalog').CatalogRuntimeManifest
+type SelectionInstallPlan = import('./types/modelCatalog').SelectionInstallPlan
+type CatalogSelectionType = import('./types/modelCatalog').CatalogSelectionType
+type ModelSelectionEnvelope = import('./types/modelCatalog').ModelSelectionEnvelope
 
 type MissingAudioCode = 'MISSING_CACHE_FILE' | 'STALE_SESSION' | 'MISSING_SOURCE_FILE'
 
@@ -84,6 +92,8 @@ interface ElectronAPI {
         inputFile: string,
         modelId: string,
         outputDir: string,
+        selectionType?: CatalogSelectionType,
+        selectionId?: string,
         stems?: string[],
         device?: string,
         overlap?: number,
@@ -102,12 +112,15 @@ interface ElectronAPI {
         pipelineConfig?: SeparationWorkflow['steps'],
         workflow?: SeparationWorkflow,
         runtimePolicy?: WorkflowRuntimePolicy,
-        exportPolicy?: WorkflowExportPolicy
+        exportPolicy?: WorkflowExportPolicy,
+        selectionEnvelope?: ModelSelectionEnvelope
     ) => Promise<any & { sourceAudioProfile?: SourceAudioProfile; stagingDecision?: StagingDecision }>
     separateAudio: (
         inputFile: string,
         modelId: string,
         outputDir: string,
+        selectionType?: CatalogSelectionType,
+        selectionId?: string,
         stems?: string[],
         device?: string,
         overlap?: number,
@@ -126,7 +139,8 @@ interface ElectronAPI {
         pipelineConfig?: SeparationWorkflow['steps'],
         workflow?: SeparationWorkflow,
         runtimePolicy?: WorkflowRuntimePolicy,
-        exportPolicy?: WorkflowExportPolicy
+        exportPolicy?: WorkflowExportPolicy,
+        selectionEnvelope?: ModelSelectionEnvelope
     ) => Promise<{
         success: boolean
         outputFiles: Record<string, string>
@@ -159,10 +173,45 @@ interface ElectronAPI {
     onExportProgress: (callback: (data: ExportProgressEvent) => void) => () => void
 
     // Model operations
+    getCatalog: () => Promise<CatalogRuntimeManifest>
     getModels: () => Promise<any[]>
     getModelTech: (modelId: string) => Promise<any>
     resolveModelDownload: (modelId: string) => Promise<any>
     getModelInstallation: (modelId: string) => Promise<any>
+    getSelectionInstallation: (
+        selectionType: CatalogSelectionType,
+        selectionId: string
+    ) => Promise<SelectionInstallPlan>
+    resolveInstallPlan: (
+        selectionType: CatalogSelectionType,
+        selectionId: string
+    ) => Promise<SelectionInstallPlan>
+    installSelection: (
+        selectionType: CatalogSelectionType,
+        selectionId: string,
+        options?: Record<string, any>
+    ) => Promise<any>
+    importSelectionArtifacts: (
+        selectionType: CatalogSelectionType,
+        selectionId: string,
+        files: Array<{ kind?: string; path: string }>,
+        allowCopy?: boolean
+    ) => Promise<any>
+    verifySelectionArtifacts: (
+        selectionType: CatalogSelectionType,
+        selectionId: string
+    ) => Promise<any>
+    resolveExecutionPlan: (
+        selectionType: CatalogSelectionType,
+        selectionId: string,
+        config?: Record<string, any>
+    ) => Promise<any>
+    runSelectionJob: (payload: Record<string, any>) => Promise<any>
+    cancelSelectionJob: (jobId: string) => Promise<any>
+    getSelectionJob: (jobId: string) => Promise<any>
+    listSelectionJobs: () => Promise<any[]>
+    exportSelectionJob: (jobId: string, exportPath: string) => Promise<any>
+    discardSelectionJob: (jobId: string) => Promise<any>
     importModelFiles: (modelId: string, files: Array<{ kind?: string; path: string }>, allowCopy?: boolean) => Promise<any>
     getRecipes: () => Promise<Recipe[]>
     qualityBaselineCreate: (payload: Record<string, any>) => Promise<any>

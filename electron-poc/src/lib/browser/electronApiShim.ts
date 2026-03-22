@@ -281,7 +281,33 @@ export function installBrowserElectronApi() {
       return files.map((file) => registerFile(file, file.name))
     },
     scanDirectory: async () => [],
-    separationPreflight: async (inputFile, modelId, _outputDir, stems, device) => {
+    separationPreflight: async (
+      inputFile: string,
+      modelId: string,
+      _outputDir: string,
+      _selectionType?: "model" | "recipe" | "workflow",
+      _selectionId?: string,
+      stems?: string[],
+      device?: string,
+      _overlap?: number,
+      _segmentSize?: number,
+      _shifts?: number,
+      _outputFormat?: string,
+      _bitrate?: string,
+      _tta?: boolean,
+      _ensembleConfig?: any,
+      _ensembleAlgorithm?: string,
+      _invert?: boolean,
+      _splitFreq?: number,
+      _phaseParams?: any,
+      _postProcessingSteps?: any[],
+      _volumeCompensation?: any,
+      _pipelineConfig?: any[],
+      _workflow?: Record<string, any>,
+      _runtimePolicy?: Record<string, any>,
+      _exportPolicy?: Record<string, any>,
+      _selectionEnvelope?: Record<string, any>,
+    ) => {
       const requiredModels = [modelId].filter(Boolean).map((id) => ({
         model_id: id,
         installed: !!hydrateModelList().find((model) => model.id === id)?.installed,
@@ -310,7 +336,33 @@ export function installBrowserElectronApi() {
         },
       }
     },
-    separateAudio: async (inputFile, modelId, _outputDir, stems) => {
+    separateAudio: async (
+      inputFile: string,
+      modelId: string,
+      _outputDir: string,
+      _selectionType?: "model" | "recipe" | "workflow",
+      _selectionId?: string,
+      stems?: string[],
+      _device?: string,
+      _overlap?: number,
+      _segmentSize?: number,
+      _shifts?: number,
+      _outputFormat?: string,
+      _bitrate?: string,
+      _tta?: boolean,
+      _ensembleConfig?: any,
+      _ensembleAlgorithm?: string,
+      _invert?: boolean,
+      _splitFreq?: number,
+      _phaseParams?: any,
+      _postProcessingSteps?: any[],
+      _volumeCompensation?: any,
+      _pipelineConfig?: any[],
+      _workflow?: Record<string, any>,
+      _runtimePolicy?: Record<string, any>,
+      _exportPolicy?: Record<string, any>,
+      _selectionEnvelope?: Record<string, any>,
+    ) => {
       const jobId = `browser-job-${crypto.randomUUID()}`
       const source = getFileEntry(inputFile)
       if (!source) {
@@ -476,6 +528,27 @@ export function installBrowserElectronApi() {
     onSeparationComplete: (callback) => separationCompleteEmitter.subscribe(callback),
     onSeparationError: (callback) => separationErrorEmitter.subscribe(callback),
     onExportProgress: (callback) => exportProgressEmitter.subscribe(callback),
+    getCatalog: async () => {
+      const models = hydrateModelList()
+      const selectionIndex = models.map((model) => ({
+        selectionType: "model" as const,
+        selectionId: model.id,
+        name: model.name,
+        catalogTier: model.catalog_tier ?? model.catalog?.tier,
+        sourceKind: model.source_kind ?? model.catalog?.sourceKind,
+        installPolicy: model.install_policy ?? model.catalog?.installPolicy,
+        selectionEnvelope: model.selection_envelope,
+        requiredModelIds: [model.id],
+      }))
+      return {
+        version: "browser-preview",
+        schema_version: "catalog-runtime-v3",
+        models,
+        recipes: [],
+        workflows: [],
+        selection_index: selectionIndex,
+      }
+    },
     getModels: async () => hydrateModelList(),
     getModelTech: async (modelId) => hydrateModelList().find((model) => model.id === modelId) || null,
     resolveModelDownload: async (modelId) => {
@@ -493,6 +566,119 @@ export function installBrowserElectronApi() {
       const model = hydrateModelList().find((entry) => entry.id === modelId)
       return model?.installation || { installed: !!model?.installed, missing_artifacts: [] }
     },
+    getSelectionInstallation: async (selectionType, selectionId) => {
+      const model = selectionType === "model"
+        ? hydrateModelList().find((entry) => entry.id === selectionId)
+        : null
+      return {
+        selectionType,
+        selectionId,
+        installed: !!model?.installed,
+        requiredModelIds: model ? [model.id] : [],
+        required_model_ids: model ? [model.id] : [],
+        selectionEnvelope: model?.selection_envelope,
+        installation: model?.installation || { installed: !!model?.installed, missing_artifacts: [] },
+      }
+    },
+    resolveInstallPlan: async (selectionType, selectionId) => {
+      const model = selectionType === "model"
+        ? hydrateModelList().find((entry) => entry.id === selectionId)
+        : null
+      return {
+        success: true,
+        selectionType,
+        selectionId,
+        requiredModelIds: model ? [model.id] : [],
+        required_model_ids: model ? [model.id] : [],
+        selectionEnvelope: model?.selection_envelope,
+        installPolicy: model?.install_policy ?? model?.catalog?.installPolicy ?? "manual",
+        catalogTier: model?.catalog_tier ?? model?.catalog?.tier,
+        sourceKind: model?.source_kind ?? model?.catalog?.sourceKind,
+        installation: model?.installation || { installed: !!model?.installed, missing_artifacts: [] },
+        model,
+      }
+    },
+    installSelection: async (selectionType, selectionId) => {
+      if (selectionType !== "model") {
+        return { success: false, error: "Browser preview only installs model selections." }
+      }
+      const success = await electronAPI.downloadModel(selectionId)
+      return {
+        success,
+        selectionType,
+        selectionId,
+        installation: await electronAPI.getSelectionInstallation(selectionType, selectionId),
+      }
+    },
+    importSelectionArtifacts: async (selectionType, selectionId, files, allowCopy = true) => {
+      if (selectionType !== "model") {
+        return { success: false, error: "Browser preview only imports model selections." }
+      }
+      return electronAPI.importModelFiles(selectionId, files, allowCopy)
+    },
+    verifySelectionArtifacts: async (selectionType, selectionId) => {
+      return electronAPI.getSelectionInstallation(selectionType, selectionId)
+    },
+    resolveExecutionPlan: async (selectionType, selectionId) => {
+      const model = selectionType === "model"
+        ? hydrateModelList().find((entry) => entry.id === selectionId)
+        : null
+      return {
+        selection_type: selectionType,
+        selection_id: selectionId,
+        selection_envelope: model?.selection_envelope,
+        required_model_ids: model ? [model.id] : [],
+        execution_constraints: { browser_preview: true },
+        resolved_bundle: model
+          ? {
+              selection_type: selectionType,
+              selection_id: selectionId,
+              required_model_ids: [model.id],
+              selection_envelope: model.selection_envelope,
+            }
+          : null,
+      }
+    },
+    runSelectionJob: async (payload) => {
+      const jobId = crypto.randomUUID()
+      return {
+        success: true,
+        job_id: jobId,
+        status: "started",
+        job: {
+          job_id: jobId,
+          status: "starting",
+          requested_at: new Date().toISOString(),
+          progress: 0,
+          selection_type: payload?.selection_type || payload?.selectionType || "model",
+          selection_id: payload?.selection_id || payload?.selectionId || payload?.model_id || payload?.modelId || null,
+        },
+      }
+    },
+    cancelSelectionJob: async (jobId) => ({
+      success: true,
+      job_id: jobId,
+      status: "cancelled",
+    }),
+    getSelectionJob: async (jobId) => ({
+      job_id: jobId,
+      status: "completed",
+      requested_at: new Date().toISOString(),
+      finished_at: new Date().toISOString(),
+      progress: 100,
+    }),
+    listSelectionJobs: async () => [],
+    exportSelectionJob: async (jobId, exportPath) => ({
+      success: true,
+      job_id: jobId,
+      export_path: exportPath,
+      output_files: {},
+    }),
+    discardSelectionJob: async (jobId) => ({
+      success: true,
+      job_id: jobId,
+      discarded: true,
+    }),
     getRecipes: async () => [],
     qualityBaselineCreate: async (payload) => {
       qualityProgressEmitter.emit({ kind: "progress", message: "Creating browser baseline..." })

@@ -1,9 +1,18 @@
+import type {
+  ModelCatalogTier,
+  ModelInstallPolicy,
+  ModelSelectionEnvelope,
+  ModelSourceKind,
+  ModelVerificationMetadata,
+} from "./modelCatalog";
+
 export interface PreflightRequiredModel {
   id: string
   name?: string | null
   installed?: boolean
   curated?: boolean | null
   support_tier?: string | null
+  catalog_tier?: ModelCatalogTier | null
   guide_rank?: number | null
   catalog_status?: string | null
   metrics_status?: string | null
@@ -24,11 +33,15 @@ export interface PreflightRequiredModel {
   runtime_checkpoint_ref?: string | null
   runtime_patch_profile?: string | null
   install_burden?: string | null
+  install_policy?: ModelInstallPolicy | null
   requires_manual_assets?: boolean
   missing_assets?: string[]
   required_files?: string[]
   requires_patch?: boolean
   requires_custom_repo_file?: string[]
+  source_kind?: ModelSourceKind | null
+  verification?: ModelVerificationMetadata | null
+  selection_envelope?: ModelSelectionEnvelope | null
   workflow_roles?: string[]
   best_for?: string[]
   artifacts_risk?: string[] | null
@@ -92,6 +105,7 @@ export interface SeparationPreflightResolvedRecipe {
   name?: string
   type?: string
   defaults?: Record<string, unknown>
+  selection_envelope?: ModelSelectionEnvelope | null
   steps?: Array<Record<string, unknown>>
   [key: string]: unknown
 }

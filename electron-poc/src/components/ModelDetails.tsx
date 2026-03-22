@@ -14,10 +14,18 @@ import { Badge } from "./ui/badge";
 import { Model } from "../stores/useStore";
 import {
   formatCardMetricValue,
-  formatCatalogStatus,
   formatMetricsSource,
   getCardMetricSlots,
 } from "../lib/models/cardMetrics";
+import {
+  formatCatalogTierLabel,
+  formatModelInstallPolicy,
+  formatModelSourceKind,
+  formatVerificationMetadata,
+  getModelCatalogTier,
+  getModelVerificationMetadata,
+  isManualCatalogModel,
+} from "../lib/models/catalog";
 
 interface ModelDetailsProps {
   model: Model;
@@ -62,7 +70,13 @@ export function ModelDetails({
   const phaseFixParams = resolvedModel.phase_fix?.recommended_params;
   const metricSlots = getCardMetricSlots(resolvedModel);
   const metricsSource = formatMetricsSource(resolvedModel);
-  const catalogStatus = formatCatalogStatus(resolvedModel.catalog_status);
+  const catalogTier = getModelCatalogTier(resolvedModel);
+  const catalogTierLabel = formatCatalogTierLabel(resolvedModel);
+  const sourceKindLabel = formatModelSourceKind(resolvedModel);
+  const installPolicyLabel = formatModelInstallPolicy(resolvedModel);
+  const verification = getModelVerificationMetadata(resolvedModel);
+  const verificationLines = formatVerificationMetadata(resolvedModel);
+  const blockedModel = catalogTier === "blocked";
   const qualityRoles = Array.isArray(resolvedModel.quality_role)
     ? resolvedModel.quality_role
     : resolvedModel.quality_role
@@ -84,7 +98,9 @@ export function ModelDetails({
   const manualInstructions = downloadInfo?.manual_instructions || [];
   const canManualImport =
     resolvedModel.availability?.class === "manual_import" ||
-    downloadInfo?.mode === "manual";
+    downloadInfo?.mode === "manual" ||
+    isManualCatalogModel(resolvedModel);
+  const manualDownloadMode = downloadInfo?.mode === "manual" || isManualCatalogModel(resolvedModel);
 
   const handleImportFiles = async () => {
     try {
@@ -161,9 +177,17 @@ export function ModelDetails({
               <Layers className="mr-1 h-3 w-3" />{" "}
               {resolvedModel.stems.join(", ")}
             </Badge>
-            {resolvedModel.catalog_status && (
+            <Badge variant="outline" className="rounded-full border-slate-200 bg-white/75 text-slate-600">
+              {catalogTierLabel}
+            </Badge>
+            {sourceKindLabel && (
               <Badge variant="outline" className="rounded-full border-slate-200 bg-white/75 text-slate-600">
-                {catalogStatus}
+                Source: {sourceKindLabel}
+              </Badge>
+            )}
+            {installPolicyLabel && (
+              <Badge variant="outline" className="rounded-full border-slate-200 bg-white/75 text-slate-600">
+                Install: {installPolicyLabel}
               </Badge>
             )}
             {metricsSource && (
@@ -185,14 +209,9 @@ export function ModelDetails({
                 Install: {resolvedModel.install.mode}
               </Badge>
             )}
-            {resolvedModel.status?.curated && (
-              <Badge variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-700">
-                Curated
-              </Badge>
-            )}
             {resolvedModel.status?.support_tier === "supported_advanced" && (
               <Badge variant="outline" className="rounded-full border-amber-200 bg-amber-50 text-amber-700">
-                Supported Advanced
+                Advanced
               </Badge>
             )}
             {phaseFixValid && (
@@ -274,6 +293,60 @@ export function ModelDetails({
               {resolvedModel.description || "No description available."}
             </p>
           </div>
+
+          {(catalogTier || sourceKindLabel || installPolicyLabel || verificationLines.length > 0) && (
+            <div className="space-y-2 rounded-[1.4rem] border border-slate-200/70 bg-white/68 p-5">
+              <h3 className="text-sm font-medium uppercase tracking-wider text-slate-500">
+                Catalog Metadata
+              </h3>
+              <div className="grid grid-cols-1 gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
+                {catalogTier && (
+                  <div className="flex justify-between border-b border-slate-200/70 py-1">
+                    <span className="text-slate-500">Catalog Tier</span>
+                    <span className="font-medium text-slate-900">{catalogTierLabel}</span>
+                  </div>
+                )}
+                {sourceKindLabel && (
+                  <div className="flex justify-between border-b border-slate-200/70 py-1">
+                    <span className="text-slate-500">Source Kind</span>
+                    <span className="font-medium text-slate-900">{sourceKindLabel}</span>
+                  </div>
+                )}
+                {installPolicyLabel && (
+                  <div className="flex justify-between border-b border-slate-200/70 py-1">
+                    <span className="text-slate-500">Install Policy</span>
+                    <span className="font-medium text-slate-900">{installPolicyLabel}</span>
+                  </div>
+                )}
+                {(resolvedModel.selection_type || resolvedModel.selection_id) && (
+                  <div className="flex justify-between border-b border-slate-200/70 py-1">
+                    <span className="text-slate-500">Selection</span>
+                    <span className="font-medium text-slate-900">
+                      {[
+                        resolvedModel.selection_type,
+                        resolvedModel.selection_id,
+                      ]
+                        .filter(Boolean)
+                        .join(" / ")}
+                    </span>
+                  </div>
+                )}
+                {verification?.lastVerified && (
+                  <div className="flex justify-between border-b border-slate-200/70 py-1">
+                    <span className="text-slate-500">Last Verified</span>
+                    <span className="font-medium text-slate-900">{verification.lastVerified}</span>
+                  </div>
+                )}
+              </div>
+              {verificationLines.length > 0 && (
+                <div className="space-y-1 text-sm text-slate-600">
+                  {verificationLines.map((line) => (
+                    <p key={line}>{line}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {metricSlots.map((slot) => (
@@ -699,7 +772,8 @@ export function ModelDetails({
             {!resolvedModel.installed ? (
               <Button
                 onClick={() => {
-                  if (downloadInfo?.mode === "manual") {
+                  if (blockedModel) return;
+                  if (manualDownloadMode) {
                     const primarySource = downloadSources[0]?.url;
                     if (primarySource) {
                       void window.electronAPI?.openExternalUrl?.(primarySource);
@@ -709,10 +783,15 @@ export function ModelDetails({
                   onDownload?.(resolvedModel.id);
                 }}
                 className="gap-2 rounded-full"
-                disabled={resolvedModel.downloading || downloadInfo?.mode === "unavailable"}
-                variant={downloadInfo?.mode === "manual" ? "outline" : "default"}
+                disabled={resolvedModel.downloading || downloadInfo?.mode === "unavailable" || blockedModel}
+                variant={manualDownloadMode || blockedModel ? "outline" : "default"}
               >
-                {downloadInfo?.mode === "manual" ? (
+                {blockedModel ? (
+                  <>
+                    <Download className="h-4 w-4" />
+                    Unavailable
+                  </>
+                ) : manualDownloadMode ? (
                   <>
                     <ExternalLink className="h-4 w-4" />
                     Open Source

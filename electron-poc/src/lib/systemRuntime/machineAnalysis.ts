@@ -1,5 +1,6 @@
 import { getRequiredModels, type Preset } from "@/presets";
 import type { Model } from "@/types/store";
+import { getModelCatalogTier, isManualCatalogModel } from "@/lib/models/catalog";
 import {
   inferHardwareTier,
   type HardwareTier,
@@ -223,18 +224,18 @@ function modelFitsCurrentRuntime(
   vramGb: number,
   hasFnoSupport: boolean,
 ): { ok: boolean; reason?: string } {
-  if (model.status?.readiness === "blocked") {
+  if (model.status?.readiness === "blocked" || getModelCatalogTier(model) === "blocked") {
     return {
       ok: false,
-      reason: model.status.blocking_reason || `${model.name} is blocked in the registry.`,
+      reason: model.status?.blocking_reason || `${model.name} is blocked in the registry.`,
     };
   }
 
-  if (model.status?.readiness === "manual") {
+  if (model.status?.readiness === "manual" || isManualCatalogModel(model)) {
     return {
       ok: false,
       reason:
-        model.status.blocking_reason || `${model.name} requires manual setup.`,
+        model.status?.blocking_reason || `${model.name} requires manual setup.`,
     };
   }
 
@@ -579,7 +580,7 @@ export function getModelMachineFit(
   const tier = operationalTierFromRuntime(facts);
   const vramGb = facts.hasCudaRuntime ? facts.rawVramGb : 0;
 
-  if (model.status?.readiness === "manual" || model.download?.mode === "manual") {
+  if (model.status?.readiness === "manual" || isManualCatalogModel(model)) {
     return {
       status: "manual_setup",
       label: "Manual Setup",

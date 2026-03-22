@@ -114,6 +114,7 @@ export function recipeToPreset(recipe: Recipe): Preset {
   const requiredModels = getRecipeRequiredModels(recipe)
   const stems = recipeDisplayStems(recipe)
   const surfaceBlocked = Array.isArray(recipe.surface_blockers) && recipe.surface_blockers.length > 0
+  const selectionEnvelope = recipe.selection_envelope || (recipe as any).selectionEnvelope
 
   const defaults = recipe.defaults
   const advancedDefaults = defaults
@@ -163,6 +164,7 @@ export function recipeToPreset(recipe: Recipe): Preset {
     workflowFamily: recipe.family,
     promotionStatus: recipe.promotion_status,
     qaStatus: recipe.qa_status,
+    selectionEnvelope,
     // Important: execute as a recipe by passing the recipe id as modelId.
     modelId: recipe.id,
     isRecipe: true,
@@ -182,6 +184,7 @@ export function recipeToPreset(recipe: Recipe): Preset {
       quality_tradeoff: recipe.quality_tradeoff,
       promotion_status: recipe.promotion_status,
       qa_status: recipe.qa_status,
+      selection_envelope: selectionEnvelope,
       surface_blockers: recipe.surface_blockers,
       required_model_statuses: recipe.required_model_statuses,
       defaults: recipe.defaults,

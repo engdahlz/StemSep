@@ -16,6 +16,10 @@ import { normalizeModel } from "../lib/models/normalizeModel";
 import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
 import { useModels } from "../hooks/useModels";
 import {
+  getModelCatalogTier,
+  isManualCatalogModel,
+} from "../lib/models/catalog";
+import {
   getModelMachineFit,
   type ModelMachineFitStatus,
 } from "../lib/systemRuntime/machineAnalysis";
@@ -26,7 +30,13 @@ type SortKey =
   | "Newest"
   | "Installed"
   | "Not Installed";
-type StatusFilter = "All" | "Installed" | "Ready" | "Manual" | "Curated";
+type StatusFilter =
+  | "All"
+  | "Installed"
+  | "Ready"
+  | "Verified"
+  | "Advanced"
+  | "Manual";
 type MachineFitFilter =
   | "All"
   | "Fits This Machine"
@@ -39,8 +49,9 @@ const statusFilters: StatusFilter[] = [
   "All",
   "Installed",
   "Ready",
+  "Verified",
+  "Advanced",
   "Manual",
-  "Curated",
 ];
 const machineFitFilters: MachineFitFilter[] = [
   "All",
@@ -91,13 +102,22 @@ const matchesCategory = (model: Model, category: string) => {
 const matchesStatus = (model: Model, status: StatusFilter) => {
   if (status === "All") return true;
   if (status === "Installed") return !!model.installed;
-  if (status === "Manual") return model.download?.mode === "manual";
-  if (status === "Curated") return !!model.status?.curated;
+  if (status === "Manual") return isManualCatalogModel(model);
+  const catalogTier = getModelCatalogTier(model);
+  if (status === "Verified") return catalogTier === "verified";
+  if (status === "Advanced") {
+    return (
+      catalogTier === "advanced" ||
+      catalogTier === "advanced_manual" ||
+      catalogTier === "online"
+    );
+  }
   if (status === "Ready") {
     return (
       !model.installed &&
       !model.downloading &&
       !model.downloadPaused &&
+      !isManualCatalogModel(model) &&
       model.download?.mode !== "manual" &&
       model.download?.mode !== "unavailable"
     );
@@ -203,6 +223,13 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
           model.description,
           model.architecture,
           model.category,
+          model.catalog?.tier,
+          model.catalog?.sourceKind,
+          model.catalog?.installPolicy,
+          model.source_kind,
+          model.install_policy,
+          model.card_metrics?.source,
+          model.card_metrics?.last_verified,
           ...(model.tags || []),
           ...(model.best_for || []),
           ...(model.workflow_groups || []),
@@ -242,21 +269,30 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
     [models],
   );
 
-  const curatedCount = useMemo(
-    () => models.filter((model) => model.status?.curated).length,
+  const verifiedCount = useMemo(
+    () => models.filter((model) => getModelCatalogTier(model) === "verified").length,
     [models],
   );
 
-  const readyCount = useMemo(
-    () => models.filter((model) => matchesStatus(model, "Ready")).length,
+  const advancedCount = useMemo(
+    () => models.filter((model) => getModelCatalogTier(model) === "advanced").length,
+    [models],
+  );
+
+  const manualCount = useMemo(
+    () => models.filter((model) => isManualCatalogModel(model)).length,
     [models],
   );
 
   const handleDownload = async (modelId: string) => {
     try {
       const model = models.find((entry) => entry.id === modelId);
-      if (model?.download?.mode === "manual") {
+      if (model && isManualCatalogModel(model)) {
         setDetailsModel(model);
+        return;
+      }
+      if (model && getModelCatalogTier(model) === "blocked") {
+        setDownloadError(modelId, "This model is blocked in the catalog and cannot be downloaded yet.");
         return;
       }
       if (model?.download?.mode === "unavailable") {
@@ -346,22 +382,22 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
             </div>
             <div className="rounded-[1.4rem] border border-white/16 bg-white/10 px-4 py-3">
               <div className="text-[11px] uppercase tracking-[0.18em] text-white/42">
-                Curated / Ready
+                Catalog Tiers
               </div>
               <div className="mt-2 text-[28px] tracking-[-1px] text-white">
-                {curatedCount} / {readyCount}
+                {verifiedCount} / {advancedCount} / {manualCount}
               </div>
               <div className="mt-1 text-[12px] text-white/40">
-                guided picks and direct installs
+                verified, advanced and manual setup paths
               </div>
             </div>
           </div>
 
           <div className="relative">
             <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-            <input
+              <input
               type="text"
-              placeholder="Search models, architectures, tags or workflow fit..."
+              placeholder="Search models, architectures, tags, source kind or workflow fit..."
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               className="w-full rounded-[1.6rem] border border-white/18 bg-white/10 py-3.5 pl-11 pr-4 text-[14px] tracking-[-0.2px] text-white outline-none transition-all placeholder:text-white/30 focus:border-white/34 focus:bg-white/16"

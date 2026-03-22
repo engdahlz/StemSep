@@ -140,10 +140,12 @@ class SimpleSeparator:
 
         return ModelManager(models_dir=self.models_dir)
 
-    def _resolve_model_bundle(self, model_id: str) -> Dict[str, Any]:
+    def _resolve_model_bundle(
+        self, model_id: str, resolved_bundle: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         try:
             mm = self._get_model_manager()
-            return mm.get_model_file_bundle(model_id)
+            return mm.get_model_file_bundle(model_id, resolved_bundle=resolved_bundle)
         except Exception as e:
             self.logger.debug(f"Bundle resolution failed for '{model_id}': {e}")
             return {
@@ -152,7 +154,9 @@ class SimpleSeparator:
                 "installation": {"installed": False, "missing_artifacts": []},
             }
 
-    def get_model_filename(self, model_id: str) -> str:
+    def get_model_filename(
+        self, model_id: str, resolved_bundle: Optional[Dict[str, Any]] = None
+    ) -> str:
         """
         Resolve a model_id to an actual filename inside models_dir.
 
@@ -164,13 +168,14 @@ class SimpleSeparator:
         4) If a file exists locally matching model_id + common extensions, use it.
         5) Fall back to returning model_id and let audio-separator handle it.
         """
-        bundle = self._resolve_model_bundle(model_id)
+        bundle = self._resolve_model_bundle(model_id, resolved_bundle=resolved_bundle)
         checkpoint_path = bundle.get("checkpoint_path")
         config_path = bundle.get("config_path")
         family = ((bundle.get("download") or {}).get("family") or "").lower()
+        strict_resolved_bundle = isinstance(resolved_bundle, dict) and bool(resolved_bundle)
 
         # 1) Custom/community models with a resolved config+weights pair use the direct-load path.
-        if self._has_local_yaml(model_id):
+        if self._has_local_yaml(model_id, resolved_bundle=resolved_bundle):
             return model_id
 
         # 2) Manifest-resolved filenames are authoritative for standard audio-separator loading.
@@ -184,7 +189,7 @@ class SimpleSeparator:
 
         # 3) Registry-derived expected local filename (URL basename)
         expected_from_registry = self._get_expected_local_filename_from_registry(
-            model_id
+            model_id, resolved_bundle=resolved_bundle
         )
         if (
             expected_from_registry
@@ -194,31 +199,34 @@ class SimpleSeparator:
 
         # 4) Legacy static mapping (kept as fallback for older installs / renamed files)
         if (
-            model_id in self.MODEL_FILENAMES
+            not strict_resolved_bundle
+            and model_id in self.MODEL_FILENAMES
             and (self.models_dir / self.MODEL_FILENAMES[model_id]).exists()
         ):
             return self.MODEL_FILENAMES[model_id]
 
         normalized = model_id.lower().replace(" ", "-").replace("_", "-")
         if (
-            normalized in self.MODEL_FILENAMES
+            not strict_resolved_bundle
+            and normalized in self.MODEL_FILENAMES
             and (self.models_dir / self.MODEL_FILENAMES[normalized]).exists()
         ):
             return self.MODEL_FILENAMES[normalized]
 
         # 5) Direct file existence checks
-        for ext in [
-            ".ckpt",
-            ".chpt",
-            ".pth",
-            ".pt",
-            ".safetensors",
-            ".onnx",
-            ".yaml",
-            "",
-        ]:
-            if (self.models_dir / f"{model_id}{ext}").exists():
-                return f"{model_id}{ext}"
+        if not strict_resolved_bundle:
+            for ext in [
+                ".ckpt",
+                ".chpt",
+                ".pth",
+                ".pt",
+                ".safetensors",
+                ".onnx",
+                ".yaml",
+                "",
+            ]:
+                if (self.models_dir / f"{model_id}{ext}").exists():
+                    return f"{model_id}{ext}"
 
         # 6) Return as-is and let audio-separator handle it
         self.logger.warning(
@@ -226,7 +234,9 @@ class SimpleSeparator:
         )
         return model_id
 
-    def _has_local_yaml(self, model_id: str) -> bool:
+    def _has_local_yaml(
+        self, model_id: str, resolved_bundle: Optional[Dict[str, Any]] = None
+    ) -> bool:
         """Check if a model has a local YAML config file.
 
         Note: MDX23C and VR models are excluded from direct loading path because they require
@@ -246,18 +256,18 @@ class SimpleSeparator:
         if any(x in model_lower for x in ["mdx23c", "vr", "uvr", "_hp"]):
             return False
 
-        bundle = self._resolve_model_bundle(model_id)
+        bundle = self._resolve_model_bundle(model_id, resolved_bundle=resolved_bundle)
         yaml_path = bundle.get("config_path")
         if not yaml_path:
             return False
         yaml_path = Path(yaml_path)
-        weight_path = self._find_local_weight_file(model_id)
+        weight_path = self._find_local_weight_file(model_id, resolved_bundle=resolved_bundle)
         if not yaml_path.exists() or yaml_path.suffix.lower() not in {".yaml", ".yml"}:
             return False
         return weight_path is not None
 
     def _get_expected_local_filename_from_registry(
-        self, model_id: str
+        self, model_id: str, resolved_bundle: Optional[Dict[str, Any]] = None
     ) -> Optional[str]:
         """
         Derive the expected local filename from the model registry (assets/models/*.json via ModelManager).
@@ -275,10 +285,12 @@ class SimpleSeparator:
             )
 
             mm = ModelManager(models_dir=self.models_dir)
-            bundle = mm.get_model_file_bundle(model_id)
+            bundle = mm.get_model_file_bundle(model_id, resolved_bundle=resolved_bundle)
 
             # Prefer centralized logic (handles architectures that don't use checkpoint URLs)
-            expected = mm.get_expected_local_filename(model_id)
+            expected = mm.get_expected_local_filename(
+                model_id, resolved_bundle=resolved_bundle
+            )
             if expected:
                 return expected
 
@@ -316,21 +328,24 @@ class SimpleSeparator:
             )
             return None
 
-    def _find_local_weight_file(self, model_id: str) -> Optional[Path]:
+    def _find_local_weight_file(
+        self, model_id: str, resolved_bundle: Optional[Dict[str, Any]] = None
+    ) -> Optional[Path]:
         """
         Find a local weight file for a model_id in models_dir.
 
         We prefer common Roformer checkpoint extensions. This allows community
         models to work even if they are not in audio-separator's internal list.
         """
-        bundle = self._resolve_model_bundle(model_id)
+        bundle = self._resolve_model_bundle(model_id, resolved_bundle=resolved_bundle)
         checkpoint_path = bundle.get("checkpoint_path")
         if checkpoint_path and Path(checkpoint_path).exists():
             return Path(checkpoint_path)
-        for ext in [".ckpt", ".pth", ".pt", ".safetensors", ".onnx"]:
-            p = self.models_dir / f"{model_id}{ext}"
-            if p.exists():
-                return p
+        if not (isinstance(resolved_bundle, dict) and bool(resolved_bundle)):
+            for ext in [".ckpt", ".pth", ".pt", ".safetensors", ".onnx"]:
+                p = self.models_dir / f"{model_id}{ext}"
+                if p.exists():
+                    return p
         return None
 
     def _normalize_model_data(self, model_data: Any) -> Any:
@@ -453,7 +468,12 @@ class SimpleSeparator:
 
         return out
 
-    def _load_model_direct(self, separator: Separator, model_id: str) -> bool:
+    def _load_model_direct(
+        self,
+        separator: Separator,
+        model_id: str,
+        resolved_bundle: Optional[Dict[str, Any]] = None,
+    ) -> bool:
         """
         Load a model directly using its local YAML config, bypassing audio-separator's validation.
 
@@ -463,10 +483,12 @@ class SimpleSeparator:
         - Ensure the config shape matches what audio-separator expects (CommonSeparator wants `training`).
         - Rely on audio-separator's internal RoformerLoader (via CommonSeparator) for best compatibility/quality.
         """
-        bundle = self._resolve_model_bundle(model_id)
+        bundle = self._resolve_model_bundle(model_id, resolved_bundle=resolved_bundle)
         yaml_path = bundle.get("config_path") or (self.models_dir / f"{model_id}.yaml")
         yaml_path = Path(yaml_path)
-        model_path = bundle.get("checkpoint_path") or self._find_local_weight_file(model_id)
+        model_path = bundle.get("checkpoint_path") or self._find_local_weight_file(
+            model_id, resolved_bundle=resolved_bundle
+        )
         model_path = Path(model_path) if model_path is not None else None
 
         if model_path is None or not yaml_path.exists():
@@ -510,7 +532,9 @@ class SimpleSeparator:
 
         model_filename_hint = ""
         try:
-            model_filename_hint = str(self.get_model_filename(model_id)).lower()
+            model_filename_hint = str(
+                self.get_model_filename(model_id, resolved_bundle=resolved_bundle)
+            ).lower()
         except Exception:
             model_filename_hint = ""
 
@@ -603,6 +627,7 @@ class SimpleSeparator:
         overlap: float = 8,
         batch_size: int = 1,
         progress_callback: Optional[Callable[[float, str], None]] = None,
+        resolved_bundle: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, str]:
         """
         Separate audio into stems.
@@ -650,11 +675,12 @@ class SimpleSeparator:
             )
 
         mm = ModelManager(models_dir=self.models_dir)
-        bundle = mm.get_model_file_bundle(model_id)
+        bundle = mm.get_model_file_bundle(model_id, resolved_bundle=resolved_bundle)
         preflight_raw = mm.ensure_model_ready(
             model_id,
-            auto_repair_filenames=True,
+            auto_repair_filenames=not bool(resolved_bundle),
             copy_instead_of_rename=True,
+            resolved_bundle=resolved_bundle,
         )
 
         # Tighten typing: ensure we only call .get(...) on a dict
@@ -693,7 +719,7 @@ class SimpleSeparator:
         )
 
         # Get actual model filename (now that naming is repaired/validated)
-        model_filename = self.get_model_filename(model_id)
+        model_filename = self.get_model_filename(model_id, resolved_bundle=resolved_bundle)
         self.logger.info(f"Separating with model: {model_filename}")
 
         # Create output directory
@@ -750,9 +776,11 @@ class SimpleSeparator:
         # If the official path (audio-separator MDXCSeparator + RoformerLoader) fails, fall back
         # to our internal RoformerSeparator implementation (still based on audio-separator logic),
         # so community YAML+weights remain functional even if audio-separator validation changes.
-        if self._has_local_yaml(model_id):
+        if self._has_local_yaml(model_id, resolved_bundle=resolved_bundle):
             try:
-                self._load_model_direct(separator, model_id)
+                self._load_model_direct(
+                    separator, model_id, resolved_bundle=resolved_bundle
+                )
             except Exception as e:
                 self.logger.warning(
                     f"Direct YAML-based loading failed for '{model_id}' via audio-separator path. "
@@ -770,6 +798,7 @@ class SimpleSeparator:
                     model_id=model_id,
                     output_dir=output_dir,
                     progress_callback=progress_callback,
+                    resolved_bundle=resolved_bundle,
                 )
         else:
             # Use standard audio-separator loading

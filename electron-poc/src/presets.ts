@@ -7,6 +7,7 @@ import type {
   RecipeType,
   RecipeVramTier,
 } from './types/recipes'
+import type { ModelSelectionEnvelope, ModelVerificationMetadata } from "./types/modelCatalog"
 
 export interface PostProcessingStep {
   type: 'phase_fix' | 'de_reverb' | 'de_bleed' | 'de_noise' | 'de_breath'
@@ -37,6 +38,7 @@ export interface Preset {
   workflowFamily?: string
   promotionStatus?: 'curated' | 'supported_advanced'
   qaStatus?: 'verified' | 'pending' | 'experimental'
+  selectionEnvelope?: ModelSelectionEnvelope
   modelId?: string // For single-model presets
   isRecipe?: boolean // For workflow recipes
   recipe?: {
@@ -55,17 +57,23 @@ export interface Preset {
     quality_tradeoff?: string
     promotion_status?: 'curated' | 'supported_advanced'
     qa_status?: 'verified' | 'pending' | 'experimental'
+    selection_envelope?: ModelSelectionEnvelope
     surface_blockers?: string[]
     required_model_statuses?: Array<{
       id: string
       catalog_status?: string | null
+      catalog_tier?: string | null
       metrics_status?: string | null
       readiness?: string | null
       simple_allowed?: boolean | null
       blocked_reason?: string | null
       runtime_adapter?: string | null
       install_mode?: string | null
+      install_policy?: string | null
+      source_kind?: string | null
+      verification?: ModelVerificationMetadata | null
       download_mode?: string | null
+      selection_envelope?: ModelSelectionEnvelope | null
     }>
     defaults?: RecipeDefaults
     difficulty?: RecipeDifficulty

@@ -60,6 +60,6 @@ describe("cardMetrics", () => {
   it("formats catalog statuses for the UI", () => {
     expect(formatCatalogStatus("verified")).toBe("Verified");
     expect(formatCatalogStatus("manual_only")).toBe("Manual");
-    expect(formatCatalogStatus("candidate")).toBe("Candidate");
+    expect(formatCatalogStatus("candidate")).toBe("Advanced");
   });
 });

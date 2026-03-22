@@ -11,6 +11,7 @@ import os
 import signal
 import sys
 import traceback
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
@@ -121,7 +122,329 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 
-def _normalize_config(config: dict) -> dict:
+@dataclass(frozen=True)
+class WorkerProtocol:
+    kind: str = "selection_step"
+    version: int = 1
+
+    @classmethod
+    def from_config(cls, value: Any) -> "WorkerProtocol":
+        if not isinstance(value, dict):
+            return cls()
+        kind = str(value.get("kind") or cls.kind).strip() or cls.kind
+        version_raw = value.get("version", cls.version)
+        try:
+            version = int(version_raw)
+        except Exception:
+            version = cls.version
+        return cls(kind=kind, version=version)
+
+
+@dataclass(frozen=True)
+class SeparationWorkerRequest:
+    protocol: WorkerProtocol
+    raw_config: dict[str, Any]
+    file_path: str
+    output_dir: str
+    models_dir: Optional[str]
+    device: str
+    gpu_enabled: bool
+    job_kwargs: dict[str, Any]
+    selection_type: Optional[str]
+    selection_id: Optional[str]
+    execution_plan: Optional[dict[str, Any]]
+    resolved_bundle: Optional[dict[str, Any]]
+    resolved_step: Optional[dict[str, Any]]
+
+    @classmethod
+    def from_json_arg(cls, raw_json: str) -> "SeparationWorkerRequest":
+        try:
+            raw_config = json.loads(raw_json)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON config: {exc}") from exc
+        return cls.from_config(raw_config)
+
+    @classmethod
+    def from_config(cls, raw_config: dict[str, Any]) -> "SeparationWorkerRequest":
+        protocol = WorkerProtocol.from_config(
+            raw_config.get("worker_protocol") if isinstance(raw_config, dict) else None
+        )
+        strict_worker = protocol.kind == "selection_step"
+        config = _normalize_volume_compensation(
+            _normalize_config(raw_config, strict_worker=strict_worker)
+        )
+        protocol = WorkerProtocol.from_config(config.get("worker_protocol"))
+
+        file_path = str(config.get("file_path") or "").strip()
+        output_dir = str(config.get("output_dir") or "").strip()
+        if not file_path or not output_dir:
+            raise ValueError("file_path and output_dir are required")
+
+        device = str(config.get("device") or "cpu").strip() or "cpu"
+        workflow = (
+            config.get("workflow") if isinstance(config.get("workflow"), dict) else None
+        )
+        pipeline_config = (
+            config.get("pipeline_config")
+            if isinstance(config.get("pipeline_config"), list)
+            else None
+        )
+        execution_plan = (
+            config.get("execution_plan")
+            if isinstance(config.get("execution_plan"), dict)
+            else None
+        )
+        resolved_bundle = (
+            config.get("resolved_bundle")
+            if isinstance(config.get("resolved_bundle"), dict)
+            else None
+        )
+
+        resolved_step = None
+        if isinstance(execution_plan, dict):
+            steps = execution_plan.get("steps")
+            if isinstance(steps, list):
+                for step in steps:
+                    if isinstance(step, dict):
+                        resolved_step = step
+                        break
+
+        stems = _normalize_stems(config.get("stems"))
+        bit_depth = _normalize_bit_depth(config.get("bit_depth", "16"))
+        job_kwargs = {
+            "file_path": file_path,
+            "model_id": config.get("model_id"),
+            "output_dir": output_dir,
+            "device": device,
+            "stems": stems,
+            "pipeline_config": pipeline_config,
+            "overlap": config.get("overlap"),
+            "segment_size": config.get("segment_size"),
+            "batch_size": config.get("batch_size"),
+            "tta": config.get("tta", False),
+            "output_format": config.get("output_format", "wav"),
+            "shifts": config.get("shifts", 1),
+            "bitrate": config.get("bitrate"),
+            "invert": config.get("invert", False),
+            "normalize": config.get("normalize", False),
+            "bit_depth": bit_depth,
+            "ensemble_config": config.get("ensemble_config"),
+            "ensemble_algorithm": config.get("ensemble_algorithm", "average"),
+            "stem_algorithms": config.get("stem_algorithms"),
+            "phase_params": config.get("phase_params"),
+            "phase_fix_enabled": config.get("phase_fix_enabled", False),
+            "split_freq": config.get("split_freq"),
+            "vc_enabled": config.get("vc_enabled", False),
+            "vc_stage": config.get("vc_stage"),
+            "vc_db_per_extra_model": config.get("vc_db_per_extra_model"),
+            "selection_type": config.get("selection_type"),
+            "selection_id": config.get("selection_id"),
+            "execution_plan": execution_plan,
+            "resolved_bundle": resolved_bundle,
+            "worker_protocol": {
+                "kind": protocol.kind,
+                "version": protocol.version,
+            },
+            "resolved_step": resolved_step,
+        }
+        if workflow is not None:
+            job_kwargs["workflow"] = workflow
+
+        return cls(
+            protocol=protocol,
+            raw_config=config,
+            file_path=file_path,
+            output_dir=output_dir,
+            models_dir=str(config.get("models_dir")).strip()
+            if config.get("models_dir")
+            else None,
+            device=device,
+            gpu_enabled="cuda" in device.lower(),
+            job_kwargs={k: v for k, v in job_kwargs.items() if v is not None},
+            selection_type=(
+                str(config.get("selection_type")).strip().lower()
+                if config.get("selection_type")
+                else None
+            ),
+            selection_id=(
+                str(config.get("selection_id")).strip()
+                if config.get("selection_id")
+                else None
+            ),
+            execution_plan=execution_plan,
+            resolved_bundle=resolved_bundle,
+            resolved_step=resolved_step,
+        )
+
+
+class SeparationWorkerRuntime:
+    """Single-job inference worker owned by the Rust control plane."""
+
+    def __init__(self, request: SeparationWorkerRequest):
+        self.request = request
+        self.model_manager: Optional[ModelManager] = None
+        self.separation_manager: Optional[SeparationManager] = None
+        self.last_job = None
+
+    def initialize(self) -> None:
+        if self.request.models_dir:
+            self.model_manager = ModelManager(models_dir=Path(self.request.models_dir))
+        else:
+            self.model_manager = ModelManager()
+        self.separation_manager = SeparationManager(
+            self.model_manager,
+            gpu_enabled=self.request.gpu_enabled,
+            max_workers=1,
+        )
+
+    async def run(self) -> None:
+        assert self.separation_manager is not None
+
+        for attempt in (1, 2):
+            job = await self._run_once(attempt)
+            self.last_job = job
+
+            if job.status == "completed":
+                ok, reason = _validate_output_lengths(
+                    self.request.file_path, job.output_files
+                )
+                if ok or attempt == 2:
+                    await self._emit_completion(job, attempt, reason)
+                    return
+
+                send_ipc(
+                    {
+                        "type": "separation_progress",
+                        "job_id": job.job_id,
+                        "progress": 99.0,
+                        "message": f"Output validation failed; retrying once: {reason}",
+                        "meta": {"attempt": attempt, "output_validation": reason},
+                    }
+                )
+                continue
+
+            if job.status == "failed":
+                send_ipc(
+                    {
+                        "type": "separation_error",
+                        "job_id": job.job_id,
+                        "error": job.error or "Unknown error",
+                        "meta": {"attempt": attempt},
+                    }
+                )
+                return
+
+            if job.status == "cancelled":
+                send_ipc(
+                    {
+                        "type": "separation_cancelled",
+                        "job_id": job.job_id,
+                        "meta": {"attempt": attempt},
+                    }
+                )
+                return
+
+    async def _run_once(self, attempt: int):
+        assert self.separation_manager is not None
+        job_id = self.separation_manager.create_job(**self.request.job_kwargs)
+        job = self.separation_manager.get_job(job_id)
+
+        def progress_callback(progress, message, device=None):
+            evt = {
+                "type": "separation_progress",
+                "job_id": job_id,
+                "progress": progress,
+                "message": message,
+                "meta": {
+                    "attempt": attempt,
+                    "worker_protocol": {
+                        "kind": self.request.protocol.kind,
+                        "version": self.request.protocol.version,
+                    },
+                    "selection_type": self.request.selection_type,
+                    "selection_id": self.request.selection_id,
+                },
+            }
+            if device:
+                evt["device"] = device
+            send_ipc(evt)
+
+        job.progress_callback = progress_callback
+        job.on_complete = lambda output_files: None
+
+        send_ipc(
+            {
+                "type": "separation_started",
+                "job_id": job_id,
+                "meta": {
+                    "attempt": attempt,
+                    "worker_protocol": {
+                        "kind": self.request.protocol.kind,
+                        "version": self.request.protocol.version,
+                    },
+                    "selection_type": self.request.selection_type,
+                    "selection_id": self.request.selection_id,
+                    "resolved_step": self.request.resolved_step,
+                },
+            }
+        )
+
+        success = self.separation_manager.start_job(job_id)
+        if not success:
+            raise RuntimeError("Failed to start separation job")
+
+        while job.status in ["pending", "queued", "running", "validating", "processing"]:
+            if shutdown_event.is_set():
+                self.separation_manager.cancel_job(job_id)
+                send_ipc({"type": "separation_cancelled", "job_id": job_id})
+                break
+            await asyncio.sleep(0.1)
+
+        return job
+
+    async def _emit_completion(self, job, attempt: int, validation_reason: str) -> None:
+        normalized_outputs = _normalize_output_files(job.output_files)
+        sanity_report, sanity_reason = _audio_sanity_check(
+            self.request.file_path, normalized_outputs
+        )
+
+        send_ipc(
+            {
+                "type": "separation_progress",
+                "job_id": job.job_id,
+                "progress": 99.5,
+                "message": f"Sanity check: {sanity_reason}",
+                "meta": {"attempt": attempt, "sanity_check": sanity_report},
+            }
+        )
+        send_ipc(
+            {
+                "type": "separation_progress",
+                "job_id": job.job_id,
+                "progress": 100.0,
+                "message": "Complete",
+                "meta": {"attempt": attempt},
+            }
+        )
+        send_ipc(
+            {
+                "type": "separation_complete",
+                "job_id": job.job_id,
+                "output_files": normalized_outputs,
+                "meta": {
+                    "attempt": attempt,
+                    "output_validation": validation_reason,
+                    "sanity_check": sanity_report,
+                    "worker_protocol": {
+                        "kind": self.request.protocol.kind,
+                        "version": self.request.protocol.version,
+                    },
+                },
+            }
+        )
+
+
+def _normalize_config(config: dict, strict_worker: bool = False) -> dict:
     """Normalize UI/backend config shapes for the Python SeparationManager.
 
     Electron UI sends some objects in a richer shape (e.g. ensemble_config as an object
@@ -133,8 +456,10 @@ def _normalize_config(config: dict) -> dict:
 
     Additionally, the UI may now send an explicit pipeline_config derived from the
     resolved workflow plan. When present, that is authoritative and we avoid
-    rebuilding the executable pipeline from workflow metadata. Post-processing
-    steps remain additive.
+    rebuilding the executable pipeline from workflow metadata. In strict worker
+    mode (the Rust control plane already resolved the selection), workflow
+    metadata is treated as informational only and is not expanded back into
+    executable pipeline / ensemble decisions.
     """
     if not isinstance(config, dict):
         return config
@@ -149,6 +474,10 @@ def _normalize_config(config: dict) -> dict:
         "outputFormat": "output_format",
         "bitDepth": "bit_depth",
         "exportMixes": "export_mixes",
+        "selectionType": "selection_type",
+        "selectionId": "selection_id",
+        "executionPlan": "execution_plan",
+        "resolvedBundle": "resolved_bundle",
         "pipelineConfig": "pipeline_config",
         "postProcessingSteps": "post_processing_steps",
         "volumeCompensation": "volume_compensation",
@@ -157,8 +486,74 @@ def _normalize_config(config: dict) -> dict:
         if dst_key not in config and src_key in config:
             config[dst_key] = config[src_key]
 
+    execution_plan = config.get("execution_plan")
+    if not isinstance(execution_plan, dict):
+        execution_plan = None
+
+    resolved_bundle = config.get("resolved_bundle")
+    if not isinstance(resolved_bundle, dict):
+        resolved_bundle = None
+
+    if isinstance(execution_plan, dict):
+        if not config.get("selection_type"):
+            raw = execution_plan.get("selection_type") or execution_plan.get(
+                "selectionType"
+            )
+            if isinstance(raw, str) and raw.strip():
+                config["selection_type"] = raw.strip().lower()
+
+        if not config.get("selection_id"):
+            raw = execution_plan.get("selection_id") or execution_plan.get("selectionId")
+            if isinstance(raw, str) and raw.strip():
+                config["selection_id"] = raw.strip()
+
+        if resolved_bundle is None:
+            candidate = execution_plan.get("resolved_bundle") or execution_plan.get(
+                "resolvedBundle"
+            )
+            if isinstance(candidate, dict):
+                resolved_bundle = candidate
+                config["resolved_bundle"] = candidate
+
+        plan_overrides = {
+            "model_id": execution_plan.get("effective_model_id")
+            or execution_plan.get("model_id"),
+            "workflow": None if strict_worker else execution_plan.get("workflow"),
+            "pipeline_config": execution_plan.get("pipeline_config"),
+            "ensemble_config": execution_plan.get("ensemble_config"),
+            "ensemble_algorithm": execution_plan.get("ensemble_algorithm"),
+            "stems": execution_plan.get("stems"),
+            "device": execution_plan.get("device"),
+            "overlap": execution_plan.get("overlap"),
+            "segment_size": execution_plan.get("segment_size"),
+            "batch_size": execution_plan.get("batch_size"),
+            "tta": execution_plan.get("tta"),
+            "output_format": execution_plan.get("output_format"),
+            "shifts": execution_plan.get("shifts"),
+            "bitrate": execution_plan.get("bitrate"),
+            "invert": execution_plan.get("invert"),
+            "split_freq": execution_plan.get("split_freq"),
+            "normalize": execution_plan.get("normalize"),
+            "bit_depth": execution_plan.get("bit_depth"),
+            "vc_enabled": execution_plan.get("vc_enabled"),
+            "vc_stage": execution_plan.get("vc_stage"),
+            "vc_db_per_extra_model": execution_plan.get("vc_db_per_extra_model"),
+            "phase_params": execution_plan.get("phase_params"),
+            "phase_fix_enabled": execution_plan.get("phase_fix_enabled"),
+            "stem_algorithms": execution_plan.get("stem_algorithms"),
+        }
+        for key, value in plan_overrides.items():
+            if value is None:
+                continue
+            config[key] = value
+
+        if strict_worker:
+            # Do not let legacy workflow metadata leak back into the worker path.
+            # Rust already resolved the effective execution plan.
+            config.pop("workflow", None)
+
     workflow = config.get("workflow")
-    if isinstance(workflow, dict):
+    if isinstance(workflow, dict) and not strict_worker:
         if "runtime_policy" not in config and isinstance(
             workflow.get("runtimePolicy"), dict
         ):
@@ -169,82 +564,88 @@ def _normalize_config(config: dict) -> dict:
             config["export_policy"] = workflow.get("exportPolicy")
         if not config.get("stems") and isinstance(workflow.get("stems"), list):
             config["stems"] = workflow.get("stems")
-        if not config.get("post_processing_steps") and isinstance(
+        if not strict_worker and not config.get("post_processing_steps") and isinstance(
             workflow.get("postprocess"), list
         ):
             config["post_processing_steps"] = workflow.get("postprocess")
 
-        kind = str(workflow.get("kind") or "").strip().lower()
-        models = workflow.get("models")
-        steps = workflow.get("steps")
-        blend = workflow.get("blend") if isinstance(workflow.get("blend"), dict) else {}
+        if strict_worker:
+            # Rust already resolved the selection into an execution plan.
+            # Keep workflow metadata for observability only and do not rebuild
+            # the executable pipeline or ensemble topology here.
+            pass
+        else:
+            kind = str(workflow.get("kind") or "").strip().lower()
+            models = workflow.get("models")
+            steps = workflow.get("steps")
+            blend = workflow.get("blend") if isinstance(workflow.get("blend"), dict) else {}
 
-        if kind == "ensemble" and not config.get("ensemble_config") and isinstance(models, list):
-            ensemble_models = []
-            for model in models:
-                if not isinstance(model, dict):
-                    continue
-                model_id = model.get("model_id")
-                if not isinstance(model_id, str) or not model_id.strip():
-                    continue
-                entry = {"model_id": model_id}
-                weight = model.get("weight")
-                if isinstance(weight, (int, float)):
-                    entry["weight"] = float(weight)
-                ensemble_models.append(entry)
-            if ensemble_models:
-                config["ensemble_config"] = ensemble_models
-                config["model_id"] = "ensemble"
-                if isinstance(blend.get("algorithm"), str) and blend.get("algorithm").strip():
-                    config["ensemble_algorithm"] = blend.get("algorithm")
-                if isinstance(blend.get("stemAlgorithms"), dict):
-                    config["stem_algorithms"] = blend.get("stemAlgorithms")
-                if blend.get("phaseFixEnabled") is True:
-                    config["phase_fix_enabled"] = True
-                if isinstance(blend.get("phaseFixParams"), dict):
-                    config["phase_params"] = blend.get("phaseFixParams")
-                if config.get("split_freq") is None and blend.get("splitFreq") is not None:
-                    config["split_freq"] = blend.get("splitFreq")
+            if kind == "ensemble" and not config.get("ensemble_config") and isinstance(models, list):
+                ensemble_models = []
+                for model in models:
+                    if not isinstance(model, dict):
+                        continue
+                    model_id = model.get("model_id")
+                    if not isinstance(model_id, str) or not model_id.strip():
+                        continue
+                    entry = {"model_id": model_id}
+                    weight = model.get("weight")
+                    if isinstance(weight, (int, float)):
+                        entry["weight"] = float(weight)
+                    ensemble_models.append(entry)
+                if ensemble_models:
+                    config["ensemble_config"] = ensemble_models
+                    config["model_id"] = "ensemble"
+                    if isinstance(blend.get("algorithm"), str) and blend.get("algorithm").strip():
+                        config["ensemble_algorithm"] = blend.get("algorithm")
+                    if isinstance(blend.get("stemAlgorithms"), dict):
+                        config["stem_algorithms"] = blend.get("stemAlgorithms")
+                    if blend.get("phaseFixEnabled") is True:
+                        config["phase_fix_enabled"] = True
+                    if isinstance(blend.get("phaseFixParams"), dict):
+                        config["phase_params"] = blend.get("phaseFixParams")
+                    if config.get("split_freq") is None and blend.get("splitFreq") is not None:
+                        config["split_freq"] = blend.get("splitFreq")
 
-        if kind == "single" and not config.get("model_id") and isinstance(models, list):
-            for model in models:
-                if isinstance(model, dict) and isinstance(model.get("model_id"), str):
-                    config["model_id"] = model.get("model_id")
-                    break
+            if kind == "single" and not config.get("model_id") and isinstance(models, list):
+                for model in models:
+                    if isinstance(model, dict) and isinstance(model.get("model_id"), str):
+                        config["model_id"] = model.get("model_id")
+                        break
 
-        if kind == "pipeline" and not config.get("pipeline_config") and isinstance(steps, list):
-            normalized_steps = []
-            for index, step in enumerate(steps):
-                if not isinstance(step, dict):
-                    continue
-                normalized = {
-                    "step_name": step.get("id")
-                    or step.get("name")
-                    or f"step_{index + 1}",
-                    "action": step.get("action") or "separate",
-                }
-                for key in (
-                    "model_id",
-                    "source_model",
-                    "input_source",
-                    "output",
-                    "apply_to",
-                    "weight",
-                    "optional",
-                ):
-                    if key in step and step.get(key) is not None:
-                        normalized[key] = step.get(key)
+            if kind == "pipeline" and not config.get("pipeline_config") and isinstance(steps, list):
+                normalized_steps = []
+                for index, step in enumerate(steps):
+                    if not isinstance(step, dict):
+                        continue
+                    normalized = {
+                        "step_name": step.get("id")
+                        or step.get("name")
+                        or f"step_{index + 1}",
+                        "action": step.get("action") or "separate",
+                    }
+                    for key in (
+                        "model_id",
+                        "source_model",
+                        "input_source",
+                        "output",
+                        "apply_to",
+                        "weight",
+                        "optional",
+                    ):
+                        if key in step and step.get(key) is not None:
+                            normalized[key] = step.get(key)
 
-                params = step.get("params")
-                if isinstance(params, dict):
-                    normalized.update(params)
+                    params = step.get("params")
+                    if isinstance(params, dict):
+                        normalized.update(params)
 
-                normalized_steps.append(normalized)
+                    normalized_steps.append(normalized)
 
-            if normalized_steps:
-                config["pipeline_config"] = normalized_steps
-                if not isinstance(config.get("model_id"), str) or not config.get("model_id"):
-                    config["model_id"] = workflow.get("id") or "pipeline"
+                if normalized_steps:
+                    config["pipeline_config"] = normalized_steps
+                    if not isinstance(config.get("model_id"), str) or not config.get("model_id"):
+                        config["model_id"] = workflow.get("id") or "pipeline"
 
     # 1) Normalize ensemble_config object -> list
     ensemble_cfg = config.get("ensemble_config")
@@ -637,240 +1038,23 @@ async def main():
         sys.exit(1)
 
     try:
-        config = json.loads(sys.argv[1])
-    except json.JSONDecodeError as e:
-        send_ipc({"type": "error", "error": f"Invalid JSON config: {e}"})
+        request = SeparationWorkerRequest.from_json_arg(sys.argv[1])
+    except ValueError as e:
+        send_ipc({"type": "error", "error": str(e)})
         sys.exit(1)
-
-    config = _normalize_config(config)
-    config = _normalize_volume_compensation(config)
 
     # Initialize logging (logs go to stderr/file due to redirect above)
     setup_logging()
 
-    model_manager = None
-    separation_manager = None
-    last_job = None
+    runtime = SeparationWorkerRuntime(request)
 
     try:
-        # Initialize Managers
-        models_dir = config.get("models_dir")
-        if models_dir:
-            model_manager = ModelManager(models_dir=Path(models_dir))
-        else:
-            model_manager = ModelManager()
-
-        # Determine device settings
-        device_str = config.get("device", "cpu")
-        gpu_enabled = "cuda" in device_str.lower()
-
-        separation_manager = SeparationManager(model_manager, gpu_enabled=gpu_enabled)
-
-        # Parse job parameters
-        file_path = config.get("file_path")
-        model_id = config.get("model_id")
-        output_dir = config.get("output_dir")
-
-        if not file_path or not output_dir:
-            raise ValueError("file_path and output_dir are required")
-
-        # Prepare job kwargs
-        stems = _normalize_stems(config.get("stems"))
-        bit_depth = _normalize_bit_depth(config.get("bit_depth", "16"))
-        workflow = config.get("workflow") if isinstance(config.get("workflow"), dict) else None
-        pipeline_config = (
-            config.get("pipeline_config")
-            if isinstance(config.get("pipeline_config"), list)
-            else None
-        )
-        job_kwargs = {
-            "file_path": file_path,
-            "model_id": model_id,
-            "output_dir": output_dir,
-            "device": device_str,
-            "stems": stems,
-            "overlap": config.get("overlap"),
-            "segment_size": config.get("segment_size"),
-            "batch_size": config.get("batch_size"),
-            "tta": config.get("tta", False),
-            "output_format": config.get("output_format", "wav"),
-            "shifts": config.get("shifts", 1),
-            "bitrate": config.get("bitrate"),
-            "invert": config.get("invert", False),
-            "normalize": config.get("normalize", False),
-            "bit_depth": bit_depth,
-            "ensemble_config": config.get("ensemble_config"),
-            "ensemble_algorithm": config.get("ensemble_algorithm", "average"),
-            "stem_algorithms": config.get("stem_algorithms"),
-            "phase_params": config.get("phase_params"),
-            "phase_fix_enabled": config.get("phase_fix_enabled", False),
-            "split_freq": config.get("split_freq"),
-            "vc_enabled": config.get("vc_enabled", False),
-            "vc_stage": config.get("vc_stage"),
-            "vc_db_per_extra_model": config.get("vc_db_per_extra_model"),
-        }
-
-        # Filter None values to allow defaults
-        job_kwargs = {k: v for k, v in job_kwargs.items() if v is not None}
-
-        async def _run_once(attempt: int):
-            # Create Job
-            if pipeline_config and (
-                str((workflow or {}).get("kind") or "").strip().lower() == "pipeline"
-                or str(model_id or "").strip().lower() == "pipeline"
-            ):
-                job_id = separation_manager.create_pipeline_job(
-                    file_path=file_path,
-                    pipeline_config=pipeline_config,
-                    output_dir=output_dir,
-                    stems=stems,
-                    device=device_str,
-                    overlap=config.get("overlap"),
-                    segment_size=config.get("segment_size") or 0,
-                    tta=config.get("tta", False),
-                    output_format=config.get("output_format", "wav"),
-                    shifts=config.get("shifts", 1),
-                    bitrate=config.get("bitrate", "320k"),
-                    export_mixes=config.get("export_mixes"),
-                    normalize=config.get("normalize", False),
-                    bit_depth=bit_depth,
-                )
-            else:
-                job_id = separation_manager.create_job(**job_kwargs)
-
-            # Setup callbacks
-            job = separation_manager.get_job(job_id)
-
-            def progress_callback(progress, message, device=None):
-                evt = {
-                    "type": "separation_progress",
-                    "job_id": job_id,
-                    "progress": progress,
-                    "message": message,
-                    "meta": {"attempt": attempt},
-                }
-                if device:
-                    evt["device"] = device
-                send_ipc(evt)
-
-            def complete_callback(output_files):
-                # Rust backend handles the final response; keep stdout clean.
-                pass
-
-            job.progress_callback = progress_callback
-            job.on_complete = complete_callback
-
-            # Start Job
-            send_ipc(
-                {
-                    "type": "separation_started",
-                    "job_id": job_id,
-                    "meta": {"attempt": attempt},
-                }
-            )
-
-            success = separation_manager.start_job(job_id)
-            if not success:
-                raise RuntimeError("Failed to start separation job")
-
-            # Monitor loop
-            while job.status in [
-                "pending",
-                "queued",
-                "running",
-                "validating",
-                "processing",
-            ]:
-                if shutdown_event.is_set():
-                    separation_manager.cancel_job(job_id)
-                    send_ipc({"type": "separation_cancelled", "job_id": job_id})
-                    break
-                await asyncio.sleep(0.1)
-
-            return job
-
-        for attempt in (1, 2):
-            job = await _run_once(attempt)
-            last_job = job
-
-            if job.status == "completed":
-                ok, reason = _validate_output_lengths(file_path, job.output_files)
-                if ok or attempt == 2:
-                    normalized_outputs = _normalize_output_files(job.output_files)
-
-                    sanity_report, sanity_reason = _audio_sanity_check(
-                        file_path, normalized_outputs
-                    )
-
-                    send_ipc(
-                        {
-                            "type": "separation_progress",
-                            "job_id": job.job_id,
-                            "progress": 99.5,
-                            "message": f"Sanity check: {sanity_reason}",
-                            "meta": {"attempt": attempt, "sanity_check": sanity_report},
-                        }
-                    )
-
-                    # Ensure UI sees an explicit terminal progress update before completion.
-                    send_ipc(
-                        {
-                            "type": "separation_progress",
-                            "job_id": job.job_id,
-                            "progress": 100.0,
-                            "message": "Complete",
-                            "meta": {"attempt": attempt},
-                        }
-                    )
-                    send_ipc(
-                        {
-                            "type": "separation_complete",
-                            "job_id": job.job_id,
-                            "output_files": normalized_outputs,
-                            "meta": {
-                                "attempt": attempt,
-                                "output_validation": reason,
-                                "sanity_check": sanity_report,
-                            },
-                        }
-                    )
-                    break
-
-                send_ipc(
-                    {
-                        "type": "separation_progress",
-                        "job_id": job.job_id,
-                        "progress": 99.0,
-                        "message": f"Output validation failed; retrying once: {reason}",
-                        "meta": {"attempt": attempt, "output_validation": reason},
-                    }
-                )
-                continue
-
-            if job.status == "failed":
-                send_ipc(
-                    {
-                        "type": "separation_error",
-                        "job_id": job.job_id,
-                        "error": job.error or "Unknown error",
-                        "meta": {"attempt": attempt},
-                    }
-                )
-                break
-
-            if job.status == "cancelled":
-                send_ipc(
-                    {
-                        "type": "separation_cancelled",
-                        "job_id": job.job_id,
-                        "meta": {"attempt": attempt},
-                    }
-                )
-                break
+        runtime.initialize()
+        await runtime.run()
 
     except Exception as e:
         # trace = traceback.format_exc()
-        job_id = getattr(last_job, "job_id", None) if last_job else None
+        job_id = getattr(runtime.last_job, "job_id", None) if runtime.last_job else None
 
         err_str = str(e)
         device_payload = _parse_structured_device_error(err_str)
@@ -890,7 +1074,7 @@ async def main():
         send_ipc(evt)
         sys.exit(1)
     finally:
-        if separation_manager:
+        if runtime.separation_manager:
             try:
                 # Cleanup/Shutdown logic if needed
                 pass

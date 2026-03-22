@@ -1,3 +1,11 @@
+import type {
+  ModelCatalogTier,
+  ModelInstallPolicy,
+  ModelSelectionEnvelope,
+  ModelSourceKind,
+  ModelVerificationMetadata,
+} from "./modelCatalog";
+
 export type RecipeType = 'ensemble' | 'pipeline' | 'chained' | 'single'
 export type RecipeDifficulty = 'simple' | 'advanced' | 'expert'
 export type RecipeVramTier = 'cpu_only' | 'low_vram' | 'mid_vram' | 'high_vram'
@@ -82,6 +90,7 @@ export interface Recipe {
   source?: string
   promotion_status?: 'curated' | 'supported_advanced'
   qa_status?: 'verified' | 'pending' | 'experimental'
+  selection_envelope?: ModelSelectionEnvelope
   vram_category?: 'low' | 'medium' | 'high'
   operating_profile?: string
   intermediate_outputs?: string[]
@@ -89,13 +98,18 @@ export interface Recipe {
   required_model_statuses?: Array<{
     id: string
     catalog_status?: string | null
+    catalog_tier?: ModelCatalogTier | null
     metrics_status?: string | null
     readiness?: string | null
     simple_allowed?: boolean | null
     blocked_reason?: string | null
     runtime_adapter?: string | null
     install_mode?: string | null
+    install_policy?: ModelInstallPolicy | null
+    source_kind?: ModelSourceKind | null
+    verification?: ModelVerificationMetadata | null
     download_mode?: string | null
+    selection_envelope?: ModelSelectionEnvelope | null
   }>
   fallback_policy?: {
     mode?: 'none' | 'runtime_fallback' | 'workflow_fallback' | 'profile_fallback'

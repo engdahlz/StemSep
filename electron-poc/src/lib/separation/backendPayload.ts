@@ -1,11 +1,14 @@
 import type { SeparationConfig, SeparationWorkflow } from '@/types/separation'
 import type { SeparationPlan } from '@/lib/separation/resolveSeparationPlan'
 import type { VolumeCompensation } from '@/types/separation'
+import type { CatalogSelectionType, ModelSelectionEnvelope } from "@/types/modelCatalog"
 
 export interface SeparationBackendPayload {
   inputFile: string
   modelId: string
   outputDir: string
+  selectionType?: CatalogSelectionType
+  selectionId?: string
   stems?: string[]
   device?: string
   overlap?: number
@@ -27,6 +30,7 @@ export interface SeparationBackendPayload {
   workflow?: SeparationWorkflow
   runtimePolicy?: SeparationConfig['runtimePolicy']
   exportPolicy?: SeparationConfig['exportPolicy']
+  selectionEnvelope?: ModelSelectionEnvelope
 }
 
 export function toBackendOverlap(value: unknown): number | undefined {
@@ -63,6 +67,15 @@ export function buildSeparationBackendPayload(args: {
     inputFile,
     modelId: plan.effectiveModelId,
     outputDir,
+    selectionType:
+      config.selectionEnvelope?.selectionType ||
+      plan.effectiveWorkflow?.selectionEnvelope?.selectionType ||
+      (plan.effectiveWorkflow ? "workflow" : "model"),
+    selectionId:
+      config.selectionEnvelope?.selectionId ||
+      plan.effectiveWorkflow?.selectionEnvelope?.selectionId ||
+      plan.effectiveWorkflow?.id ||
+      plan.effectiveModelId,
     stems: plan.effectiveStems,
     device:
       config.device && config.device !== 'auto' ? config.device : undefined,
@@ -88,6 +101,40 @@ export function buildSeparationBackendPayload(args: {
     workflow: plan.effectiveWorkflow,
     runtimePolicy: config.runtimePolicy,
     exportPolicy: config.exportPolicy,
+    selectionEnvelope: config.selectionEnvelope ?? plan.effectiveWorkflow?.selectionEnvelope,
+  }
+}
+
+function resolveTransportSelection(
+  payload: SeparationBackendPayload,
+): {
+  selectionType?: CatalogSelectionType
+  selectionId?: string
+  selectionEnvelope?: ModelSelectionEnvelope
+} {
+  const derivedSelectionType =
+    payload.selectionType ||
+    payload.selectionEnvelope?.selectionType ||
+    payload.workflow?.selectionEnvelope?.selectionType ||
+    (payload.workflow ? "workflow" : undefined)
+  const derivedSelectionId =
+    payload.selectionId ||
+    payload.selectionEnvelope?.selectionId ||
+    payload.workflow?.selectionEnvelope?.selectionId ||
+    payload.workflow?.id
+
+  return {
+    selectionType: derivedSelectionType,
+    selectionId: derivedSelectionId,
+    selectionEnvelope:
+      payload.selectionEnvelope ||
+      payload.workflow?.selectionEnvelope ||
+      (derivedSelectionType && derivedSelectionId
+        ? {
+            selectionType: derivedSelectionType,
+            selectionId: derivedSelectionId,
+          }
+        : undefined),
   }
 }
 
@@ -95,10 +142,13 @@ export function executeSeparationPreflight(
   api: Window['electronAPI'],
   payload: SeparationBackendPayload,
 ) {
+  const selection = resolveTransportSelection(payload)
   return api.separationPreflight(
     payload.inputFile,
     payload.modelId,
     payload.outputDir,
+    selection.selectionType,
+    selection.selectionId,
     payload.stems,
     payload.device,
     payload.overlap,
@@ -118,6 +168,7 @@ export function executeSeparationPreflight(
     payload.workflow,
     payload.runtimePolicy,
     payload.exportPolicy,
+    selection.selectionEnvelope,
   )
 }
 
@@ -125,10 +176,13 @@ export function executeSeparation(
   api: Window['electronAPI'],
   payload: SeparationBackendPayload,
 ) {
+  const selection = resolveTransportSelection(payload)
   return api.separateAudio(
     payload.inputFile,
     payload.modelId,
     payload.outputDir,
+    selection.selectionType,
+    selection.selectionId,
     payload.stems,
     payload.device,
     payload.overlap,
@@ -148,5 +202,6 @@ export function executeSeparation(
     payload.workflow,
     payload.runtimePolicy,
     payload.exportPolicy,
+    selection.selectionEnvelope,
   )
 }

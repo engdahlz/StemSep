@@ -22,6 +22,17 @@ def _merge_dicts(base: Dict[str, Any], overlay: Dict[str, Any]) -> Dict[str, Any
     return merged
 
 
+def _coerce_path_string(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, str):
+        trimmed = value.strip()
+        return trimmed or None
+    return str(value)
+
+
 @dataclass
 class ModelInfo:
     id: str
@@ -202,12 +213,7 @@ class ModelManager:
                 pass
 
     def _registry_path(self) -> Path:
-        # Primary registry in this repo is models.json.bak
-        p1 = self.assets_dir / "models.json.bak"
-        if p1.exists():
-            return p1
-        p2 = self.assets_dir / "models.json"
-        return p2
+        return self.assets_dir / "catalog.runtime.json"
 
     def _load_registry(self):
         path = self._registry_path()
@@ -296,6 +302,70 @@ class ModelManager:
         if not fn or ".MISSING" in fn:
             return None
         return fn
+
+    def _normalize_resolved_bundle(
+        self, resolved_bundle: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        if not isinstance(resolved_bundle, dict):
+            return {}
+
+        out = dict(resolved_bundle)
+
+        for nested_key in (
+            "resolved_bundle",
+            "resolvedBundle",
+            "bundle",
+            "install_bundle",
+            "installBundle",
+        ):
+            nested = out.get(nested_key)
+            if isinstance(nested, dict):
+                merged = dict(nested)
+                merged.update(out)
+                out = merged
+                break
+
+        paths = out.get("paths")
+        if isinstance(paths, dict):
+            for alias, canonical in (
+                ("checkpoint", "checkpoint_path"),
+                ("config", "config_path"),
+                ("model", "checkpoint_path"),
+                ("weights", "checkpoint_path"),
+            ):
+                if canonical not in out or not _coerce_path_string(out.get(canonical)):
+                    candidate = _coerce_path_string(paths.get(alias))
+                    if candidate:
+                        out[canonical] = candidate
+
+        alias_groups = {
+            "checkpoint_path": (
+                "checkpointPath",
+                "checkpoint",
+                "model_path",
+                "modelPath",
+                "weights_path",
+                "weightsPath",
+            ),
+            "config_path": ("configPath", "config", "yaml_path", "yamlPath"),
+            "download": ("downloadManifest", "manifest"),
+            "installation": ("install",),
+            "availability": ("status",),
+            "artifacts": ("files",),
+            "selection_type": ("selectionType",),
+            "selection_id": ("selectionId",),
+            "execution_plan": ("executionPlan",),
+        }
+        for canonical, aliases in alias_groups.items():
+            if canonical in out and out.get(canonical) not in (None, "", []):
+                continue
+            for alias in aliases:
+                candidate = out.get(alias)
+                if candidate is not None and candidate != "":
+                    out[canonical] = candidate
+                    break
+
+        return out
 
     def _model_family(self, model: Optional[ModelInfo]) -> str:
         if not model:
@@ -651,9 +721,40 @@ class ModelManager:
             },
         }
 
-    def get_model_file_bundle(self, model_id: str) -> Dict[str, Any]:
+    def get_model_file_bundle(
+        self,
+        model_id: str,
+        resolved_bundle: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         manifest = self.resolve_download_manifest(model_id)
-        artifacts = manifest.get("artifacts") or []
+        resolved_bundle = self._normalize_resolved_bundle(resolved_bundle)
+        strict_resolved_bundle = bool(resolved_bundle)
+
+        if resolved_bundle:
+            manifest = dict(manifest)
+            for key in ("download", "availability"):
+                value = resolved_bundle.get(key)
+                if isinstance(value, dict):
+                    manifest[key] = _merge_dicts(
+                        manifest.get(key) if isinstance(manifest.get(key), dict) else {},
+                        value,
+                    )
+            if (
+                _coerce_path_string(resolved_bundle.get("checkpoint_path"))
+                or _coerce_path_string(resolved_bundle.get("config_path"))
+                or isinstance(resolved_bundle.get("artifacts"), list)
+            ):
+                manifest["availability"] = (
+                    resolved_bundle.get("availability")
+                    if isinstance(resolved_bundle.get("availability"), dict)
+                    else {"class": "direct"}
+                )
+
+        artifacts = (
+            resolved_bundle.get("artifacts")
+            if isinstance(resolved_bundle.get("artifacts"), list)
+            else manifest.get("artifacts") or []
+        )
         missing = []
         relative_paths = []
         checkpoint_path: Optional[Path] = None
@@ -666,15 +767,45 @@ class ModelManager:
             if rel:
                 relative_paths.append(rel)
             canonical = self.models_dir / Path(rel) if rel else None
-            legacy = self._legacy_artifact_paths(
-                model_id,
-                str(artifact.get("kind") or "aux"),
-                str(artifact.get("filename") or ""),
+            legacy = (
+                []
+                if strict_resolved_bundle
+                else self._legacy_artifact_paths(
+                    model_id,
+                    str(artifact.get("kind") or "aux"),
+                    str(artifact.get("filename") or ""),
+                )
             )
-            existing = canonical if canonical and canonical.exists() else next(
-                (path for path in legacy if path.exists()),
-                None,
-            )
+            resolved_existing = None
+            if resolved_bundle:
+                artifact_kind = str(artifact.get("kind") or "").strip().lower()
+                if artifact_kind == "config":
+                    candidate = _coerce_path_string(resolved_bundle.get("config_path"))
+                    if candidate:
+                        resolved_existing = Path(candidate)
+                else:
+                    candidate = _coerce_path_string(
+                        resolved_bundle.get("checkpoint_path")
+                        or resolved_bundle.get("model_path")
+                        or resolved_bundle.get("weights_path")
+                    )
+                    if candidate:
+                        resolved_existing = Path(candidate)
+
+            existing = None
+            if strict_resolved_bundle:
+                if resolved_existing is not None and resolved_existing.exists():
+                    existing = resolved_existing
+                elif canonical and canonical.exists():
+                    existing = canonical
+            else:
+                existing = (
+                    canonical
+                    if canonical and canonical.exists()
+                    else resolved_existing
+                    if resolved_existing is not None and resolved_existing.exists()
+                    else next((path for path in legacy if path.exists()), None)
+                )
             if bool(artifact.get("required", True)) and existing is None:
                 missing.append(rel or str(artifact.get("filename") or ""))
             kind = str(artifact.get("kind") or "")
@@ -683,7 +814,28 @@ class ModelManager:
             if kind == "config" and config_path is None and existing is not None:
                 config_path = existing
 
-        installed = len(artifacts) > 0 and len(missing) == 0
+        if checkpoint_path is None:
+            candidate = _coerce_path_string(resolved_bundle.get("checkpoint_path"))
+            if candidate:
+                checkpoint_path = Path(candidate)
+        if config_path is None:
+            candidate = _coerce_path_string(resolved_bundle.get("config_path"))
+            if candidate:
+                config_path = Path(candidate)
+
+        installation = (
+            resolved_bundle.get("installation")
+            if isinstance(resolved_bundle.get("installation"), dict)
+            else None
+        )
+        if installation and "installed" in installation:
+            installed = bool(installation.get("installed"))
+        elif checkpoint_path is not None or config_path is not None:
+            paths_to_check = [p for p in (checkpoint_path, config_path) if p is not None]
+            installed = bool(paths_to_check) and all(p.exists() for p in paths_to_check)
+        else:
+            installed = len(artifacts) > 0 and len(missing) == 0
+
         return {
             "model_id": model_id,
             "download": manifest,
@@ -696,19 +848,41 @@ class ModelManager:
             "checkpoint_path": checkpoint_path,
             "config_path": config_path,
             "artifacts": artifacts,
+            "resolved_bundle": resolved_bundle or None,
         }
 
-    def _is_installed(self, model_id: str, model: Optional[ModelInfo]) -> bool:
+    def _is_installed(
+        self,
+        model_id: str,
+        model: Optional[ModelInfo],
+        resolved_bundle: Optional[Dict[str, Any]] = None,
+    ) -> bool:
         if not model_id:
             return False
-        bundle = self.get_model_file_bundle(model_id)
+        bundle = self.get_model_file_bundle(model_id, resolved_bundle=resolved_bundle)
         installation = bundle.get("installation") or {}
         return bool(installation.get("installed"))
 
-    def _candidate_files(self, model_id: str, model: Optional[ModelInfo]) -> List[Path]:
-        bundle = self.get_model_file_bundle(model_id)
+    def _candidate_files(
+        self,
+        model_id: str,
+        model: Optional[ModelInfo],
+        resolved_bundle: Optional[Dict[str, Any]] = None,
+    ) -> List[Path]:
+        bundle = self.get_model_file_bundle(model_id, resolved_bundle=resolved_bundle)
+        strict_resolved_bundle = bool(self._normalize_resolved_bundle(resolved_bundle))
         candidates: List[Path] = []
         seen = set()
+
+        for direct_path in (
+            bundle.get("checkpoint_path"),
+            bundle.get("config_path"),
+        ):
+            if direct_path:
+                path = Path(direct_path)
+                if path not in seen:
+                    seen.add(path)
+                    candidates.append(path)
 
         for artifact in bundle.get("artifacts") or []:
             if not isinstance(artifact, dict):
@@ -721,12 +895,13 @@ class ModelManager:
                     candidates.append(path)
             filename = str(artifact.get("filename") or "").strip()
             kind = str(artifact.get("kind") or "aux")
-            for legacy in self._legacy_artifact_paths(model_id, kind, filename):
-                if legacy not in seen:
-                    seen.add(legacy)
-                    candidates.append(legacy)
+            if not strict_resolved_bundle:
+                for legacy in self._legacy_artifact_paths(model_id, kind, filename):
+                    if legacy not in seen:
+                        seen.add(legacy)
+                        candidates.append(legacy)
 
-        if not candidates:
+        if not candidates and not strict_resolved_bundle:
             for ext in [".ckpt", ".pth", ".pt", ".onnx", ".safetensors", ".yaml", ".yml"]:
                 path = self.models_dir / f"{model_id}{ext}"
                 if path not in seen:
@@ -759,7 +934,11 @@ class ModelManager:
     def get_model(self, model_id: str) -> Optional[ModelInfo]:
         return self.models.get(model_id)
 
-    def get_expected_local_filename(self, model_id: str) -> Optional[str]:
+    def get_expected_local_filename(
+        self,
+        model_id: str,
+        resolved_bundle: Optional[Dict[str, Any]] = None,
+    ) -> Optional[str]:
         """Return the expected primary local filename for a registry model.
 
         This is used by the separation stack to translate a registry `model_id`
@@ -771,10 +950,10 @@ class ModelManager:
         - fallback for well-known demucs ids: `{model_id}.yaml`
         """
         m = self.models.get(model_id)
-        if not m:
+        if not m and resolved_bundle is None:
             return None
 
-        bundle = self.get_model_file_bundle(model_id)
+        bundle = self.get_model_file_bundle(model_id, resolved_bundle=resolved_bundle)
         family = str((bundle.get("download") or {}).get("family") or "").lower()
         config_path = bundle.get("config_path")
         if family == "demucs" and config_path:
@@ -796,7 +975,7 @@ class ModelManager:
         if model_id == "mel-band-roformer-kim":
             return "vocals_mel_band_roformer.ckpt"
 
-        links = m.links or {}
+        links = m.links if m and isinstance(m.links, dict) else {}
         ckpt_url = links.get("checkpoint") if isinstance(links, dict) else None
         cfg_url = links.get("config") if isinstance(links, dict) else None
 
@@ -812,14 +991,22 @@ class ModelManager:
             return cfg_base
 
         # Demucs YAML models are often referenced by id.
-        if (m.architecture or "").lower() == "demucs":
+        if m and (m.architecture or "").lower() == "demucs":
             return f"{model_id}.yaml"
 
         return None
 
-    def is_model_installed(self, model_id: str) -> bool:
+    def is_model_installed(
+        self,
+        model_id: str,
+        resolved_bundle: Optional[Dict[str, Any]] = None,
+    ) -> bool:
         self._refresh_install_flags()
         m = self.models.get(model_id)
+        if resolved_bundle is not None:
+            bundle = self.get_model_file_bundle(model_id, resolved_bundle=resolved_bundle)
+            installation = bundle.get("installation") or {}
+            return bool(installation.get("installed"))
         return bool(m and m.installed)
 
     def ensure_model_ready(
@@ -827,6 +1014,7 @@ class ModelManager:
         model_id: str,
         auto_repair_filenames: bool = True,
         copy_instead_of_rename: bool = True,
+        resolved_bundle: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Compatibility API used by python-bridge.
 
@@ -834,16 +1022,20 @@ class ModelManager:
         """
         self._refresh_install_flags()
         m = self.models.get(model_id)
-        if not m:
+        if not m and resolved_bundle is None:
             return {
                 "ok": False,
                 "model_id": model_id,
                 "installed": False,
                 "error": f"Unknown model_id: {model_id}",
             }
+        if not m:
+            m = ModelInfo(id=model_id, name=model_id, architecture="")
 
-        expected_primary = self.get_expected_local_filename(model_id)
-        bundle = self.get_model_file_bundle(model_id)
+        expected_primary = self.get_expected_local_filename(
+            model_id, resolved_bundle=resolved_bundle
+        )
+        bundle = self.get_model_file_bundle(model_id, resolved_bundle=resolved_bundle)
         checkpoint_path = bundle.get("checkpoint_path")
         config_path = bundle.get("config_path")
         availability = bundle.get("availability") or {}
@@ -862,7 +1054,10 @@ class ModelManager:
         # Best-effort filename repair:
         # If registry stores files under URL basenames (common), create a local alias
         # so tools expecting `model_id.yaml` + `model_id.<weights>` can work.
-        if auto_repair_filenames and checkpoint_path and config_path:
+        allow_legacy_alias_repair = auto_repair_filenames and not bool(
+            self._normalize_resolved_bundle(resolved_bundle)
+        )
+        if allow_legacy_alias_repair and checkpoint_path and config_path:
             try:
                 ckpt_src = Path(checkpoint_path)
                 cfg_src = Path(config_path)
@@ -896,7 +1091,7 @@ class ModelManager:
         #   vocals_mel_band_roformer.ckpt + vocals_mel_band_roformer.yaml
         # Instead of inventing a YAML (which may mismatch weights), create a local alias
         # so the official audio-separator path can be used.
-        if auto_repair_filenames and model_id == "mel-band-roformer-kim":
+        if allow_legacy_alias_repair and model_id == "mel-band-roformer-kim":
             try:
                 ckpt_src = Path(checkpoint_path) if checkpoint_path else None
                 ckpt_alias = self.models_dir / "vocals_mel_band_roformer.ckpt"
@@ -912,19 +1107,28 @@ class ModelManager:
         # Refresh after any repair attempts.
         self._refresh_install_flags()
         m = self.models.get(model_id) or m
+        installed = bool((bundle.get("installation") or {}).get("installed"))
+        if not installed:
+            installed = bool(getattr(m, "installed", False))
 
         report: Dict[str, Any] = {
-            "ok": bool(m.installed),
+            "ok": installed,
             "model_id": model_id,
-            "installed": bool(m.installed),
+            "installed": installed,
             "models_dir": str(self.models_dir),
             "architecture": m.architecture,
             "expected_filename": expected_primary,
-            "expected_files": [str(p) for p in self._candidate_files(model_id, m)],
+            "expected_files": [
+                str(p)
+                for p in self._candidate_files(
+                    model_id, m, resolved_bundle=resolved_bundle
+                )
+            ],
             "links": m.links or {},
             "download": bundle.get("download"),
             "availability": availability,
             "installation": bundle.get("installation"),
+            "resolved_bundle": bundle.get("resolved_bundle"),
         }
 
         if availability_class == "manual_import" and not m.installed:

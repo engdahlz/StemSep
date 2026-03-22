@@ -255,6 +255,7 @@ class RoformerSeparator:
         model_id: str,
         output_dir: str,
         progress_callback: Optional[Callable] = None,
+        resolved_bundle: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, str]:
         """
         Separate audio file into stems.

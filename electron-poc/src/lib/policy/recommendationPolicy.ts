@@ -1,6 +1,7 @@
 import type { Preset } from "@/presets";
 import { getRequiredModels } from "@/presets";
 import type { Model } from "@/types/store";
+import { getModelCatalogTier, isManualCatalogModel } from "@/lib/models/catalog";
 
 export type PolicyTarget =
   | "vocals"
@@ -152,7 +153,7 @@ function modelScore(
   if (supportsTier(model, tier)) score += 20;
   if (model.installed) score += 15;
   if (model.status?.simple_allowed !== false) score += 10;
-  if (model.status?.readiness === "verified") score += 10;
+  if (model.status?.readiness === "verified" || getModelCatalogTier(model) === "verified") score += 10;
   score += tierScore(model);
   score += deterministicPriorityScore(model);
   if (typeof model.guide_rank === "number") {
@@ -160,7 +161,12 @@ function modelScore(
   }
   const required = Number(model.vram_required || 0);
   if (required > 0 && vramGb > 0 && required > vramGb + 0.5) score -= 30;
-  if (model.status?.readiness === "blocked" || model.status?.readiness === "manual") {
+  if (
+    model.status?.readiness === "blocked" ||
+    model.status?.readiness === "manual" ||
+    getModelCatalogTier(model) === "blocked" ||
+    isManualCatalogModel(model)
+  ) {
     score -= 100;
   }
   return score;
@@ -227,7 +233,7 @@ function workflowScore(
       score -= 30;
       if (model.status.blocking_reason) notes.push(model.status.blocking_reason);
     }
-    if (model.status?.readiness === "verified") score += 10;
+    if (model.status?.readiness === "verified" || getModelCatalogTier(model) === "verified") score += 10;
     if (typeof model.guide_rank === "number") {
       score += Math.max(0, 20 - model.guide_rank * 4);
     }

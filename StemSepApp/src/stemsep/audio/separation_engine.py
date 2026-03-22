@@ -580,6 +580,10 @@ class SeparationEngine:
         use_amp: bool = True,
         progress_callback: Optional[Callable] = None,
         check_cancelled: Optional[Callable[[], bool]] = None,
+        selection_type: Optional[str] = None,
+        selection_id: Optional[str] = None,
+        execution_plan: Optional[Dict] = None,
+        resolved_bundle: Optional[Dict] = None,
     ) -> tuple[Dict[str, str], str]:
         """
         Separate audio into stems
@@ -779,7 +783,14 @@ class SeparationEngine:
             model = None
             if not use_zfturbo_engine:
                 notify(20.0, f"Loading {model_info['architecture']} model...")
-                model = await self._load_model(model_id, device=separation_device)
+                model = await self._load_model(
+                    model_id,
+                    device=separation_device,
+                    selection_type=selection_type,
+                    selection_id=selection_id,
+                    execution_plan=execution_plan,
+                    resolved_bundle=resolved_bundle,
+                )
             notify(25.0, "Ready")
 
             if check_cancelled and check_cancelled():
@@ -789,7 +800,9 @@ class SeparationEngine:
             target_instrument = None
             expected_in_channel = None
             if self.model_manager:
-                bundle = self.model_manager.get_model_file_bundle(model_id)
+                bundle = self._resolve_model_bundle(
+                    model_id, resolved_bundle=resolved_bundle
+                )
                 config_path = bundle.get("config_path")
                 if config_path and Path(config_path).exists():
                     try:
@@ -844,27 +857,46 @@ class SeparationEngine:
 
             # Fallback: Infer target from model name if not specified in YAML
             if not target_instrument:
-                model_id_lower = model_id.lower()
-                if "inst" in model_id_lower or "instrumental" in model_id_lower:
-                    target_instrument = "instrumental"
-                elif "voc" in model_id_lower or "vocal" in model_id_lower:
-                    target_instrument = "vocals"
-                elif "karaoke" in model_id_lower:
-                    target_instrument = (
-                        "vocals"  # Karaoke models typically output vocals
+                plan_target = None
+                if isinstance(execution_plan, dict):
+                    for key in (
+                        "target_instrument",
+                        "targetInstrument",
+                        "target",
+                        "preferred_stem",
+                        "stem",
+                    ):
+                        raw_target = execution_plan.get(key)
+                        if isinstance(raw_target, str) and raw_target.strip():
+                            plan_target = raw_target.strip().lower()
+                            break
+                if plan_target:
+                    target_instrument = plan_target
+                    self.logger.info(
+                        f"Resolved target_instrument from execution_plan: {target_instrument}"
                     )
-                elif "drum" in model_id_lower:
-                    target_instrument = "drums"
-                elif "bass" in model_id_lower:
-                    target_instrument = "bass"
-                elif "guitar" in model_id_lower:
-                    target_instrument = "guitar"
                 else:
-                    # Default to vocals for unrecognized models
-                    target_instrument = "vocals"
-                self.logger.info(
-                    f"Inferred target_instrument from model name: {target_instrument}"
-                )
+                    model_id_lower = model_id.lower()
+                    if "inst" in model_id_lower or "instrumental" in model_id_lower:
+                        target_instrument = "instrumental"
+                    elif "voc" in model_id_lower or "vocal" in model_id_lower:
+                        target_instrument = "vocals"
+                    elif "karaoke" in model_id_lower:
+                        target_instrument = (
+                            "vocals"  # Karaoke models typically output vocals
+                        )
+                    elif "drum" in model_id_lower:
+                        target_instrument = "drums"
+                    elif "bass" in model_id_lower:
+                        target_instrument = "bass"
+                    elif "guitar" in model_id_lower:
+                        target_instrument = "guitar"
+                    else:
+                        # Default to vocals for unrecognized models
+                        target_instrument = "vocals"
+                    self.logger.info(
+                        f"Inferred target_instrument from model name: {target_instrument}"
+                    )
 
             self.logger.info(f"Model {model_id} target_instrument: {target_instrument}")
 
@@ -909,6 +941,7 @@ class SeparationEngine:
                         overlap=audio_separator_overlap,
                         batch_size=batch_size,
                         progress_callback=lambda pct, msg: notify(35 + pct * 0.45, msg),
+                        resolved_bundle=resolved_bundle,
                     ),
                 )
 
@@ -1006,7 +1039,15 @@ class SeparationEngine:
             notify(0.0, f"Error: {e}")
             raise
 
-    async def _load_model(self, model_id: str, device=None):
+    async def _load_model(
+        self,
+        model_id: str,
+        device=None,
+        selection_type: Optional[str] = None,
+        selection_id: Optional[str] = None,
+        execution_plan: Optional[Dict] = None,
+        resolved_bundle: Optional[Dict] = None,
+    ):
         """Load a model by ID"""
         try:
             # Get model info
@@ -1028,7 +1069,13 @@ class SeparationEngine:
             arch = model_info.get("architecture", "").lower()
             is_demucs = "demucs" in arch or "htdemucs" in arch
 
-            bundle = self._resolve_model_bundle(model_id) if self.model_manager else None
+            bundle = (
+                self._resolve_model_bundle(
+                    model_id, resolved_bundle=resolved_bundle
+                )
+                if self.model_manager
+                else None
+            )
             availability = (
                 bundle.get("availability")
                 if isinstance(bundle, dict)
@@ -1043,12 +1090,14 @@ class SeparationEngine:
                         availability.get("reason")
                         or f"Model '{model_id}' is blocked and cannot be loaded."
                     )
-                if availability_class == "manual_import" and not self.model_manager.is_model_installed(model_id):
+                if availability_class == "manual_import" and not self.model_manager.is_model_installed(model_id, resolved_bundle=resolved_bundle):
                     raise FileNotFoundError(
                         availability.get("reason")
                         or f"Model '{model_id}' requires manual asset import before it can run."
                     )
-                if not self.model_manager.is_model_installed(model_id):
+                if not self.model_manager.is_model_installed(
+                    model_id, resolved_bundle=resolved_bundle
+                ):
                     # IMPORTANT: Do not silently substitute a different model.
                     # Separation should be deterministic and UI-driven: model installs/downloads
                     # must happen explicitly via the UI/Model Browser, not implicitly during a run.
@@ -1061,7 +1110,9 @@ class SeparationEngine:
                 # legacy loaders can always find the config/checkpoint regardless of
                 # registry basenames.
                 try:
-                    self.model_manager.ensure_model_ready(model_id)
+                    self.model_manager.ensure_model_ready(
+                        model_id, resolved_bundle=resolved_bundle
+                    )
                 except Exception:
                     pass
 
@@ -1069,10 +1120,14 @@ class SeparationEngine:
                 if checkpoint_path is None and model_id in self.model_manager.installed_models:
                     checkpoint_path = self.model_manager.installed_models[model_id]
                 if checkpoint_path is None:
-                    checkpoint_path = self.model_manager.models_dir / f"{model_id}.ckpt"
+                    raise FileNotFoundError(
+                        f"Resolved checkpoint path is missing for model '{model_id}'. "
+                        "Reinstall the model so StemSep can rebuild its canonical artifact bundle."
+                    )
             else:
-                # Fallback if no manager (shouldn't happen in normal app usage)
-                checkpoint_path = Path(f"models/{model_id}.ckpt")
+                raise FileNotFoundError(
+                    f"No model manager is available to resolve canonical artifacts for '{model_id}'."
+                )
             checkpoint_path = Path(checkpoint_path)
 
             # Get configuration
@@ -1729,10 +1784,16 @@ class SeparationEngine:
         }
         return models.get(model_id)
 
-    def _resolve_model_bundle(self, model_id: str) -> Dict:
+    def _resolve_model_bundle(
+        self,
+        model_id: str,
+        resolved_bundle: Optional[Dict] = None,
+    ) -> Dict:
         if self.model_manager:
             try:
-                bundle = self.model_manager.get_model_file_bundle(model_id)
+                bundle = self.model_manager.get_model_file_bundle(
+                    model_id, resolved_bundle=resolved_bundle
+                )
                 if isinstance(bundle, dict):
                     return bundle
             except Exception as e:
@@ -1925,6 +1986,10 @@ class SeparationJob:
         self.actual_device = None
         self.shifts = 1
         self.bitrate = None
+        self.selection_type = None
+        self.selection_id = None
+        self.execution_plan = None
+        self.resolved_bundle = None
 
     def _write_active_lock(self):
         """Mark temp dir as active for crash-safe startup cleanup."""
@@ -1950,7 +2015,7 @@ class SeparationJob:
 
     def to_dict(self) -> Dict:
         """Convert to dictionary"""
-        return {
+        payload = {
             "id": self.id,
             "file_name": Path(self.file_path).name,
             "file_path": self.file_path,
@@ -1960,3 +2025,8 @@ class SeparationJob:
             "output_files": list(self.output_files.values()),
             "device": self.actual_device,
         }
+        if hasattr(self, "selection_type"):
+            payload["selection_type"] = self.selection_type
+        if hasattr(self, "selection_id"):
+            payload["selection_id"] = self.selection_id
+        return payload

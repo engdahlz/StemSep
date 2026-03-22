@@ -7,6 +7,8 @@ import type {
   WorkflowStep,
   WorkflowSurface,
 } from "@/types/separation";
+import type { ModelSelectionEnvelope, ModelVerificationMetadata } from "@/types/modelCatalog";
+import { getModelCatalogTier, isManualCatalogModel } from "@/lib/models/catalog";
 import { modelRequiresFnoRuntime } from "@/lib/systemRuntime/modelRuntime";
 
 /**
@@ -40,6 +42,32 @@ export type ModelLike = {
   installed?: boolean;
   name?: string;
   architecture?: string;
+  catalog?: {
+    tier?: string;
+    sourceKind?: string;
+    installPolicy?: string;
+    verification?: ModelVerificationMetadata;
+  };
+  catalog_tier?: string;
+  source_kind?: string;
+  install_policy?: string;
+  verification?: ModelVerificationMetadata;
+  selection_envelope?: ModelSelectionEnvelope;
+  catalog_status?: string;
+  download?: {
+    mode?: string;
+    sources?: Array<{
+      host?: string;
+      url?: string;
+      manual?: boolean;
+    }>;
+  };
+  availability?: {
+    class?: string;
+  };
+  install?: {
+    mode?: string;
+  };
   runtime?: {
     variant?: string;
     install_mode?: string;
@@ -70,6 +98,7 @@ export type PresetLike = {
   recipe?: {
     type?: string;
     target?: string;
+    selection_envelope?: ModelSelectionEnvelope;
     defaults?: {
       overlap?: number;
       segment_size?: number;
@@ -105,6 +134,7 @@ export type PresetLike = {
   };
   // Optional post-processing pipeline steps (used by some presets/recipes)
   postProcessingSteps?: any[];
+  selectionEnvelope?: ModelSelectionEnvelope;
   // Some presets/recipes attach metadata in a "recipe" field; we don't need it here
   // but we keep the shape open.
   [k: string]: any;
@@ -302,6 +332,11 @@ function buildRecipeWorkflow(
 ): SeparationWorkflow | undefined {
   const recipe = preset.recipe;
   if (!recipe) return undefined;
+  const selectionEnvelope =
+    config.selectionEnvelope ||
+    preset.selectionEnvelope ||
+    recipe.selection_envelope ||
+    (recipe as any).selectionEnvelope;
 
   const steps = Array.isArray(recipe.steps)
     ? recipe.steps.map((step, index) =>
@@ -363,6 +398,7 @@ function buildRecipeWorkflow(
     id: preset.id,
     name: preset.name,
     kind,
+    selectionEnvelope,
     family:
       typeof (preset.recipe as any)?.family === "string"
         ? (preset.recipe as any).family
@@ -441,6 +477,7 @@ function buildEnsembleWorkflow(
     description?: string;
     surface?: string;
     stems?: string[];
+    selectionEnvelope?: ModelSelectionEnvelope;
     ensembleConfig: NonNullable<SeparationConfig["ensembleConfig"]>;
     postprocess?: SeparationConfig["postProcessingSteps"];
     runtimePolicy?: SeparationConfig["runtimePolicy"];
@@ -455,6 +492,7 @@ function buildEnsembleWorkflow(
     description,
     surface,
     stems,
+    selectionEnvelope,
     ensembleConfig,
     postprocess,
     runtimePolicy,
@@ -468,6 +506,7 @@ function buildEnsembleWorkflow(
     id,
     name,
     kind: "ensemble",
+    selectionEnvelope,
     surface: normalizeSurface(surface),
     description,
     stems,
@@ -503,6 +542,7 @@ function buildSingleWorkflow(args: {
   surface?: string;
   modelId: string;
   stems?: string[];
+  selectionEnvelope?: ModelSelectionEnvelope;
   postprocess?: SeparationConfig["postProcessingSteps"];
   runtimePolicy?: SeparationConfig["runtimePolicy"];
   exportPolicy?: SeparationConfig["exportPolicy"];
@@ -513,6 +553,7 @@ function buildSingleWorkflow(args: {
     id: args.id,
     name: args.name,
     kind: "single",
+    selectionEnvelope: args.selectionEnvelope,
     surface: normalizeSurface(args.surface),
     description: args.description,
     stems: args.stems,
@@ -690,6 +731,7 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
         description: preset.workflowSummary || preset.description,
         surface: preset.simpleGoal || preset.recipe?.target || "ensemble",
         stems: effectiveStems,
+        selectionEnvelope: preset.selectionEnvelope || preset.recipe?.selection_envelope,
         ensembleConfig: effectiveEnsembleConfig!,
         postprocess: effectivePostProcessingSteps,
         runtimePolicy: config.runtimePolicy,
@@ -715,6 +757,7 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
           surface: preset.simpleGoal || "single",
           modelId: mappedModelId,
           stems: effectiveStems,
+          selectionEnvelope: preset.selectionEnvelope || preset.recipe?.selection_envelope,
           postprocess: effectivePostProcessingSteps,
           runtimePolicy: config.runtimePolicy,
           exportPolicy: config.exportPolicy,
@@ -754,6 +797,7 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
       description: config.workflow?.description,
       surface: config.workflow?.surface || "ensemble",
       stems: effectiveStems,
+      selectionEnvelope: config.selectionEnvelope,
       ensembleConfig: config.ensembleConfig,
       postprocess: effectivePostProcessingSteps,
       runtimePolicy: config.runtimePolicy,
@@ -781,6 +825,7 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
       surface: config.workflow?.surface || "single",
       modelId: effectiveModelId,
       stems: effectiveStems,
+      selectionEnvelope: config.selectionEnvelope,
       postprocess: effectivePostProcessingSteps,
       runtimePolicy: config.runtimePolicy,
       exportPolicy: config.exportPolicy,
@@ -911,17 +956,17 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
       );
     }
 
-    if (model.status?.readiness === "blocked") {
+    if (model.status?.readiness === "blocked" || getModelCatalogTier(model as any) === "blocked") {
       const message =
-        model.status.blocking_reason ||
+        model.status?.blocking_reason ||
         `${model.name || model.id} is blocked by the registry/runtime policy.`;
       if (config.mode === "simple") pushBlocking(message);
       else pushWarning(message);
     }
 
-    if (model.status?.readiness === "manual") {
+    if (model.status?.readiness === "manual" || isManualCatalogModel(model as any)) {
       const message =
-        model.status.blocking_reason ||
+        model.status?.blocking_reason ||
         `${model.name || model.id} requires manual setup before it can run cleanly.`;
       if (config.mode === "simple") pushBlocking(message);
       else pushWarning(message);

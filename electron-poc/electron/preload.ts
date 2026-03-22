@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 type PreloadWorkflow = Record<string, any>
 type PreloadRuntimePolicy = Record<string, any>
 type PreloadExportPolicy = Record<string, any>
+type PreloadSelectionEnvelope = Record<string, any>
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // Audio file operations
@@ -74,11 +75,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('youtube-progress', handler)
   },
 
-  separationPreflight: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, pipelineConfig?: any[], workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy) =>
-    ipcRenderer.invoke('separation-preflight', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, pipelineConfig, workflow, runtimePolicy, exportPolicy }),
+  separationPreflight: (inputFile: string, modelId: string, outputDir: string, selectionType?: string, selectionId?: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, pipelineConfig?: any[], workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy, selectionEnvelope?: PreloadSelectionEnvelope) =>
+    ipcRenderer.invoke('separation-preflight', { inputFile, modelId, outputDir, selectionType, selectionId, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, pipelineConfig, workflow, runtimePolicy, exportPolicy, selectionEnvelope }),
 
-  separateAudio: (inputFile: string, modelId: string, outputDir: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, pipelineConfig?: any[], workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy) =>
-    ipcRenderer.invoke('separate-audio', { inputFile, modelId, outputDir, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, pipelineConfig, workflow, runtimePolicy, exportPolicy }),
+  separateAudio: (inputFile: string, modelId: string, outputDir: string, selectionType?: string, selectionId?: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, pipelineConfig?: any[], workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy, selectionEnvelope?: PreloadSelectionEnvelope) =>
+    ipcRenderer.invoke('separate-audio', { inputFile, modelId, outputDir, selectionType, selectionId, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, pipelineConfig, workflow, runtimePolicy, exportPolicy, selectionEnvelope }),
   cancelSeparation: (jobId: string) => ipcRenderer.invoke('cancel-separation', jobId),
   saveJobOutput: (jobId: string) => ipcRenderer.invoke('save-job-output', jobId),
   discardJobOutput: (jobId: string) => ipcRenderer.invoke('discard-job-output', jobId),
@@ -120,6 +121,31 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getModelTech: (modelId: string) => ipcRenderer.invoke('get-model-tech', modelId),
   resolveModelDownload: (modelId: string) => ipcRenderer.invoke('resolve-model-download', modelId),
   getModelInstallation: (modelId: string) => ipcRenderer.invoke('get-model-installation', modelId),
+  getCatalog: () => ipcRenderer.invoke('get-catalog'),
+  getSelectionInstallation: (selectionType: string, selectionId: string) =>
+    ipcRenderer.invoke('get-selection-installation', { selectionType, selectionId }),
+  resolveInstallPlan: (selectionType: string, selectionId: string) =>
+    ipcRenderer.invoke('resolve-install-plan', { selectionType, selectionId }),
+  installSelection: (selectionType: string, selectionId: string, options?: Record<string, any>) =>
+    ipcRenderer.invoke('install-selection', { selectionType, selectionId, options }),
+  importSelectionArtifacts: (selectionType: string, selectionId: string, files: Array<{ kind?: string; path: string }>, allowCopy = true) =>
+    ipcRenderer.invoke('import-selection-artifacts', { selectionType, selectionId, files, allowCopy }),
+  verifySelectionArtifacts: (selectionType: string, selectionId: string) =>
+    ipcRenderer.invoke('verify-selection-artifacts', { selectionType, selectionId }),
+  resolveExecutionPlan: (selectionType: string, selectionId: string, config?: Record<string, any>) =>
+    ipcRenderer.invoke('resolve-execution-plan', { selectionType, selectionId, config }),
+  runSelectionJob: (payload: Record<string, any>) =>
+    ipcRenderer.invoke('run-selection-job', payload),
+  cancelSelectionJob: (jobId: string) =>
+    ipcRenderer.invoke('cancel-selection-job-direct', { jobId }),
+  getSelectionJob: (jobId: string) =>
+    ipcRenderer.invoke('get-selection-job', { jobId }),
+  listSelectionJobs: () =>
+    ipcRenderer.invoke('list-selection-jobs'),
+  exportSelectionJob: (jobId: string, exportPath: string) =>
+    ipcRenderer.invoke('export-selection-job', { jobId, exportPath }),
+  discardSelectionJob: (jobId: string) =>
+    ipcRenderer.invoke('discard-selection-job', { jobId }),
   getRecipes: () => ipcRenderer.invoke('get-recipes'),
   qualityBaselineCreate: (payload: Record<string, any>) =>
     ipcRenderer.invoke('quality-baseline-create', payload),
