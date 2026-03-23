@@ -138,7 +138,21 @@ describe("backendPayload", () => {
   })
 
   it("forwards explicit pipelineConfig for execution transport", async () => {
-    const separateAudio = vi.fn(async () => ({ success: true, outputFiles: {} }))
+    const runSelectionJob = vi.fn(async (_payload: any) => ({
+      success: true,
+      job_id: "job-123",
+      status: "started",
+      job: {
+        job_id: "job-123",
+        status: "completed",
+        output_files: { vocals: "C:/out/vocals.wav" },
+      },
+    }))
+    const getSelectionJob = vi.fn(async () => ({
+      job_id: "job-123",
+      status: "completed",
+      output_files: { vocals: "C:/out/vocals.wav" },
+    }))
     const payload = {
       inputFile: "C:/audio.wav",
       modelId: "workflow_phase_fix_instrumental",
@@ -155,17 +169,18 @@ describe("backendPayload", () => {
     } as any
 
     await executeSeparation(
-      { separateAudio } as unknown as Window["electronAPI"],
+      { runSelectionJob, getSelectionJob } as unknown as Window["electronAPI"],
       payload,
     )
 
-    expect(separateAudio).toHaveBeenCalledTimes(1)
-    const args = separateAudio.mock.calls[0] as any[]
-    expect(args[3]).toBe("workflow")
-    expect(args[4]).toBe("workflow_phase_fix_instrumental")
-    expect(args[20]).toEqual(payload.pipelineConfig)
-    expect(args[21]).toEqual(payload.workflow)
-    expect(args[24]).toEqual({
+    expect(runSelectionJob).toHaveBeenCalledTimes(1)
+    expect(getSelectionJob).not.toHaveBeenCalled()
+    const request = runSelectionJob.mock.calls[0]?.[0] as any
+    expect(request.selectionType).toBe("workflow")
+    expect(request.selectionId).toBe("workflow_phase_fix_instrumental")
+    expect(request.pipelineConfig).toEqual(payload.pipelineConfig)
+    expect(request.workflow).toEqual(payload.workflow)
+    expect(request.selectionEnvelope).toEqual({
       selectionType: "workflow",
       selectionId: "workflow_phase_fix_instrumental",
     })

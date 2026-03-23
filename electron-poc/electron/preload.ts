@@ -77,14 +77,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   separationPreflight: (inputFile: string, modelId: string, outputDir: string, selectionType?: string, selectionId?: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, pipelineConfig?: any[], workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy, selectionEnvelope?: PreloadSelectionEnvelope) =>
     ipcRenderer.invoke('separation-preflight', { inputFile, modelId, outputDir, selectionType, selectionId, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, pipelineConfig, workflow, runtimePolicy, exportPolicy, selectionEnvelope }),
-
-  separateAudio: (inputFile: string, modelId: string, outputDir: string, selectionType?: string, selectionId?: string, stems?: string[], device?: string, overlap?: number, segmentSize?: number, shifts?: number, outputFormat?: string, bitrate?: string, tta?: boolean, ensembleConfig?: any, ensembleAlgorithm?: string, invert?: boolean, splitFreq?: number, phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number }, postProcessingSteps?: any[], volumeCompensation?: { enabled: boolean; stage?: 'export' | 'blend' | 'both'; dbPerExtraModel?: number }, pipelineConfig?: any[], workflow?: PreloadWorkflow, runtimePolicy?: PreloadRuntimePolicy, exportPolicy?: PreloadExportPolicy, selectionEnvelope?: PreloadSelectionEnvelope) =>
-    ipcRenderer.invoke('separate-audio', { inputFile, modelId, outputDir, selectionType, selectionId, stems, device, overlap, segmentSize, shifts, outputFormat, bitrate, tta, ensembleConfig, ensembleAlgorithm, invert, splitFreq, phaseParams, postProcessingSteps, volumeCompensation, pipelineConfig, workflow, runtimePolicy, exportPolicy, selectionEnvelope }),
-  cancelSeparation: (jobId: string) => ipcRenderer.invoke('cancel-separation', jobId),
-  saveJobOutput: (jobId: string) => ipcRenderer.invoke('save-job-output', jobId),
-  discardJobOutput: (jobId: string) => ipcRenderer.invoke('discard-job-output', jobId),
-  exportOutput: (jobId: string, exportPath: string, format: string, bitrate: string, requestId?: string) =>
-    ipcRenderer.invoke('export-output', { jobId, exportPath, format, bitrate, requestId }),
   pauseQueue: () => ipcRenderer.invoke('pause-queue'),
   resumeQueue: () => ipcRenderer.invoke('resume-queue'),
   reorderQueue: (jobIds: string[]) => ipcRenderer.invoke('reorder-queue', jobIds),

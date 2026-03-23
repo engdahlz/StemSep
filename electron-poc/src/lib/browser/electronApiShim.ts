@@ -136,6 +136,7 @@ export function installBrowserElectronApi() {
 
   const fileStore = new Map<string, BrowserFileEntry>()
   const jobOutputs = new Map<string, Record<string, string>>()
+  const selectionJobs = new Map<string, Record<string, any>>()
 
   const separationEventEmitter = createEmitter<SeparationProgressEvent>()
   const separationStartedEmitter = createEmitter<{ jobId: string }>()
@@ -336,151 +337,9 @@ export function installBrowserElectronApi() {
         },
       }
     },
-    separateAudio: async (
-      inputFile: string,
-      modelId: string,
-      _outputDir: string,
-      _selectionType?: "model" | "recipe" | "workflow",
-      _selectionId?: string,
-      stems?: string[],
-      _device?: string,
-      _overlap?: number,
-      _segmentSize?: number,
-      _shifts?: number,
-      _outputFormat?: string,
-      _bitrate?: string,
-      _tta?: boolean,
-      _ensembleConfig?: any,
-      _ensembleAlgorithm?: string,
-      _invert?: boolean,
-      _splitFreq?: number,
-      _phaseParams?: any,
-      _postProcessingSteps?: any[],
-      _volumeCompensation?: any,
-      _pipelineConfig?: any[],
-      _workflow?: Record<string, any>,
-      _runtimePolicy?: Record<string, any>,
-      _exportPolicy?: Record<string, any>,
-      _selectionEnvelope?: Record<string, any>,
-    ) => {
-      const jobId = `browser-job-${crypto.randomUUID()}`
-      const source = getFileEntry(inputFile)
-      if (!source) {
-        const error = "Browser preview could not find the selected file."
-        separationErrorEmitter.emit({ error })
-        separationEventEmitter.emit({ jobId, kind: "error", error, message: error, ts: Date.now() })
-        return { success: false, outputFiles: {}, error }
-      }
-
-      const outputStems = stemListFor(modelId, stems)
-      const startedAt = Date.now()
-
-      separationStartedEmitter.emit({ jobId })
-      separationEventEmitter.emit({
-        jobId,
-        kind: "job_started",
-        progress: 0,
-        message: "Preparing browser preview",
-        stepCount: outputStems.length,
-        ts: startedAt,
-      })
-
-      await delay(120)
-
-      const outputFiles: Record<string, string> = {}
-      for (let index = 0; index < outputStems.length; index += 1) {
-        const stem = outputStems[index]
-        separationEventEmitter.emit({
-          jobId,
-          kind: "step_started",
-          progress: Math.round((index / outputStems.length) * 100),
-          message: `Generating ${stem} preview`,
-          stepId: stem,
-          stepLabel: `Preview ${stem}`,
-          stepIndex: index,
-          stepCount: outputStems.length,
-          modelId,
-          chunksDone: index,
-          chunksTotal: outputStems.length,
-          ts: Date.now(),
-        })
-        await delay(180)
-        const outputName = `${stripExt(source.name)}-${stem}${extensionForType(source.type, source.name)}`
-        outputFiles[stem] = registerFile(source.blob, outputName)
-        separationEventEmitter.emit({
-          jobId,
-          kind: "step_completed",
-          progress: Math.round(((index + 1) / outputStems.length) * 100),
-          message: `${stem} ready`,
-          stepId: stem,
-          stepLabel: `Preview ${stem}`,
-          stepIndex: index,
-          stepCount: outputStems.length,
-          modelId,
-          chunksDone: index + 1,
-          chunksTotal: outputStems.length,
-          elapsedMs: Date.now() - startedAt,
-          ts: Date.now(),
-        })
-      }
-
-      jobOutputs.set(jobId, outputFiles)
-
-      separationEventEmitter.emit({
-        jobId,
-        kind: "completed",
-        progress: 100,
-        message: "Browser preview ready",
-        stepCount: outputStems.length,
-        elapsedMs: Date.now() - startedAt,
-        ts: Date.now(),
-      })
-      separationCompleteEmitter.emit({ outputFiles })
-
-      return {
-        success: true,
-        outputFiles,
-        jobId,
-        outputDir: _outputDir || "Browser Preview",
-        playbackSourceKind: "preview_cache",
-        sourceAudioProfile: sourceProfileFor(inputFile),
-        stagingDecision: stagingDecisionFor(inputFile),
-      }
-    },
-    cancelSeparation: async () => ({ success: true }),
-    saveJobOutput: async (jobId) => {
-      const outputFiles = jobOutputs.get(jobId)
-      if (!outputFiles) return { success: false, error: "No browser preview outputs found for this job." }
-      for (const [stem, path] of Object.entries(outputFiles)) {
-        const entry = getFileEntry(path)
-        if (entry) downloadBlob(entry.blob, entry.name || `${stem}.wav`)
-      }
-      return { success: true, outputFiles }
-    },
-    discardJobOutput: async (jobId) => {
-      const outputs = jobOutputs.get(jobId)
-      if (outputs) {
-        Object.values(outputs).forEach((path) => {
-          const entry = fileStore.get(path)
-          if (entry) {
-            URL.revokeObjectURL(entry.objectUrl)
-            fileStore.delete(path)
-          }
-        })
-        jobOutputs.delete(jobId)
-      }
-      return { success: true }
-    },
     pauseQueue: async () => undefined,
     resumeQueue: async () => undefined,
     reorderQueue: async () => undefined,
-    exportOutput: async (jobId, exportPath, format, bitrate, requestId) => {
-      const outputFiles = jobOutputs.get(jobId)
-      if (!outputFiles) {
-        return { success: false, error: "No preview outputs available for export.", requestId }
-      }
-      return electronAPI.exportFiles(outputFiles, exportPath, format, bitrate, requestId)
-    },
     exportFiles: async (sourceFiles, exportPath, format, _bitrate, requestId) => {
       const stems = Object.entries(sourceFiles)
       exportProgressEmitter.emit({
@@ -640,19 +499,148 @@ export function installBrowserElectronApi() {
       }
     },
     runSelectionJob: async (payload) => {
-      const jobId = crypto.randomUUID()
+      const jobId = `browser-job-${crypto.randomUUID()}`
+      const inputFile = String(payload?.inputFile || payload?.file_path || "")
+      const modelId = String(payload?.modelId || payload?.model_id || "")
+      const outputDir = String(payload?.outputDir || payload?.output_dir || "Browser Preview")
+      const selectionType =
+        payload?.selectionType ||
+        payload?.selection_type ||
+        payload?.selectionEnvelope?.selectionType ||
+        "model"
+      const selectionId =
+        payload?.selectionId ||
+        payload?.selection_id ||
+        payload?.selectionEnvelope?.selectionId ||
+        modelId ||
+        null
+      const stems = Array.isArray(payload?.stems) ? payload.stems : undefined
+      const source = getFileEntry(inputFile)
+
+      if (!source) {
+        const error = "Browser preview could not find the selected file."
+        separationErrorEmitter.emit({ error })
+        separationEventEmitter.emit({ jobId, kind: "error", error, message: error, ts: Date.now() })
+        const failedSnapshot = {
+          job_id: jobId,
+          status: "failed",
+          requested_at: new Date().toISOString(),
+          finished_at: new Date().toISOString(),
+          progress: 0,
+          error,
+          selection_type: selectionType,
+          selection_id: selectionId,
+          output_dir: outputDir,
+          output_files: {},
+        }
+        selectionJobs.set(jobId, failedSnapshot)
+        return { success: false, job_id: jobId, status: "failed", job: failedSnapshot, error }
+      }
+
+      const outputStems = stemListFor(modelId, stems)
+      const requestedAt = new Date().toISOString()
+      const startingSnapshot = {
+        job_id: jobId,
+        status: "starting",
+        requested_at: requestedAt,
+        progress: 0,
+        model_id: modelId,
+        selection_type: selectionType,
+        selection_id: selectionId,
+        file_path: inputFile,
+        output_dir: outputDir,
+        output_files: {},
+      }
+      selectionJobs.set(jobId, startingSnapshot)
+
+      void (async () => {
+        const startedAt = Date.now()
+        const startedIso = new Date().toISOString()
+        selectionJobs.set(jobId, {
+          ...startingSnapshot,
+          status: "running",
+          started_at: startedIso,
+        })
+
+        separationStartedEmitter.emit({ jobId })
+        separationEventEmitter.emit({
+          jobId,
+          kind: "job_started",
+          progress: 0,
+          message: "Preparing browser preview",
+          stepCount: outputStems.length,
+          ts: startedAt,
+        })
+
+        await delay(120)
+
+        const outputFiles: Record<string, string> = {}
+        for (let index = 0; index < outputStems.length; index += 1) {
+          const stem = outputStems[index]
+          separationEventEmitter.emit({
+            jobId,
+            kind: "step_started",
+            progress: Math.round((index / outputStems.length) * 100),
+            message: `Generating ${stem} preview`,
+            stepId: stem,
+            stepLabel: `Preview ${stem}`,
+            stepIndex: index,
+            stepCount: outputStems.length,
+            modelId,
+            chunksDone: index,
+            chunksTotal: outputStems.length,
+            ts: Date.now(),
+          })
+          await delay(180)
+          const outputName = `${stripExt(source.name)}-${stem}${extensionForType(source.type, source.name)}`
+          outputFiles[stem] = registerFile(source.blob, outputName)
+          separationEventEmitter.emit({
+            jobId,
+            kind: "step_completed",
+            progress: Math.round(((index + 1) / outputStems.length) * 100),
+            message: `${stem} ready`,
+            stepId: stem,
+            stepLabel: `Preview ${stem}`,
+            stepIndex: index,
+            stepCount: outputStems.length,
+            modelId,
+            chunksDone: index + 1,
+            chunksTotal: outputStems.length,
+            elapsedMs: Date.now() - startedAt,
+            ts: Date.now(),
+          })
+        }
+
+        jobOutputs.set(jobId, outputFiles)
+        const completedSnapshot = {
+          ...startingSnapshot,
+          status: "completed",
+          started_at: startedIso,
+          finished_at: new Date().toISOString(),
+          progress: 100,
+          output_files: outputFiles,
+          source_audio_profile: sourceProfileFor(inputFile),
+          staging_decision: stagingDecisionFor(inputFile),
+        }
+        selectionJobs.set(jobId, completedSnapshot)
+
+        separationEventEmitter.emit({
+          jobId,
+          kind: "completed",
+          progress: 100,
+          message: "Browser preview ready",
+          stepCount: outputStems.length,
+          elapsedMs: Date.now() - startedAt,
+          ts: Date.now(),
+        })
+        separationCompleteEmitter.emit({ outputFiles })
+      })()
+
       return {
         success: true,
         job_id: jobId,
         status: "started",
-        job: {
-          job_id: jobId,
-          status: "starting",
-          requested_at: new Date().toISOString(),
-          progress: 0,
-          selection_type: payload?.selection_type || payload?.selectionType || "model",
-          selection_id: payload?.selection_id || payload?.selectionId || payload?.model_id || payload?.modelId || null,
-        },
+        job: startingSnapshot,
       }
     },
     cancelSelectionJob: async (jobId) => ({
@@ -660,25 +648,39 @@ export function installBrowserElectronApi() {
       job_id: jobId,
       status: "cancelled",
     }),
-    getSelectionJob: async (jobId) => ({
-      job_id: jobId,
-      status: "completed",
-      requested_at: new Date().toISOString(),
-      finished_at: new Date().toISOString(),
-      progress: 100,
-    }),
+    getSelectionJob: async (jobId) => selectionJobs.get(jobId) || null,
     listSelectionJobs: async () => [],
-    exportSelectionJob: async (jobId, exportPath) => ({
-      success: true,
-      job_id: jobId,
-      export_path: exportPath,
-      output_files: {},
-    }),
-    discardSelectionJob: async (jobId) => ({
-      success: true,
-      job_id: jobId,
-      discarded: true,
-    }),
+    exportSelectionJob: async (jobId, exportPath) => {
+      const outputFiles = jobOutputs.get(jobId)
+      if (!outputFiles) {
+        return { success: false, error: "No preview outputs available for export.", job_id: jobId }
+      }
+      return electronAPI.exportFiles(outputFiles, exportPath, "wav", "320k", `browser-export-${jobId}`)
+    },
+    discardSelectionJob: async (jobId) => {
+      const outputs = jobOutputs.get(jobId)
+      if (outputs) {
+        Object.values(outputs).forEach((path) => {
+          const entry = fileStore.get(path)
+          if (entry) {
+            URL.revokeObjectURL(entry.objectUrl)
+            fileStore.delete(path)
+          }
+        })
+        jobOutputs.delete(jobId)
+      }
+      selectionJobs.set(jobId, {
+        ...(selectionJobs.get(jobId) || { job_id: jobId }),
+        status: "discarded",
+        discarded: true,
+        finished_at: new Date().toISOString(),
+      })
+      return {
+        success: true,
+        job_id: jobId,
+        discarded: true,
+      }
+    },
     getRecipes: async () => [],
     qualityBaselineCreate: async (payload) => {
       qualityProgressEmitter.emit({ kind: "progress", message: "Creating browser baseline..." })

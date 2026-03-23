@@ -33,6 +33,37 @@ export interface SeparationBackendPayload {
   selectionEnvelope?: ModelSelectionEnvelope
 }
 
+type SelectionJobSnapshotLike = {
+  job_id?: string
+  jobId?: string
+  status?: string
+  requested_at?: string
+  requestedAt?: string
+  started_at?: string
+  startedAt?: string
+  finished_at?: string
+  finishedAt?: string
+  progress?: number
+  message?: string
+  error?: string
+  model_id?: string
+  modelId?: string
+  selection_type?: CatalogSelectionType
+  selectionType?: CatalogSelectionType
+  selection_id?: string
+  selectionId?: string
+  file_path?: string
+  filePath?: string
+  output_dir?: string
+  outputDir?: string
+  output_files?: Record<string, string>
+  outputFiles?: Record<string, string>
+  sourceAudioProfile?: SourceAudioProfile
+  source_audio_profile?: SourceAudioProfile
+  stagingDecision?: StagingDecision
+  staging_decision?: StagingDecision
+}
+
 export function toBackendOverlap(value: unknown): number | undefined {
   const n = typeof value === 'number' ? value : Number(value)
   if (!Number.isFinite(n)) return undefined
@@ -172,36 +203,139 @@ export function executeSeparationPreflight(
   )
 }
 
+function normalizeSelectionJobSnapshot(snapshot: SelectionJobSnapshotLike | null | undefined) {
+  if (!snapshot) return null
+  const outputFiles = snapshot.outputFiles || snapshot.output_files || {}
+  return {
+    jobId: snapshot.jobId || snapshot.job_id || "",
+    status: snapshot.status || "",
+    requestedAt: snapshot.requestedAt || snapshot.requested_at,
+    startedAt: snapshot.startedAt || snapshot.started_at,
+    finishedAt: snapshot.finishedAt || snapshot.finished_at,
+    progress: typeof snapshot.progress === "number" ? snapshot.progress : undefined,
+    message: snapshot.message,
+    error: snapshot.error,
+    modelId: snapshot.modelId || snapshot.model_id,
+    selectionType: snapshot.selectionType || snapshot.selection_type,
+    selectionId: snapshot.selectionId || snapshot.selection_id,
+    filePath: snapshot.filePath || snapshot.file_path,
+    outputDir: snapshot.outputDir || snapshot.output_dir,
+    outputFiles,
+    sourceAudioProfile: snapshot.sourceAudioProfile || snapshot.source_audio_profile,
+    stagingDecision: snapshot.stagingDecision || snapshot.staging_decision,
+  }
+}
+
+function isFinalSelectionJobStatus(status?: string) {
+  return ["completed", "failed", "cancelled", "discarded"].includes(
+    String(status || "").toLowerCase(),
+  )
+}
+
+async function waitForSelectionJobCompletion(
+  api: Window["electronAPI"],
+  jobId: string,
+  initialSnapshot?: SelectionJobSnapshotLike | null,
+) {
+  const timeoutMs = 24 * 60 * 60 * 1000
+  const startedAt = Date.now()
+  let snapshot = normalizeSelectionJobSnapshot(initialSnapshot)
+
+  while (Date.now() - startedAt < timeoutMs) {
+    if (
+      snapshot?.status &&
+      isFinalSelectionJobStatus(snapshot.status) &&
+      Object.keys(snapshot.outputFiles || {}).length > 0
+    ) {
+      return snapshot
+    }
+
+    const next = await api.getSelectionJob(jobId)
+    snapshot = normalizeSelectionJobSnapshot(next)
+    if (!snapshot) {
+      throw new Error("Selection job not found")
+    }
+
+    if (
+      isFinalSelectionJobStatus(snapshot.status) &&
+      Object.keys(snapshot.outputFiles || {}).length > 0
+    ) {
+      return snapshot
+    }
+
+    if (isFinalSelectionJobStatus(snapshot.status) && snapshot.status !== "completed") {
+      throw new Error(snapshot.error || snapshot.message || `Selection job ${snapshot.status}`)
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 1000))
+  }
+
+  throw new Error("Timed out waiting for selection job completion")
+}
+
 export function executeSeparation(
   api: Window['electronAPI'],
   payload: SeparationBackendPayload,
 ) {
   const selection = resolveTransportSelection(payload)
-  return api.separateAudio(
-    payload.inputFile,
-    payload.modelId,
-    payload.outputDir,
-    selection.selectionType,
-    selection.selectionId,
-    payload.stems,
-    payload.device,
-    payload.overlap,
-    payload.segmentSize,
-    payload.shifts,
-    payload.outputFormat,
-    payload.bitrate,
-    payload.tta,
-    payload.ensembleConfig,
-    payload.ensembleAlgorithm,
-    payload.invert,
-    payload.splitFreq,
-    payload.phaseParams,
-    payload.postProcessingSteps,
-    payload.volumeCompensation,
-    payload.pipelineConfig,
-    payload.workflow,
-    payload.runtimePolicy,
-    payload.exportPolicy,
-    selection.selectionEnvelope,
-  )
+  return api
+    .runSelectionJob({
+      inputFile: payload.inputFile,
+      modelId: payload.modelId,
+      outputDir: payload.outputDir,
+      selectionType: selection.selectionType,
+      selectionId: selection.selectionId,
+      stems: payload.stems,
+      device: payload.device,
+      overlap: payload.overlap,
+      segmentSize: payload.segmentSize,
+      shifts: payload.shifts,
+      outputFormat: payload.outputFormat,
+      bitrate: payload.bitrate,
+      tta: payload.tta,
+      ensembleConfig: payload.ensembleConfig,
+      ensembleAlgorithm: payload.ensembleAlgorithm,
+      invert: payload.invert,
+      splitFreq: payload.splitFreq,
+      phaseParams: payload.phaseParams,
+      postProcessingSteps: payload.postProcessingSteps,
+      volumeCompensation: payload.volumeCompensation,
+      pipelineConfig: payload.pipelineConfig,
+      workflow: payload.workflow,
+      runtimePolicy: payload.runtimePolicy,
+      exportPolicy: payload.exportPolicy,
+      selectionEnvelope: selection.selectionEnvelope,
+    })
+    .then(async (response) => {
+      const initialSnapshot = normalizeSelectionJobSnapshot(
+        response?.job || response?.selection_job || response,
+      )
+      const jobId =
+        initialSnapshot?.jobId ||
+        response?.job_id ||
+        response?.jobId ||
+        response?.selection_job_id ||
+        response?.selectionJobId
+
+      if (!jobId) {
+        throw new Error("Selection job did not return a job id")
+      }
+
+      const finalSnapshot =
+        initialSnapshot &&
+        isFinalSelectionJobStatus(initialSnapshot.status) &&
+        Object.keys(initialSnapshot.outputFiles || {}).length > 0
+          ? initialSnapshot
+          : await waitForSelectionJobCompletion(api, jobId, initialSnapshot)
+
+      return {
+        success: true,
+        jobId,
+        outputFiles: finalSnapshot.outputFiles || {},
+        outputDir: finalSnapshot.outputDir,
+        sourceAudioProfile: finalSnapshot.sourceAudioProfile,
+        stagingDecision: finalSnapshot.stagingDecision,
+        playbackSourceKind: "selection_job",
+      }
+    })
 }

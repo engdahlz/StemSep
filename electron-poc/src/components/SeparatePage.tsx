@@ -367,7 +367,9 @@ export default function SeparatePage({
   const history = useStore((state) => state.history);
   const loadSession = useStore((state) => state.loadSession);
   const outputDirectory = useStore((state) => state.settings.defaultOutputDir);
-  const cancelSeparation = useStore((state) => state.cancelSeparation);
+  const cancelActiveSelectionJob = useStore(
+    (state) => state.cancelActiveSelectionJob,
+  );
   const phaseParams = useStore((state) => state.settings.phaseParams);
 
   // Global State
@@ -1939,7 +1941,7 @@ export default function SeparatePage({
               {isProcessing && (
                 <button
                   type="button"
-                  onClick={cancelSeparation}
+                  onClick={cancelActiveSelectionJob}
                   className="rounded-[18px] border border-white/20 bg-white/12 px-4 py-2 text-[13px] tracking-[-0.2px] text-white/82 backdrop-blur-md transition-all hover:bg-white/18"
                 >
                   Cancel

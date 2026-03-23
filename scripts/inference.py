@@ -140,10 +140,28 @@ class WorkerProtocol:
         return cls(kind=kind, version=version)
 
 
+def _first_execution_step(execution_plan: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
+    """Return the first concrete execution step from a resolved plan."""
+    if not isinstance(execution_plan, dict):
+        return None
+
+    resolved = execution_plan.get("resolved_step")
+    if isinstance(resolved, dict):
+        return resolved
+
+    steps = execution_plan.get("steps")
+    if isinstance(steps, list):
+        for step in steps:
+            if isinstance(step, dict):
+                return step
+    return None
+
+
 @dataclass(frozen=True)
 class SeparationWorkerRequest:
     protocol: WorkerProtocol
     raw_config: dict[str, Any]
+    job_id: Optional[str]
     file_path: str
     output_dir: str
     models_dir: Optional[str]
@@ -179,6 +197,7 @@ class SeparationWorkerRequest:
         output_dir = str(config.get("output_dir") or "").strip()
         if not file_path or not output_dir:
             raise ValueError("file_path and output_dir are required")
+        job_id = str(config.get("job_id") or "").strip() or None
 
         device = str(config.get("device") or "cpu").strip() or "cpu"
         workflow = (
@@ -200,17 +219,33 @@ class SeparationWorkerRequest:
             else None
         )
 
-        resolved_step = None
-        if isinstance(execution_plan, dict):
-            steps = execution_plan.get("steps")
-            if isinstance(steps, list):
-                for step in steps:
-                    if isinstance(step, dict):
-                        resolved_step = step
-                        break
+        resolved_step = _first_execution_step(execution_plan)
 
         stems = _normalize_stems(config.get("stems"))
         bit_depth = _normalize_bit_depth(config.get("bit_depth", "16"))
+        selection_type = (
+            str(config.get("selection_type")).strip().lower()
+            if config.get("selection_type")
+            else None
+        )
+        selection_id = (
+            str(config.get("selection_id")).strip()
+            if config.get("selection_id")
+            else None
+        )
+        if not strict_worker and isinstance(execution_plan, dict):
+            if not selection_type:
+                raw = execution_plan.get("selection_type") or execution_plan.get(
+                    "selectionType"
+                )
+                if isinstance(raw, str) and raw.strip():
+                    selection_type = raw.strip().lower()
+
+            if not selection_id:
+                raw = execution_plan.get("selection_id") or execution_plan.get("selectionId")
+                if isinstance(raw, str) and raw.strip():
+                    selection_id = raw.strip()
+
         job_kwargs = {
             "file_path": file_path,
             "model_id": config.get("model_id"),
@@ -253,6 +288,7 @@ class SeparationWorkerRequest:
         return cls(
             protocol=protocol,
             raw_config=config,
+            job_id=job_id,
             file_path=file_path,
             output_dir=output_dir,
             models_dir=str(config.get("models_dir")).strip()
@@ -261,16 +297,8 @@ class SeparationWorkerRequest:
             device=device,
             gpu_enabled="cuda" in device.lower(),
             job_kwargs={k: v for k, v in job_kwargs.items() if v is not None},
-            selection_type=(
-                str(config.get("selection_type")).strip().lower()
-                if config.get("selection_type")
-                else None
-            ),
-            selection_id=(
-                str(config.get("selection_id")).strip()
-                if config.get("selection_id")
-                else None
-            ),
+            selection_type=selection_type,
+            selection_id=selection_id,
             execution_plan=execution_plan,
             resolved_bundle=resolved_bundle,
             resolved_step=resolved_step,
@@ -346,13 +374,12 @@ class SeparationWorkerRuntime:
 
     async def _run_once(self, attempt: int):
         assert self.separation_manager is not None
-        job_id = self.separation_manager.create_job(**self.request.job_kwargs)
-        job = self.separation_manager.get_job(job_id)
+        event_job_id = self.request.job_id
 
         def progress_callback(progress, message, device=None):
             evt = {
                 "type": "separation_progress",
-                "job_id": job_id,
+                "job_id": event_job_id,
                 "progress": progress,
                 "message": message,
                 "meta": {
@@ -369,13 +396,10 @@ class SeparationWorkerRuntime:
                 evt["device"] = device
             send_ipc(evt)
 
-        job.progress_callback = progress_callback
-        job.on_complete = lambda output_files: None
-
         send_ipc(
             {
                 "type": "separation_started",
-                "job_id": job_id,
+                "job_id": event_job_id,
                 "meta": {
                     "attempt": attempt,
                     "worker_protocol": {
@@ -389,20 +413,25 @@ class SeparationWorkerRuntime:
             }
         )
 
-        success = self.separation_manager.start_job(job_id)
-        if not success:
-            raise RuntimeError("Failed to start separation job")
+        job = await self.separation_manager.run_worker_job(
+            external_job_id=event_job_id,
+            **{
+                **self.request.job_kwargs,
+                "progress_callback": progress_callback,
+                "on_complete": lambda output_files: None,
+            },
+        )
 
-        while job.status in ["pending", "queued", "running", "validating", "processing"]:
-            if shutdown_event.is_set():
-                self.separation_manager.cancel_job(job_id)
-                send_ipc({"type": "separation_cancelled", "job_id": job_id})
-                break
-            await asyncio.sleep(0.1)
+        if shutdown_event.is_set() and job.status in ["pending", "queued", "running", "validating", "processing"]:
+            # Local worker shutdown only: the Rust control plane already owns
+            # the lifecycle and this worker just mirrors the cancellation state.
+            job.status = "cancelled"
+            send_ipc({"type": "separation_cancelled", "job_id": event_job_id or job.job_id})
 
         return job
 
     async def _emit_completion(self, job, attempt: int, validation_reason: str) -> None:
+        event_job_id = self.request.job_id or job.job_id
         normalized_outputs = _normalize_output_files(job.output_files)
         sanity_report, sanity_reason = _audio_sanity_check(
             self.request.file_path, normalized_outputs
@@ -411,7 +440,7 @@ class SeparationWorkerRuntime:
         send_ipc(
             {
                 "type": "separation_progress",
-                "job_id": job.job_id,
+                "job_id": event_job_id,
                 "progress": 99.5,
                 "message": f"Sanity check: {sanity_reason}",
                 "meta": {"attempt": attempt, "sanity_check": sanity_report},
@@ -420,7 +449,7 @@ class SeparationWorkerRuntime:
         send_ipc(
             {
                 "type": "separation_progress",
-                "job_id": job.job_id,
+                "job_id": event_job_id,
                 "progress": 100.0,
                 "message": "Complete",
                 "meta": {"attempt": attempt},
@@ -429,7 +458,7 @@ class SeparationWorkerRuntime:
         send_ipc(
             {
                 "type": "separation_complete",
-                "job_id": job.job_id,
+                "job_id": event_job_id,
                 "output_files": normalized_outputs,
                 "meta": {
                     "attempt": attempt,
@@ -445,7 +474,7 @@ class SeparationWorkerRuntime:
 
 
 def _normalize_config(config: dict, strict_worker: bool = False) -> dict:
-    """Normalize UI/backend config shapes for the Python SeparationManager.
+    """Normalize UI/backend config shapes for the Python worker runtime.
 
     Electron UI sends some objects in a richer shape (e.g. ensemble_config as an object
     with {models, algorithm, phaseFixEnabled,...}). The core SeparationManager expects:
@@ -569,83 +598,77 @@ def _normalize_config(config: dict, strict_worker: bool = False) -> dict:
         ):
             config["post_processing_steps"] = workflow.get("postprocess")
 
-        if strict_worker:
-            # Rust already resolved the selection into an execution plan.
-            # Keep workflow metadata for observability only and do not rebuild
-            # the executable pipeline or ensemble topology here.
-            pass
-        else:
-            kind = str(workflow.get("kind") or "").strip().lower()
-            models = workflow.get("models")
-            steps = workflow.get("steps")
-            blend = workflow.get("blend") if isinstance(workflow.get("blend"), dict) else {}
+        kind = str(workflow.get("kind") or "").strip().lower()
+        models = workflow.get("models")
+        steps = workflow.get("steps")
+        blend = workflow.get("blend") if isinstance(workflow.get("blend"), dict) else {}
 
-            if kind == "ensemble" and not config.get("ensemble_config") and isinstance(models, list):
-                ensemble_models = []
-                for model in models:
-                    if not isinstance(model, dict):
-                        continue
-                    model_id = model.get("model_id")
-                    if not isinstance(model_id, str) or not model_id.strip():
-                        continue
-                    entry = {"model_id": model_id}
-                    weight = model.get("weight")
-                    if isinstance(weight, (int, float)):
-                        entry["weight"] = float(weight)
-                    ensemble_models.append(entry)
-                if ensemble_models:
-                    config["ensemble_config"] = ensemble_models
-                    config["model_id"] = "ensemble"
-                    if isinstance(blend.get("algorithm"), str) and blend.get("algorithm").strip():
-                        config["ensemble_algorithm"] = blend.get("algorithm")
-                    if isinstance(blend.get("stemAlgorithms"), dict):
-                        config["stem_algorithms"] = blend.get("stemAlgorithms")
-                    if blend.get("phaseFixEnabled") is True:
-                        config["phase_fix_enabled"] = True
-                    if isinstance(blend.get("phaseFixParams"), dict):
-                        config["phase_params"] = blend.get("phaseFixParams")
-                    if config.get("split_freq") is None and blend.get("splitFreq") is not None:
-                        config["split_freq"] = blend.get("splitFreq")
+        if kind == "ensemble" and not config.get("ensemble_config") and isinstance(models, list):
+            ensemble_models = []
+            for model in models:
+                if not isinstance(model, dict):
+                    continue
+                model_id = model.get("model_id")
+                if not isinstance(model_id, str) or not model_id.strip():
+                    continue
+                entry = {"model_id": model_id}
+                weight = model.get("weight")
+                if isinstance(weight, (int, float)):
+                    entry["weight"] = float(weight)
+                ensemble_models.append(entry)
+            if ensemble_models:
+                config["ensemble_config"] = ensemble_models
+                config["model_id"] = "ensemble"
+                if isinstance(blend.get("algorithm"), str) and blend.get("algorithm").strip():
+                    config["ensemble_algorithm"] = blend.get("algorithm")
+                if isinstance(blend.get("stemAlgorithms"), dict):
+                    config["stem_algorithms"] = blend.get("stemAlgorithms")
+                if blend.get("phaseFixEnabled") is True:
+                    config["phase_fix_enabled"] = True
+                if isinstance(blend.get("phaseFixParams"), dict):
+                    config["phase_params"] = blend.get("phaseFixParams")
+                if config.get("split_freq") is None and blend.get("splitFreq") is not None:
+                    config["split_freq"] = blend.get("splitFreq")
 
-            if kind == "single" and not config.get("model_id") and isinstance(models, list):
-                for model in models:
-                    if isinstance(model, dict) and isinstance(model.get("model_id"), str):
-                        config["model_id"] = model.get("model_id")
-                        break
+        if kind == "single" and not config.get("model_id") and isinstance(models, list):
+            for model in models:
+                if isinstance(model, dict) and isinstance(model.get("model_id"), str):
+                    config["model_id"] = model.get("model_id")
+                    break
 
-            if kind == "pipeline" and not config.get("pipeline_config") and isinstance(steps, list):
-                normalized_steps = []
-                for index, step in enumerate(steps):
-                    if not isinstance(step, dict):
-                        continue
-                    normalized = {
-                        "step_name": step.get("id")
-                        or step.get("name")
-                        or f"step_{index + 1}",
-                        "action": step.get("action") or "separate",
-                    }
-                    for key in (
-                        "model_id",
-                        "source_model",
-                        "input_source",
-                        "output",
-                        "apply_to",
-                        "weight",
-                        "optional",
-                    ):
-                        if key in step and step.get(key) is not None:
-                            normalized[key] = step.get(key)
+        if kind == "pipeline" and not config.get("pipeline_config") and isinstance(steps, list):
+            normalized_steps = []
+            for index, step in enumerate(steps):
+                if not isinstance(step, dict):
+                    continue
+                normalized = {
+                    "step_name": step.get("id")
+                    or step.get("name")
+                    or f"step_{index + 1}",
+                    "action": step.get("action") or "separate",
+                }
+                for key in (
+                    "model_id",
+                    "source_model",
+                    "input_source",
+                    "output",
+                    "apply_to",
+                    "weight",
+                    "optional",
+                ):
+                    if key in step and step.get(key) is not None:
+                        normalized[key] = step.get(key)
 
-                    params = step.get("params")
-                    if isinstance(params, dict):
-                        normalized.update(params)
+                params = step.get("params")
+                if isinstance(params, dict):
+                    normalized.update(params)
 
-                    normalized_steps.append(normalized)
+                normalized_steps.append(normalized)
 
-                if normalized_steps:
-                    config["pipeline_config"] = normalized_steps
-                    if not isinstance(config.get("model_id"), str) or not config.get("model_id"):
-                        config["model_id"] = workflow.get("id") or "pipeline"
+            if normalized_steps:
+                config["pipeline_config"] = normalized_steps
+                if not isinstance(config.get("model_id"), str) or not config.get("model_id"):
+                    config["model_id"] = workflow.get("id") or "pipeline"
 
     # 1) Normalize ensemble_config object -> list
     ensemble_cfg = config.get("ensemble_config")
@@ -689,7 +712,8 @@ def _normalize_config(config: dict, strict_worker: bool = False) -> dict:
         post_steps = config.get("postProcessingSteps")
 
     if (
-        isinstance(post_steps, list)
+        not strict_worker
+        and isinstance(post_steps, list)
         and post_steps
         and not config.get("ensemble_config")
         and isinstance(config.get("model_id"), str)
@@ -1054,7 +1078,9 @@ async def main():
 
     except Exception as e:
         # trace = traceback.format_exc()
-        job_id = getattr(runtime.last_job, "job_id", None) if runtime.last_job else None
+        job_id = request.job_id or (
+            getattr(runtime.last_job, "job_id", None) if runtime.last_job else None
+        )
 
         err_str = str(e)
         device_payload = _parse_structured_device_error(err_str)

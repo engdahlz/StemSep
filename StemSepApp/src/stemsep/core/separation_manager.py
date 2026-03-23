@@ -1166,6 +1166,42 @@ class SeparationManager:
             job.error = str(e)
             return False
 
+    async def run_worker_job(
+        self,
+        *,
+        external_job_id: Optional[str] = None,
+        **job_kwargs,
+    ) -> SeparationJob:
+        """Execute a single resolved worker job directly.
+
+        This bypasses the app-level queue/executor semantics so an external
+        control plane can own lifecycle, cancellation and retry policy while
+        still reusing the proven execution paths inside SeparationManager.
+        """
+        job_id = self.create_job(**job_kwargs)
+        if external_job_id:
+            with self.job_lock:
+                if job_id in self.jobs:
+                    self.jobs[job_id].job_id = external_job_id
+        return await self.execute_worker_job(job_id)
+
+    async def execute_worker_job(self, job_id: str) -> SeparationJob:
+        """Execute an already created job directly, bypassing queue/executor."""
+        with self.job_lock:
+            if job_id not in self.jobs:
+                raise RuntimeError(f"Created worker job {job_id} is missing")
+            job = self.jobs[job_id]
+            self.queue = [queued_id for queued_id in self.queue if queued_id != job_id]
+
+        if job.model_id == "ensemble":
+            await self._run_ensemble_job(job)
+        elif job.model_id == "pipeline":
+            await self._run_pipeline_job(job)
+        else:
+            await self._run_job(job)
+
+        return job
+
     def pause_queue(self):
         """Pause queue processing (does not stop running jobs)"""
         self.paused = True

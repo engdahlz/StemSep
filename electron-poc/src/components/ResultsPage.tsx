@@ -560,6 +560,7 @@ export function ResultsPage({ onBack }: ResultsPageProps) {
             <MultiTrackPlayer
               stems={playableOutputFiles}
               jobId={activeSession.backendJobId || activeSession.id}
+              outputDir={activeSession.outputDir}
               isResolvingPlayback={isResolvingPlayback}
               onDiscard={() => {
                 removeFromHistory(activeSession.id);

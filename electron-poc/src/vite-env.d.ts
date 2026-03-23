@@ -115,55 +115,9 @@ interface ElectronAPI {
         exportPolicy?: WorkflowExportPolicy,
         selectionEnvelope?: ModelSelectionEnvelope
     ) => Promise<any & { sourceAudioProfile?: SourceAudioProfile; stagingDecision?: StagingDecision }>
-    separateAudio: (
-        inputFile: string,
-        modelId: string,
-        outputDir: string,
-        selectionType?: CatalogSelectionType,
-        selectionId?: string,
-        stems?: string[],
-        device?: string,
-        overlap?: number,
-        segmentSize?: number,
-        shifts?: number,
-        outputFormat?: string,
-        bitrate?: string,
-        tta?: boolean,
-        ensembleConfig?: any,
-        ensembleAlgorithm?: string,
-        invert?: boolean,
-        splitFreq?: number,
-        phaseParams?: { enabled: boolean; lowHz: number; highHz: number; highFreqWeight: number },
-        postProcessingSteps?: any[],
-        volumeCompensation?: VolumeCompensation,
-        pipelineConfig?: SeparationWorkflow['steps'],
-        workflow?: SeparationWorkflow,
-        runtimePolicy?: WorkflowRuntimePolicy,
-        exportPolicy?: WorkflowExportPolicy,
-        selectionEnvelope?: ModelSelectionEnvelope
-    ) => Promise<{
-        success: boolean
-        outputFiles: Record<string, string>
-        jobId?: string
-        error?: string
-        outputDir?: string
-        playbackSourceKind?: string
-        sourceAudioProfile?: SourceAudioProfile
-        stagingDecision?: StagingDecision
-      }>
-    cancelSeparation: (jobId: string) => Promise<any>
-    saveJobOutput: (jobId: string) => Promise<{
-        success: boolean
-        outputFiles?: Record<string, string>
-        error?: string
-        sourceAudioProfile?: SourceAudioProfile
-        stagingDecision?: StagingDecision
-      }>
-    discardJobOutput: (jobId: string) => Promise<{ success: boolean; error?: string }>
     pauseQueue: () => Promise<void>
     resumeQueue: () => Promise<void>
     reorderQueue: (jobIds: string[]) => Promise<void>
-    exportOutput: (jobId: string, exportPath: string, format: string, bitrate: string, requestId?: string) => Promise<ExportFilesResult>
     exportFiles: (sourceFiles: Record<string, string>, exportPath: string, format: string, bitrate: string, requestId?: string) => Promise<ExportFilesResult>
     onSeparationProgress: (callback: (data: { progress: number; message: string; jobId?: string; meta?: Record<string, any> }) => void) => () => void
     onSeparationEvent: (callback: (data: SeparationProgressEvent) => void) => () => void

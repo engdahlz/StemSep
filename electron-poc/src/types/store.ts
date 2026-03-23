@@ -515,7 +515,7 @@ export interface SeparationSlice {
   updateQueueItem: (id: string, updates: Partial<QueueItem>) => void;
   clearQueue: () => void;
   startSeparation: () => void;
-  cancelSeparation: () => void;
+  cancelActiveSelectionJob: () => void;
   pauseQueue: () => void;
   resumeQueue: () => void;
   reorderQueue: (jobIds: string[]) => void;

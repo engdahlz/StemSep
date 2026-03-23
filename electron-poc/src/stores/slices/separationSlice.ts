@@ -77,17 +77,17 @@ export const createSeparationSlice: StateCreator<AppState, [["zustand/immer", ne
     state.separation.logs = [`[${new Date().toLocaleTimeString()}] Starting batch processing...`]
   }),
 
-  cancelSeparation: () => {
+  cancelActiveSelectionJob: () => {
     set((state) => {
       state.separation.isProcessing = false
       const item = state.separation.queue.find(i => i.status === 'processing')
       if (item) {
         item.status = 'cancelled'
         item.error = 'Cancelled by user'
-        if (window.electronAPI?.cancelSeparation) {
+        if (window.electronAPI?.cancelSelectionJob) {
           // IMPORTANT: backend job id differs from our local queue item id.
           const jobId = item.backendJobId || item.id
-          window.electronAPI.cancelSeparation(jobId).catch(console.error)
+          window.electronAPI.cancelSelectionJob(jobId).catch(console.error)
         }
       }
       state.separation.logs.push(`[${new Date().toLocaleTimeString()}] Separation cancelled by user.`)

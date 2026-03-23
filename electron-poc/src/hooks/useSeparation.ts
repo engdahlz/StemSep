@@ -214,10 +214,6 @@ export const useSeparation = () => {
 
           console.log("Separation Result (Frontend):", result);
 
-          if (!result.success) {
-            throw new Error(result.error || "Separation failed");
-          }
-
           const outputs =
             (result.outputFiles as unknown as Record<string, string>) || {};
           allOutputs[item.id] = Object.values(outputs);

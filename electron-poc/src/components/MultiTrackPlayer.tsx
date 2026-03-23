@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 interface MultiTrackPlayerProps {
     stems: Record<string, string>
     jobId?: string
+    outputDir?: string
     onClose?: () => void
     onDiscard?: () => void
     isResolvingPlayback?: boolean
@@ -27,6 +28,7 @@ const DEFAULT_COLOR = '#64748b'
 export function MultiTrackPlayer({
     stems,
     jobId,
+    outputDir,
     onClose,
     onDiscard,
     isResolvingPlayback = false,
@@ -214,10 +216,14 @@ export function MultiTrackPlayer({
     }
 
     const handleSave = async () => {
-        if (!jobId || !window.electronAPI?.saveJobOutput) return
+        if (!jobId || !window.electronAPI?.exportSelectionJob) return
+        if (!outputDir) {
+            toast.error("No output directory is configured for this separation")
+            return
+        }
         setIsSaving(true)
         try {
-            const result = await window.electronAPI.saveJobOutput(jobId)
+            const result = await window.electronAPI.exportSelectionJob(jobId, outputDir)
             if (result.success) {
                 toast.success("Files saved to output directory")
                 onClose?.()
@@ -235,8 +241,8 @@ export function MultiTrackPlayer({
     const handleDiscard = () => {
         if (!confirm("Discard this separation? This will remove it from history and delete the cached stems.")) return
 
-        if (jobId && window.electronAPI?.discardJobOutput) {
-            window.electronAPI.discardJobOutput(jobId)
+        if (jobId && window.electronAPI?.discardSelectionJob) {
+            window.electronAPI.discardSelectionJob(jobId)
                 .then((result) => {
                     if (!result?.success) {
                         toast.error("Failed to discard output: " + (result?.error || "Unknown error"))
