@@ -5,12 +5,12 @@ import {
 } from "electron";
 import { createBackendBridge } from "./backend/bridge";
 import { createBackendRuntimeController } from "./backend/runtime-status";
-import { registerExportIpcHandlers } from "./backend/ipc-export";
 import {
   createSelectionPlanResolver,
   normalizeSelectionType,
 } from "./backend/selection-plan";
 import { createModelRemovalController } from "./backend/model-removal";
+import { registerAppIpcHandlers } from "./backend/register-ipc";
 import {
   PREVIEW_CACHE_KEEP_LAST,
   PREVIEW_CACHE_MAX_AGE_DAYS,
@@ -32,18 +32,6 @@ import {
   computeCaptureQualityMode,
   resolveCaptureLaunchTarget,
 } from "./playback/capture-metadata";
-import { registerSelectionIpcHandlers } from "./backend/ipc-selection";
-import { registerSeparationIpcHandlers } from "./backend/ipc-separation";
-import { registerQueueIpcHandlers } from "./backend/ipc-queue";
-import { registerRuntimeIpcHandlers } from "./backend/ipc-runtime";
-import { registerModelIpcHandlers } from "./backend/ipc-models";
-import { registerQualityIpcHandlers } from "./backend/ipc-quality";
-import { registerDownloadIpcHandlers } from "./backend/ipc-downloads";
-import { registerDialogIpcHandlers } from "./system/dialogs";
-import { registerConfigIpcHandlers } from "./system/config";
-import { registerWatchIpcHandlers } from "./system/watch";
-import { registerLibraryCaptureIpcHandlers } from "./remote/ipc-library";
-import { registerRemoteImportIpcHandlers } from "./remote/ipc-remote";
 import { createRemoteDownloadController } from "./remote/download-audio";
 import { createRemoteBrowserLibraryController } from "./remote/library-browser";
 import { createRemoteLibraryController } from "./remote/library-core";
@@ -424,87 +412,30 @@ registerAppLifecycleHandlers({
   },
 });
 
-registerQueueIpcHandlers({
-  ipcMain,
-  sendBackendCommand: sendPythonCommand,
-});
-
-registerRuntimeIpcHandlers({
-  ipcMain,
-  getGpuDevicesCached,
-  getSystemRuntimeInfoCached,
-});
-
-registerSeparationIpcHandlers({
+registerAppIpcHandlers({
   ipcMain,
   log,
+  sendBackendCommand: sendPythonCommand,
+  sendBackendCommandWithRetry: sendPythonCommandWithRetry,
   createPreviewDirForInput,
   resolveEffectiveModelId,
   resolveSelectionExecutionPlan,
   ensureWavInput,
   normalizeSelectionType,
-  sendBackendCommand: sendPythonCommand,
-});
-
-registerSelectionIpcHandlers({
-  ipcMain,
-  sendBackendCommand: sendPythonCommandWithRetry,
-});
-
-registerModelIpcHandlers({
-  ipcMain,
-  sendBackendCommandWithRetry: sendPythonCommandWithRetry,
-});
-
-registerDownloadIpcHandlers({
-  ipcMain,
-  sendBackendCommand: sendPythonCommand,
-  sendBackendCommandWithRetry: sendPythonCommandWithRetry,
+  getGpuDevicesCached,
+  getSystemRuntimeInfoCached,
   removeModelLocal,
-  log,
-});
-
-registerExportIpcHandlers({
-  ipcMain,
   exportFilesLocal,
   emitExportProgress,
-  log,
-});
-
-registerQualityIpcHandlers({
-  ipcMain,
-  sendBackendCommandWithRetry: sendPythonCommandWithRetry,
-});
-
-registerLibraryCaptureIpcHandlers({
-  ipcMain,
-  log,
-  refreshQobuzPlaybackDeviceMappings,
-  getCaptureEnvironmentStatusForQobuz,
+  getMainWindow: () => mainWindow,
+  resolvePlaybackFilePath,
+  classifyMissingAudioPath,
+  resolvePlaybackStems,
   writeAppConfig,
-  qobuzSinkIdByPlaybackDeviceId,
-  getRemoteProviderConfig,
-  checkLibraryProviderAuthenticated,
-  isQobuzPlaybackCaptureActive,
-  openRemoteSourceAuthWindow,
-  scrapeProviderItems,
-  searchQobuzCatalogViaApi,
-  remoteCatalogCache,
-  isPlaybackCaptureActive,
-  getCachedLibraryItem,
-  getNativePlaybackDevices,
-  resolveCaptureLaunchTarget,
-  computeCaptureQualityMode,
-  startQobuzPlaybackCaptureForItem,
-  sendBackendCommandWithRetry: sendPythonCommandWithRetry,
-  playbackCaptureSessions,
-  lastPlaybackCaptureProgressById,
-  abortPlaybackCaptureSession,
-});
-
-registerRemoteImportIpcHandlers({
-  ipcMain,
-  log,
+  getStoredHuggingFaceToken,
+  setStoredHuggingFaceToken,
+  requestBridgeRestart,
+  restartBackendAndWait,
   getRemoteProviderConfig,
   openRemoteSourceAuthWindow,
   scrapeRemoteCollection,
@@ -514,32 +445,21 @@ registerRemoteImportIpcHandlers({
   downloadRemoteFile,
   extractArchiveForRemoteTrack,
   probeAudioFile,
-  sendPythonCommand,
-});
-
-registerDialogIpcHandlers({
-  ipcMain,
-  getMainWindow: () => mainWindow,
-  log,
-  resolvePlaybackFilePath,
-  classifyMissingAudioPath,
-  resolvePlaybackStems,
-});
-
-registerConfigIpcHandlers({
-  ipcMain,
-  log,
-  writeAppConfig,
-  getStoredHuggingFaceToken,
-  setStoredHuggingFaceToken,
-  requestBridgeRestart,
-  restartBackendAndWait,
-  sendBackendCommandWithRetry: sendPythonCommandWithRetry,
-});
-
-registerWatchIpcHandlers({
-  ipcMain,
-  getMainWindow: () => mainWindow,
-  log,
+  refreshQobuzPlaybackDeviceMappings,
+  getCaptureEnvironmentStatusForQobuz,
+  qobuzSinkIdByPlaybackDeviceId,
+  checkLibraryProviderAuthenticated,
+  isQobuzPlaybackCaptureActive,
+  scrapeProviderItems,
+  searchQobuzCatalogViaApi,
+  isPlaybackCaptureActive,
+  getCachedLibraryItem,
+  getNativePlaybackDevices,
+  resolveCaptureLaunchTarget,
+  computeCaptureQualityMode,
+  startQobuzPlaybackCaptureForItem,
+  playbackCaptureSessions,
+  lastPlaybackCaptureProgressById,
+  abortPlaybackCaptureSession,
 });
 

@@ -30,6 +30,37 @@ const MAX_HEALTH_CHECK_FAILURES = 2;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+function candidateRootsFromBackendModule() {
+  const cwd = process.cwd();
+  const packageRoot = cwd;
+  const repoRoot = path.resolve(cwd, "..");
+  const distRoot = path.resolve(__dirname, "..");
+  const packageRootFromDist = path.resolve(__dirname, "../..");
+  const repoRootFromDist = path.resolve(__dirname, "../../..");
+
+  return Array.from(
+    new Set([
+      packageRoot,
+      repoRoot,
+      distRoot,
+      packageRootFromDist,
+      repoRootFromDist,
+    ]),
+  );
+}
+
+function findFirstExistingPath(candidates: string[]) {
+  return (
+    candidates.find((candidate) => {
+      try {
+        return fs.existsSync(candidate);
+      } catch {
+        return false;
+      }
+    }) || null
+  );
+}
+
 export function createBackendBridge({
   log,
   getStoredHuggingFaceToken,
@@ -334,42 +365,36 @@ export function createBackendBridge({
       const backendPref = (process.env.STEMSEP_BACKEND || "").toLowerCase().trim();
       const rustExe = (() => {
         const candidates: string[] = [];
+        const roots = candidateRootsFromBackendModule();
         if (process.platform === "win32") {
           candidates.push(
             path.join(process.resourcesPath, "stemsep-backend.exe"),
-            path.join(__dirname, "../../../stemsep-backend/target/release/stemsep-backend.exe"),
-            path.join(__dirname, "../../../stemsep-backend/target/debug/stemsep-backend.exe"),
+            ...roots.flatMap((root) => [
+              path.join(root, "stemsep-backend", "target", "release", "stemsep-backend.exe"),
+              path.join(root, "stemsep-backend", "target", "debug", "stemsep-backend.exe"),
+            ]),
           );
         } else {
           candidates.push(
             path.join(process.resourcesPath, "stemsep-backend"),
-            path.join(__dirname, "../../../stemsep-backend/target/release/stemsep-backend"),
-            path.join(__dirname, "../../../stemsep-backend/target/debug/stemsep-backend"),
+            ...roots.flatMap((root) => [
+              path.join(root, "stemsep-backend", "target", "release", "stemsep-backend"),
+              path.join(root, "stemsep-backend", "target", "debug", "stemsep-backend"),
+            ]),
           );
         }
-        return candidates.find((candidate) => {
-          try {
-            return fs.existsSync(candidate);
-          } catch {
-            return false;
-          }
-        }) || null;
+        return findFirstExistingPath(candidates);
       })();
 
       if (rustExe) {
         const rustArgs: string[] = [];
         const assetsDir = (() => {
+          const roots = candidateRootsFromBackendModule();
           const candidates: string[] = [
             path.join(process.resourcesPath, "StemSepApp", "assets"),
-            path.join(__dirname, "../../../StemSepApp/assets"),
+            ...roots.map((root) => path.join(root, "StemSepApp", "assets")),
           ];
-          return candidates.find((candidate) => {
-            try {
-              return fs.existsSync(candidate);
-            } catch {
-              return false;
-            }
-          }) || null;
+          return findFirstExistingPath(candidates);
         })();
 
         if (assetsDir) rustArgs.push("--assets-dir", assetsDir);
@@ -428,11 +453,14 @@ export function createBackendBridge({
       log("Backend bridge spawned (rust mode)");
     } else {
       const pythonPath = (() => {
+        const roots = candidateRootsFromBackendModule();
         if (process.platform === "win32") {
           const candidates = [
             path.join(process.resourcesPath, ".venv", "Scripts", "python.exe"),
-            path.join(__dirname, "../../../StemSepApp/.venv/Scripts/python.exe"),
-            path.join(__dirname, "../../../.venv/Scripts/python.exe"),
+            ...roots.flatMap((root) => [
+              path.join(root, "StemSepApp", ".venv", "Scripts", "python.exe"),
+              path.join(root, ".venv", "Scripts", "python.exe"),
+            ]),
             "python",
             "python3",
             "py",
@@ -451,8 +479,10 @@ export function createBackendBridge({
 
         const candidates = [
           path.join(process.resourcesPath, ".venv", "bin", "python"),
-          path.join(__dirname, "../../../StemSepApp/.venv/bin/python"),
-          path.join(__dirname, "../../../.venv/bin/python"),
+          ...roots.flatMap((root) => [
+            path.join(root, "StemSepApp", ".venv", "bin", "python"),
+            path.join(root, ".venv", "bin", "python"),
+          ]),
           "python3",
           "python",
         ];
@@ -469,21 +499,16 @@ export function createBackendBridge({
 
       let scriptPath = app.isPackaged
         ? path.join(process.resourcesPath, "python-bridge.py")
-        : path.join(__dirname, "../../python-bridge.py");
+        : path.join(process.cwd(), "python-bridge.py");
 
       if (!fs.existsSync(scriptPath)) {
+        const roots = candidateRootsFromBackendModule();
         const candidates = [
-          path.join(__dirname, "../../python-bridge.py"),
+          ...roots.map((root) => path.join(root, "python-bridge.py")),
           path.join(process.resourcesPath, "python-bridge.py"),
           path.join(process.resourcesPath, "app.asar.unpacked", "python-bridge.py"),
         ];
-        const resolved = candidates.find((candidate) => {
-          try {
-            return fs.existsSync(candidate);
-          } catch {
-            return false;
-          }
-        });
+        const resolved = findFirstExistingPath(candidates);
         if (resolved) scriptPath = resolved;
       }
 
@@ -509,17 +534,12 @@ export function createBackendBridge({
             ? { STEMSEP_MODELS_DIR: modelsDir }
             : {}),
           ...(() => {
+            const roots = candidateRootsFromBackendModule();
             const candidates: string[] = [
               path.join(process.resourcesPath, "StemSepApp", "assets"),
-              path.join(__dirname, "../../../StemSepApp/assets"),
+              ...roots.map((root) => path.join(root, "StemSepApp", "assets")),
             ];
-            const assetsDir = candidates.find((candidate) => {
-              try {
-                return fs.existsSync(candidate);
-              } catch {
-                return false;
-              }
-            });
+            const assetsDir = findFirstExistingPath(candidates);
             return assetsDir ? { STEMSEP_ASSETS_DIR: assetsDir } : {};
           })(),
           PYTHONIOENCODING: "utf-8",

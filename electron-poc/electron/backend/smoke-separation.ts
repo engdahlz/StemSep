@@ -29,6 +29,34 @@ type SelectionJobSnapshot = {
   progress?: number;
 };
 
+function resolveDefaultSmokeInputFile(): string {
+  const candidates = [
+    path.join(process.cwd(), "electron-poc", "strip mall.wav"),
+    path.join(process.cwd(), "strip mall.wav"),
+  ];
+
+  try {
+    const appPath = app.getAppPath();
+    candidates.push(
+      path.join(appPath, "strip mall.wav"),
+      path.join(appPath, "..", "strip mall.wav"),
+      path.join(appPath, "..", "electron-poc", "strip mall.wav"),
+    );
+  } catch {
+    // ignore
+  }
+
+  for (const candidate of candidates) {
+    try {
+      if (fs.existsSync(candidate)) return candidate;
+    } catch {
+      // ignore
+    }
+  }
+
+  return path.join(process.cwd(), "electron-poc", "strip mall.wav");
+}
+
 function extractJobId(value: any): string | null {
   const candidate =
     value?.job_id ??
@@ -155,7 +183,7 @@ export function createSmokeSeparationRunner({
 
     const inputFile =
       (process.env.STEMSEP_SMOKE_INPUT_FILE || "").trim() ||
-      path.join(__dirname, "../strip mall.wav");
+      resolveDefaultSmokeInputFile();
     const modelId =
       (process.env.STEMSEP_SMOKE_MODEL_ID || "").trim() ||
       "bs-roformer-viperx-1297";
