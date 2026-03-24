@@ -55,6 +55,7 @@ export function registerSeparationIpcHandlers({
         device,
         overlap,
         segmentSize,
+        batchSize,
         tta,
         outputFormat,
         exportMixes,
@@ -80,6 +81,7 @@ export function registerSeparationIpcHandlers({
         device?: string;
         overlap?: number;
         segmentSize?: number;
+        batchSize?: number;
         tta?: boolean;
         outputFormat?: string;
         exportMixes?: string[];
@@ -176,6 +178,7 @@ export function registerSeparationIpcHandlers({
           shifts: shifts || 0,
           overlap,
           segment_size: segmentSize,
+          batch_size: batchSize,
           tta,
           output_format: outputFormat,
           bitrate,

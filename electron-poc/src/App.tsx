@@ -201,6 +201,15 @@ function App() {
     setConfigureFile(null);
   };
 
+  const handleWorkflowLabPrepare = (
+    config: SeparationConfig,
+    file: ConfigureFileInfo,
+  ) => {
+    logger.info("Workflow Lab prepared separation", { config, file }, "App");
+    setPendingSeparationConfig({ config, file });
+    setCurrentPage("home");
+  };
+
   // Build availability map from models
   const availability: Record<string, any> = {};
   models.forEach((m) => {
@@ -266,7 +275,13 @@ function App() {
       case "settings":
         return <SettingsPage />;
       case "quality":
-        return <QualityLabPage />;
+        return (
+          <QualityLabPage
+            presets={configurePresets}
+            models={models}
+            onPrepareSeparation={handleWorkflowLabPrepare}
+          />
+        );
       case "about":
         return (
           <PageShell>

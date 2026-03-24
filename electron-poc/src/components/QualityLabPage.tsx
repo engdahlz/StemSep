@@ -1,788 +1,689 @@
-import { useEffect, useMemo, useState } from "react"
-import { FlaskConical, GitCompareArrows, Wand2 } from "lucide-react"
-import { toast } from "sonner"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
-import { PageShell } from "./PageShell"
-import { Badge } from "./ui/badge"
-import type { Recipe } from "@/types/recipes"
+import { useEffect, useMemo, useState } from "react";
+import { Cpu, HardDriveDownload, Layers3, ShieldCheck, Sparkles, Wand2 } from "lucide-react";
+import { toast } from "sonner";
 
-function parseJsonOrThrow<T = any>(raw: string, label: string): T {
-  try {
-    return JSON.parse(raw) as T
-  } catch (e: any) {
-    throw new Error(`${label} is not valid JSON: ${e?.message || String(e)}`)
-  }
+import { PageShell } from "./PageShell";
+import { EnsembleBuilder } from "./EnsembleBuilder";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import type { Preset } from "@/presets";
+import { getRequiredModels } from "@/presets";
+import type { Model } from "@/types/store";
+import type { QualityProfile, SeparationConfig } from "@/types/separation";
+import {
+  deriveRecommendedHardwareTier,
+  deriveRuntimeBurden,
+  deriveTargetUseCase,
+  deriveWorkflowTier,
+  getQualityProfiles,
+  resolveQualityProfileAdvancedParams,
+} from "@/lib/separation/qualityProfiles";
+import { bestVolumeCompensation } from "@/utils/volumeCompensation";
+
+type WorkflowLabSurface = "guided" | "manual" | "restoration";
+
+interface WorkflowLabPageProps {
+  presets: Preset[];
+  models: Model[];
+  onPrepareSeparation: (
+    config: SeparationConfig,
+    file: { name: string; path: string; presetId?: string },
+  ) => void;
 }
 
-const EXAMPLE_SCENARIOS = [
-  {
-    label: "Vocals",
-    recipeId: "recipe_vocal_denoise",
-    baselineName: "vocals-baseline",
-    modelIdsCsv: "unwa-big-beta-5e,gabox-voc-fv4",
-    configJson: JSON.stringify({ device: "auto", recipe_id: "recipe_vocal_denoise" }, null, 2),
-    outputFilesJson: JSON.stringify(
-      {
-        vocals: "C:/datasets/reference/vocals.wav",
-        instrumental: "C:/datasets/reference/instrumental.wav",
-      },
-      null,
-      2,
-    ),
-  },
-  {
-    label: "Instrumental",
-    recipeId: "workflow_phase_fix_instrumental",
-    baselineName: "instrumental-baseline",
-    modelIdsCsv: "unwa-inst-v1e-plus,becruily-vocal",
-    configJson: JSON.stringify(
-      { device: "auto", recipe_id: "workflow_phase_fix_instrumental" },
-      null,
-      2,
-    ),
-    outputFilesJson: JSON.stringify(
-      {
-        instrumental: "C:/datasets/reference/instrumental.wav",
-        vocals: "C:/datasets/reference/vocals.wav",
-      },
-      null,
-      2,
-    ),
-  },
-  {
-    label: "Karaoke",
-    recipeId: "recipe_karaoke_fusion",
-    baselineName: "karaoke-baseline",
-    modelIdsCsv: "bs-roformer-karaoke-becruily,anvuew-karaoke",
-    configJson: JSON.stringify({ device: "auto", recipe_id: "recipe_karaoke_fusion" }, null, 2),
-    outputFilesJson: JSON.stringify(
-      {
-        no_vocals: "C:/datasets/reference/no_vocals.wav",
-        vocals: "C:/datasets/reference/vocals.wav",
-      },
-      null,
-      2,
-    ),
-  },
-  {
-    label: "Restoration",
-    recipeId: "workflow_live_restoration",
-    baselineName: "restoration-baseline",
-    modelIdsCsv: "anvuew-dereverb-room,aufr33-denoise-aggressive",
-    configJson: JSON.stringify(
-      { device: "auto", recipe_id: "workflow_live_restoration" },
-      null,
-      2,
-    ),
-    outputFilesJson: JSON.stringify(
-      {
-        vocals: "C:/datasets/reference/restored_vocals.wav",
-      },
-      null,
-      2,
-    ),
-  },
-] as const
+type GuidedWorkflowSpec = {
+  key: string;
+  title: string;
+  description: string;
+  candidates: string[];
+  fallback?: (preset: Preset) => boolean;
+};
 
-export default function QualityLabPage() {
-  const [baselineName, setBaselineName] = useState("quality-baseline")
-  const [modelIdsCsv, setModelIdsCsv] = useState("")
-  const [configJson, setConfigJson] = useState("{\n  \"device\": \"auto\"\n}")
-  const [outputFilesJson, setOutputFilesJson] = useState(
-    "{\n  \"vocals\": \"C:/path/to/vocals.wav\",\n  \"instrumental\": \"C:/path/to/instrumental.wav\"\n}",
-  )
-  const [manifestPath, setManifestPath] = useState("")
+type GuidedWorkflowCard = {
+  spec: GuidedWorkflowSpec;
+  preset: Preset;
+  workflowTier: "verified" | "advanced";
+  runtimeBurden: string;
+  hardwareTier: string;
+  targetUseCase: string;
+  installedCount: number;
+  requiredCount: number;
+};
 
-  const [baselineManifestPath, setBaselineManifestPath] = useState("")
-  const [candidateManifestPath, setCandidateManifestPath] = useState("")
-  const [candidateName, setCandidateName] = useState("quality-candidate")
-  const [candidateModelIdsCsv, setCandidateModelIdsCsv] = useState("")
-  const [candidateConfigJson, setCandidateConfigJson] =
-    useState("{\n  \"device\": \"auto\"\n}")
-  const [candidateOutputFilesJson, setCandidateOutputFilesJson] = useState(
-    "{\n  \"vocals\": \"C:/path/to/candidate-vocals.wav\",\n  \"instrumental\": \"C:/path/to/candidate-instrumental.wav\"\n}",
-  )
+const GUIDED_WORKFLOWS: GuidedWorkflowSpec[] = [
+  {
+    key: "best-vocals",
+    title: "Best Vocals",
+    description: "Targets lead-vocal clarity first, with cleanup-oriented defaults for modern vocal extraction.",
+    candidates: ["recipe_vocal_denoise", "best_vocals", "natural_body_vocals"],
+    fallback: (preset) =>
+      preset.simpleGoal === "vocals" &&
+      (preset.workflowFamily?.toLowerCase().includes("vocal") ||
+        preset.name.toLowerCase().includes("vocals")),
+  },
+  {
+    key: "best-instrumental",
+    title: "Best Instrumental",
+    description: "Guide-style instrumental extraction with fuller backing recovery and stronger anti-buzz defaults.",
+    candidates: ["workflow_phase_fix_instrumental", "best_instrumental", "high_quality_instrumental"],
+    fallback: (preset) =>
+      preset.simpleGoal === "instrumental" &&
+      (preset.workflowFamily?.toLowerCase().includes("instrument") ||
+        preset.name.toLowerCase().includes("instrumental")),
+  },
+  {
+    key: "bleedless-karaoke",
+    title: "Bleedless Karaoke",
+    description: "Optimized for the cleanest backing track possible, prioritising low vocal bleed over fullness.",
+    candidates: ["recipe_karaoke_fusion", "best_karaoke"],
+    fallback: (preset) =>
+      preset.simpleGoal === "karaoke" || preset.name.toLowerCase().includes("karaoke"),
+  },
+  {
+    key: "vocal-restoration",
+    title: "Separated Vocal Restoration",
+    description: "Chains separation with repair-oriented cleanup to produce a vocal track that is easier to mix or edit.",
+    candidates: ["workflow_live_restoration", "recipe_vocal_denoise"],
+    fallback: (preset) =>
+      preset.simpleGoal === "cleanup" &&
+      (preset.workflowFamily?.toLowerCase().includes("restoration") ||
+        preset.name.toLowerCase().includes("restoration")),
+  },
+  {
+    key: "precision-dereverb",
+    title: "Precision Dereverb",
+    description: "Focused restoration workflow for reverb-heavy material where vocal intelligibility matters more than speed.",
+    candidates: ["workflow_dereverb_precision_bs", "restoration_dereverb_denoise", "de_reverb_room"],
+    fallback: (preset) =>
+      preset.workflowFamily?.toLowerCase().includes("dereverb") ||
+      preset.name.toLowerCase().includes("reverb"),
+  },
+  {
+    key: "bass-definition-hybrid",
+    title: "Bass Definition Hybrid",
+    description: "Hybrid low-end workflow inspired by Colab-style specialist chains for tighter, more defined bass recovery.",
+    candidates: ["bass_hybrid_scnet_demucs"],
+    fallback: (preset) =>
+      preset.workflowFamily?.toLowerCase().includes("bass") || preset.name.toLowerCase().includes("bass"),
+  },
+];
 
-  const [busy, setBusy] = useState(false)
-  const [qualityProgress, setQualityProgress] = useState<any>(null)
-  const [lastResult, setLastResult] = useState<any>(null)
-  const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [selectedRecipeId, setSelectedRecipeId] = useState("")
+const RESTORATION_WORKFLOWS: GuidedWorkflowSpec[] = [
+  {
+    key: "separated-vocal-restoration",
+    title: "Separated Vocal Restoration",
+    description: "Restoration-first vocal repair chain for already separated or cleanup-heavy vocal material.",
+    candidates: ["recipe_vocal_denoise", "workflow_live_restoration", "restoration_dereverb_denoise"],
+    fallback: (preset) =>
+      Boolean(
+        preset.simpleGoal === "cleanup" &&
+          (preset.workflowFamily?.toLowerCase().includes("restoration") ||
+            preset.name.toLowerCase().includes("restoration")),
+      ),
+  },
+  {
+    key: "live-restoration",
+    title: "Live Vocal Restoration",
+    description: "Use when the source is noisy, roomy or audience-heavy and you want cleanup to be part of the first pass.",
+    candidates: ["workflow_live_restoration", "restoration_dereverb_denoise"],
+    fallback: (preset) =>
+      Boolean(
+        preset.simpleGoal === "cleanup" &&
+          preset.workflowFamily?.toLowerCase().includes("restoration"),
+      ),
+  },
+  {
+    key: "precision-dereverb",
+    title: "Precision Dereverb",
+    description: "Dedicated dereverb path for speech-like vocals and reverberant rooms.",
+    candidates: ["workflow_dereverb_precision_bs", "restoration_dereverb_denoise", "de_reverb_room"],
+    fallback: (preset) =>
+      preset.workflowFamily?.toLowerCase().includes("dereverb") ||
+      preset.name.toLowerCase().includes("reverb"),
+  },
+  {
+    key: "noise-and-bleed-cleanup",
+    title: "Noise and Bleed Cleanup",
+    description: "Useful as a second-stage cleanup path when separation is already done but the result still needs repair.",
+    candidates: ["recipe_vocal_denoise", "de_noise_aggressive", "de_bleed"],
+    fallback: (preset) =>
+      preset.simpleGoal === "cleanup" &&
+      (preset.name.toLowerCase().includes("noise") || preset.name.toLowerCase().includes("bleed")),
+  },
+];
+
+const basename = (path: string) => path.split(/[\\/]/).pop() || path;
+
+function resolveGuidedWorkflow(
+  presets: Preset[],
+  models: Model[],
+  spec: GuidedWorkflowSpec,
+): GuidedWorkflowCard | null {
+  const preset =
+    spec.candidates.map((id) => presets.find((entry) => entry.id === id)).find(Boolean) ||
+    presets.find((entry) => spec.fallback?.(entry));
+
+  if (!preset) return null;
+
+  const requiredIds = getRequiredModels(preset);
+  const installedCount = requiredIds.filter((id) =>
+    models.some((model) => model.id === id && model.installed),
+  ).length;
+
+  return {
+    spec,
+    preset,
+    workflowTier: deriveWorkflowTier(preset),
+    runtimeBurden: deriveRuntimeBurden(preset),
+    hardwareTier: deriveRecommendedHardwareTier(preset),
+    targetUseCase: deriveTargetUseCase(preset),
+    installedCount,
+    requiredCount: requiredIds.length,
+  };
+}
+
+function buildGuidedConfig(preset: Preset, qualityProfile: QualityProfile): SeparationConfig {
+  return {
+    mode: "simple",
+    presetId: preset.id,
+    modelId: preset.modelId,
+    selectionEnvelope: preset.selectionEnvelope,
+    workflowId: preset.id,
+    device: "auto",
+    outputFormat: "wav",
+    normalize: true,
+    stems: preset.stems,
+    qualityProfile,
+    advancedParams: resolveQualityProfileAdvancedParams({
+      profile: qualityProfile,
+      preset,
+    }),
+  };
+}
+
+export default function QualityLabPage({
+  presets,
+  models,
+  onPrepareSeparation,
+}: WorkflowLabPageProps) {
+  const [surface, setSurface] = useState<WorkflowLabSurface>("guided");
+  const [qualityProfile, setQualityProfile] = useState<QualityProfile>("balanced");
+  const [manualTarget, setManualTarget] = useState<"vocals" | "instrumental" | "karaoke">("instrumental");
+  const [manualModels, setManualModels] = useState<Array<{ model_id: string; weight: number }>>([]);
+  const [manualAlgorithm, setManualAlgorithm] = useState<"average" | "max_spec" | "min_spec" | "frequency_split">("average");
+  const [manualStemAlgorithms, setManualStemAlgorithms] = useState<{
+    vocals?: "average" | "max_spec" | "min_spec";
+    instrumental?: "average" | "max_spec" | "min_spec";
+  }>();
+  const [manualPhaseFixEnabled, setManualPhaseFixEnabled] = useState(false);
+  const [manualPhaseFixParams, setManualPhaseFixParams] = useState({
+    enabled: true,
+    lowHz: 500,
+    highHz: 5000,
+    highFreqWeight: 2,
+  });
+  const [manualVolumeComp, setManualVolumeComp] = useState(true);
+  const [secondaryCleanupModelId, setSecondaryCleanupModelId] = useState("");
+  const [dereverbModelId, setDereverbModelId] = useState("");
+  const [denoiseModelId, setDenoiseModelId] = useState("");
+  const [isPreparing, setIsPreparing] = useState(false);
+
+  const qualityProfiles = useMemo(() => getQualityProfiles(), []);
+  const installedModels = useMemo(() => models.filter((model) => model.installed), [models]);
 
   useEffect(() => {
-    const offProgress = window.electronAPI?.onQualityProgress?.((msg) => {
-      setQualityProgress(msg)
-    })
-    const offComplete = window.electronAPI?.onQualityComplete?.((msg) => {
-      setQualityProgress(msg)
-    })
-    return () => {
-      offProgress?.()
-      offComplete?.()
+    if (manualModels.length > 0 || installedModels.length === 0) return;
+    const initialModels = installedModels.slice(0, Math.min(2, installedModels.length));
+    setManualModels(initialModels.map((model) => ({ model_id: model.id, weight: 1 })));
+  }, [installedModels, manualModels.length]);
+
+  const guidedCards = useMemo(
+    () => GUIDED_WORKFLOWS.map((spec) => resolveGuidedWorkflow(presets, models, spec)).filter(Boolean) as GuidedWorkflowCard[],
+    [models, presets],
+  );
+  const restorationCards = useMemo(
+    () => RESTORATION_WORKFLOWS.map((spec) => resolveGuidedWorkflow(presets, models, spec)).filter(Boolean) as GuidedWorkflowCard[],
+    [models, presets],
+  );
+
+  const cleanupCandidates = useMemo(
+    () => installedModels.filter((model) => /bleed|clean|noise|denoise|crowd/i.test(`${model.name} ${model.id} ${model.description}`)),
+    [installedModels],
+  );
+  const dereverbCandidates = useMemo(
+    () => installedModels.filter((model) => /reverb|room/i.test(`${model.name} ${model.id} ${model.description}`)),
+    [installedModels],
+  );
+  const denoiseCandidates = useMemo(
+    () => installedModels.filter((model) => /noise|denoise|clean/i.test(`${model.name} ${model.id} ${model.description}`)),
+    [installedModels],
+  );
+
+  const manualRequiredIds = useMemo(() => {
+    const ids = new Set(manualModels.map((entry) => entry.model_id).filter(Boolean));
+    if (secondaryCleanupModelId) ids.add(secondaryCleanupModelId);
+    if (dereverbModelId) ids.add(dereverbModelId);
+    if (denoiseModelId) ids.add(denoiseModelId);
+    return Array.from(ids);
+  }, [denoiseModelId, dereverbModelId, manualModels, secondaryCleanupModelId]);
+
+  const manualStepSummary = useMemo(() => {
+    const steps: string[] = [];
+    steps.push(manualTarget === "karaoke" ? "Separate into no-vocals and vocal reference" : `Separate for ${manualTarget}`);
+    if (secondaryCleanupModelId) steps.push("Secondary cleanup");
+    if (dereverbModelId) steps.push("Dereverb");
+    if (denoiseModelId) steps.push("Denoise");
+    if (manualPhaseFixEnabled) steps.push("Phase fix");
+    if (manualAlgorithm === "frequency_split") steps.push("Frequency split blend");
+    return steps;
+  }, [denoiseModelId, dereverbModelId, manualAlgorithm, manualPhaseFixEnabled, manualTarget, secondaryCleanupModelId]);
+
+  const selectedProfile = useMemo(
+    () => qualityProfiles.find((profile) => profile.id === qualityProfile) || null,
+    [qualityProfile, qualityProfiles],
+  );
+
+  const prepareWithAudioFile = async (config: SeparationConfig, presetId?: string) => {
+    if (!window.electronAPI?.openAudioFileDialog) {
+      toast.error("Audio file picker is not available.");
+      return;
     }
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    const loadRecipes = async () => {
-      try {
-        const loaded = await window.electronAPI?.getRecipes?.()
-        if (cancelled || !Array.isArray(loaded)) return
-        const qaRecipes = loaded.filter(
-          (recipe: Recipe) =>
-            recipe.requires_qa_pass ||
-            (!!recipe.golden_set_id && !!recipe.audio_quality_thresholds),
-        )
-        setRecipes(qaRecipes)
-      } catch (e) {
-        console.warn("Failed to load QA recipes", e)
-      }
-    }
-    void loadRecipes()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const progressText = useMemo(() => {
-    if (!qualityProgress) return "Idle"
-    const p = Number(qualityProgress?.progress)
-    const pct = Number.isFinite(p) ? `${Math.round(p)}%` : ""
-    return `${qualityProgress?.stage || "quality"} ${pct} ${qualityProgress?.message || ""}`.trim()
-  }, [qualityProgress])
-
-  const comparison = lastResult?.comparison
-  const baseline = lastResult?.baseline || lastResult
-  const candidate = lastResult?.candidate
-  const audioQuality = comparison?.audio_quality
-  const qaPolicy = lastResult?.qa_policy
-  const selectedRecipe = useMemo(
-    () => recipes.find((recipe) => recipe.id === selectedRecipeId) || null,
-    [recipes, selectedRecipeId],
-  )
-  const selectedThresholds = selectedRecipe?.audio_quality_thresholds || null
-
-  const qualitySummary = useMemo(() => {
-    const outputsCount = Array.isArray(baseline?.outputs)
-      ? baseline.outputs.length
-      : baseline?.output_hashes
-        ? Object.keys(baseline.output_hashes).length
-        : 0
-
-    return {
-      compatible:
-        typeof comparison?.compatible === "boolean" ? comparison.compatible : null,
-      qualityScore:
-        typeof comparison?.quality_score === "number"
-          ? comparison.quality_score
-          : null,
-      diffCount:
-        typeof comparison?.difference_count === "number"
-          ? comparison.difference_count
-          : Array.isArray(comparison?.differences)
-            ? comparison.differences.length
-            : 0,
-      outputMismatchCount:
-        typeof comparison?.output_mismatch_count === "number"
-          ? comparison.output_mismatch_count
-          : 0,
-      metricsDeltaEntries: comparison?.metrics_delta
-        ? Object.entries(comparison.metrics_delta)
-        : [],
-      audioVerdict:
-        typeof audioQuality?.verdict === "string" ? audioQuality.verdict : null,
-      audioComparedPairs:
-        typeof audioQuality?.summary?.compared_pairs === "number"
-          ? audioQuality.summary.compared_pairs
-          : 0,
-      audioFailedPairs:
-        typeof audioQuality?.summary?.failed_pairs === "number"
-          ? audioQuality.summary.failed_pairs
-          : 0,
-      baselineModels: Array.isArray(baseline?.models) ? baseline.models : [],
-      candidateModels: Array.isArray(candidate?.models) ? candidate.models : [],
-      outputsCount,
-      baselineHash: comparison?.baseline_manifest_hash || baseline?.manifest_hash || null,
-      candidateHash:
-        comparison?.candidate_manifest_hash || candidate?.manifest_hash || null,
-    }
-  }, [audioQuality, baseline, candidate, comparison])
-
-  const differenceRows = Array.isArray(comparison?.differences)
-    ? comparison.differences
-    : []
-  const audioQualityPairs = Array.isArray(audioQuality?.pairs) ? audioQuality.pairs : []
-
-  const applyScenario = (scenario: (typeof EXAMPLE_SCENARIOS)[number]) => {
-    setSelectedRecipeId(scenario.recipeId)
-    setBaselineName(scenario.baselineName)
-    setModelIdsCsv(scenario.modelIdsCsv)
-    setConfigJson(scenario.configJson)
-    setOutputFilesJson(scenario.outputFilesJson)
-    setCandidateName(`${scenario.baselineName}-candidate`)
-    setCandidateModelIdsCsv(scenario.modelIdsCsv)
-    setCandidateConfigJson(scenario.configJson)
-    setCandidateOutputFilesJson(scenario.outputFilesJson)
-  }
-
-  const createBaseline = async () => {
-    if (!window.electronAPI?.qualityBaselineCreate) return
-    setBusy(true)
+    setIsPreparing(true);
     try {
-      const modelIds = modelIdsCsv
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-      const parsedConfig = parseJsonOrThrow<Record<string, any>>(configJson, "Config JSON")
-      const effectiveConfig = {
-        ...parsedConfig,
-        ...(selectedRecipe?.id ? { recipe_id: selectedRecipe.id } : {}),
-        ...(selectedRecipe?.golden_set_id
-          ? { golden_set_id: selectedRecipe.golden_set_id }
-          : {}),
-      }
-      const payload: Record<string, any> = {
-        name: baselineName || undefined,
-        model_ids: modelIds,
-        recipe_id: selectedRecipe?.id,
-        golden_set_id: selectedRecipe?.golden_set_id,
-        config: effectiveConfig,
-        output_files: parseJsonOrThrow(outputFilesJson, "Output files JSON"),
-      }
-      if (manifestPath.trim()) {
-        payload.manifest_path = manifestPath.trim()
-      }
-      const result = await window.electronAPI.qualityBaselineCreate(payload)
-      setLastResult(result)
-      if (manifestPath.trim()) {
-        setBaselineManifestPath(manifestPath.trim())
-      }
-      toast.success("Quality baseline created")
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to create quality baseline")
+      const filePaths = await window.electronAPI.openAudioFileDialog();
+      if (!filePaths || filePaths.length === 0) return;
+      const path = filePaths[0];
+      onPrepareSeparation(config, { name: basename(path), path, presetId });
+      toast.success("Workflow staged on Home. Review the prepared run and start it there.");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to prepare workflow.");
     } finally {
-      setBusy(false)
+      setIsPreparing(false);
     }
-  }
+  };
 
-  const compareManifests = async () => {
-    if (!window.electronAPI?.qualityCompare) return
-    if (!baselineManifestPath.trim()) {
-      toast.error("Provide a baseline manifest path")
-      return
+  const launchGuidedWorkflow = async (card: GuidedWorkflowCard) => {
+    const config = buildGuidedConfig(card.preset, qualityProfile);
+    await prepareWithAudioFile(config, card.preset.id);
+  };
+
+  const launchManualWorkflow = async () => {
+    const normalizedModels = manualModels.filter((entry) => entry.model_id);
+    if (normalizedModels.length === 0) {
+      toast.error("Add at least one installed model to the ensemble.");
+      return;
     }
-    setBusy(true)
-    try {
-      const payload: Record<string, any> = {
-        baseline_manifest_path: baselineManifestPath.trim(),
-        recipe_id: selectedRecipe?.id,
-        golden_set_id: selectedRecipe?.golden_set_id,
-        audio_quality_thresholds: selectedThresholds || undefined,
-      }
 
-      if (candidateManifestPath.trim()) {
-        payload.candidate_manifest_path = candidateManifestPath.trim()
-      } else {
-        const parsedCandidateConfig = parseJsonOrThrow<Record<string, any>>(
-          candidateConfigJson,
-          "Candidate config JSON",
-        )
-        payload.candidate = {
-          name: candidateName || undefined,
-          model_ids: candidateModelIdsCsv
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean),
-          config: {
-            ...parsedCandidateConfig,
-            ...(selectedRecipe?.id ? { recipe_id: selectedRecipe.id } : {}),
-            ...(selectedRecipe?.golden_set_id
-              ? { golden_set_id: selectedRecipe.golden_set_id }
-              : {}),
-          },
-          output_files: parseJsonOrThrow(
-            candidateOutputFilesJson,
-            "Candidate output files JSON",
-          ),
-        }
-      }
+    const postProcessingSteps = [
+      secondaryCleanupModelId
+        ? {
+            type:
+              manualTarget === "instrumental" || manualTarget === "karaoke" ? "de_bleed" : "de_noise",
+            modelId: secondaryCleanupModelId,
+            description: "Secondary cleanup pass",
+            targetStem: manualTarget === "instrumental" ? "instrumental" : "vocals",
+          }
+        : null,
+      dereverbModelId
+        ? {
+            type: "de_reverb",
+            modelId: dereverbModelId,
+            description: "Dereverb pass",
+            targetStem: "vocals" as const,
+          }
+        : null,
+      denoiseModelId
+        ? {
+            type: "de_noise",
+            modelId: denoiseModelId,
+            description: "Denoise pass",
+            targetStem: manualTarget === "instrumental" ? ("instrumental" as const) : ("vocals" as const),
+          }
+        : null,
+    ].filter(Boolean) as NonNullable<SeparationConfig["postProcessingSteps"]>;
 
-      const result = await window.electronAPI.qualityCompare(payload)
-      setLastResult(result)
-      const compatible = !!result?.comparison?.compatible
-      if (compatible) toast.success("Quality compare passed")
-      else toast.error("Quality compare found differences")
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to compare quality manifests")
-    } finally {
-      setBusy(false)
-    }
-  }
+    const config: SeparationConfig = {
+      mode: "advanced",
+      workflowId: `workflow_lab_${manualTarget}`,
+      device: "auto",
+      outputFormat: "wav",
+      normalize: true,
+      qualityProfile,
+      stems:
+        manualTarget === "karaoke"
+          ? ["no_vocals", "vocals"]
+          : manualTarget === "vocals"
+            ? ["vocals", "instrumental"]
+            : ["instrumental", "vocals"],
+      advancedParams: resolveQualityProfileAdvancedParams({
+        profile: qualityProfile,
+        current: { batchSize: 1 },
+      }),
+      ensembleConfig: {
+        models: normalizedModels,
+        algorithm: manualAlgorithm,
+        stemAlgorithms: manualStemAlgorithms,
+        phaseFixEnabled: manualPhaseFixEnabled,
+        phaseFixParams: manualPhaseFixEnabled ? manualPhaseFixParams : undefined,
+      },
+      postProcessingSteps,
+      volumeCompensation: manualVolumeComp ? bestVolumeCompensation() : undefined,
+    };
+
+    await prepareWithAudioFile(config);
+  };
+
+  const renderWorkflowCard = (card: GuidedWorkflowCard) => {
+    const ready = card.requiredCount === 0 || card.installedCount === card.requiredCount;
+    return (
+      <Card key={card.spec.key} className="border-white/60 bg-white/58 backdrop-blur-xl shadow-[0_18px_50px_rgba(0,0,0,0.10)]">
+        <CardHeader className="gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={card.workflowTier === "verified" ? "default" : "secondary"}>
+              {card.workflowTier === "verified" ? "Verified Workflow" : "Advanced / Experimental"}
+            </Badge>
+            <Badge variant="outline">{card.preset.workflowFamily || card.preset.category}</Badge>
+            <Badge variant="outline">{card.runtimeBurden}</Badge>
+          </div>
+          <div>
+            <CardTitle className="text-[1.2rem] tracking-[-0.4px] text-slate-900">{card.spec.title}</CardTitle>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{card.spec.description}</p>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-[1.1rem] border border-white/60 bg-white/62 p-3">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-slate-400">
+                <Sparkles className="h-3.5 w-3.5" />
+                Target use
+              </div>
+              <p className="mt-2 text-sm text-slate-700">{card.targetUseCase}</p>
+            </div>
+            <div className="rounded-[1.1rem] border border-white/60 bg-white/62 p-3">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-slate-400">
+                <Cpu className="h-3.5 w-3.5" />
+                Hardware
+              </div>
+              <p className="mt-2 text-sm text-slate-700">{card.hardwareTier}</p>
+            </div>
+          </div>
+          <div className="rounded-[1.1rem] border border-white/60 bg-white/62 p-3">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-slate-400">
+              <HardDriveDownload className="h-3.5 w-3.5" />
+              Model readiness
+            </div>
+            <p className="mt-2 text-sm text-slate-700">
+              {card.requiredCount === 0
+                ? "No extra model dependencies surfaced for this workflow."
+                : `${card.installedCount} of ${card.requiredCount} required models already installed.`}
+            </p>
+            {!ready && (
+              <p className="mt-1 text-xs text-slate-500">
+                You can still prepare the run now. Home will block on missing assets before execution.
+              </p>
+            )}
+          </div>
+          <div className="rounded-[1.1rem] border border-white/60 bg-white/50 p-3 text-sm text-slate-600">
+            <div className="font-medium text-slate-800">Why this workflow exists</div>
+            <p className="mt-1">{card.preset.workflowSummary || card.preset.description}</p>
+            {card.preset.contraindications?.length ? (
+              <p className="mt-2 text-xs text-slate-500">
+                Watch-outs: {card.preset.contraindications.join(", ")}
+              </p>
+            ) : null}
+          </div>
+          <Button className="w-full rounded-[1rem]" size="lg" onClick={() => void launchGuidedWorkflow(card)} disabled={isPreparing}>
+            {isPreparing ? "Preparing..." : "Choose Audio and Prepare"}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <PageShell>
-      <div className="flex flex-col max-w-6xl mx-auto w-full p-6 gap-6">
-        <div>
-          <h1 className="text-3xl font-bold">Quality Lab</h1>
-          <p className="text-muted-foreground mt-2">
-            Internal QA workspace for reproducible baselines, candidate runs, and
-            manifest diffs before promoting workflows into Simple mode.
-          </p>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
+        <div className="rounded-[1.8rem] border border-white/60 bg-white/50 p-6 shadow-[0_28px_90px_rgba(0,0,0,0.12)] backdrop-blur-2xl">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-3 flex flex-wrap gap-2">
+                <Badge variant="secondary">Workflow Lab</Badge>
+                <Badge variant="outline">Colab-inspired</Badge>
+                <Badge variant="outline">Quality-first</Badge>
+              </div>
+              <h1 className="text-3xl tracking-[-1px] text-slate-900">
+                Curated high-quality separation without notebook chaos
+              </h1>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Guided workflows expose the best notebook-inspired chains as curated products. Manual Ensemble keeps
+                the power-user path available without forcing you to remember community model lore.
+              </p>
+            </div>
+            <div className="min-w-[280px] rounded-[1.3rem] border border-white/60 bg-white/62 p-4">
+              <div className="text-xs uppercase tracking-[0.16em] text-slate-400">Selected quality profile</div>
+              <div className="mt-2 text-lg font-medium text-slate-900">{selectedProfile?.label || "Balanced"}</div>
+              <p className="mt-1 text-sm text-slate-600">{selectedProfile?.description}</p>
+            </div>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>QA Policy</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={selectedRecipeId}
-              onChange={(e) => setSelectedRecipeId(e.target.value)}
-            >
-              <option value="">Manual / no recipe policy</option>
-              {recipes.map((recipe) => (
-                <option key={recipe.id} value={recipe.id}>
-                  {recipe.name} ({recipe.id})
-                </option>
-              ))}
-            </select>
-            {selectedRecipe ? (
-              <div className="rounded-md border p-3 space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {selectedRecipe.golden_set_id && (
-                    <Badge variant="secondary">
-                      Golden set: {selectedRecipe.golden_set_id}
-                    </Badge>
-                  )}
-                  {selectedRecipe.qa_status && (
-                    <Badge variant="outline">QA status: {selectedRecipe.qa_status}</Badge>
-                  )}
-                  {selectedRecipe.requires_qa_pass && (
-                    <Badge>Promotion-gated</Badge>
-                  )}
-                </div>
-                <div className="grid gap-2 md:grid-cols-2 text-xs">
-                  <div className="rounded bg-muted/40 p-2">
-                    Min correlation:{" "}
-                    {selectedThresholds?.min_correlation ?? "default"}
-                  </div>
-                  <div className="rounded bg-muted/40 p-2">
-                    Min SNR:{" "}
-                    {typeof selectedThresholds?.min_snr_db === "number"
-                      ? `${selectedThresholds.min_snr_db} dB`
-                      : "default"}
-                  </div>
-                  <div className="rounded bg-muted/40 p-2">
-                    Min SI-SDR:{" "}
-                    {typeof selectedThresholds?.min_si_sdr_db === "number"
-                      ? `${selectedThresholds.min_si_sdr_db} dB`
-                      : "default"}
-                  </div>
-                  <div className="rounded bg-muted/40 p-2">
-                    Max gain delta:{" "}
-                    {typeof selectedThresholds?.max_gain_delta_db === "number"
-                      ? `${selectedThresholds.max_gain_delta_db} dB`
-                      : "default"}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                Pick a recipe to compare against its golden-set policy instead of generic defaults.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Reference Scenarios</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {EXAMPLE_SCENARIOS.map((scenario) => (
-              <Button
-                key={scenario.label}
-                variant="outline"
-                size="sm"
-                onClick={() => applyScenario(scenario)}
+        <div className="rounded-[1.5rem] border border-white/60 bg-white/55 p-3 backdrop-blur-xl">
+          <div className="flex flex-wrap gap-2">
+            {qualityProfiles.map((profile) => (
+              <button
+                key={profile.id}
+                type="button"
+                onClick={() => setQualityProfile(profile.id)}
+                className={`rounded-full border px-4 py-2 text-sm transition-all ${
+                  qualityProfile === profile.id
+                    ? "border-slate-900/10 bg-slate-900 text-white shadow-[0_10px_25px_rgba(0,0,0,0.18)]"
+                    : "border-white/70 bg-white/70 text-slate-600 hover:bg-white/90 hover:text-slate-900"
+                }`}
               >
-                {scenario.label}
-              </Button>
+                {profile.label}
+              </button>
             ))}
-          </CardContent>
-        </Card>
-
-        <div className="grid gap-6 xl:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Baseline</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Input
-                value={baselineName}
-                onChange={(e) => setBaselineName(e.target.value)}
-                placeholder="Baseline name"
-              />
-              <Input
-                value={modelIdsCsv}
-                onChange={(e) => setModelIdsCsv(e.target.value)}
-                placeholder="Model IDs (comma-separated)"
-              />
-              <Input
-                value={manifestPath}
-                onChange={(e) => setManifestPath(e.target.value)}
-                placeholder="Optional manifest path"
-              />
-              <div className="grid grid-cols-1 gap-3">
-                <textarea
-                  className="min-h-40 rounded-md border border-border bg-background p-3 text-sm"
-                  value={configJson}
-                  onChange={(e) => setConfigJson(e.target.value)}
-                  spellCheck={false}
-                />
-                <textarea
-                  className="min-h-40 rounded-md border border-border bg-background p-3 text-sm"
-                  value={outputFilesJson}
-                  onChange={(e) => setOutputFilesJson(e.target.value)}
-                  spellCheck={false}
-                />
-              </div>
-              <Button disabled={busy} onClick={createBaseline}>
-                <FlaskConical className="mr-2 h-4 w-4" />
-                {busy ? "Working..." : "Create Baseline"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Compare Candidate</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Input
-                value={baselineManifestPath}
-                onChange={(e) => setBaselineManifestPath(e.target.value)}
-                placeholder="Baseline manifest path"
-              />
-              <Input
-                value={candidateManifestPath}
-                onChange={(e) => setCandidateManifestPath(e.target.value)}
-                placeholder="Candidate manifest path (optional)"
-              />
-              {!candidateManifestPath.trim() && (
-                <div className="space-y-3 rounded-md border border-dashed p-3">
-                  <div className="text-sm font-medium">
-                    Inline candidate manifest
-                  </div>
-                  <Input
-                    value={candidateName}
-                    onChange={(e) => setCandidateName(e.target.value)}
-                    placeholder="Candidate name"
-                  />
-                  <Input
-                    value={candidateModelIdsCsv}
-                    onChange={(e) => setCandidateModelIdsCsv(e.target.value)}
-                    placeholder="Candidate model IDs (comma-separated)"
-                  />
-                  <textarea
-                    className="min-h-28 rounded-md border border-border bg-background p-3 text-sm"
-                    value={candidateConfigJson}
-                    onChange={(e) => setCandidateConfigJson(e.target.value)}
-                    spellCheck={false}
-                  />
-                  <textarea
-                    className="min-h-28 rounded-md border border-border bg-background p-3 text-sm"
-                    value={candidateOutputFilesJson}
-                    onChange={(e) => setCandidateOutputFilesJson(e.target.value)}
-                    spellCheck={false}
-                  />
-                </div>
-              )}
-              <Button disabled={busy} onClick={compareManifests}>
-                <GitCompareArrows className="mr-2 h-4 w-4" />
-                {busy ? "Working..." : "Compare"}
-              </Button>
-            </CardContent>
-          </Card>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Live Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground">{progressText}</div>
-          </CardContent>
-        </Card>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: "guided" as const, label: "Guided", description: "Curated workflow picks" },
+            { id: "manual" as const, label: "Manual Ensemble", description: "Build your own chain" },
+            { id: "restoration" as const, label: "Restoration", description: "Cleanup and repair" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setSurface(tab.id)}
+              className={`rounded-[1.2rem] border px-4 py-3 text-left transition-all ${
+                surface === tab.id
+                  ? "border-white/90 bg-white/88 text-slate-900 shadow-[0_16px_40px_rgba(0,0,0,0.10)]"
+                  : "border-white/60 bg-white/50 text-slate-600 hover:bg-white/72 hover:text-slate-900"
+              }`}
+            >
+              <div className="text-sm font-medium">{tab.label}</div>
+              <div className="mt-1 text-xs text-slate-500">{tab.description}</div>
+            </button>
+          ))}
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quality Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-3">
-              <div className="rounded-md border p-3 min-w-36">
-                <div className="text-xs text-muted-foreground">Compatibility</div>
-                <div className="mt-1">
-                  {qualitySummary.compatible === null ? (
-                    <Badge variant="secondary">N/A</Badge>
-                  ) : qualitySummary.compatible ? (
-                    <Badge>Pass</Badge>
-                  ) : (
-                    <Badge variant="destructive">Fail</Badge>
-                  )}
-                </div>
+        {surface === "guided" && (
+          <div className="grid gap-6 xl:grid-cols-2">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                Verified Workflows
               </div>
-              <div className="rounded-md border p-3 min-w-36">
-                <div className="text-xs text-muted-foreground">Quality Score</div>
-                <div className="mt-1 text-lg font-semibold">
-                  {qualitySummary.qualityScore == null
-                    ? "N/A"
-                    : qualitySummary.qualityScore}
-                </div>
-              </div>
-              <div className="rounded-md border p-3 min-w-36">
-                <div className="text-xs text-muted-foreground">Differences</div>
-                <div className="mt-1 text-lg font-semibold">
-                  {qualitySummary.diffCount}
-                </div>
-              </div>
-              <div className="rounded-md border p-3 min-w-36">
-                <div className="text-xs text-muted-foreground">Output mismatches</div>
-                <div className="mt-1 text-lg font-semibold">
-                  {qualitySummary.outputMismatchCount}
-                </div>
-              </div>
-              <div className="rounded-md border p-3 min-w-36">
-                <div className="text-xs text-muted-foreground">Outputs</div>
-                <div className="mt-1 text-lg font-semibold">
-                  {qualitySummary.outputsCount}
-                </div>
-              </div>
-              <div className="rounded-md border p-3 min-w-36">
-                <div className="text-xs text-muted-foreground">Audio QA</div>
-                <div className="mt-1">
-                  {qualitySummary.audioVerdict === null ? (
-                    <Badge variant="secondary">N/A</Badge>
-                  ) : qualitySummary.audioVerdict === "pass" ? (
-                    <Badge>Pass</Badge>
-                  ) : qualitySummary.audioVerdict === "skipped" ? (
-                    <Badge variant="secondary">Skipped</Badge>
-                  ) : (
-                    <Badge variant="destructive">Fail</Badge>
-                  )}
-                </div>
-              </div>
-              <div className="rounded-md border p-3 min-w-36">
-                <div className="text-xs text-muted-foreground">Audio pairs</div>
-                <div className="mt-1 text-lg font-semibold">
-                  {qualitySummary.audioComparedPairs}
-                </div>
-              </div>
-              <div className="rounded-md border p-3 min-w-36">
-                <div className="text-xs text-muted-foreground">Audio regressions</div>
-                <div className="mt-1 text-lg font-semibold">
-                  {qualitySummary.audioFailedPairs}
-                </div>
-              </div>
-              <div className="rounded-md border p-3 min-w-36">
-                <div className="text-xs text-muted-foreground">QA policy source</div>
-                <div className="mt-1 text-sm font-semibold">
-                  {qaPolicy?.source || "N/A"}
-                </div>
-              </div>
+              {guidedCards.filter((card) => card.workflowTier === "verified").map(renderWorkflowCard)}
             </div>
-
-            {(qaPolicy?.recipe_id || qaPolicy?.golden_set_id) && (
-              <div className="flex flex-wrap gap-2">
-                {qaPolicy?.recipe_id && (
-                  <Badge variant="outline">Recipe: {qaPolicy.recipe_id}</Badge>
-                )}
-                {qaPolicy?.golden_set_id && (
-                  <Badge variant="secondary">
-                    Golden set: {qaPolicy.golden_set_id}
-                  </Badge>
-                )}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                <Layers3 className="h-4 w-4 text-slate-700" />
+                Advanced / Experimental
               </div>
-            )}
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="rounded-md border p-3 space-y-3">
-                <div className="text-sm font-medium">Baseline</div>
-                <div className="flex flex-wrap gap-2">
-                  {qualitySummary.baselineModels.length > 0 ? (
-                    qualitySummary.baselineModels.map((model: any) => (
-                      <Badge key={model.id || model.name} variant="secondary">
-                        {model.id || model.name}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-sm text-muted-foreground">No baseline loaded</span>
-                  )}
-                </div>
-                {qualitySummary.baselineHash && (
-                  <div className="text-xs text-muted-foreground break-all">
-                    Hash: {qualitySummary.baselineHash}
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-md border p-3 space-y-3">
-                <div className="text-sm font-medium">Candidate</div>
-                <div className="flex flex-wrap gap-2">
-                  {qualitySummary.candidateModels.length > 0 ? (
-                    qualitySummary.candidateModels.map((model: any) => (
-                      <Badge key={model.id || model.name} variant="secondary">
-                        {model.id || model.name}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-sm text-muted-foreground">
-                      Candidate shown after compare
-                    </span>
-                  )}
-                </div>
-                {qualitySummary.candidateHash && (
-                  <div className="text-xs text-muted-foreground break-all">
-                    Hash: {qualitySummary.candidateHash}
-                  </div>
-                )}
-              </div>
+              {guidedCards.filter((card) => card.workflowTier === "advanced").map(renderWorkflowCard)}
             </div>
+          </div>
+        )}
 
-            {qualitySummary.metricsDeltaEntries.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Wand2 className="h-4 w-4 text-primary" />
-                  Metric deltas
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {qualitySummary.metricsDeltaEntries.map(([key, value]) => (
-                    <Badge key={key} variant="secondary">
-                      {key}: {Number(value).toFixed(3)}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+        {surface === "restoration" && <div className="grid gap-6 xl:grid-cols-2">{restorationCards.map(renderWorkflowCard)}</div>}
 
-            {audioQualityPairs.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Wand2 className="h-4 w-4 text-primary" />
-                  Audio regression metrics
-                </div>
-                <div className="space-y-2">
-                  {audioQualityPairs.map((pair: any, index: number) => (
-                    <div
-                      key={pair.label || pair.reference_path || `audio-pair-${index}`}
-                      className="rounded-md border p-3 space-y-2"
+        {surface === "manual" && (
+          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+            <Card className="border-white/60 bg-white/58 backdrop-blur-xl shadow-[0_18px_50px_rgba(0,0,0,0.10)]">
+              <CardHeader>
+                <CardTitle className="text-slate-900">Manual Ensemble Builder</CardTitle>
+                <p className="text-sm leading-6 text-slate-600">
+                  Combine installed models, phase fix and cleanup passes into a single staged run. This keeps the
+                  exploratory notebook power-user path, but still hands execution back to the Rust control plane.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-800">Primary goal</label>
+                    <select
+                      value={manualTarget}
+                      onChange={(event) => setManualTarget(event.target.value as typeof manualTarget)}
+                      className="flex h-10 w-full rounded-[1rem] border border-white/60 bg-white/76 px-3 text-sm text-slate-800 shadow-sm outline-none"
                     >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline">{pair.label || "output"}</Badge>
-                        {pair.verdict === "pass" ? (
-                          <Badge>Pass</Badge>
-                        ) : pair.verdict === "skipped" ? (
-                          <Badge variant="secondary">Skipped</Badge>
-                        ) : (
-                          <Badge variant="destructive">Fail</Badge>
-                        )}
-                      </div>
-                      <div className="grid gap-2 md:grid-cols-2 text-xs">
-                        <div className="rounded bg-muted/40 p-2">
-                          Correlation:{" "}
-                          {typeof pair.correlation === "number"
-                            ? pair.correlation.toFixed(6)
-                            : "N/A"}
-                        </div>
-                        <div className="rounded bg-muted/40 p-2">
-                          SNR:{" "}
-                          {typeof pair.snr_db === "number"
-                            ? `${pair.snr_db.toFixed(2)} dB`
-                            : "N/A"}
-                        </div>
-                        <div className="rounded bg-muted/40 p-2">
-                          SI-SDR:{" "}
-                          {typeof pair.si_sdr_db === "number"
-                            ? `${pair.si_sdr_db.toFixed(2)} dB`
-                            : "N/A"}
-                        </div>
-                        <div className="rounded bg-muted/40 p-2">
-                          Gain delta:{" "}
-                          {typeof pair.gain_delta_db === "number"
-                            ? `${pair.gain_delta_db.toFixed(2)} dB`
-                            : "N/A"}
-                        </div>
-                      </div>
-                      {Array.isArray(pair.regressions) && pair.regressions.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {pair.regressions.map((regression: string) => (
-                            <Badge key={regression} variant="destructive">
-                              {regression}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                      {pair.reason && (
-                        <div className="text-xs text-muted-foreground">{pair.reason}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Detailed Differences</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {differenceRows.length === 0 ? (
-              <div className="text-sm text-muted-foreground">
-                No structured differences yet.
-              </div>
-            ) : (
-              differenceRows.map((difference: any, index: number) => (
-                <div key={`${difference.type}-${index}`} className="rounded-md border p-3 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline">{difference.type || "difference"}</Badge>
-                    {difference.id && <Badge variant="secondary">{difference.id}</Badge>}
-                    {difference.label && (
-                      <Badge variant="secondary">{difference.label}</Badge>
-                    )}
+                      <option value="instrumental">Instrumental / backing</option>
+                      <option value="vocals">Lead vocals</option>
+                      <option value="karaoke">Karaoke / no vocals</option>
+                    </select>
                   </div>
-                  <div className="grid gap-2 md:grid-cols-2 text-xs">
-                    <div className="rounded bg-muted/40 p-2 break-all">
-                      <div className="text-muted-foreground mb-1">Baseline</div>
-                      <div>{String(difference.baseline ?? "N/A")}</div>
-                    </div>
-                    <div className="rounded bg-muted/40 p-2 break-all">
-                      <div className="text-muted-foreground mb-1">Candidate</div>
-                      <div>{String(difference.candidate ?? "N/A")}</div>
-                    </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-800">Secondary cleanup</label>
+                    <select
+                      value={secondaryCleanupModelId}
+                      onChange={(event) => setSecondaryCleanupModelId(event.target.value)}
+                      className="flex h-10 w-full rounded-[1rem] border border-white/60 bg-white/76 px-3 text-sm text-slate-800 shadow-sm outline-none"
+                    >
+                      <option value="">None</option>
+                      {cleanupCandidates.map((model) => (
+                        <option key={model.id} value={model.id}>
+                          {model.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-800">Dereverb</label>
+                    <select
+                      value={dereverbModelId}
+                      onChange={(event) => setDereverbModelId(event.target.value)}
+                      className="flex h-10 w-full rounded-[1rem] border border-white/60 bg-white/76 px-3 text-sm text-slate-800 shadow-sm outline-none"
+                    >
+                      <option value="">None</option>
+                      {dereverbCandidates.map((model) => (
+                        <option key={model.id} value={model.id}>
+                          {model.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-800">Denoise</label>
+                    <select
+                      value={denoiseModelId}
+                      onChange={(event) => setDenoiseModelId(event.target.value)}
+                      className="flex h-10 w-full rounded-[1rem] border border-white/60 bg-white/76 px-3 text-sm text-slate-800 shadow-sm outline-none"
+                    >
+                      <option value="">None</option>
+                      {denoiseCandidates.map((model) => (
+                        <option key={model.id} value={model.id}>
+                          {model.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Last Result</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="text-xs rounded-md bg-muted p-3 overflow-auto max-h-[420px]">
-              {JSON.stringify(lastResult, null, 2)}
-            </pre>
-          </CardContent>
-        </Card>
+                <EnsembleBuilder
+                  models={models}
+                  config={manualModels}
+                  algorithm={manualAlgorithm}
+                  phaseFixEnabled={manualPhaseFixEnabled}
+                  volumeCompEnabled={manualVolumeComp}
+                  stemAlgorithms={manualStemAlgorithms}
+                  phaseFixParams={manualPhaseFixParams}
+                  onVolumeCompEnabledChange={setManualVolumeComp}
+                  onChange={(config, algorithm, stemAlgorithms, phaseFixParams, phaseFixEnabled) => {
+                    setManualModels(config);
+                    setManualAlgorithm(algorithm);
+                    setManualStemAlgorithms(stemAlgorithms);
+                    if (phaseFixParams) setManualPhaseFixParams(phaseFixParams);
+                    if (typeof phaseFixEnabled === "boolean") setManualPhaseFixEnabled(phaseFixEnabled);
+                  }}
+                />
+
+                <Button size="lg" className="w-full rounded-[1rem]" onClick={() => void launchManualWorkflow()} disabled={isPreparing || manualModels.length === 0}>
+                  {isPreparing ? "Preparing..." : "Choose Audio and Prepare Manual Workflow"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-4">
+              <Card className="border-white/60 bg-white/58 backdrop-blur-xl shadow-[0_18px_50px_rgba(0,0,0,0.10)]">
+                <CardHeader>
+                  <CardTitle className="text-slate-900">Workflow Preview</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary">{manualTarget}</Badge>
+                    <Badge variant="outline">{manualAlgorithm}</Badge>
+                    {manualPhaseFixEnabled && <Badge variant="outline">phase fix</Badge>}
+                    {manualVolumeComp && <Badge variant="outline">volume compensation</Badge>}
+                  </div>
+                  <div className="rounded-[1.1rem] border border-white/60 bg-white/60 p-3">
+                    <div className="text-xs uppercase tracking-[0.16em] text-slate-400">Planned chain</div>
+                    <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                      {manualStepSummary.map((step) => (
+                        <li key={step} className="flex items-start gap-2">
+                          <Wand2 className="mt-0.5 h-4 w-4 text-slate-400" />
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="rounded-[1.1rem] border border-white/60 bg-white/60 p-3">
+                    <div className="text-xs uppercase tracking-[0.16em] text-slate-400">Required installed models</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {manualRequiredIds.length > 0 ? (
+                        manualRequiredIds.map((id) => (
+                          <Badge key={id} variant="outline">
+                            {models.find((model) => model.id === id)?.name || id}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-slate-500">No models selected yet.</span>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/60 bg-white/58 backdrop-blur-xl shadow-[0_18px_50px_rgba(0,0,0,0.10)]">
+                <CardHeader>
+                  <CardTitle className="text-slate-900">What stays out of scope</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm leading-6 text-slate-600">
+                  <p>
+                    This pass intentionally keeps transcription, mastering and voice cloning outside the main separation
+                    surface.
+                  </p>
+                  <p>
+                    Workflow Lab is focused on separation quality, cleanup and restoration, not on turning the app into
+                    a generic audio notebook shell.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
       </div>
     </PageShell>
-  )
+  );
 }

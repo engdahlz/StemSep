@@ -3,6 +3,11 @@ import type { PostProcessingStep } from '../presets'
 
 export type VolumeCompensationStage = 'export' | 'blend' | 'both'
 export type WorkflowKind = 'single' | 'ensemble' | 'pipeline'
+export type QualityProfile =
+    | 'fast'
+    | 'balanced'
+    | 'maximum_quality'
+    | 'long_file_safe'
 export type WorkflowSurface =
     | 'single'
     | 'ensemble'
@@ -139,10 +144,12 @@ export interface SeparationConfig {
     advancedParams?: {
         overlap?: number
         segmentSize?: number
+        batchSize?: number
         shifts?: number
         tta?: boolean
         bitrate?: string
     }
+    qualityProfile?: QualityProfile
     ensembleConfig?: {
         models: { model_id: string; weight?: number }[]
         algorithm: 'average' | 'avg_wave' | 'max_spec' | 'min_spec' | 'phase_fix' | 'frequency_split'

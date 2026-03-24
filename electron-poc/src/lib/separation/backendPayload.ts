@@ -2,6 +2,7 @@ import type { SeparationConfig, SeparationWorkflow } from '@/types/separation'
 import type { SeparationPlan } from '@/lib/separation/resolveSeparationPlan'
 import type { VolumeCompensation } from '@/types/separation'
 import type { CatalogSelectionType, ModelSelectionEnvelope } from "@/types/modelCatalog"
+import type { SourceAudioProfile, StagingDecision } from "@/types/media"
 
 export interface SeparationBackendPayload {
   inputFile: string
@@ -13,6 +14,7 @@ export interface SeparationBackendPayload {
   device?: string
   overlap?: number
   segmentSize?: number
+  batchSize?: number
   shifts?: number
   outputFormat: string
   bitrate?: string
@@ -117,6 +119,8 @@ export function buildSeparationBackendPayload(args: {
       plan.effectiveAdvancedParams?.segmentSize ??
         config.advancedParams?.segmentSize,
     ),
+    batchSize:
+      plan.effectiveAdvancedParams?.batchSize ?? config.advancedParams?.batchSize,
     shifts: plan.effectiveAdvancedParams?.shifts ?? config.advancedParams?.shifts,
     outputFormat: config.outputFormat || 'wav',
     bitrate: config.advancedParams?.bitrate,
@@ -184,6 +188,7 @@ export function executeSeparationPreflight(
     payload.device,
     payload.overlap,
     payload.segmentSize,
+    payload.batchSize,
     payload.shifts,
     payload.outputFormat,
     payload.bitrate,
@@ -289,6 +294,7 @@ export function executeSeparation(
       device: payload.device,
       overlap: payload.overlap,
       segmentSize: payload.segmentSize,
+      batchSize: payload.batchSize,
       shifts: payload.shifts,
       outputFormat: payload.outputFormat,
       bitrate: payload.bitrate,

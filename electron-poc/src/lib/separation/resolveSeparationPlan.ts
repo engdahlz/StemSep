@@ -10,6 +10,7 @@ import type {
 import type { ModelSelectionEnvelope, ModelVerificationMetadata } from "@/types/modelCatalog";
 import { getModelCatalogTier, isManualCatalogModel } from "@/lib/models/catalog";
 import { modelRequiresFnoRuntime } from "@/lib/systemRuntime/modelRuntime";
+import { resolveQualityProfileAdvancedParams } from "@/lib/separation/qualityProfiles";
 
 /**
  * Canonical separation plan resolver.
@@ -198,6 +199,7 @@ export type SeparationPlan = {
   effectiveAdvancedParams?: {
     overlap?: number;
     segmentSize?: number;
+    batchSize?: number;
     shifts?: number;
     tta?: boolean;
   };
@@ -653,6 +655,12 @@ function getPresetAdvancedDefaults(preset?: PresetLike) {
         : typeof recipeDefaults?.shifts === "number"
           ? recipeDefaults.shifts
           : undefined,
+    batchSize:
+      typeof (direct as any)?.batchSize === "number"
+        ? (direct as any).batchSize
+        : typeof (recipeDefaults as any)?.batch_size === "number"
+          ? (recipeDefaults as any).batch_size
+          : undefined,
     tta:
       typeof direct?.tta === "boolean"
         ? direct.tta
@@ -688,6 +696,7 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
       ? {
           overlap: config.advancedParams?.overlap,
           segmentSize: config.advancedParams?.segmentSize,
+          batchSize: config.advancedParams?.batchSize,
           shifts: config.advancedParams?.shifts,
           tta: config.advancedParams?.tta,
         }
@@ -847,6 +856,23 @@ export function resolveSeparationPlan(inputs: ResolveInputs): SeparationPlan {
           stems: effectiveWorkflow.stems || effectiveStems,
           outputFormat: config.outputFormat,
         },
+    };
+  }
+
+  const qualityProfileAdvancedParams = resolveQualityProfileAdvancedParams({
+    profile: config.qualityProfile,
+    preset,
+    workflow: effectiveWorkflow,
+    current: effectiveAdvancedParams,
+  });
+
+  if (qualityProfileAdvancedParams) {
+    effectiveAdvancedParams = {
+      overlap: qualityProfileAdvancedParams.overlap,
+      segmentSize: qualityProfileAdvancedParams.segmentSize,
+      batchSize: qualityProfileAdvancedParams.batchSize,
+      shifts: qualityProfileAdvancedParams.shifts,
+      tta: qualityProfileAdvancedParams.tta,
     };
   }
 

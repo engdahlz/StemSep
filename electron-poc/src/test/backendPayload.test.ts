@@ -36,6 +36,7 @@ describe("backendPayload", () => {
         advancedParams: {
           overlap: 4,
           segmentSize: 352800,
+          batchSize: 1,
           shifts: 2,
           bitrate: "320k",
           tta: true,
@@ -49,6 +50,7 @@ describe("backendPayload", () => {
         effectiveAdvancedParams: {
           overlap: 4,
           segmentSize: 352800,
+          batchSize: 1,
           shifts: 2,
           tta: true,
         },
@@ -94,6 +96,7 @@ describe("backendPayload", () => {
     expect(payload.device).toBe("cuda:0")
     expect(payload.overlap).toBeCloseTo(0.75)
     expect(payload.segmentSize).toBe(352800)
+    expect(payload.batchSize).toBe(1)
     expect(payload.outputFormat).toBe("wav")
     expect(payload.selectionType).toBe("workflow")
     expect(payload.selectionId).toBe("workflow_phase_fix_instrumental")
@@ -129,9 +132,9 @@ describe("backendPayload", () => {
     const args = separationPreflight.mock.calls[0] as any[]
     expect(args[3]).toBe("workflow")
     expect(args[4]).toBe("workflow_phase_fix_instrumental")
-    expect(args[20]).toEqual(payload.pipelineConfig)
-    expect(args[21]).toEqual(payload.workflow)
-    expect(args[24]).toEqual({
+    expect(args[21]).toEqual(payload.pipelineConfig)
+    expect(args[22]).toEqual(payload.workflow)
+    expect(args[25]).toEqual({
       selectionType: "workflow",
       selectionId: "workflow_phase_fix_instrumental",
     })
@@ -184,5 +187,52 @@ describe("backendPayload", () => {
       selectionType: "workflow",
       selectionId: "workflow_phase_fix_instrumental",
     })
+  })
+
+  it("forwards profile-derived batch size to transport", () => {
+    const payload = buildSeparationBackendPayload({
+      inputFile: "C:/audio.wav",
+      outputDir: "C:/out",
+      config: {
+        mode: "advanced",
+        modelId: "model-1",
+        device: "auto",
+        outputFormat: "wav",
+        qualityProfile: "long_file_safe",
+        advancedParams: {
+          batchSize: 2,
+        },
+      },
+      plan: {
+        effectiveModelId: "model-1",
+        effectiveStems: ["vocals", "instrumental"],
+        effectiveEnsembleConfig: undefined,
+        effectivePostProcessingSteps: undefined,
+        effectiveAdvancedParams: {
+          overlap: 2,
+          segmentSize: 112455,
+          batchSize: 1,
+          shifts: 1,
+          tta: false,
+        },
+        effectiveWorkflow: undefined,
+        effectiveGlobalPhaseParams: undefined,
+        missingModels: [],
+        blockingIssues: [],
+        warnings: [],
+        canProceed: true,
+        isExplicitPipelinePhaseFix: false,
+        debug: {
+          mode: "advanced",
+          usedPreset: false,
+          usedEnsemble: false,
+          usedRecipePreset: false,
+          usedGlobalPhaseParams: false,
+        },
+      },
+    })
+
+    expect(payload.batchSize).toBe(1)
+    expect(payload.segmentSize).toBe(112455)
   })
 })

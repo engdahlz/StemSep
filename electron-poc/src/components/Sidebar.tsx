@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   ChevronRight,
+  FlaskConical,
   Headphones,
   Home,
   Library,
@@ -24,6 +25,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { id: "home", label: "Home", icon: Home },
+  { id: "quality", label: "Workflow Lab", icon: FlaskConical },
   { id: "models", label: "Model Library", icon: Library },
   { id: "results", label: "Results", icon: Headphones },
 ];
@@ -146,6 +148,8 @@ export function Sidebar({ currentPage, onPageChange }: SidebarProps) {
                       <div className="mt-0.5 text-[11px] text-slate-500">
                         {item.id === "home"
                           ? "Start new separation"
+                          : item.id === "quality"
+                            ? "Curated workflows, manual ensembles and restoration chains"
                           : item.id === "models"
                             ? "Browse installed and available models"
                             : "Browse past separations and preview stems"}

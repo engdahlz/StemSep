@@ -48,6 +48,42 @@ describe("resolveSeparationPlan", () => {
     });
   });
 
+  it("applies quality profiles on top of guided preset defaults", () => {
+    const plan = resolveSeparationPlan({
+      config: {
+        ...baseConfig,
+        qualityProfile: "maximum_quality",
+      },
+      presets: [
+        {
+          id: "preset_quality",
+          name: "Quality Preset",
+          modelId: "model-balanced",
+          simpleGoal: "instrumental",
+          recipe: {
+            defaults: {
+              overlap: 4,
+              segment_size: 352800,
+              shifts: 2,
+              tta: false,
+            },
+          },
+        },
+      ],
+      models: [{ id: "model-balanced", installed: true }],
+      runtimeSupport: { fnoSupported: true },
+    });
+
+    expect(plan.canProceed).toBe(true);
+    expect(plan.effectiveAdvancedParams).toEqual({
+      overlap: 5,
+      segmentSize: 485100,
+      batchSize: 1,
+      shifts: 3,
+      tta: true,
+    });
+  });
+
   it("blocks FNO models in simple mode when runtime support is missing", () => {
     const plan = resolveSeparationPlan({
       config: baseConfig,

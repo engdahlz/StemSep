@@ -292,6 +292,7 @@ export function installBrowserElectronApi() {
       device?: string,
       _overlap?: number,
       _segmentSize?: number,
+      _batchSize?: number,
       _shifts?: number,
       _outputFormat?: string,
       _bitrate?: string,

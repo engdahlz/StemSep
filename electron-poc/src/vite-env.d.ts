@@ -98,6 +98,7 @@ interface ElectronAPI {
         device?: string,
         overlap?: number,
         segmentSize?: number,
+        batchSize?: number,
         shifts?: number,
         outputFormat?: string,
         bitrate?: string,
