@@ -73,8 +73,8 @@ export function SimplePresetCard({
       className={cn(
         'group relative w-full overflow-visible rounded-[1.25rem] border p-4 text-left transition-all duration-300',
         selected
-          ? 'border-white bg-white/84 shadow-[0_24px_70px_rgba(141,150,179,0.18)]'
-          : 'border-white/55 bg-[rgba(255,255,255,0.52)] hover:border-white/80 hover:bg-[rgba(255,255,255,0.7)]'
+          ? 'border-white bg-white/88 shadow-[0_24px_70px_rgba(141,150,179,0.2)] ring-1 ring-white/75'
+          : 'border-white/55 bg-[rgba(255,255,255,0.52)] hover:-translate-y-[1px] hover:border-white/80 hover:bg-[rgba(255,255,255,0.76)] hover:shadow-[0_24px_70px_rgba(141,150,179,0.16)]'
       )}
       onClick={onSelect}
       onKeyDown={(event) => {
@@ -195,7 +195,7 @@ export function SimplePresetCard({
 
       <div className="mt-4 flex items-center justify-between gap-3">
         {selected ? (
-          <div className="rounded-full border border-emerald-300/55 bg-emerald-50/82 px-3 py-1.5 text-[12px] text-emerald-700">
+          <div className="rounded-full border border-emerald-300/55 bg-emerald-50/82 px-3 py-1.5 text-[12px] font-medium text-emerald-700">
             Selected
           </div>
         ) : (
@@ -211,10 +211,10 @@ export function SimplePresetCard({
             onSelect()
           }}
           className={cn(
-            'rounded-full border px-4 py-2 text-[13px] tracking-[-0.2px] transition-all',
+            'rounded-full border px-4 py-2 text-[13px] tracking-[-0.2px] transition-all shadow-[0_12px_26px_rgba(141,150,179,0.12)]',
             selected
-              ? 'border-white/70 bg-white/80 text-slate-700'
-              : 'border-white/65 bg-white/68 text-slate-700 hover:bg-white/84 hover:text-slate-900'
+              ? 'border-white/75 bg-white/88 text-slate-700'
+              : 'border-white/70 bg-white/76 text-slate-700 hover:-translate-y-[1px] hover:bg-white hover:text-slate-900'
           )}
         >
           {selected ? 'Selected preset' : 'Choose preset'}

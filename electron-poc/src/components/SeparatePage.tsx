@@ -216,6 +216,7 @@ export default function SeparatePage({
   const [isSavingPlaybackDevice, setIsSavingPlaybackDevice] = useState(false);
   const [isPlaybackDeviceMenuOpen, setIsPlaybackDeviceMenuOpen] =
     useState(false);
+  const reportedMissingQueueFilesRef = useRef<Set<string>>(new Set());
 
   // Model Details Overlay State
   const [detailsModelId, setDetailsModelId] = useState<string | null>(null);
@@ -518,6 +519,71 @@ export default function SeparatePage({
   const [preparedSeparation, setPreparedSeparation] =
     useState<PendingSeparationConfig | null>(null);
 
+  useEffect(() => {
+    if (!window.electronAPI?.checkFileExists) return;
+
+    const candidatePaths = Array.from(
+      new Set(
+        [
+          ...queue
+            .filter((item) =>
+              item.status === "pending" ||
+              item.status === "queued" ||
+              item.status === "failed",
+            )
+            .map((item) => item.file),
+          preparedSeparation?.file?.path,
+        ].filter((value): value is string => !!value),
+      ),
+    );
+
+    if (candidatePaths.length === 0) return;
+
+    let cancelled = false;
+
+    const pruneMissingQueueSources = async () => {
+      const checks = await Promise.all(
+        candidatePaths.map(async (filePath) => ({
+          filePath,
+          exists: await window.electronAPI?.checkFileExists?.(filePath),
+        })),
+      );
+
+      if (cancelled) return;
+
+      const missingPaths = checks
+        .filter((entry) => !entry.exists)
+        .map((entry) => entry.filePath);
+
+      if (missingPaths.length === 0) return;
+
+      for (const missingPath of missingPaths) {
+        queue
+          .filter((item) => item.file === missingPath)
+          .forEach((item) => removeFromQueue(item.id));
+
+        setPreparedSeparation((current) =>
+          current?.file?.path === missingPath ? null : current,
+        );
+
+        if (!reportedMissingQueueFilesRef.current.has(missingPath)) {
+          const fileName = getDisplayNameForPath(missingPath);
+          toast.error(`Removed missing source: ${fileName}`, {
+            description:
+              "The queued file no longer exists on disk, so it cannot be configured or separated.",
+          });
+          reportedMissingQueueFilesRef.current.add(missingPath);
+        }
+      }
+    };
+
+    void pruneMissingQueueSources();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [preparedSeparation?.file?.path, queue, removeFromQueue]);
+
   // Handle pending separation config from ConfigurePage.
   // We store it locally instead of auto-starting so the entry flow becomes:
   // add audio -> configure -> explicit start.
@@ -575,43 +641,58 @@ export default function SeparatePage({
     if (pendingSeparationConfig && onClearPendingConfig) {
       processingPendingConfigRef.current = true;
 
-      const { config, file } = pendingSeparationConfig;
+      const processPendingConfig = async () => {
+        const { config, file } = pendingSeparationConfig;
 
-      // Check if file is already in queue
-      const existingItem = queue.find((q) => q.file === file.path);
+        const sourceExists = await window.electronAPI?.checkFileExists?.(file.path);
+        if (sourceExists === false) {
+          onClearPendingConfig();
+          processingPendingConfigRef.current = false;
+          toast.error("Configured source is missing", {
+            description:
+              "The prepared audio file no longer exists on disk, so the pending configuration was discarded.",
+          });
+          return;
+        }
 
-      // If file is completed, remove it first (user must re-upload to reprocess)
-      if (existingItem && existingItem.status === "completed") {
-        toast.info("Previous separation completed. Re-processing...");
-        removeFromQueue(existingItem.id);
-      }
+        // Check if file is already in queue
+        const existingItem = queue.find((q) => q.file === file.path);
 
-      // Only add if not currently processing
-      if (!existingItem || existingItem.status === "completed") {
-        // Add file to queue with proper QueueItem format
-        const queueItem: QueueItem = {
-          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          file: file.path,
-          displayName: file.name,
-          status: "pending",
-        };
-        addToQueueStore([queueItem]);
-      } else if (existingItem.status === "processing") {
-        toast.warning("File is already being processed");
+        // If file is completed, remove it first (user must re-upload to reprocess)
+        if (existingItem && existingItem.status === "completed") {
+          toast.info("Previous separation completed. Re-processing...");
+          removeFromQueue(existingItem.id);
+        }
+
+        // Only add if not currently processing
+        if (!existingItem || existingItem.status === "completed") {
+          // Add file to queue with proper QueueItem format
+          const queueItem: QueueItem = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            file: file.path,
+            displayName: file.name,
+            status: "pending",
+          };
+          addToQueueStore([queueItem]);
+        } else if (existingItem.status === "processing") {
+          toast.warning("File is already being processed");
+          onClearPendingConfig();
+          processingPendingConfigRef.current = false;
+          return;
+        }
+
+        // Store the prepared run locally for the primary CTA.
+        setPreparedSeparation({ config, file });
+
+        // Clear the app-level handoff after we have copied it locally.
         onClearPendingConfig();
+        toast.success(
+          "Configuration ready. Press Start Separation when you are ready.",
+        );
         processingPendingConfigRef.current = false;
-        return;
-      }
+      };
 
-      // Store the prepared run locally for the primary CTA.
-      setPreparedSeparation({ config, file });
-
-      // Clear the app-level handoff after we have copied it locally.
-      onClearPendingConfig();
-      toast.success(
-        "Configuration ready. Press Start Separation when you are ready.",
-      );
-      processingPendingConfigRef.current = false;
+      void processPendingConfig();
     }
   }, [pendingSeparationConfig, onClearPendingConfig, addToQueueStore]);
   // NOTE: Removed 'queue' from dependencies to prevent double-execution
@@ -1203,6 +1284,16 @@ export default function SeparatePage({
 
         const displayName =
           started.display_name || prepare.displayName || item.title;
+        const capturedFileExists = await window.electronAPI.checkFileExists?.(
+          started.file_path,
+        );
+        if (!capturedFileExists) {
+          toast.error("Capture finished but the WAV file is missing", {
+            description:
+              "The captured file was not found on disk, so it was not added to the queue.",
+          });
+          return;
+        }
         await addToQueue([
           {
             path: started.file_path,
@@ -1316,6 +1407,19 @@ export default function SeparatePage({
     !!preparedSeparation.file?.path &&
     queue.some((item) => item.file === preparedSeparation.file.path);
 
+  const clearQueuedPath = useCallback(
+    (targetPath: string) => {
+      queue
+        .filter((item) => item.file === targetPath)
+        .forEach((item) => removeFromQueue(item.id));
+
+      setPreparedSeparation((current) =>
+        current?.file?.path === targetPath ? null : current,
+      );
+    },
+    [queue, removeFromQueue],
+  );
+
   const handlePrimaryAction = useCallback(async () => {
     if (isProcessing) return;
 
@@ -1335,9 +1439,19 @@ export default function SeparatePage({
 
     const item = leadQueueItem;
     if (!item) return;
+    const exists = await window.electronAPI?.checkFileExists?.(item.file);
+    if (exists === false) {
+      clearQueuedPath(item.file);
+      toast.error("Queued source is missing", {
+        description:
+          "This item was removed because the audio file no longer exists on disk.",
+      });
+      return;
+    }
     const fileName = getDisplayNameForPath(item.file, item.displayName);
     onNavigateToConfigure?.(fileName, item.file, selectedPreset);
   }, [
+    clearQueuedPath,
     hasPreparedConfig,
     isProcessing,
     leadQueueItem,
@@ -1375,14 +1489,8 @@ export default function SeparatePage({
     const targetPath = preparedSeparation?.file?.path || leadQueueItem?.file;
     if (!targetPath) return;
 
-    queue
-      .filter((item) => item.file === targetPath)
-      .forEach((item) => removeFromQueue(item.id));
-
-    setPreparedSeparation((current) =>
-      current?.file?.path === targetPath ? null : current,
-    );
-  }, [leadQueueItem?.file, preparedSeparation?.file?.path, queue, removeFromQueue]);
+    clearQueuedPath(targetPath);
+  }, [clearQueuedPath, leadQueueItem?.file, preparedSeparation?.file?.path]);
 
   const handleOpenLatestResults = useCallback(() => {
     if (!latestCompletedSession) return;
@@ -1470,6 +1578,22 @@ export default function SeparatePage({
     config: SeparationConfig,
     filePath: string,
   ) => {
+    const inputFileExists = await window.electronAPI?.checkFileExists?.(filePath);
+    if (!inputFileExists) {
+      const queueItem = queue.find((q) => q.file === filePath);
+      if (queueItem) {
+        removeFromQueue(queueItem.id);
+      }
+      setPreparedSeparation((current) =>
+        current?.file?.path === filePath ? null : current,
+      );
+      toast.error("Source file is missing", {
+        description:
+          "This queued item was removed because the audio file no longer exists on disk.",
+      });
+      return;
+    }
+
     // Use output directory if set, otherwise backend will use temp directory
     // User can export from Results after previewing
     const targetOutputDir = outputDirectory || "";

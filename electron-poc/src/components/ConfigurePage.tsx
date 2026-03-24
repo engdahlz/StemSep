@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { resolveSeparationPlan } from "@/lib/separation/resolveSeparationPlan";
 import {
   ArrowLeft,
-  Info,
   Settings2,
   Layers,
   Zap,
@@ -22,10 +21,8 @@ import { VRAMUsageMeter, estimateVRAMUsage } from "./ui/vram-meter";
 import { CPUOnlyWarning, LowVRAMWarning, EnsembleTip } from "./ui/warning-tip";
 import { bestVolumeCompensation } from "../utils/volumeCompensation";
 import { SimplePresetPicker } from "./simple/SimplePresetPicker";
-import { CollapsibleSection } from "./ui/collapsible-section";
 import { PageShell } from "./PageShell";
 import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
-import { RuntimeDoctorCard } from "./RuntimeDoctorCard";
 import { modelRequiresFnoRuntime } from "../lib/systemRuntime/modelRuntime";
 import { recommendWorkflowPreset } from "@/lib/policy/recommendationPolicy";
 import { SeparationPlanCard } from "./SeparationPlanCard";
@@ -248,7 +245,6 @@ export function ConfigurePage({
   const resumeDownload = useStore((state) => state.resumeDownload);
   const setDownloadError = useStore((state) => state.setDownloadError);
   const [mode, setMode] = useState<"simple" | "advanced">("simple");
-  const [simpleSpeed, setSimpleSpeed] = useState<number>(70);
   const [selectedPresetId, setSelectedPresetId] = useState<string>(
     initialPresetId || (presets.length > 0 ? presets[0].id : ""),
   );
@@ -286,6 +282,7 @@ export function ConfigurePage({
   const [backendPreflight, setBackendPreflight] =
     useState<SeparationPreflightReport | null>(null);
   const [isPreflightLoading, setIsPreflightLoading] = useState(false);
+  const [sourceFileExists, setSourceFileExists] = useState(true);
   const preflightRequestRef = useRef(0);
 
   const handleQuickDownload = async (modelId: string) => {
@@ -307,11 +304,8 @@ export function ConfigurePage({
     }
   };
 
-  // Phase Correction State
-  const [usePhaseCorrection, setUsePhaseCorrection] = useState(false);
-
   // Auto Post-Processing Pipeline State
-  const [enableAutoPipeline, setEnableAutoPipeline] = useState(true);
+  const [enableAutoPipeline] = useState(true);
 
   // Ensemble State
   const [isEnsembleMode, setIsEnsembleMode] = useState(false);
@@ -396,7 +390,7 @@ export function ConfigurePage({
   // - We only auto-apply when enabling (to avoid overwriting manual tweaks).
   // - Works for both Simple and Advanced model selection, but only when a single model is selected.
   useEffect(() => {
-    if (!usePhaseCorrection) return;
+    if (!phaseFixEnabled) return;
     if (!selectedModelId) return;
 
     const model = models.find((m) => m.id === selectedModelId);
@@ -415,7 +409,7 @@ export function ConfigurePage({
       if (!isDefault) return prev;
       return recommended;
     });
-  }, [usePhaseCorrection, selectedModelId, models]);
+  }, [phaseFixEnabled, selectedModelId, models]);
 
   const separationPlan = useMemo(() => {
     // Construct a minimal config that reflects what ConfigurePage would run if confirmed.
@@ -481,7 +475,6 @@ export function ConfigurePage({
     stemAlgorithms,
     phaseFixEnabled,
     phaseFixParams,
-    usePhaseCorrection,
     enableAutoPipeline,
     phaseParams,
     runtimeInfo?.runtimeFingerprint?.neuralop?.fno1d_import_ok,
@@ -722,10 +715,14 @@ export function ConfigurePage({
                   ? fallback
                   : 0;
               })(),
-              shifts: (() => {
-                const speed = clamp(simpleSpeed, 0, 100);
-                return speed >= 85 ? 1 : speed >= 65 ? 2 : speed >= 35 ? 3 : 4;
-              })(),
+              shifts:
+                preset?.qualityLevel === "fast"
+                  ? 1
+                  : preset?.qualityLevel === "balanced"
+                    ? 2
+                    : preset?.qualityLevel === "quality"
+                      ? 3
+                      : 4,
               overlap: presetOverlap,
             },
       ensembleConfig:
@@ -774,15 +771,49 @@ export function ConfigurePage({
     presets,
     selectedModelId,
     selectedPresetId,
-    simpleSpeed,
     stemAlgorithms,
     validEnsembleModels,
     volumeCompEnabled,
   ]);
 
   useEffect(() => {
+    if (!window.electronAPI?.checkFileExists || !filePath) {
+      setSourceFileExists(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    const verifySourceFile = async () => {
+      const exists = await window.electronAPI?.checkFileExists?.(filePath);
+      if (!cancelled) {
+        setSourceFileExists(!!exists);
+      }
+    };
+
+    void verifySourceFile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filePath]);
+
+  useEffect(() => {
     if (!window.electronAPI?.separationPreflight || !filePath) {
       setBackendPreflight(null);
+      setIsPreflightLoading(false);
+      return;
+    }
+
+    if (!sourceFileExists) {
+      setBackendPreflight({
+        can_proceed: false,
+        errors: [
+          "The selected source file no longer exists on disk. Go back and import or capture it again.",
+        ],
+        warnings: [],
+        missing_models: [],
+      });
       setIsPreflightLoading(false);
       return;
     }
@@ -803,6 +834,21 @@ export function ConfigurePage({
 
     const timer = window.setTimeout(async () => {
       try {
+        const stillExists = await window.electronAPI?.checkFileExists?.(filePath);
+        if (!stillExists) {
+          if (preflightRequestRef.current !== requestId) return;
+          setSourceFileExists(false);
+          setBackendPreflight({
+            can_proceed: false,
+            errors: [
+              "The selected source file no longer exists on disk. Go back and import or capture it again.",
+            ],
+            warnings: [],
+            missing_models: [],
+          });
+          return;
+        }
+
         const payload = buildSeparationBackendPayload({
           inputFile: filePath,
           outputDir: "",
@@ -844,41 +890,77 @@ export function ConfigurePage({
     selectedModelId,
     selectedPresetId,
     separationPlan,
+    sourceFileExists,
     validEnsembleModels.length,
   ]);
 
   const handleConfirm = () => {
-    if (mode === "simple" && hasFnoRuntimeBlock) {
-      toast.error("Selected model is blocked by environment", {
-        description:
-          "FNO-based model requires neuraloperator/neuralop with FNO1d support. " +
-          `Blocked: ${blockedFnoModels.join(", ")}.`,
-      });
-      return;
-    }
-
-    if (mode === "advanced" && isEnsembleMode) {
-      if (validEnsembleModels.length < 2) {
-        toast.error("Ensemble requires at least 2 models.", {
+    const continueConfirm = () => {
+      if (mode === "simple" && hasFnoRuntimeBlock) {
+        toast.error("Selected model is blocked by environment", {
           description:
-            "Add another model in Ensemble mode (or install more models) and try again.",
+            "FNO-based model requires neuraloperator/neuralop with FNO1d support. " +
+            `Blocked: ${blockedFnoModels.join(", ")}.`,
         });
         return;
       }
-    }
 
-    if (missingModels.length > 0) {
-      setMissingDialogOpen(true);
-      toast.error("Install the required model before saving this configuration.");
+      if (mode === "advanced" && isEnsembleMode) {
+        if (validEnsembleModels.length < 2) {
+          toast.error("Ensemble requires at least 2 models.", {
+            description:
+              "Add another model in Ensemble mode (or install more models) and try again.",
+          });
+          return;
+        }
+      }
+
+      if (missingModels.length > 0) {
+        setMissingDialogOpen(true);
+        toast.error("Install the required model before saving this configuration.");
+        return;
+      }
+
+      if (separationPlan.blockingIssues.length > 0) {
+        toast.error(separationPlan.blockingIssues[0]);
+        return;
+      }
+
+      onConfirm(effectiveConfig);
+    };
+
+    if (!window.electronAPI?.checkFileExists || !filePath) {
+      if (!sourceFileExists) {
+        toast.error("Source file is missing", {
+          description:
+            "Go back and re-import or re-capture the audio before saving this configuration.",
+        });
+        return;
+      }
+      continueConfirm();
       return;
     }
 
-    if (separationPlan.blockingIssues.length > 0) {
-      toast.error(separationPlan.blockingIssues[0]);
-      return;
-    }
-
-    onConfirm(effectiveConfig);
+    void (async () => {
+      const exists = await window.electronAPI?.checkFileExists?.(filePath);
+      if (!exists) {
+        setSourceFileExists(false);
+        setBackendPreflight({
+          can_proceed: false,
+          errors: [
+            "The selected source file no longer exists on disk. Go back and import or capture it again.",
+          ],
+          warnings: [],
+          missing_models: [],
+        });
+        toast.error("Source file is missing", {
+          description:
+            "Go back and re-import or re-capture the audio before saving this configuration.",
+        });
+        return;
+      }
+      continueConfirm();
+    })();
   };
 
   const handleSelectPreset = (presetId: string) => {
@@ -977,13 +1059,72 @@ export function ConfigurePage({
             </button>
           </div>
 
-          <CollapsibleSection
-            title="Model / Env Doctor"
-            defaultOpen={false}
-            className="border-white/55 bg-[rgba(255,255,255,0.5)]"
-          >
-            <RuntimeDoctorCard compact showHeader={false} />
-          </CollapsibleSection>
+          {mode === "advanced" && (
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,360px)]">
+              <div className="rounded-[1.7rem] border border-white/65 bg-[linear-gradient(135deg,rgba(255,255,255,0.64),rgba(255,255,255,0.34))] px-6 py-5 shadow-[0_28px_80px_rgba(141,150,179,0.16)] backdrop-blur-2xl">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="stemsep-config-chip">Configuration</span>
+                  <span className="stemsep-config-chip stemsep-config-chip-subtle">
+                    Machine-aware
+                  </span>
+                </div>
+                <h2 className="text-[24px] font-normal tracking-[-0.7px] text-slate-800">
+                  Build a custom separation run with full control
+                </h2>
+                <p className="mt-2 max-w-3xl text-[14px] leading-[1.55] text-slate-500">
+                  Advanced mode is the workshop. Choose device, strategy, chunking and ensemble behavior explicitly when you need to push quality or solve edge cases.
+                </p>
+              </div>
+              <div className="rounded-[1.7rem] border border-white/65 bg-[rgba(255,255,255,0.48)] px-5 py-5 shadow-[0_22px_60px_rgba(141,150,179,0.14)] backdrop-blur-2xl">
+                <div className="mb-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                  Input
+                </div>
+                <div className="truncate text-[15px] font-medium text-slate-800">
+                  {fileName}
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[1.1rem] border border-white/60 bg-white/62 px-3 py-3">
+                    <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                      Device
+                    </div>
+                    <div className="mt-1 text-[14px] text-slate-700">
+                      {device === "auto"
+                        ? hasCuda
+                          ? "Auto / GPU preferred"
+                          : "Auto / CPU"
+                        : device.startsWith("cuda")
+                          ? selectedGpuForMeter?.name || "CUDA"
+                          : "CPU"}
+                    </div>
+                  </div>
+                  <div className="rounded-[1.1rem] border border-white/60 bg-white/62 px-3 py-3">
+                    <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                      Runtime
+                    </div>
+                    <div className="mt-1 text-[14px] text-slate-700">
+                      {hasCuda ? `${availableVRAM || "GPU"} GB VRAM` : "CPU only"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!sourceFileExists && (
+            <Card className="rounded-[1.5rem] border-rose-300/55 bg-rose-50/82 p-4 text-slate-800 backdrop-blur-xl">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
+                <div className="space-y-1.5">
+                  <div className="font-medium text-destructive">
+                    Source file missing
+                  </div>
+                  <div className="text-sm text-rose-900/80">
+                    The selected audio file no longer exists on disk. Go back and import or capture it again before saving this configuration.
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
 
           {hasFnoRuntimeBlock && (
             <Card className="rounded-[1.5rem] border-rose-300/55 bg-rose-50/82 p-4 text-slate-800 backdrop-blur-xl">
@@ -1022,31 +1163,13 @@ export function ConfigurePage({
             </Card>
           )}
 
-          {mode === "simple" && separationPlan.blockingIssues.length > 0 && (
-            <Card className="rounded-[1.5rem] border-rose-300/55 bg-rose-50/82 p-4 text-slate-800 backdrop-blur-xl">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
-                <div className="space-y-1.5">
-                  <div className="font-medium text-destructive">
-                    Simple mode guardrails
-                  </div>
-                  <div className="space-y-1 text-sm text-rose-900/80">
-                    {separationPlan.blockingIssues.map((issue) => (
-                      <div key={issue}>{issue}</div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {separationPlan.warnings.length > 0 && (
+          {mode === "advanced" && separationPlan.warnings.length > 0 && (
             <Card className="rounded-[1.5rem] border-amber-300/55 bg-amber-50/82 p-4 text-slate-800 backdrop-blur-xl">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-700" />
                 <div className="space-y-1.5">
                   <div className="font-medium text-amber-800">
-                    Advanced mode warnings
+                    Configuration warnings
                   </div>
                   <div className="space-y-1 text-sm text-amber-900/80">
                     {separationPlan.warnings.map((warning) => (
@@ -1059,529 +1182,17 @@ export function ConfigurePage({
           )}
 
           {mode === "simple" ? (
-            <div className="space-y-6">
+            <div>
               <SimplePresetPicker
                 presets={presets}
                 selectedPresetId={selectedPresetId}
                 onSelectPreset={handleSelectPreset}
                 availability={availability}
               />
-
-              <Card className="space-y-3 rounded-[1.5rem] border-white/55 bg-[rgba(255,255,255,0.5)] p-4 text-slate-800 shadow-[0_20px_60px_rgba(141,150,179,0.14)] backdrop-blur-xl">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">Speed</div>
-                    <div className="text-xs text-slate-500">
-                      {maxSafeSegmentSize > 0
-                        ? `Machine limit: ${maxSafeSegmentSize}`
-                        : "Machine limit: Auto"}
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="stemsep-config-secondary rounded-[999px] border border-white/70 bg-white/72 px-4 text-[13px] font-normal tracking-[-0.2px] text-slate-700 hover:bg-white/88 hover:text-slate-900"
-                    onClick={() => setSimpleSpeed(70)}
-                  >
-                    Best for my machine
-                  </Button>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={simpleSpeed}
-                  onChange={(e) => setSimpleSpeed(parseInt(e.target.value, 10))}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-900/10 accent-slate-800"
-                />
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>Quality</span>
-                  <span>Speed</span>
-                </div>
-              </Card>
-
-              {/* Selected preset info */}
-              {selectedPreset && (
-                <Card className="space-y-3 rounded-[1.5rem] border-white/55 bg-[rgba(255,255,255,0.5)] p-4 text-slate-800 shadow-[0_20px_60px_rgba(141,150,179,0.14)] backdrop-blur-xl">
-                  {/* Header with quality badge */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm text-slate-600">
-                        {selectedPreset.description}
-                      </p>
-                    </div>
-                    {"qualityLevel" in selectedPreset && (
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ml-3 shrink-0 ${
-                          selectedPreset.qualityLevel === "ultra"
-                            ? "border-fuchsia-300/55 bg-fuchsia-50/82 text-fuchsia-700"
-                            : selectedPreset.qualityLevel === "quality"
-                              ? "border-emerald-300/55 bg-emerald-50/82 text-emerald-700"
-                              : selectedPreset.qualityLevel === "balanced"
-                                ? "border-sky-300/55 bg-sky-50/82 text-sky-700"
-                                : "border-amber-300/55 bg-amber-50/82 text-amber-700"
-                        }`}
-                      >
-                        {selectedPreset.qualityLevel === "ultra"
-                          ? "⭐ Ultra"
-                          : selectedPreset.qualityLevel === "quality"
-                            ? "✓ Quality"
-                            : selectedPreset.qualityLevel === "balanced"
-                              ? "◎ Balanced"
-                              : "⚡ Fast"}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* VRAM and Stems Row */}
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      {"estimatedVram" in selectedPreset && (
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <span className="text-slate-500">VRAM:</span>
-                          <span
-                            className={`font-medium ${
-                              selectedPreset.estimatedVram >= 12
-                                ? "text-orange-400"
-                                : selectedPreset.estimatedVram >= 8
-                                  ? "text-yellow-400"
-                                  : "text-emerald-400"
-                            }`}
-                          >
-                            {selectedPreset.estimatedVram}GB
-                          </span>
-                        </div>
-                      )}
-                      <span className="text-sm font-medium text-slate-500">
-                        Stems:
-                      </span>
-                    </div>
-                    <div className="flex gap-1 flex-wrap">
-                      {selectedPreset.stems.map((stem) => (
-                        <span
-                          key={stem}
-                          className="inline-flex items-center rounded-full border border-white/60 bg-white/70 px-2.5 py-0.5 text-xs font-semibold text-slate-700"
-                        >
-                          {stem}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Tags */}
-                  {"tags" in selectedPreset &&
-                    selectedPreset.tags &&
-                    selectedPreset.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {selectedPreset.tags.map((tag: string) => (
-                          <span
-                            key={tag}
-                            className="inline-flex items-center rounded-md bg-white/62 px-2 py-0.5 text-xs text-slate-500"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                  {/* Ensemble Info */}
-                  {selectedPreset.ensembleConfig && (
-                    <div className="border-t border-white/55 pt-2">
-                      <div className="flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">
-                          Ensemble:{" "}
-                          {selectedPreset.ensembleConfig.models.length} models
-                        </span>
-                        <span className="text-xs text-slate-500">
-                          (
-                          {selectedPreset.ensembleConfig.algorithm ===
-                          "max_spec"
-                            ? "Max Spec"
-                            : selectedPreset.ensembleConfig.algorithm ===
-                                "min_spec"
-                              ? "Min Spec"
-                              : "Average"}
-                          )
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Workflow (Recipe) Details */}
-                  {(selectedPreset as any).isRecipe &&
-                    (selectedPreset as any).recipe && (
-                      <div className="space-y-2 border-t border-white/55 pt-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Zap className="w-4 h-4 text-primary" />
-                            <span className="text-sm font-medium">
-                              Multi-step preset
-                            </span>
-                            <span className="text-xs text-slate-500">
-                              ({(selectedPreset as any).recipe.type})
-                            </span>
-                          </div>
-                        </div>
-
-                        {(selectedPreset as any).recipe.warning && (
-                          <div className="flex items-start gap-2 rounded border border-amber-300/55 bg-amber-50/82 p-2 text-xs text-amber-700">
-                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            <span>
-                              {(selectedPreset as any).recipe.warning}
-                            </span>
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
-                          {(selectedPreset as any).recipe.source && (
-                            <div className="rounded bg-white/62 p-2">
-                              <span className="font-medium text-slate-700">
-                                Source:
-                              </span>{" "}
-                              {(selectedPreset as any).recipe.source}
-                            </div>
-                          )}
-                          {(selectedPreset as any).recipe.defaults?.overlap !=
-                            null && (
-                            <div className="rounded bg-white/62 p-2">
-                              <span className="font-medium text-slate-700">
-                                Default overlap:
-                              </span>{" "}
-                              {(selectedPreset as any).recipe.defaults.overlap}
-                            </div>
-                          )}
-                        </div>
-
-                        {(selectedPreset as any).recipe.requiredModels?.length >
-                          0 && (
-                          <div className="space-y-1">
-                            <div className="text-xs text-slate-500">
-                              Required models:
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {(
-                                selectedPreset as any
-                              ).recipe.requiredModels.map((id: string) => (
-                                <span
-                                  key={id}
-                                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] ${
-                                    missingModels.includes(id)
-                                      ? "border-rose-300/55 bg-rose-50/82 text-rose-700"
-                                      : "border-white/60 bg-white/70 text-slate-700"
-                                  }`}
-                                >
-                                  {id}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {(selectedPreset as any).recipe.steps?.length > 0 && (
-                          <CollapsibleSection
-                            title={`What happens? (${(selectedPreset as any).recipe.steps.length} steps)`}
-                            defaultOpen={false}
-                          >
-                            <div className="space-y-2">
-                              <div className="text-xs text-slate-500">
-                                Runs these steps automatically in one job.
-                              </div>
-                              <div className="space-y-1">
-                                {(selectedPreset as any).recipe.steps.map(
-                                  (step: any, idx: number) => {
-                                    const name =
-                                      step.step_name ||
-                                      step.name ||
-                                      step.action ||
-                                      `step_${idx + 1}`;
-                                    const optional = !!step.optional;
-                                    return (
-                                      <div
-                                        key={idx}
-                                        className="flex items-start justify-between gap-3 rounded bg-white/60 px-2 py-1"
-                                      >
-                                        <div className="min-w-0">
-                                          <div className="truncate text-xs font-medium text-slate-800">
-                                            {idx + 1}. {name}
-                                            {optional ? " (optional)" : ""}
-                                          </div>
-                                          {step.note && (
-                                            <div className="text-[11px] text-slate-500">
-                                              {step.note}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  },
-                                )}
-                              </div>
-                            </div>
-                          </CollapsibleSection>
-                        )}
-                      </div>
-                    )}
-
-                  {/* Post-Processing Pipeline Toggle */}
-                  {"postProcessingSteps" in selectedPreset &&
-                  selectedPreset.postProcessingSteps &&
-                  selectedPreset.postProcessingSteps.length > 0 ? (
-                    <div className="border-t border-white/55 pt-2">
-                      <button
-                        onClick={() =>
-                          setEnableAutoPipeline(!enableAutoPipeline)
-                        }
-                        className={`w-full flex items-start gap-3 text-left p-3 rounded-lg transition-all ${
-                          enableAutoPipeline
-                            ? "border border-emerald-300/55 bg-emerald-50/80"
-                            : "border border-white/55 bg-white/55 hover:border-white/80"
-                        }`}
-                      >
-                        <div
-                          className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                            enableAutoPipeline
-                              ? "border-emerald-500 bg-emerald-500"
-                              : "border-slate-400/45"
-                          }`}
-                        >
-                          {enableAutoPipeline && (
-                            <svg
-                              className="w-3 h-3 text-white"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`text-sm font-medium ${enableAutoPipeline ? "text-emerald-700" : "text-slate-600"}`}
-                            >
-                              Auto Post-Processing
-                            </span>
-                            {enableAutoPipeline && (
-                              <span className="rounded bg-emerald-500/14 px-1.5 py-0.5 text-xs text-emerald-700">
-                                ON
-                              </span>
-                            )}
-                          </div>
-                          <div className="mt-1 text-xs text-slate-500">
-                            {selectedPreset.postProcessingSteps.map(
-                              (step: any, i: number) => (
-                                <span key={i}>
-                                  {i > 0 && " → "}
-                                  {step.description}
-                                </span>
-                              ),
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-                  ) : (
-                    // Show regular pipeline note if no postProcessingSteps
-                    "pipelineNote" in selectedPreset &&
-                    selectedPreset.pipelineNote && (
-                      <div className="border-t border-white/55 pt-2">
-                        <div className="flex items-start gap-2 rounded bg-white/60 p-2 text-xs text-slate-500">
-                          <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          <span>{selectedPreset.pipelineNote}</span>
-                        </div>
-                      </div>
-                    )
-                  )}
-
-                  {/* Missing models are shown as a modal dialog below */}
-                </Card>
-              )}
-
-              <CollapsibleSection
-                title="Output & Device"
-                icon={<Settings2 className="h-4 w-4" />}
-                defaultOpen={false}
-              >
-                {/* Device Selection (GPU/CPU) */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium block">
-                    Processing Device
-                  </label>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button
-                      variant={device === "auto" ? "default" : "outline"}
-                      size="sm"
-                      className={device === "auto" ? "stemsep-config-option stemsep-config-option-active" : "stemsep-config-option"}
-                      onClick={() => setDevice("auto")}
-                    >
-                      Auto
-                    </Button>
-                    {gpuInfo?.has_cuda && (
-                      <Button
-                        variant={
-                          device.startsWith("cuda") ? "default" : "outline"
-                        }
-                        size="sm"
-                        className={device.startsWith("cuda") ? "stemsep-config-option stemsep-config-option-active" : "stemsep-config-option"}
-                        onClick={() => setDevice("cuda")}
-                      >
-                        GPU (CUDA)
-                      </Button>
-                    )}
-                    <Button
-                      variant={device === "cpu" ? "default" : "outline"}
-                      size="sm"
-                      className={device === "cpu" ? "stemsep-config-option stemsep-config-option-active" : "stemsep-config-option"}
-                      onClick={() => setDevice("cpu")}
-                    >
-                      CPU {!gpuInfo?.has_cuda && "(No GPU detected)"}
-                    </Button>
-                  </div>
-                  {device === "cpu" && gpuInfo?.has_cuda && (
-                    <p className="text-xs text-slate-500">
-                      CPU processing is slower but uses less memory
-                    </p>
-                  )}
-                </div>
-
-                <div className="text-xs text-slate-500">
-                  Preview stems are saved as WAV for lossless playback. Use
-                  Export in Results to create MP3/FLAC.
-                </div>
-              </CollapsibleSection>
-
-              <CollapsibleSection
-                title="Enhancements (Optional)"
-                icon={<Zap className="h-4 w-4" />}
-                defaultOpen={false}
-              >
-                {/* Phase Correction Toggle */}
-                {selectedPreset && !selectedPreset.ensembleConfig && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium block">
-                      Phase Correction
-                    </label>
-                    <button
-                      onClick={() => setUsePhaseCorrection(!usePhaseCorrection)}
-                      className={`w-full flex items-start gap-3 text-left p-3 rounded-lg transition-all ${
-                        usePhaseCorrection
-                          ? "border border-sky-300/55 bg-sky-50/82"
-                          : "border border-white/55 bg-white/55 hover:border-white/80"
-                      }`}
-                    >
-                      <div
-                        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                          usePhaseCorrection
-                            ? "border-sky-500 bg-sky-500"
-                            : "border-slate-400/45"
-                        }`}
-                      >
-                        {usePhaseCorrection && (
-                          <svg
-                            className="w-3 h-3 text-white"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div
-                          className={`font-medium ${usePhaseCorrection ? "text-sky-700" : "text-slate-700"}`}
-                        >
-                          Phase Swap Enhancement
-                        </div>
-                        <p className="mt-1 text-xs text-slate-500">
-                          Uses a reference model to improve phase accuracy.
-                          Reduces artifacts in high frequencies.
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                )}
-
-                {/* Volume Compensation */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium block">
-                    Volume Compensation (VC)
-                  </label>
-                  <button
-                    onClick={() => setVolumeCompEnabled(!volumeCompEnabled)}
-                    className={`w-full flex items-start gap-3 text-left p-3 rounded-lg transition-all ${
-                      volumeCompEnabled
-                        ? "border border-sky-300/55 bg-sky-50/82"
-                        : "border border-white/55 bg-white/55 hover:border-white/80"
-                    }`}
-                  >
-                    <div
-                      className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        volumeCompEnabled
-                          ? "border-sky-500 bg-sky-500"
-                          : "border-slate-400/45"
-                      }`}
-                    >
-                      {volumeCompEnabled && (
-                        <svg
-                          className="w-3 h-3 text-white"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div
-                        className={`font-medium ${volumeCompEnabled ? "text-sky-700" : "text-slate-700"}`}
-                      >
-                        Enable VC
-                      </div>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Adds headroom when combining multiple models (reduces
-                        clipping risk). When enabled, uses best defaults.
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              </CollapsibleSection>
-
-              {/* Warnings */}
-              <div className="space-y-2">
-                {isCPUOnly && <CPUOnlyWarning />}
-                {availableVRAM > 0 && estimatedVRAM > availableVRAM * 0.8 && (
-                  <LowVRAMWarning
-                    available={availableVRAM}
-                    required={estimatedVRAM}
-                  />
-                )}
-                {selectedPreset?.ensembleConfig && <EnsembleTip />}
-              </div>
             </div>
           ) : (
-            <div className="space-y-6">
-              <SeparationPlanCard
-                report={backendPreflight}
-                loading={isPreflightLoading}
-                mode={mode}
-              />
-
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_380px]">
+              <div className="space-y-6">
               <div className="rounded-[1.4rem] border border-amber-300/60 bg-amber-50/82 p-5 text-amber-900/80">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <span className="rounded-full border border-amber-300/55 bg-amber-50/88 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-amber-700">
@@ -1948,13 +1559,105 @@ export function ConfigurePage({
                 </div>
               </Card>
 
-              {/* VRAM Meter */}
-              {availableVRAM > 0 && (
-                <VRAMUsageMeter
-                  availableVRAM={availableVRAM}
-                  estimatedVRAM={estimatedVRAM}
+              </div>
+
+              <div className="space-y-4 xl:sticky xl:top-0 xl:self-start">
+                <SeparationPlanCard
+                  report={backendPreflight}
+                  loading={isPreflightLoading}
+                  mode={mode}
                 />
-              )}
+
+                <Card className="rounded-[1.6rem] border-white/60 bg-[rgba(255,255,255,0.48)] p-5 text-slate-800 shadow-[0_20px_60px_rgba(141,150,179,0.12)] backdrop-blur-xl">
+                  <div className="mb-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                    Run Summary
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                    <div className="rounded-[1.1rem] border border-white/60 bg-white/62 px-3 py-3">
+                      <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                        Strategy
+                      </div>
+                      <div className="mt-1 text-[14px] text-slate-700">
+                        {isEnsembleMode
+                          ? `${validEnsembleModels.length || 0}-model ensemble`
+                          : selectedModelId
+                            ? "Single model"
+                            : "Choose a strategy"}
+                      </div>
+                    </div>
+                    <div className="rounded-[1.1rem] border border-white/60 bg-white/62 px-3 py-3">
+                      <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                        Device
+                      </div>
+                      <div className="mt-1 text-[14px] text-slate-700">
+                        {device === "auto"
+                          ? hasCuda
+                            ? "Auto / GPU preferred"
+                            : "Auto / CPU"
+                          : device.startsWith("cuda")
+                            ? selectedGpuForMeter?.name || "CUDA"
+                            : "CPU"}
+                      </div>
+                    </div>
+                    <div className="rounded-[1.1rem] border border-white/60 bg-white/62 px-3 py-3">
+                      <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                        Segment
+                      </div>
+                      <div className="mt-1 text-[14px] text-slate-700">
+                        {advancedParams.segmentSize === 0
+                          ? "Auto"
+                          : advancedParams.segmentSize}
+                      </div>
+                    </div>
+                    <div className="rounded-[1.1rem] border border-white/60 bg-white/62 px-3 py-3">
+                      <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                        Overlap / Shifts
+                      </div>
+                      <div className="mt-1 text-[14px] text-slate-700">
+                        {advancedParams.overlap} / {advancedParams.shifts}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="rounded-[1.6rem] border-white/60 bg-[rgba(255,255,255,0.48)] p-5 text-slate-800 shadow-[0_20px_60px_rgba(141,150,179,0.12)] backdrop-blur-xl">
+                  <div className="mb-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                    Machine Guidance
+                  </div>
+                  <div className="space-y-2 text-[13px] leading-[1.55] text-slate-500">
+                    <p>
+                      Advanced mode exposes raw controls for edge cases, heavier
+                      quality passes and custom ensembles.
+                    </p>
+                    <p>
+                      {hasCuda
+                        ? `Current machine profile: ${availableVRAM || "GPU"} GB VRAM.`
+                        : "Current machine profile: CPU only."}{" "}
+                      {maxSafeSegmentSize > 0
+                        ? `Recommended segment ceiling for this machine is ${maxSafeSegmentSize}.`
+                        : "Use Auto segment size when VRAM telemetry is unavailable."}
+                    </p>
+                  </div>
+                </Card>
+
+                {availableVRAM > 0 && (
+                  <VRAMUsageMeter
+                    availableVRAM={availableVRAM}
+                    estimatedVRAM={estimatedVRAM}
+                  />
+                )}
+
+                <div className="space-y-2">
+                  {isCPUOnly && <CPUOnlyWarning />}
+                  {availableVRAM > 0 && estimatedVRAM > availableVRAM * 0.8 && (
+                    <LowVRAMWarning
+                      available={availableVRAM}
+                      required={estimatedVRAM}
+                    />
+                  )}
+                  {isEnsembleMode && <EnsembleTip />}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1975,27 +1678,28 @@ export function ConfigurePage({
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <div className="rounded-full border border-white/40 bg-white/28 px-4 py-2 text-[12px] text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
             {mode === "simple"
-              ? "Choose a preset, tweak speed, then save this configuration."
+              ? "Choose a preset and save. StemSep will handle the technical defaults behind the scenes."
               : "Tune models and machine limits, then save this configuration."}
           </div>
           <div className="flex gap-3">
           <Button
             variant="outline"
             onClick={onBack}
-            className="stemsep-config-secondary rounded-[32px] border border-white/70 bg-white/72 px-5 py-3 text-[16px] font-normal tracking-[-0.3px] text-slate-700 hover:bg-white/88 hover:text-slate-900"
+            className="stemsep-config-secondary rounded-[999px] border border-white/75 bg-white/78 px-6 py-3 text-[15px] font-medium tracking-[-0.25px] text-slate-700 shadow-[0_16px_32px_rgba(141,150,179,0.12)] hover:-translate-y-[1px] hover:bg-white hover:text-slate-900"
           >
             Cancel
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={
+              !sourceFileExists ||
               (!selectedPresetId && mode === "simple") ||
               (mode === "advanced" && !isEnsembleMode && !selectedModelId) ||
               (mode === "advanced" &&
                 isEnsembleMode &&
                 validEnsembleModels.length < 2)
             }
-            className="stemsep-config-action relative overflow-hidden rounded-[38px] border border-white/75 bg-white/84 px-6 py-3 text-[18px] font-normal tracking-[-0.45px] text-[#23324c] shadow-[0_18px_36px_rgba(141,150,179,0.2)] transition-all duration-300 hover:scale-[1.02] hover:bg-white disabled:border-white/45 disabled:bg-white/45 disabled:text-slate-400 disabled:shadow-none"
+            className="stemsep-config-action relative overflow-hidden rounded-[999px] border border-white/80 bg-white/88 px-7 py-3 text-[16px] font-medium tracking-[-0.35px] text-[#23324c] shadow-[0_20px_40px_rgba(141,150,179,0.18)] transition-all duration-300 hover:-translate-y-[1px] hover:bg-white disabled:border-white/45 disabled:bg-white/45 disabled:text-slate-400 disabled:shadow-none"
           >
             <Zap className="w-4 h-4 mr-2" />
             Save Configuration
