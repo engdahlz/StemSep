@@ -103,6 +103,15 @@ struct PlaybackDeviceInfo {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PlaybackDeviceActivityProbe {
+    device_id: String,
+    detected: bool,
+    peak_rms: f64,
+    elapsed_ms: u64,
+}
+
+#[derive(Debug, Clone, Serialize)]
 struct PlaybackCaptureResultData {
     capture_id: String,
     file_path: String,
@@ -3735,6 +3744,129 @@ fn detect_playback_devices_native() -> Result<Vec<PlaybackDeviceInfo>> {
 fn detect_playback_devices_native() -> Result<Vec<PlaybackDeviceInfo>> {
     Err(anyhow!(
         "Native playback capture is only available on Windows in this build."
+    ))
+}
+
+#[cfg(target_os = "windows")]
+fn probe_playback_device_activity_native(
+    device_id: &str,
+    timeout_ms: u64,
+    min_active_rms: f64,
+) -> Result<PlaybackDeviceActivityProbe> {
+    let _ = initialize_mta().ok();
+    let started = std::time::Instant::now();
+
+    let enumerator = DeviceEnumerator::new().context("create device enumerator")?;
+    let device = enumerator
+        .get_device(device_id)
+        .with_context(|| format!("resolve playback device {device_id}"))?;
+    let device_format = device
+        .get_device_format()
+        .context("read playback device format")?;
+    let sample_rate = device_format.get_samplespersec().max(44_100);
+    let channels = 2usize;
+    let desired_format = WaveFormat::new(
+        32,
+        32,
+        &SampleType::Float,
+        sample_rate as usize,
+        channels,
+        None,
+    );
+    let frame_bytes = desired_format.get_blockalign() as usize;
+
+    let mut audio_client = device
+        .get_iaudioclient()
+        .context("activate playback audio client")?;
+    let (_default_period, min_period) = audio_client
+        .get_device_period()
+        .context("read playback device period")?;
+    let mode = StreamMode::EventsShared {
+        autoconvert: true,
+        buffer_duration_hns: min_period.max(0),
+    };
+    audio_client
+        .initialize_client(&desired_format, &Direction::Capture, &mode)
+        .context("initialize render loopback probe")?;
+    let event_handle = audio_client
+        .set_get_eventhandle()
+        .context("create loopback event handle")?;
+    let capture_client = audio_client
+        .get_audiocaptureclient()
+        .context("create loopback capture client")?;
+    let mut sample_queue: VecDeque<u8> = VecDeque::with_capacity(frame_bytes * 4096);
+
+    audio_client.start_stream().context("start loopback probe")?;
+
+    let mut detected = false;
+    let mut peak_rms = 0.0f64;
+    while started.elapsed() < Duration::from_millis(timeout_ms) {
+        let new_frames = capture_client
+            .get_next_packet_size()
+            .context("read next loopback packet size")?
+            .unwrap_or(0);
+        if new_frames > 0 {
+            let additional = (new_frames as usize * frame_bytes)
+                .saturating_sub(sample_queue.capacity().saturating_sub(sample_queue.len()));
+            sample_queue.reserve(additional);
+            capture_client
+                .read_from_device_to_deque(&mut sample_queue)
+                .context("read loopback probe packet")?;
+        }
+
+        let available_frames = sample_queue.len() / frame_bytes;
+        if available_frames > 0 {
+            let mut chunk = vec![0u8; available_frames * frame_bytes];
+            for byte in &mut chunk {
+                *byte = sample_queue.pop_front().unwrap_or(0);
+            }
+
+            let mut rms_sum = 0.0f64;
+            let mut rms_count = 0usize;
+            for frame in 0..available_frames {
+                for channel in 0..channels {
+                    let offset = frame * frame_bytes + channel * 4;
+                    let sample = f32::from_le_bytes([
+                        chunk[offset],
+                        chunk[offset + 1],
+                        chunk[offset + 2],
+                        chunk[offset + 3],
+                    ]);
+                    rms_sum += f64::from(sample * sample);
+                    rms_count += 1;
+                }
+            }
+
+            if rms_count > 0 {
+                let rms = (rms_sum / rms_count as f64).sqrt();
+                peak_rms = peak_rms.max(rms);
+                if rms >= min_active_rms {
+                    detected = true;
+                    break;
+                }
+            }
+        }
+
+        let _ = event_handle.wait_for_event(200);
+    }
+
+    audio_client.stop_stream().ok();
+    Ok(PlaybackDeviceActivityProbe {
+        device_id: device_id.to_string(),
+        detected,
+        peak_rms,
+        elapsed_ms: started.elapsed().as_millis() as u64,
+    })
+}
+
+#[cfg(not(target_os = "windows"))]
+fn probe_playback_device_activity_native(
+    _device_id: &str,
+    _timeout_ms: u64,
+    _min_active_rms: f64,
+) -> Result<PlaybackDeviceActivityProbe> {
+    Err(anyhow!(
+        "Native playback activity probing is only available on Windows in this build."
     ))
 }
 
@@ -9286,6 +9418,47 @@ fn main() -> Result<()> {
                             &stdout,
                             req.id,
                             serde_json::to_value(devices).unwrap_or(Value::Array(vec![])),
+                        )?;
+                    }
+                    Err(error) => {
+                        send_err(
+                            &stdout,
+                            req.id,
+                            "CAPTURE_ENVIRONMENT_FAILED",
+                            &format!("{error:#}"),
+                        )?;
+                    }
+                }
+            }
+            "probe_playback_device_activity" => {
+                let device_id = req.extra.get("device_id").and_then(|v| v.as_str());
+                if device_id.is_none() {
+                    send_err(&stdout, req.id, "INVALID", "device_id is required")?;
+                    continue;
+                }
+
+                let timeout_ms = req
+                    .extra
+                    .get("timeout_ms")
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(2_500);
+                let min_active_rms = req
+                    .extra
+                    .get("min_active_rms")
+                    .and_then(|v| v.as_f64())
+                    .filter(|value| value.is_finite() && *value > 0.0)
+                    .unwrap_or(0.001);
+
+                match probe_playback_device_activity_native(
+                    device_id.unwrap(),
+                    timeout_ms,
+                    min_active_rms,
+                ) {
+                    Ok(probe) => {
+                        send_ok(
+                            &stdout,
+                            req.id,
+                            serde_json::to_value(probe).unwrap_or(Value::Null),
                         )?;
                     }
                     Err(error) => {

@@ -93,6 +93,10 @@ export type QobuzPlaybackVerification = {
   currentAlbumId?: string;
   rowMatched?: boolean;
   rowState?: string;
+  rowTitle?: string;
+  rowArtist?: string;
+  rowTrackId?: string;
+  rowAlbumId?: string;
   activeMedia?: boolean;
   playButtonClicked?: boolean;
   mediaCount?: number;
@@ -171,6 +175,63 @@ function getExpectedCaptureDurationSec(item: RemoteCatalogItem) {
     return capSec ?? undefined;
   }
   return capSec ? Math.min(item.durationSec, capSec) : item.durationSec;
+}
+
+function getQobuzTrailingSilenceMs() {
+  const raw = String(
+    process.env.STEMSEP_QOBUZ_CAPTURE_TRAILING_SILENCE_MS ||
+      process.env.STEMSEP_CAPTURE_TRAILING_SILENCE_MS ||
+      "",
+  ).trim();
+  if (!raw) return 10_000;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 2_500) {
+    return 10_000;
+  }
+  return Math.min(parsed, 30_000);
+}
+
+function getMinimumAcceptableCaptureDurationSec(expectedDurationSec: number) {
+  if (!Number.isFinite(expectedDurationSec) || expectedDurationSec <= 0) {
+    return 0;
+  }
+  if (expectedDurationSec <= 12) {
+    return Math.max(3, expectedDurationSec - 2);
+  }
+  if (expectedDurationSec <= 45) {
+    return expectedDurationSec * 0.7;
+  }
+  if (expectedDurationSec <= 120) {
+    return expectedDurationSec * 0.75;
+  }
+  return expectedDurationSec * 0.8;
+}
+
+async function readQobuzPlaybackHealth(win: BrowserWindow) {
+  try {
+    return await win.webContents.executeJavaScript(
+      `(() => {
+        const bodyText = document.body?.innerText || "";
+        const media = globalThis.navigator?.mediaSession?.metadata
+          ? {
+              title: globalThis.navigator.mediaSession.metadata.title || "",
+              artist: globalThis.navigator.mediaSession.metadata.artist || "",
+              album: globalThis.navigator.mediaSession.metadata.album || "",
+            }
+          : null;
+        const timeMatches = Array.from(bodyText.matchAll(/\\b\\d{2}:\\d{2}\\b/g)).map((match) => match[0]);
+        return {
+          hasPlaybackError: /an error occurred while playing the current track/i.test(bodyText),
+          mediaSession: media,
+          visibleTimes: timeMatches.slice(0, 4),
+          bodySnippet: bodyText.slice(0, 400),
+        };
+      })()`,
+      true,
+    );
+  } catch {
+    return null;
+  }
 }
 
 const sleep = (ms: number) =>
@@ -268,6 +329,199 @@ export function createQobuzCaptureController({
       : [];
     cachedNativePlaybackDevices = normalized;
     return normalized;
+  }
+
+  async function resolveEffectiveCaptureDevice(
+    preferredDeviceId: string,
+    playbackResult: QobuzPlaybackVerification | null | undefined,
+  ) {
+    const sinkApplied = Number(playbackResult?.sinkApplied || 0);
+    const mediaCount = Number(playbackResult?.mediaCount || 0);
+    const activeMedia = !!playbackResult?.activeMedia;
+    if (sinkApplied > 0 || mediaCount > 0 || activeMedia) {
+      return {
+        deviceId: preferredDeviceId,
+        reason: null as string | null,
+        probes: [] as Array<Record<string, any>>,
+      };
+    }
+
+    const devices = await getNativePlaybackDevices();
+    const preferredDevice =
+      devices.find((device) => device.id === preferredDeviceId) || null;
+    const defaultDevice = devices.find((device) => device.isDefault) || null;
+    const orderedDevices = [
+      preferredDevice,
+      defaultDevice && defaultDevice.id !== preferredDeviceId ? defaultDevice : null,
+      ...devices.filter(
+        (device) =>
+          device.id !== preferredDeviceId &&
+          (!defaultDevice || device.id !== defaultDevice.id),
+      ),
+    ].filter((device): device is PlaybackDevice => !!device);
+
+    const probes: Array<Record<string, any>> = [];
+    for (const device of orderedDevices) {
+      try {
+        const probe = await sendBackendCommand(
+          "probe_playback_device_activity",
+          {
+            device_id: device.id,
+            timeout_ms: 2_500,
+            min_active_rms: 0.0006,
+          },
+          12_000,
+        );
+        probes.push({
+          deviceId: device.id,
+          label: device.label,
+          isDefault: !!device.isDefault,
+          ...(probe && typeof probe === "object" ? probe : {}),
+        });
+        if (probe?.detected) {
+          if (device.id === preferredDeviceId) {
+            return {
+              deviceId: device.id,
+              reason: null as string | null,
+              probes,
+            };
+          }
+          return {
+            deviceId: device.id,
+            reason: `Qobuz did not expose a routable media element, so capture is using the playback device that actually showed audio activity: ${device.label}.`,
+            probes,
+          };
+        }
+      } catch (error: any) {
+        probes.push({
+          deviceId: device.id,
+          label: device.label,
+          isDefault: !!device.isDefault,
+          error: error?.message || String(error),
+        });
+      }
+    }
+
+    if (!defaultDevice || defaultDevice.id === preferredDeviceId) {
+      return {
+        deviceId: preferredDeviceId,
+        reason: null as string | null,
+        probes,
+      };
+    }
+
+    return {
+      deviceId: defaultDevice.id,
+      reason: `Qobuz did not expose a routable media element, so capture is falling back from ${preferredDevice?.label || "the saved silent output"} to the current default playback device ${defaultDevice.label}.`,
+      probes,
+    };
+  }
+
+  async function prepareQobuzPlaybackForCapture(
+    item: RemoteCatalogItem,
+    preferredDeviceId: string,
+    captureId: string,
+  ) {
+    const attempts: Array<Record<string, any>> = [];
+    let lastError: any = null;
+
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      if (attempt > 1) {
+        emitPlaybackCaptureProgress({
+          provider: "qobuz",
+          captureId,
+          status: "verifying",
+          detail: "Qobuz did not start cleanly. Retrying hidden playback once...",
+        });
+        await stopHiddenQobuzPlayback();
+        await sleep(1_100);
+      }
+
+      try {
+        const playbackReady = await prepareHiddenQobuzPlayback(
+          item,
+          preferredDeviceId,
+        );
+        const effectiveCaptureDevice = await resolveEffectiveCaptureDevice(
+          preferredDeviceId,
+          playbackReady.playbackResult || null,
+        );
+        const playbackWindow =
+          getExistingQobuzAutomationWindow() || getQobuzAutomationWindow();
+        const playbackHealth = await readQobuzPlaybackHealth(playbackWindow);
+        const detectedAudio =
+          Number(playbackReady.playbackResult?.sinkApplied || 0) > 0 ||
+          Number(playbackReady.playbackResult?.mediaCount || 0) > 0 ||
+          !!playbackReady.playbackResult?.activeMedia ||
+          effectiveCaptureDevice.probes.some((probe) => !!probe?.detected);
+
+        const attemptSummary = {
+          attempt,
+          verificationMatched:
+            !!playbackReady.playbackResult?.verificationMatched,
+          verificationReason:
+            playbackReady.playbackResult?.verificationReason || null,
+          activeMedia: !!playbackReady.playbackResult?.activeMedia,
+          mediaCount: Number(playbackReady.playbackResult?.mediaCount || 0),
+          sinkApplied: Number(playbackReady.playbackResult?.sinkApplied || 0),
+          detectedAudio,
+          effectiveDeviceId: effectiveCaptureDevice.deviceId,
+          captureFallbackReason: effectiveCaptureDevice.reason,
+          playbackHealth,
+          deviceProbes: effectiveCaptureDevice.probes,
+        };
+        attempts.push(attemptSummary);
+
+        if (detectedAudio) {
+          return {
+            playbackReady,
+            effectiveCaptureDevice,
+            playbackHealth,
+            attempts,
+          };
+        }
+
+        if (playbackHealth?.hasPlaybackError) {
+          const error: any = new Error(
+            "Qobuz reported a playback error before audio reached the capture device.",
+          );
+          error.details = {
+            playbackHealth,
+            playbackResult: playbackReady.playbackResult || null,
+            attempts,
+          };
+          throw error;
+        }
+      } catch (error: any) {
+        lastError = error;
+        attempts.push({
+          attempt,
+          error: error?.message || String(error),
+          details:
+            error && typeof error === "object" && "details" in error
+              ? (error as any).details
+              : null,
+        });
+        if (cancelledPlaybackCaptureIds.has(captureId)) {
+          throw error;
+        }
+      }
+    }
+
+    if (lastError instanceof Error) {
+      const typedLastError = lastError as Error & { details?: Record<string, any> };
+      if (!typedLastError.details || typeof typedLastError.details !== "object") {
+        typedLastError.details = {};
+      }
+      typedLastError.details.attempts = attempts;
+      throw typedLastError;
+    }
+
+    const error: any = new Error(
+      "Qobuz accepted the track selection but no playback activity reached any capture device. The web player appears stalled.",
+    );
+    error.details = { attempts };
+    throw error;
   }
 
   async function getQobuzBrowserOutputDevices() {
@@ -544,10 +798,19 @@ export function createQobuzCaptureController({
   ) {
     try {
       safeMkdir(path.dirname(session.diagnosticsPath));
+      let existing: Record<string, any> = {};
+      if (fs.existsSync(session.diagnosticsPath)) {
+        try {
+          existing = JSON.parse(fs.readFileSync(session.diagnosticsPath, "utf-8"));
+        } catch {
+          existing = {};
+        }
+      }
       fs.writeFileSync(
         session.diagnosticsPath,
         JSON.stringify(
           {
+            ...existing,
             captureId: session.captureId,
             provider: session.provider,
             deviceId: session.deviceId,
@@ -719,12 +982,12 @@ export function createQobuzCaptureController({
           const text = normalize(row.innerText || row.textContent || "");
           if (!text) return null;
 
-          const titleAnchor =
-            row.querySelector('a[href*="/track/"]') ||
-            row.querySelector('[class*="ListItem__title"] a[href]');
+          const titleAnchor = row.querySelector('a[href*="/track/"]');
+          const titleNode = row.querySelector('[class*="ListItem__title"]');
           const artistAnchor =
             row.querySelector('a[href*="/artist/"]') ||
             row.querySelector('[class*="ListItem__artist"] a[href]');
+          const artistNode = row.querySelector('[class*="ListItem__artist"]');
           const albumAnchor = row.querySelector('a[href*="/album/"]');
           const numberNode = row.querySelector('.ListItem__number, [class*="ListItem__number"]');
           const playerButton = row.querySelector(
@@ -732,12 +995,12 @@ export function createQobuzCaptureController({
           );
           const title = normalize(
             titleAnchor?.textContent ||
-              row.querySelector('[class*="ListItem__title"]')?.textContent ||
+              titleNode?.textContent ||
               "",
           );
           const artist = normalize(
             artistAnchor?.textContent ||
-              row.querySelector('[class*="ListItem__artist"]')?.textContent ||
+              artistNode?.textContent ||
               "",
           );
           const trackHref = String(titleAnchor?.getAttribute?.("href") || "");
@@ -806,6 +1069,12 @@ export function createQobuzCaptureController({
           return rows.find((row) => row.playerButton && row.score >= 120) || null;
         };
         const readPlayerSnapshot = () => {
+          const mediaSessionTitle = normalize(
+            navigator.mediaSession?.metadata?.title || "",
+          );
+          const mediaSessionArtist = normalize(
+            navigator.mediaSession?.metadata?.artist || "",
+          );
           const playerScopes = [
             ...document.querySelectorAll('footer, [class*="Player"], [class*="NowPlaying"], [data-testid*="player"]'),
           ].filter((scope) => scope instanceof HTMLElement && isVisible(scope));
@@ -820,11 +1089,13 @@ export function createQobuzCaptureController({
             const currentTitle = normalize(
               trackAnchor?.textContent ||
                 scope.querySelector('[class*="title"]')?.textContent ||
+                mediaSessionTitle ||
                 "",
             );
             const currentArtist = normalize(
               artistAnchor?.textContent ||
                 scope.querySelector('[class*="artist"]')?.textContent ||
+                mediaSessionArtist ||
                 "",
             );
             const currentTrackHref = String(trackAnchor?.getAttribute?.("href") || "");
@@ -843,15 +1114,19 @@ export function createQobuzCaptureController({
             }
           }
           return {
-            currentTitle: "",
-            currentArtist: "",
+            currentTitle: mediaSessionTitle || "",
+            currentArtist: mediaSessionArtist || "",
             currentTrackHref: "",
             currentAlbumHref: "",
             currentTrackId: "",
             currentAlbumId: "",
           };
         };
-        const verifyPlayerSnapshot = (snapshot) => {
+        const looselyMatches = (left, right) =>
+          !!left &&
+          !!right &&
+          (left === right || left.includes(right) || right.includes(left));
+        const verifyPlayerSnapshot = (snapshot, rowSnapshot = null, rowScopeText = "") => {
           const trackIdMatched =
             !!targetTrackId &&
             !!snapshot.currentTrackId &&
@@ -860,45 +1135,79 @@ export function createQobuzCaptureController({
             !!targetTrackId &&
             String(snapshot.currentTrackHref || "").includes("/track/" + targetTrackId);
           const titleMatched =
-            !!targetTitle &&
-            !!snapshot.currentTitle &&
-            (snapshot.currentTitle === targetTitle ||
-              snapshot.currentTitle.includes(targetTitle) ||
-              targetTitle.includes(snapshot.currentTitle));
+            !!targetTitle && looselyMatches(snapshot.currentTitle, targetTitle);
           const artistMatched =
             !targetArtist ||
             !snapshot.currentArtist ||
-            snapshot.currentArtist === targetArtist ||
-            snapshot.currentArtist.includes(targetArtist) ||
-            targetArtist.includes(snapshot.currentArtist);
+            looselyMatches(snapshot.currentArtist, targetArtist);
           if (trackIdMatched) return { matched: true, reason: "track_id" };
           if (hrefMatched) return { matched: true, reason: "track_href" };
           if (titleMatched && artistMatched) return { matched: true, reason: "title_artist" };
+          const rowState = normalize(rowSnapshot?.rowState || "");
+          const rowTitle = normalize(rowSnapshot?.title || "");
+          const rowArtist = normalize(rowSnapshot?.artist || "");
+          const rowTrackId = String(rowSnapshot?.trackId || "");
+          const rowAlbumId = String(rowSnapshot?.albumId || "");
+          const normalizedScopeText = normalize(rowScopeText || "");
+          const rowActive = /pause|playing|active/.test(rowState);
+          const rowTrackIdMatched =
+            !!targetTrackId && !!rowTrackId && rowTrackId === targetTrackId;
+          const rowAlbumMatched =
+            !targetAlbumId || !rowAlbumId || rowAlbumId === targetAlbumId;
+          const rowTitleMatched =
+            (!!targetTitle && looselyMatches(rowTitle, targetTitle)) ||
+            (!!targetTitle && !!normalizedScopeText && normalizedScopeText.includes(targetTitle));
+          const rowArtistMatched =
+            !targetArtist ||
+            looselyMatches(rowArtist, targetArtist) ||
+            (!!normalizedScopeText && normalizedScopeText.includes(targetArtist));
+          const rowTrackNumberMatched =
+            !Number.isFinite(targetTrackNumber) ||
+            !Number.isFinite(rowSnapshot?.trackNumber) ||
+            rowSnapshot?.trackNumber === targetTrackNumber;
+          if (rowActive && rowTrackIdMatched) {
+            return { matched: true, reason: "row_track_id" };
+          }
+          if (rowActive && rowAlbumMatched && rowTitleMatched && rowArtistMatched && rowTrackNumberMatched) {
+            return { matched: true, reason: "row_state" };
+          }
           return { matched: false, reason: "failed" };
         };
         const waitForPlaybackVerification = async (timeoutMs) => {
           const startedAt = Date.now();
           let snapshot = readPlayerSnapshot();
-          let verification = verifyPlayerSnapshot(snapshot);
+          let targetRow = findExactTrackRowButton() || exactTrackRow || null;
+          let verification = verifyPlayerSnapshot(snapshot, targetRow, clickedScopeText);
           while (Date.now() - startedAt < timeoutMs) {
             if (verification.matched) {
               return {
                 ...snapshot,
                 verificationMatched: true,
                 verificationReason: verification.reason,
+                rowMatched: !!targetRow,
+                rowState: targetRow?.rowState || "",
+                rowTitle: targetRow?.title || "",
+                rowArtist: targetRow?.artist || "",
+                rowTrackId: targetRow?.trackId || "",
+                rowAlbumId: targetRow?.albumId || "",
               };
             }
             await wait(350);
             snapshot = readPlayerSnapshot();
-            verification = verifyPlayerSnapshot(snapshot);
+            targetRow = findExactTrackRowButton() || exactTrackRow || null;
+            verification = verifyPlayerSnapshot(snapshot, targetRow, clickedScopeText);
           }
-          const targetRow = findExactTrackRowButton();
+          targetRow = findExactTrackRowButton() || exactTrackRow || null;
           return {
             ...snapshot,
             verificationMatched: false,
             verificationReason: verification.reason,
             rowMatched: !!targetRow,
             rowState: targetRow?.rowState || "",
+            rowTitle: targetRow?.title || "",
+            rowArtist: targetRow?.artist || "",
+            rowTrackId: targetRow?.trackId || "",
+            rowAlbumId: targetRow?.albumId || "",
           };
         };
         const findTransportButton = (matcher, classPattern) =>
@@ -1237,6 +1546,10 @@ export function createQobuzCaptureController({
           currentAlbumId: String(verificationSnapshot?.currentAlbumId || ""),
           rowMatched: !!verificationSnapshot?.rowMatched,
           rowState: String(verificationSnapshot?.rowState || ""),
+          rowTitle: String(verificationSnapshot?.rowTitle || ""),
+          rowArtist: String(verificationSnapshot?.rowArtist || ""),
+          rowTrackId: String(verificationSnapshot?.rowTrackId || ""),
+          rowAlbumId: String(verificationSnapshot?.rowAlbumId || ""),
           mediaCount: document.querySelectorAll("audio,video").length,
           sinkApplied,
           sinkError: String(window.__stemsepLastSinkError || ""),
@@ -1284,7 +1597,10 @@ export function createQobuzCaptureController({
         },
       });
       const expectedTrack = [item.artist, item.title].filter(Boolean).join(" - ");
-      const detectedTrack = [playbackResult?.currentArtist, playbackResult?.currentTitle]
+      const detectedTrack = [
+        playbackResult?.currentArtist || playbackResult?.rowArtist,
+        playbackResult?.currentTitle || playbackResult?.rowTitle,
+      ]
         .filter(Boolean)
         .join(" - ");
       const error: any = new Error(
@@ -1363,6 +1679,11 @@ export function createQobuzCaptureController({
             );
           }, autoCancelAfterMs)
         : null;
+    let partialCaptureResult: any = null;
+    let partialProbeProfile: any = null;
+    let partialQuality: any = null;
+    let playbackHealth: any = null;
+    let playbackWarmupAttempts: Array<Record<string, any>> = [];
 
     emitPlaybackCaptureProgress({
       provider: "qobuz",
@@ -1380,19 +1701,41 @@ export function createQobuzCaptureController({
         status: "verifying",
         detail: "Verifying hidden Qobuz playback...",
       });
-      const playbackReady = await prepareHiddenQobuzPlayback(item, deviceId);
+      const preparedPlayback = await prepareQobuzPlaybackForCapture(
+        item,
+        deviceId,
+        captureId,
+      );
+      const playbackReady = preparedPlayback.playbackReady;
       const session = playbackCaptureSessions.get(captureId);
+      const effectiveCaptureDevice = preparedPlayback.effectiveCaptureDevice;
+      playbackWarmupAttempts = preparedPlayback.attempts;
       if (session) {
+        session.deviceId = effectiveCaptureDevice.deviceId;
         session.verification = playbackReady.playbackResult || null;
         writePlaybackCaptureDiagnostics(session, {
           stage: "playback_verified",
           verification: playbackReady.playbackResult || null,
           sinkId: playbackReady.sinkId || null,
+          requestedDeviceId: deviceId,
+          effectiveDeviceId: effectiveCaptureDevice.deviceId,
+          captureFallbackReason: effectiveCaptureDevice.reason,
+          deviceProbes: effectiveCaptureDevice.probes,
+          playbackWarmupAttempts,
         });
       }
 
       if (cancelledPlaybackCaptureIds.has(captureId)) {
         throw new Error("Capture cancelled");
+      }
+
+      if (effectiveCaptureDevice.reason) {
+        emitPlaybackCaptureProgress({
+          provider: "qobuz",
+          captureId,
+          status: "awaiting_audio",
+          detail: effectiveCaptureDevice.reason,
+        });
       }
 
       emitPlaybackCaptureProgress({
@@ -1412,11 +1755,11 @@ export function createQobuzCaptureController({
         "capture_playback_loopback",
         {
           capture_id: captureId,
-          device_id: deviceId,
+          device_id: effectiveCaptureDevice.deviceId,
           output_path: outputPath,
           expected_duration_sec: getExpectedCaptureDurationSec(item),
-          start_timeout_ms: 15_000,
-          trailing_silence_ms: 2_500,
+          start_timeout_ms: 22_000,
+          trailing_silence_ms: getQobuzTrailingSilenceMs(),
           min_active_rms: 0.003,
         },
         Math.max(300_000, Math.round(((item.durationSec || 180) + 30) * 1000)),
@@ -1430,13 +1773,31 @@ export function createQobuzCaptureController({
         throw (captureOutcome as { ok: false; error: any }).error;
       }
       const captureResult = captureOutcome.value;
+      partialCaptureResult = captureResult;
       const profile = await probeAudioFile(captureResult.file_path);
+      partialProbeProfile = profile;
       const quality = computeCaptureQualityMode(
         "qobuz",
         item,
         captureResult.capture_sample_rate || profile.sampleRate || undefined,
         captureResult.capture_channels || profile.channels || undefined,
       );
+      partialQuality = quality;
+      const playbackWindow =
+        getExistingQobuzAutomationWindow() || getQobuzAutomationWindow();
+      const expectedDurationSec = getExpectedCaptureDurationSec(item);
+      const actualDurationSec =
+        captureResult.duration_sec || profile.durationSeconds || 0;
+      playbackHealth = await readQobuzPlaybackHealth(playbackWindow);
+      const minimumAcceptableDurationSec =
+        typeof expectedDurationSec === "number"
+          ? getMinimumAcceptableCaptureDurationSec(expectedDurationSec)
+          : 0;
+      const endedTooEarly =
+        typeof expectedDurationSec === "number" &&
+        expectedDurationSec > 0 &&
+        actualDurationSec > 0 &&
+        actualDurationSec < minimumAcceptableDurationSec;
       if (session) {
         writePlaybackCaptureDiagnostics(session, {
           stage: "completed",
@@ -1444,7 +1805,23 @@ export function createQobuzCaptureController({
           captureResult,
           probedFile: profile,
           quality,
+          playbackHealth,
         });
+      }
+      if (
+        playbackHealth?.hasPlaybackError &&
+        typeof expectedDurationSec === "number" &&
+        expectedDurationSec > 0 &&
+        actualDurationSec + 5 < expectedDurationSec
+      ) {
+        throw new Error(
+          `Qobuz playback ended early after ${actualDurationSec.toFixed(1)}s of expected ${expectedDurationSec.toFixed(1)}s.`,
+        );
+      }
+      if (endedTooEarly) {
+        throw new Error(
+          `Captured audio ended too early after ${actualDurationSec.toFixed(1)}s of expected ${expectedDurationSec!.toFixed(1)}s.`,
+        );
       }
 
       return {
@@ -1475,7 +1852,7 @@ export function createQobuzCaptureController({
         playback_surface: "browser" as const,
         quality_mode: quality.qualityMode,
         verified_lossless: quality.verified,
-        capture_device_id: deviceId,
+        capture_device_id: effectiveCaptureDevice.deviceId,
         capture_sample_rate:
           captureResult.capture_sample_rate || profile.sampleRate || undefined,
         capture_channels:
@@ -1488,6 +1865,10 @@ export function createQobuzCaptureController({
         capture_end_at: captureResult.capture_end_at || new Date().toISOString(),
       };
     } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : String(error || "Playback capture failed");
       const session = playbackCaptureSessions.get(captureId);
       if (session?.backendCaptureStarted) {
         await sendBackendCommandWithRetry(
@@ -1501,19 +1882,50 @@ export function createQobuzCaptureController({
         writePlaybackCaptureDiagnostics(session, {
           stage: cancelledPlaybackCaptureIds.has(captureId) ? "cancelled" : "failed",
           verification: session.verification || null,
-          error:
-            error instanceof Error
-              ? error.message
-              : String(error || "Playback capture failed"),
+          playbackWarmupAttempts,
+          captureResult: partialCaptureResult,
+          probedFile: partialProbeProfile,
+          quality: partialQuality,
+          playbackHealth,
+          error: errorMessage,
           details:
             error && typeof error === "object" && "details" in error
               ? (error as any).details
               : null,
         });
       }
+      const partialFilePath =
+        partialCaptureResult?.file_path && typeof partialCaptureResult.file_path === "string"
+          ? partialCaptureResult.file_path
+          : outputPath;
+      try {
+        if (
+          partialFilePath &&
+          fs.existsSync(partialFilePath) &&
+          !cancelledPlaybackCaptureIds.has(captureId)
+        ) {
+          fs.unlinkSync(partialFilePath);
+        }
+      } catch {
+        // ignore cleanup failures for partial captures
+      }
       if (cancelledPlaybackCaptureIds.has(captureId)) {
+        emitPlaybackCaptureProgress({
+          provider: "qobuz",
+          captureId,
+          status: "cancelled",
+          detail: "Capture cancelled.",
+          error: "Capture cancelled",
+        });
         throw new Error("Capture cancelled");
       }
+      emitPlaybackCaptureProgress({
+        provider: "qobuz",
+        captureId,
+        status: "failed",
+        detail: errorMessage,
+        error: errorMessage,
+      });
       throw error;
     } finally {
       if (autoCancelTimer) {
