@@ -39,13 +39,19 @@ export function useModelEvents() {
             logger.info(`Download complete: ${data.modelId}`, undefined, 'useModelEvents')
             completeDownload(data.modelId)
             try {
-                const [downloadInfo, installation] = await Promise.all([
-                    window.electronAPI?.resolveModelDownload?.(data.modelId),
-                    window.electronAPI?.getModelInstallation?.(data.modelId),
-                ])
+                const catalog = await window.electronAPI?.getCatalog?.()
+                const refreshed = Array.isArray(catalog?.models)
+                    ? catalog.models.find((entry: { id?: string }) => entry?.id === data.modelId)
+                    : null
+
+                if (refreshed) {
+                    mergeModel(data.modelId, normalizeModel(refreshed))
+                    return
+                }
+
+                const installation = await window.electronAPI?.getSelectionInstallation?.("model", data.modelId)
                 mergeModel(data.modelId, normalizeModel({
                     id: data.modelId,
-                    download: downloadInfo?.download,
                     installation,
                     installed: Boolean(installation?.installed),
                     downloading: false,

@@ -19,3 +19,5 @@ sysinfo = "0.30"
 tract-onnx = { version = "0.21", optional = true }
 sha2 = "0.10"
 wasapi = "0.22"
+base64 = "0.22"
+ed25519-dalek = { version = "2.1", default-features = false, features = ["std"] }

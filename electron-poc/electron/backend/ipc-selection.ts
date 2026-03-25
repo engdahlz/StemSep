@@ -19,6 +19,14 @@ export function registerSelectionIpcHandlers({
     return sendBackendCommand("get_catalog", {}, 30000);
   });
 
+  ipcMain.handle("get-catalog-status", async () => {
+    return sendBackendCommand("get_catalog_status", {}, 15000);
+  });
+
+  ipcMain.handle("refresh-catalog", async () => {
+    return sendBackendCommand("refresh_catalog", {}, 60000);
+  });
+
   ipcMain.handle("get-selection-installation", async (_event, payload) => {
     return sendBackendCommand(
       "get_selection_installation",

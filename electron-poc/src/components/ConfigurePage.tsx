@@ -242,7 +242,6 @@ export function ConfigurePage({
   const setAdvancedSettings = useStore((state) => state.setAdvancedSettings);
   const phaseParams = useStore((state) => state.settings.phaseParams);
   const startDownload = useStore((state) => state.startDownload);
-  const resumeDownload = useStore((state) => state.resumeDownload);
   const setDownloadError = useStore((state) => state.setDownloadError);
   const [mode, setMode] = useState<"simple" | "advanced">("simple");
   const [selectedPresetId, setSelectedPresetId] = useState<string>(
@@ -286,19 +285,10 @@ export function ConfigurePage({
   const preflightRequestRef = useRef(0);
 
   const handleQuickDownload = async (modelId: string) => {
-    const model = models.find((m) => m.id === modelId);
-
     try {
-      if (model?.downloadPaused) {
-        resumeDownload(modelId);
-        if (window.electronAPI?.resumeDownload)
-          await window.electronAPI.resumeDownload(modelId);
-        return;
-      }
-
       startDownload(modelId);
-      if (window.electronAPI?.downloadModel)
-        await window.electronAPI.downloadModel(modelId);
+      if (window.electronAPI?.installSelection)
+        await window.electronAPI.installSelection("model", modelId);
     } catch (e) {
       setDownloadError(modelId, e instanceof Error ? e.message : String(e));
     }

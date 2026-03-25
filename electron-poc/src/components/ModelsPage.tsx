@@ -131,8 +131,6 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
     setModels,
     startDownload,
     setDownloadError,
-    pauseDownload,
-    resumeDownload,
     setModelInstalled,
   } = useStore();
   const { loading } = useModels();
@@ -300,25 +298,7 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
         return;
       }
       startDownload(modelId);
-      await window.electronAPI?.downloadModel?.(modelId);
-    } catch (error) {
-      setDownloadError(modelId, String(error));
-    }
-  };
-
-  const handlePause = async (modelId: string) => {
-    try {
-      await window.electronAPI?.pauseDownload?.(modelId);
-      pauseDownload(modelId);
-    } catch (error) {
-      setDownloadError(modelId, String(error));
-    }
-  };
-
-  const handleResume = async (modelId: string) => {
-    try {
-      resumeDownload(modelId);
-      await window.electronAPI?.resumeDownload?.(modelId);
+      await window.electronAPI?.installSelection?.("model", modelId);
     } catch (error) {
       setDownloadError(modelId, String(error));
     }
@@ -330,8 +310,8 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
       await window.electronAPI?.removeModel?.(modelId);
       const model = models.find((item) => item.id === modelId);
       if (model?.is_custom || modelId.startsWith("custom_")) {
-        const backendModels = await window.electronAPI?.getModels?.();
-        if (backendModels) setModels(backendModels.map(normalizeModel));
+        const catalog = await window.electronAPI?.getCatalog?.();
+        if (Array.isArray(catalog?.models)) setModels(catalog.models.map(normalizeModel));
         return;
       }
       setModelInstalled(modelId, false);
@@ -574,8 +554,6 @@ export function ModelsPage({ preSelectedModel }: ModelsPageProps) {
                   model={model}
                   machineFit={machineFitById.get(model.id)}
                   onDownload={handleDownload}
-                  onPause={handlePause}
-                  onResume={handleResume}
                   onDetails={setDetailsModel}
                   isSelected={false}
                   onToggleSelection={() => {}}

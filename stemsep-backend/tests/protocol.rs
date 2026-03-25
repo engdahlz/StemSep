@@ -1,6 +1,11 @@
-use std::io::{BufRead, BufReader, Write};
+use std::collections::HashMap;
+use std::io::{BufRead, BufReader, Read, Write};
+use std::net::TcpListener;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::sync::Arc;
+use std::thread;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::Value;
 
@@ -40,6 +45,12 @@ fn spawn_backend_with_env(envs: &[(&str, &str)]) -> std::process::Child {
 }
 
 fn assert_cmd_path() -> String {
+    if let Ok(path) = std::env::var("CARGO_BIN_EXE_stemsep-backend") {
+        if std::path::Path::new(&path).exists() {
+            return path;
+        }
+    }
+
     // Prefer target/debug from cargo test workspace
     let mut candidates = vec![
         "target\\debug\\stemsep-backend.exe".to_string(),
@@ -74,6 +85,106 @@ fn read_response_for_id(
         }
     }
     panic!("did not receive response for id={id}");
+}
+
+fn send_request(stdin: &mut std::process::ChildStdin, req: &Value) {
+    stdin
+        .write_all(format!("{req}\n").as_bytes())
+        .expect("write request");
+    stdin.flush().ok();
+}
+
+fn temp_test_dir(prefix: &str) -> PathBuf {
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system time")
+        .as_nanos();
+    let path = std::env::temp_dir().join(format!("stemsep_{prefix}_{nonce}"));
+    std::fs::create_dir_all(&path).expect("create temp test dir");
+    path
+}
+
+fn remote_catalog_fixture_dir() -> PathBuf {
+    PathBuf::from(r"c:\Users\engdahlz\StemSep\StemSepApp\assets\registry\remote")
+}
+
+fn remote_catalog_public_key_path() -> PathBuf {
+    remote_catalog_fixture_dir().join("catalog.public.ed25519.txt")
+}
+
+fn cached_runtime_path(cache_dir: &std::path::Path) -> PathBuf {
+    cache_dir.join("catalog.runtime.cached.json")
+}
+
+fn cached_signature_path(cache_dir: &std::path::Path) -> PathBuf {
+    cache_dir.join("catalog.runtime.cached.json.sig")
+}
+
+fn write_cached_catalog_fixture(cache_dir: &std::path::Path) {
+    let fixture_dir = remote_catalog_fixture_dir();
+    std::fs::create_dir_all(cache_dir).expect("create cache dir");
+    std::fs::copy(
+        fixture_dir.join("catalog.runtime.remote.json"),
+        cached_runtime_path(cache_dir),
+    )
+    .expect("copy cached runtime");
+    std::fs::copy(
+        fixture_dir.join("catalog.runtime.remote.json.sig"),
+        cached_signature_path(cache_dir),
+    )
+    .expect("copy cached signature");
+}
+
+fn spawn_static_http_server(
+    routes: Vec<(&'static str, Vec<u8>, &'static str)>,
+    max_requests: usize,
+) -> (String, thread::JoinHandle<()>) {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind test server");
+    let base_url = format!("http://{}", listener.local_addr().expect("local addr"));
+    let route_map: Arc<HashMap<String, (Vec<u8>, &'static str)>> = Arc::new(
+        routes
+            .into_iter()
+            .map(|(path, body, content_type)| (path.to_string(), (body, content_type)))
+            .collect(),
+    );
+
+    let handle = thread::spawn(move || {
+        for _ in 0..max_requests {
+            let (mut stream, _) = listener.accept().expect("accept request");
+            let mut request = [0u8; 8192];
+            let read = stream.read(&mut request).expect("read request");
+            let request_text = String::from_utf8_lossy(&request[..read]);
+            let path = request_text
+                .lines()
+                .next()
+                .and_then(|line| line.split_whitespace().nth(1))
+                .unwrap_or("/");
+
+            if let Some((body, content_type)) = route_map.get(path) {
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: {}\r\nConnection: close\r\n\r\n",
+                    body.len(),
+                    content_type
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .expect("write response header");
+                stream.write_all(body).expect("write response body");
+            } else {
+                let body = b"not found";
+                let response = format!(
+                    "HTTP/1.1 404 Not Found\r\nContent-Length: {}\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .expect("write 404 header");
+                stream.write_all(body).expect("write 404 body");
+            }
+        }
+    });
+
+    (base_url, handle)
 }
 
 #[test]
@@ -1234,4 +1345,206 @@ fn rust_dummy_separation_smoke_env_gated() {
     );
     assert!(vocals.exists(), "vocals output exists");
     assert!(inst.exists(), "instrumental output exists");
+}
+
+#[test]
+fn remote_catalog_startup_uses_bundled_fallback_when_remote_unreachable() {
+    let cache_dir = temp_test_dir("catalog_bundled_fallback");
+    let public_key = remote_catalog_public_key_path();
+    let cache_dir_str = cache_dir.to_string_lossy().to_string();
+    let public_key_str = public_key.to_string_lossy().to_string();
+    let mut child = spawn_backend_with_env(&[
+        ("STEMSEP_PROXY_PYTHON", "0"),
+        ("STEMSEP_PREFER_RUST_SEPARATION", "1"),
+        ("STEMSEP_CATALOG_CACHE_DIR", cache_dir_str.as_str()),
+        ("STEMSEP_CATALOG_URL", "http://127.0.0.1:9/catalog.runtime.remote.json"),
+        ("STEMSEP_CATALOG_SIG_URL", "http://127.0.0.1:9/catalog.runtime.remote.json.sig"),
+        ("STEMSEP_CATALOG_PUBLIC_KEY_PATH", public_key_str.as_str()),
+    ]);
+
+    let stdin = child.stdin.as_mut().expect("stdin");
+    let stdout = child.stdout.take().expect("stdout");
+    let mut reader = BufReader::new(stdout);
+
+    let ready = read_json_line(&mut reader);
+    assert_eq!(ready.get("type").and_then(|v| v.as_str()), Some("bridge_ready"));
+    let catalog = ready.get("catalog").expect("bridge_ready catalog");
+    assert_eq!(
+        catalog.get("fallback_kind").and_then(|v| v.as_str()),
+        Some("bundled_fallback")
+    );
+    assert_eq!(catalog.get("signature_valid").and_then(|v| v.as_bool()), Some(false));
+
+    send_request(
+        stdin,
+        &serde_json::json!({
+            "command": "get_catalog_status",
+            "id": 2001
+        }),
+    );
+    let resp = read_response_for_id(&mut reader, 2001, 50);
+    assert_eq!(resp.get("success").and_then(|v| v.as_bool()), Some(true));
+    let data = resp.get("data").expect("catalog status");
+    assert_eq!(
+        data.get("fallback_kind").and_then(|v| v.as_str()),
+        Some("bundled_fallback")
+    );
+}
+
+#[test]
+fn remote_catalog_startup_uses_cached_fallback_when_cache_is_valid() {
+    let cache_dir = temp_test_dir("catalog_cached_fallback");
+    write_cached_catalog_fixture(&cache_dir);
+    let public_key = remote_catalog_public_key_path();
+    let cache_dir_str = cache_dir.to_string_lossy().to_string();
+    let public_key_str = public_key.to_string_lossy().to_string();
+    let mut child = spawn_backend_with_env(&[
+        ("STEMSEP_PROXY_PYTHON", "0"),
+        ("STEMSEP_PREFER_RUST_SEPARATION", "1"),
+        ("STEMSEP_CATALOG_CACHE_DIR", cache_dir_str.as_str()),
+        ("STEMSEP_CATALOG_URL", "http://127.0.0.1:9/catalog.runtime.remote.json"),
+        ("STEMSEP_CATALOG_SIG_URL", "http://127.0.0.1:9/catalog.runtime.remote.json.sig"),
+        ("STEMSEP_CATALOG_PUBLIC_KEY_PATH", public_key_str.as_str()),
+    ]);
+
+    let stdout = child.stdout.take().expect("stdout");
+    let mut reader = BufReader::new(stdout);
+
+    let ready = read_json_line(&mut reader);
+    assert_eq!(ready.get("type").and_then(|v| v.as_str()), Some("bridge_ready"));
+    let catalog = ready.get("catalog").expect("bridge_ready catalog");
+    assert_eq!(
+        catalog.get("fallback_kind").and_then(|v| v.as_str()),
+        Some("cached_fallback")
+    );
+    assert_eq!(catalog.get("signature_valid").and_then(|v| v.as_bool()), Some(true));
+    assert_eq!(catalog.get("stale").and_then(|v| v.as_bool()), Some(true));
+}
+
+#[test]
+fn remote_catalog_startup_and_refresh_use_remote_current_when_signature_is_valid() {
+    let fixture_dir = remote_catalog_fixture_dir();
+    let runtime_bytes =
+        std::fs::read(fixture_dir.join("catalog.runtime.remote.json")).expect("read remote runtime");
+    let signature_bytes =
+        std::fs::read(fixture_dir.join("catalog.runtime.remote.json.sig")).expect("read remote sig");
+    let (base_url, handle) = spawn_static_http_server(
+        vec![
+            (
+                "/catalog.runtime.remote.json",
+                runtime_bytes,
+                "application/json",
+            ),
+            (
+                "/catalog.runtime.remote.json.sig",
+                signature_bytes,
+                "text/plain",
+            ),
+        ],
+        4,
+    );
+
+    let cache_dir = temp_test_dir("catalog_remote_current");
+    let public_key = remote_catalog_public_key_path();
+    let cache_dir_str = cache_dir.to_string_lossy().to_string();
+    let public_key_str = public_key.to_string_lossy().to_string();
+    let runtime_url = format!("{base_url}/catalog.runtime.remote.json");
+    let sig_url = format!("{base_url}/catalog.runtime.remote.json.sig");
+    let mut child = spawn_backend_with_env(&[
+        ("STEMSEP_PROXY_PYTHON", "0"),
+        ("STEMSEP_PREFER_RUST_SEPARATION", "1"),
+        ("STEMSEP_CATALOG_CACHE_DIR", cache_dir_str.as_str()),
+        ("STEMSEP_CATALOG_URL", runtime_url.as_str()),
+        ("STEMSEP_CATALOG_SIG_URL", sig_url.as_str()),
+        ("STEMSEP_CATALOG_PUBLIC_KEY_PATH", public_key_str.as_str()),
+    ]);
+
+    let stdin = child.stdin.as_mut().expect("stdin");
+    let stdout = child.stdout.take().expect("stdout");
+    let mut reader = BufReader::new(stdout);
+
+    let ready = read_json_line(&mut reader);
+    assert_eq!(ready.get("type").and_then(|v| v.as_str()), Some("bridge_ready"));
+    let ready_catalog = ready.get("catalog").expect("bridge_ready catalog");
+    assert_eq!(
+        ready_catalog.get("fallback_kind").and_then(|v| v.as_str()),
+        Some("remote_current")
+    );
+    assert_eq!(
+        ready_catalog.get("signature_valid").and_then(|v| v.as_bool()),
+        Some(true)
+    );
+
+    send_request(
+        stdin,
+        &serde_json::json!({
+            "command": "refresh_catalog",
+            "id": 2002
+        }),
+    );
+    let resp = read_response_for_id(&mut reader, 2002, 50);
+    assert_eq!(resp.get("success").and_then(|v| v.as_bool()), Some(true));
+    let data = resp.get("data").expect("refresh_catalog data");
+    assert_eq!(
+        data.get("fallback_kind").and_then(|v| v.as_str()),
+        Some("remote_current")
+    );
+    assert_eq!(data.get("signature_valid").and_then(|v| v.as_bool()), Some(true));
+
+    handle.join().expect("join http server");
+}
+
+#[test]
+fn resolve_install_plan_exposes_provider_and_resolver_metadata() {
+    let mut child = spawn_backend();
+
+    let stdin = child.stdin.as_mut().expect("stdin");
+    let stdout = child.stdout.take().expect("stdout");
+    let mut reader = BufReader::new(stdout);
+
+    let _ = read_json_line(&mut reader);
+
+    send_request(
+        stdin,
+        &serde_json::json!({
+            "command": "resolve_install_plan",
+            "id": 2003,
+            "selection_type": "model",
+            "selection_id": "bs-roformer-viperx-1297"
+        }),
+    );
+    let resp = read_response_for_id(&mut reader, 2003, 50);
+    assert_eq!(resp.get("success").and_then(|v| v.as_bool()), Some(true));
+
+    let first_artifact_source = resp
+        .get("data")
+        .and_then(|v| v.get("required_models"))
+        .and_then(|v| v.as_array())
+        .and_then(|models| models.first())
+        .and_then(|model| model.get("download"))
+        .and_then(|download| download.get("artifacts"))
+        .and_then(|v| v.as_array())
+        .and_then(|artifacts| artifacts.first())
+        .and_then(|artifact| artifact.get("sources"))
+        .and_then(|v| v.as_array())
+        .and_then(|sources| sources.first())
+        .cloned()
+        .expect("first artifact source");
+
+    assert_eq!(
+        first_artifact_source
+            .get("provider")
+            .and_then(|v| v.as_str()),
+        Some("github")
+    );
+    assert_eq!(
+        first_artifact_source
+            .get("resolver")
+            .and_then(|v| v.as_str()),
+        Some("github_release_asset")
+    );
+    assert!(
+        first_artifact_source.get("locator").is_some(),
+        "expected source locator metadata to be present"
+    );
 }

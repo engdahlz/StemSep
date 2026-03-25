@@ -1,5 +1,7 @@
 use anyhow::{anyhow, Context, Result};
+use base64::Engine;
 use chrono::Utc;
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
@@ -72,6 +74,23 @@ fn now_ts_seconds() -> f64 {
 struct BackendConfig {
     assets_dir: PathBuf,
     models_dir: PathBuf,
+    catalog_cache_dir: PathBuf,
+    catalog_bootstrap_path: PathBuf,
+    catalog_remote_url: String,
+    catalog_signature_url: String,
+    catalog_public_key_path: PathBuf,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+struct CatalogStatus {
+    active_revision: String,
+    source_url: String,
+    fetched_at: Option<String>,
+    fallback_kind: String,
+    stale: bool,
+    signature_valid: bool,
+    active_path: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -212,6 +231,10 @@ struct ResolvedSourceLink {
     role: String,
     url: String,
     host: String,
+    provider: String,
+    resolver: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    locator: Option<Value>,
     manual: bool,
     channel: String,
     priority: usize,
@@ -230,6 +253,10 @@ struct ResolvedAvailability {
 struct ResolvedArtifactSource {
     url: String,
     host: String,
+    provider: String,
+    resolver: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    locator: Option<Value>,
     channel: String,
     priority: usize,
     auth: String,
@@ -274,8 +301,10 @@ struct ResolvedInstallationStatus {
     installed: bool,
     canonical_ready: bool,
     legacy_fallback_used: bool,
+    verified_hashes: bool,
     missing_artifacts: Vec<String>,
     relative_paths: Vec<String>,
+    source_resolution: Vec<Value>,
     artifacts: Vec<ResolvedArtifactInstallation>,
 }
 
@@ -330,6 +359,11 @@ fn home_dir() -> Option<PathBuf> {
         .or_else(|| std::env::var_os("HOME"))
         .map(PathBuf::from)
 }
+
+const DEFAULT_REMOTE_CATALOG_URL: &str =
+    "https://raw.githubusercontent.com/engdahlz/StemSep/main/StemSepApp/assets/registry/remote/catalog.runtime.remote.json";
+const DEFAULT_REMOTE_CATALOG_SIG_URL: &str =
+    "https://raw.githubusercontent.com/engdahlz/StemSep/main/StemSepApp/assets/registry/remote/catalog.runtime.remote.json.sig";
 
 fn locate_assets_dir(cli_assets: Option<String>) -> Result<PathBuf> {
     if let Some(p) = cli_assets {
@@ -388,9 +422,292 @@ fn locate_models_dir(cli_models: Option<String>) -> Result<PathBuf> {
     Ok(home.join(".stemsep").join("models"))
 }
 
+fn locate_catalog_cache_dir(cli_cache_dir: Option<String>) -> Result<PathBuf> {
+    if let Some(path) = cli_cache_dir {
+        return Ok(PathBuf::from(path));
+    }
+    if let Ok(env) = std::env::var("STEMSEP_CATALOG_CACHE_DIR") {
+        return Ok(PathBuf::from(env));
+    }
+    let home = home_dir().ok_or_else(|| anyhow!("Unable to resolve home directory"))?;
+    Ok(home.join(".stemsep").join("catalog"))
+}
+
+fn locate_catalog_bootstrap_path(assets_dir: &Path) -> PathBuf {
+    let dedicated = assets_dir.join("catalog.runtime.bootstrap.json");
+    if dedicated.exists() {
+        return dedicated;
+    }
+    assets_dir.join("catalog.runtime.json")
+}
+
+fn locate_catalog_public_key_path(assets_dir: &Path, cli_value: Option<String>) -> PathBuf {
+    if let Some(value) = cli_value {
+        return PathBuf::from(value);
+    }
+    if let Ok(env) = std::env::var("STEMSEP_CATALOG_PUBLIC_KEY_PATH") {
+        return PathBuf::from(env);
+    }
+    assets_dir
+        .join("registry")
+        .join("remote")
+        .join("catalog.public.ed25519.txt")
+}
+
+fn configured_catalog_remote_url(cli_value: Option<String>) -> String {
+    cli_value
+        .or_else(|| std::env::var("STEMSEP_CATALOG_URL").ok())
+        .unwrap_or_else(|| DEFAULT_REMOTE_CATALOG_URL.to_string())
+}
+
+fn configured_catalog_signature_url(cli_value: Option<String>) -> String {
+    cli_value
+        .or_else(|| std::env::var("STEMSEP_CATALOG_SIG_URL").ok())
+        .unwrap_or_else(|| DEFAULT_REMOTE_CATALOG_SIG_URL.to_string())
+}
+
+fn ephemeral_backend_config(models_dir: &Path) -> BackendConfig {
+    BackendConfig {
+        assets_dir: PathBuf::new(),
+        models_dir: models_dir.to_path_buf(),
+        catalog_cache_dir: PathBuf::new(),
+        catalog_bootstrap_path: PathBuf::new(),
+        catalog_remote_url: String::new(),
+        catalog_signature_url: String::new(),
+        catalog_public_key_path: PathBuf::new(),
+    }
+}
+
 fn read_json_file(path: &Path) -> Result<Value> {
     let bytes = std::fs::read(path).with_context(|| format!("read {}", path.display()))?;
     serde_json::from_slice(&bytes).with_context(|| format!("parse {}", path.display()))
+}
+
+fn catalog_cached_runtime_path(cache_dir: &Path) -> PathBuf {
+    cache_dir.join("catalog.runtime.cached.json")
+}
+
+fn catalog_cached_signature_path(cache_dir: &Path) -> PathBuf {
+    cache_dir.join("catalog.runtime.cached.json.sig")
+}
+
+fn catalog_status_path(cache_dir: &Path) -> PathBuf {
+    cache_dir.join("catalog.status.json")
+}
+
+fn validate_runtime_catalog_bytes(bytes: &[u8], label: &str) -> Result<Value> {
+    let value: Value = serde_json::from_slice(bytes).with_context(|| format!("parse {label}"))?;
+    let schema_version = value
+        .get("schema_version")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    let has_models = value.get("models").and_then(|v| v.as_array()).is_some();
+    let has_index = value
+        .get("selection_index")
+        .and_then(|v| v.as_array())
+        .is_some();
+    if !has_models || !has_index {
+        return Err(anyhow!(
+            "{label} is not a compatible StemSep runtime catalog (missing models[] or selection_index[])"
+        ));
+    }
+    if !schema_version.starts_with("catalog-runtime-v") {
+        return Err(anyhow!(
+            "{label} is not a compatible StemSep runtime catalog (schema_version={schema_version})"
+        ));
+    }
+    Ok(value)
+}
+
+fn read_catalog_status(cache_dir: &Path) -> Option<CatalogStatus> {
+    let path = catalog_status_path(cache_dir);
+    let bytes = std::fs::read(path).ok()?;
+    serde_json::from_slice(&bytes).ok()
+}
+
+fn write_catalog_status(cache_dir: &Path, status: &CatalogStatus) -> Result<()> {
+    std::fs::create_dir_all(cache_dir)
+        .with_context(|| format!("create {}", cache_dir.display()))?;
+    let path = catalog_status_path(cache_dir);
+    let payload = serde_json::to_vec_pretty(status)?;
+    std::fs::write(&path, payload).with_context(|| format!("write {}", path.display()))?;
+    Ok(())
+}
+
+fn read_public_key(cfg: &BackendConfig) -> Result<VerifyingKey> {
+    let text = std::fs::read_to_string(&cfg.catalog_public_key_path)
+        .with_context(|| format!("read {}", cfg.catalog_public_key_path.display()))?;
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return Err(anyhow!(
+            "catalog public key file is empty: {}",
+            cfg.catalog_public_key_path.display()
+        ));
+    }
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(trimmed)
+        .with_context(|| format!("decode {}", cfg.catalog_public_key_path.display()))?;
+    let key_bytes: [u8; 32] = bytes
+        .try_into()
+        .map_err(|_| anyhow!("catalog public key must be 32 raw bytes (base64-encoded)"))?;
+    VerifyingKey::from_bytes(&key_bytes).context("parse ed25519 public key")
+}
+
+fn verify_catalog_signature(
+    cfg: &BackendConfig,
+    payload: &[u8],
+    signature_text: &str,
+) -> Result<()> {
+    let verifying_key = read_public_key(cfg)?;
+    let trimmed = signature_text.trim();
+    if trimmed.is_empty() {
+        return Err(anyhow!("catalog signature payload is empty"));
+    }
+    let signature_bytes = base64::engine::general_purpose::STANDARD
+        .decode(trimmed)
+        .context("decode catalog signature")?;
+    let signature = Signature::from_slice(&signature_bytes)
+        .map_err(|_| anyhow!("catalog signature is not a valid ed25519 signature"))?;
+    verifying_key
+        .verify(payload, &signature)
+        .context("verify catalog signature")
+}
+
+fn write_cached_catalog(cfg: &BackendConfig, payload: &[u8], signature_text: &str) -> Result<()> {
+    std::fs::create_dir_all(&cfg.catalog_cache_dir)
+        .with_context(|| format!("create {}", cfg.catalog_cache_dir.display()))?;
+    let runtime_path = catalog_cached_runtime_path(&cfg.catalog_cache_dir);
+    let signature_path = catalog_cached_signature_path(&cfg.catalog_cache_dir);
+    std::fs::write(&runtime_path, payload)
+        .with_context(|| format!("write {}", runtime_path.display()))?;
+    std::fs::write(&signature_path, signature_text)
+        .with_context(|| format!("write {}", signature_path.display()))?;
+    Ok(())
+}
+
+fn refresh_remote_catalog(cfg: &BackendConfig) -> Result<CatalogStatus> {
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .user_agent("StemSep/remote-catalog-v4")
+        .build()
+        .context("build catalog HTTP client")?;
+
+    let response = client
+        .get(&cfg.catalog_remote_url)
+        .send()
+        .with_context(|| format!("fetch {}", cfg.catalog_remote_url))?
+        .error_for_status()
+        .with_context(|| format!("download {}", cfg.catalog_remote_url))?;
+    let payload = response.bytes().context("read remote catalog bytes")?;
+    validate_runtime_catalog_bytes(payload.as_ref(), &cfg.catalog_remote_url)?;
+
+    let signature_text = client
+        .get(&cfg.catalog_signature_url)
+        .send()
+        .with_context(|| format!("fetch {}", cfg.catalog_signature_url))?
+        .error_for_status()
+        .with_context(|| format!("download {}", cfg.catalog_signature_url))?
+        .text()
+        .context("read remote catalog signature")?;
+    verify_catalog_signature(cfg, payload.as_ref(), &signature_text)?;
+
+    write_cached_catalog(cfg, payload.as_ref(), &signature_text)?;
+
+    let status = CatalogStatus {
+        active_revision: sha256_hex_bytes(payload.as_ref()),
+        source_url: cfg.catalog_remote_url.clone(),
+        fetched_at: Some(Utc::now().to_rfc3339()),
+        fallback_kind: "remote_current".to_string(),
+        stale: false,
+        signature_valid: true,
+        active_path: catalog_cached_runtime_path(&cfg.catalog_cache_dir)
+            .display()
+            .to_string(),
+    };
+    write_catalog_status(&cfg.catalog_cache_dir, &status)?;
+    Ok(status)
+}
+
+fn cached_catalog_status(cfg: &BackendConfig) -> Result<Option<CatalogStatus>> {
+    let runtime_path = catalog_cached_runtime_path(&cfg.catalog_cache_dir);
+    let signature_path = catalog_cached_signature_path(&cfg.catalog_cache_dir);
+    if !runtime_path.exists() || !signature_path.exists() {
+        return Ok(None);
+    }
+    let payload = std::fs::read(&runtime_path)
+        .with_context(|| format!("read {}", runtime_path.display()))?;
+    validate_runtime_catalog_bytes(&payload, &runtime_path.display().to_string())?;
+    let signature_text = std::fs::read_to_string(&signature_path)
+        .with_context(|| format!("read {}", signature_path.display()))?;
+    verify_catalog_signature(cfg, &payload, &signature_text)?;
+    let fetched_at = read_catalog_status(&cfg.catalog_cache_dir).and_then(|status| status.fetched_at);
+    Ok(Some(CatalogStatus {
+        active_revision: sha256_hex_bytes(&payload),
+        source_url: cfg.catalog_remote_url.clone(),
+        fetched_at,
+        fallback_kind: "cached_fallback".to_string(),
+        stale: true,
+        signature_valid: true,
+        active_path: runtime_path.display().to_string(),
+    }))
+}
+
+fn bundled_catalog_status(cfg: &BackendConfig) -> Result<CatalogStatus> {
+    let payload = std::fs::read(&cfg.catalog_bootstrap_path)
+        .with_context(|| format!("read {}", cfg.catalog_bootstrap_path.display()))?;
+    validate_runtime_catalog_bytes(&payload, &cfg.catalog_bootstrap_path.display().to_string())?;
+    Ok(CatalogStatus {
+        active_revision: sha256_hex_bytes(&payload),
+        source_url: cfg.catalog_bootstrap_path.display().to_string(),
+        fetched_at: None,
+        fallback_kind: "bundled_fallback".to_string(),
+        stale: true,
+        signature_valid: false,
+        active_path: cfg.catalog_bootstrap_path.display().to_string(),
+    })
+}
+
+fn active_catalog_status(cfg: &BackendConfig) -> Option<CatalogStatus> {
+    let status = read_catalog_status(&cfg.catalog_cache_dir)?;
+    let active_path = PathBuf::from(&status.active_path);
+    if active_path.exists() {
+        Some(status)
+    } else {
+        None
+    }
+}
+
+fn refresh_or_fallback_catalog_status(cfg: &BackendConfig) -> Result<CatalogStatus> {
+    match refresh_remote_catalog(cfg) {
+        Ok(status) => Ok(status),
+        Err(remote_error) => {
+            if let Some(status) = cached_catalog_status(cfg)? {
+                write_catalog_status(&cfg.catalog_cache_dir, &status)?;
+                Ok(status)
+            } else {
+                let status = bundled_catalog_status(cfg).with_context(|| {
+                    format!(
+                        "remote catalog refresh failed and no usable cache exists: {remote_error:#}"
+                    )
+                })?;
+                write_catalog_status(&cfg.catalog_cache_dir, &status)?;
+                Ok(status)
+            }
+        }
+    }
+}
+
+fn ensure_catalog_runtime_status(cfg: &BackendConfig) -> Result<CatalogStatus> {
+    if let Some(status) = active_catalog_status(cfg) {
+        return Ok(status);
+    }
+    if let Some(status) = cached_catalog_status(cfg)? {
+        write_catalog_status(&cfg.catalog_cache_dir, &status)?;
+        return Ok(status);
+    }
+    let status = bundled_catalog_status(cfg)?;
+    write_catalog_status(&cfg.catalog_cache_dir, &status)?;
+    Ok(status)
 }
 
 fn load_models_with_guide_overrides(cfg: &BackendConfig) -> Result<Value> {
@@ -398,14 +715,18 @@ fn load_models_with_guide_overrides(cfg: &BackendConfig) -> Result<Value> {
 }
 
 fn load_catalog_runtime(cfg: &BackendConfig) -> Result<Value> {
-    let runtime_path = cfg.assets_dir.join("catalog.runtime.json");
+    let status = ensure_catalog_runtime_status(cfg)?;
+    let runtime_path = PathBuf::from(&status.active_path);
     if !runtime_path.exists() {
         return Err(anyhow!(
-            "catalog.runtime.json is required for v3 catalog commands ({})",
+            "runtime catalog is missing after fallback resolution ({})",
             runtime_path.display()
         ));
     }
-    read_json_file(&runtime_path)
+    let payload = std::fs::read(&runtime_path)
+        .with_context(|| format!("read {}", runtime_path.display()))?;
+    validate_runtime_catalog_bytes(&payload, &runtime_path.display().to_string())?;
+    serde_json::from_slice(&payload).with_context(|| format!("parse {}", runtime_path.display()))
 }
 
 fn load_catalog_recipes(cfg: &BackendConfig) -> Result<Value> {
@@ -849,10 +1170,7 @@ fn detect_runtime_adapter(model_obj: &Value) -> Option<String> {
 }
 
 fn collect_missing_runtime_assets(models_dir: &Path, model_id: &str, model_obj: &Value) -> Vec<String> {
-    let cfg = BackendConfig {
-        assets_dir: PathBuf::new(),
-        models_dir: models_dir.to_path_buf(),
-    };
+    let cfg = ephemeral_backend_config(models_dir);
     let manifest = resolve_model_download_manifest(&cfg, model_id, model_obj);
     resolve_installation_status(&cfg, &manifest).missing_artifacts
 }
@@ -1215,6 +1533,7 @@ fn resolve_model_download_manifest(
             return;
         }
         seen_source_urls.push(trimmed.to_string());
+        let (provider, resolver, locator) = infer_source_provider_resolver(&trimmed);
         sources.push(ResolvedSourceLink {
             role: role.to_string(),
             url: trimmed.to_string(),
@@ -1224,6 +1543,17 @@ fn resolve_model_download_manifest(
                 .map(|v| v.to_string())
                 .or_else(|| url_host(&trimmed))
                 .unwrap_or_else(|| "unknown".to_string()),
+            provider: source_value
+                .get("provider")
+                .and_then(|v| v.as_str())
+                .unwrap_or(&provider)
+                .to_string(),
+            resolver: source_value
+                .get("resolver")
+                .and_then(|v| v.as_str())
+                .unwrap_or(&resolver)
+                .to_string(),
+            locator: source_value.get("locator").cloned().or(locator),
             manual,
             channel: source_value
                 .get("channel")
@@ -1397,6 +1727,8 @@ fn resolve_model_download_manifest(
                             if url.is_empty() {
                                 return None;
                             }
+                            let (provider, resolver, locator) =
+                                infer_source_provider_resolver(&url);
                             Some(ResolvedArtifactSource {
                                 url: url.clone(),
                                 host: entry
@@ -1405,6 +1737,17 @@ fn resolve_model_download_manifest(
                                     .map(|v| v.to_string())
                                     .or_else(|| url_host(&url))
                                     .unwrap_or_else(|| "unknown".to_string()),
+                                provider: entry
+                                    .get("provider")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or(&provider)
+                                    .to_string(),
+                                resolver: entry
+                                    .get("resolver")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or(&resolver)
+                                    .to_string(),
+                                locator: entry.get("locator").cloned().or(locator),
                                 channel: entry
                                     .get("channel")
                                     .and_then(|v| v.as_str())
@@ -1440,9 +1783,13 @@ fn resolve_model_download_manifest(
                 .map(|v| v.to_string());
             if artifact_sources.is_empty() {
                 if let Some(url) = legacy_source.clone() {
+                    let (provider, resolver, locator) = infer_source_provider_resolver(&url);
                     artifact_sources.push(ResolvedArtifactSource {
                         url: url.clone(),
                         host: url_host(&url).unwrap_or_else(|| "unknown".to_string()),
+                        provider,
+                        resolver,
+                        locator,
                         channel: item
                             .get("channel")
                             .and_then(|v| v.as_str())
@@ -1792,6 +2139,142 @@ fn resolve_model_download_manifest(
     }
 }
 
+fn parse_url(url: &str) -> Option<reqwest::Url> {
+    reqwest::Url::parse(url).ok()
+}
+
+fn github_release_locator(url: &str) -> Option<Value> {
+    let parsed = parse_url(url)?;
+    let segments = parsed.path_segments()?.collect::<Vec<_>>();
+    if segments.len() < 6 || segments.get(2) != Some(&"releases") || segments.get(3) != Some(&"download") {
+        return None;
+    }
+    Some(serde_json::json!({
+        "owner": segments[0],
+        "repo": segments[1],
+        "tag": segments[4],
+        "asset_name": segments[5..].join("/"),
+    }))
+}
+
+fn github_raw_locator(url: &str) -> Option<Value> {
+    let parsed = parse_url(url)?;
+    let segments = parsed.path_segments()?.collect::<Vec<_>>();
+    match parsed.host_str()? {
+        "raw.githubusercontent.com" if segments.len() >= 4 => Some(serde_json::json!({
+            "owner": segments[0],
+            "repo": segments[1],
+            "revision": segments[2],
+            "file_path": segments[3..].join("/"),
+        })),
+        "github.com" if segments.len() >= 5 && segments.get(2) == Some(&"raw") => Some(serde_json::json!({
+            "owner": segments[0],
+            "repo": segments[1],
+            "revision": segments[3],
+            "file_path": segments[4..].join("/"),
+        })),
+        _ => None,
+    }
+}
+
+fn huggingface_resolve_locator(url: &str) -> Option<Value> {
+    let parsed = parse_url(url)?;
+    if parsed.host_str()? != "huggingface.co" {
+        return None;
+    }
+    let segments = parsed.path_segments()?.collect::<Vec<_>>();
+    if segments.len() < 5 || segments.get(2) != Some(&"resolve") {
+        return None;
+    }
+    Some(serde_json::json!({
+        "repo_id": format!("{}/{}", segments[0], segments[1]),
+        "revision": segments[3],
+        "file_path": segments[4..].join("/"),
+    }))
+}
+
+fn google_drive_file_id_from_url(url: &str) -> Option<String> {
+    let parsed = parse_url(url)?;
+    let host = parsed.host_str()?.to_lowercase();
+    if !host.contains("drive.google.com") && !host.contains("drive.usercontent.google.com") {
+        return None;
+    }
+    if let Some(id) = parsed
+        .query_pairs()
+        .find(|(key, _)| key == "id")
+        .map(|(_, value)| value.to_string())
+        .filter(|value| !value.trim().is_empty())
+    {
+        return Some(id);
+    }
+    let segments = parsed.path_segments()?.collect::<Vec<_>>();
+    for index in 0..segments.len() {
+        if segments[index] == "d" && index + 1 < segments.len() {
+            return Some(segments[index + 1].to_string());
+        }
+        if segments[index] == "folders" && index + 1 < segments.len() {
+            return Some(segments[index + 1].to_string());
+        }
+    }
+    None
+}
+
+fn proton_share_locator(url: &str) -> Option<Value> {
+    let parsed = parse_url(url)?;
+    let host = parsed.host_str()?.to_lowercase();
+    if !host.contains("drive.proton.me") {
+        return None;
+    }
+    let token = parsed
+        .fragment()
+        .map(|fragment| fragment.to_string())
+        .filter(|fragment| !fragment.trim().is_empty());
+    Some(serde_json::json!({
+        "share_url": url,
+        "share_token": token,
+    }))
+}
+
+fn infer_source_provider_resolver(url: &str) -> (String, String, Option<Value>) {
+    if let Some(locator) = huggingface_resolve_locator(url) {
+        return (
+            "huggingface".to_string(),
+            "huggingface_resolve".to_string(),
+            Some(locator),
+        );
+    }
+    if let Some(locator) = github_release_locator(url) {
+        return (
+            "github".to_string(),
+            "github_release_asset".to_string(),
+            Some(locator),
+        );
+    }
+    if let Some(locator) = github_raw_locator(url) {
+        return ("github".to_string(), "github_raw".to_string(), Some(locator));
+    }
+    if let Some(file_id) = google_drive_file_id_from_url(url) {
+        let resolver = if url.contains("/folders/") {
+            "google_drive_folder_entry"
+        } else {
+            "google_drive_file"
+        };
+        return (
+            "google_drive".to_string(),
+            resolver.to_string(),
+            Some(serde_json::json!({ "file_id": file_id })),
+        );
+    }
+    if let Some(locator) = proton_share_locator(url) {
+        return (
+            "proton_drive".to_string(),
+            "proton_share_entry".to_string(),
+            Some(locator),
+        );
+    }
+    ("static".to_string(), "static_url".to_string(), None)
+}
+
 fn resolve_installation_status(
     _cfg: &BackendConfig,
     manifest: &ResolvedDownloadManifest,
@@ -1823,12 +2306,42 @@ fn resolve_installation_status(
         .filter(|artifact| artifact.required && (!artifact.exists || !artifact.verified))
         .map(|artifact| artifact.relative_path.clone())
         .collect::<Vec<_>>();
+    let source_resolution = manifest
+        .artifacts
+        .iter()
+        .map(|artifact| {
+            let selected = artifact_download_sources(artifact)
+                .into_iter()
+                .next()
+                .map(|source| {
+                    serde_json::json!({
+                        "url": source.url,
+                        "provider": source.provider,
+                        "resolver": source.resolver,
+                        "locator": source.locator,
+                        "priority": source.priority,
+                        "channel": source.channel,
+                        "verified": source.verified,
+                    })
+                })
+                .unwrap_or(Value::Null);
+            serde_json::json!({
+                "relative_path": artifact.relative_path,
+                "selected_source": selected,
+            })
+        })
+        .collect::<Vec<_>>();
     let canonical_ready = manifest
         .artifacts
         .iter()
         .filter(|artifact| artifact.required)
         .all(|artifact| artifact.canonical_present && artifact.verified)
         && !manifest.artifacts.is_empty();
+    let verified_hashes = manifest
+        .artifacts
+        .iter()
+        .filter(|artifact| artifact.required)
+        .all(|artifact| artifact.sha256.is_none() || artifact.verified);
     let legacy_fallback_used = manifest
         .artifacts
         .iter()
@@ -1837,8 +2350,10 @@ fn resolve_installation_status(
         installed: missing_artifacts.is_empty() && !manifest.artifacts.is_empty(),
         canonical_ready,
         legacy_fallback_used,
+        verified_hashes,
         missing_artifacts,
         relative_paths,
+        source_resolution,
         artifacts,
     }
 }
@@ -1847,6 +2362,7 @@ fn artifact_download_sources(artifact: &ResolvedArtifact) -> Vec<ResolvedArtifac
     let mut sources = artifact.sources.clone();
     if sources.is_empty() {
         if let Some(url) = artifact.source.clone() {
+            let (provider, resolver, locator) = infer_source_provider_resolver(&url);
             sources.push(ResolvedArtifactSource {
                 url: url.clone(),
                 host: artifact
@@ -1854,6 +2370,9 @@ fn artifact_download_sources(artifact: &ResolvedArtifact) -> Vec<ResolvedArtifac
                     .clone()
                     .or_else(|| url_host(&url))
                     .unwrap_or_else(|| "unknown".to_string()),
+                provider,
+                resolver,
+                locator,
                 channel: if url.contains("github.com/engdahlz/stemsep-models") {
                     "mirror".to_string()
                 } else {
@@ -1872,6 +2391,73 @@ fn artifact_download_sources(artifact: &ResolvedArtifact) -> Vec<ResolvedArtifac
         )
     });
     sources
+}
+
+fn source_locator_string(locator: &Option<Value>, key: &str) -> Option<String> {
+    locator
+        .as_ref()
+        .and_then(|value| value.get(key))
+        .and_then(|value| value.as_str())
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+}
+
+fn resolve_download_source_url(source: &ResolvedArtifactSource) -> Result<String> {
+    match source.resolver.as_str() {
+        "static_url" | "huggingface_resolve" | "github_release_asset" | "github_raw" => {
+            Ok(source.url.clone())
+        }
+        "google_drive_file" => {
+            let file_id = source_locator_string(&source.locator, "file_id")
+                .or_else(|| google_drive_file_id_from_url(&source.url))
+                .ok_or_else(|| {
+                    anyhow!(
+                        "google_drive_file source is missing locator.file_id: {}",
+                        source.url
+                    )
+                })?;
+            let mut url = reqwest::Url::parse("https://drive.usercontent.google.com/download")
+                .context("build google drive download URL")?;
+            url.query_pairs_mut()
+                .append_pair("id", &file_id)
+                .append_pair("export", "download")
+                .append_pair("confirm", "t");
+            Ok(url.to_string())
+        }
+        "google_drive_folder_entry" => {
+            if let Some(download_url) = source_locator_string(&source.locator, "download_url") {
+                return Ok(download_url);
+            }
+            let file_id = source_locator_string(&source.locator, "file_id")
+                .or_else(|| google_drive_file_id_from_url(&source.url))
+                .ok_or_else(|| {
+                    anyhow!(
+                        "google_drive_folder_entry requires locator.download_url or locator.file_id: {}",
+                        source.url
+                    )
+                })?;
+            let mut url = reqwest::Url::parse("https://drive.usercontent.google.com/download")
+                .context("build google drive folder-entry URL")?;
+            url.query_pairs_mut()
+                .append_pair("id", &file_id)
+                .append_pair("export", "download")
+                .append_pair("confirm", "t");
+            Ok(url.to_string())
+        }
+        "proton_share_file" | "proton_share_entry" => {
+            if let Some(download_url) = source_locator_string(&source.locator, "download_url") {
+                return Ok(download_url);
+            }
+            Err(anyhow!(
+                "{} source requires locator.download_url; raw share pages are not auto-downloadable",
+                source.resolver
+            ))
+        }
+        other => Err(anyhow!(
+            "Unsupported artifact source resolver '{other}' for {}",
+            source.url
+        )),
+    }
 }
 
 fn download_with_progress_cancellable(
@@ -2274,8 +2860,18 @@ impl DownloadManager {
                 let mut source_errors: Vec<String> = Vec::new();
                 let mut completed = false;
                 for source in &f.sources {
+                    let resolved_url = match resolve_download_source_url(source) {
+                        Ok(url) => url,
+                        Err(error) => {
+                            source_errors.push(format!(
+                                "{} [{}:{}]: {error:#}",
+                                source.url, source.provider, source.resolver
+                            ));
+                            continue;
+                        }
+                    };
                     let res = download_with_progress_cancellable(
-                        &source.url,
+                        &resolved_url,
                         &f.dest_path,
                         stdout.clone(),
                         model_id_clone.clone(),
@@ -2283,7 +2879,7 @@ impl DownloadManager {
                         files.len(),
                         f.filename.clone(),
                         f.relative_path.clone(),
-                        source.url.clone(),
+                        resolved_url.clone(),
                         f.sha256.clone(),
                         f.size_bytes,
                         Some(cancel.clone()),
@@ -2301,7 +2897,10 @@ impl DownloadManager {
                             break;
                         }
                         Err(e) => {
-                            source_errors.push(format!("{}: {e:#}", source.url));
+                            source_errors.push(format!(
+                                "{} [{}:{}]: {e:#}",
+                                source.url, source.provider, source.resolver
+                            ));
                         }
                     }
                 }
@@ -2797,6 +3396,45 @@ fn install_selection(
     }))
 }
 
+fn hydrated_catalog_runtime(cfg: &BackendConfig) -> Result<Value> {
+    let runtime = load_catalog_runtime(cfg)?;
+    let catalog_status = ensure_catalog_runtime_status(cfg)?;
+    let models = runtime
+        .get("models")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let mut hydrated_models: Vec<Value> = Vec::with_capacity(models.len());
+    for model in models {
+        let id = model.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let (installed, download_value, installation_value) = if !id.is_empty() {
+            let manifest = resolve_model_download_manifest(cfg, id, &model);
+            let installation = resolve_installation_status(cfg, &manifest);
+            (
+                installation.installed,
+                serde_json::to_value(&manifest).unwrap_or(Value::Null),
+                serde_json::to_value(&installation).unwrap_or(Value::Null),
+            )
+        } else {
+            (false, Value::Null, Value::Null)
+        };
+        let mut obj = model.as_object().cloned().unwrap_or_default();
+        obj.insert("installed".to_string(), Value::from(installed));
+        obj.insert("download".to_string(), download_value);
+        obj.insert("installation".to_string(), installation_value);
+        hydrated_models.push(Value::Object(obj));
+    }
+
+    let mut object = runtime.as_object().cloned().unwrap_or_default();
+    object.insert("models".to_string(), Value::Array(hydrated_models));
+    object.insert(
+        "catalog_status".to_string(),
+        serde_json::to_value(catalog_status).unwrap_or(Value::Null),
+    );
+    Ok(Value::Object(object))
+}
+
 fn import_selection_artifacts(
     cfg: &BackendConfig,
     extra: &Map<String, Value>,
@@ -2891,10 +3529,7 @@ fn import_selection_artifacts(
 }
 
 fn any_model_file_exists(models_dir: &Path, model_id: &str, model_obj: &Value) -> bool {
-    let cfg = BackendConfig {
-        assets_dir: PathBuf::new(),
-        models_dir: models_dir.to_path_buf(),
-    };
+    let cfg = ephemeral_backend_config(models_dir);
     let manifest = resolve_model_download_manifest(&cfg, model_id, model_obj);
     if !manifest.artifacts.is_empty() {
         return resolve_installation_status(&cfg, &manifest).installed;
@@ -6260,10 +6895,21 @@ fn main() -> Result<()> {
     let args: Vec<OsString> = std::env::args_os().collect();
     let assets_dir = locate_assets_dir(parse_arg_value(&args, "--assets-dir"))?;
     let models_dir = locate_models_dir(parse_arg_value(&args, "--models-dir"))?;
+    let catalog_cache_dir = locate_catalog_cache_dir(parse_arg_value(&args, "--catalog-cache-dir"))?;
     let cfg = BackendConfig {
+        catalog_bootstrap_path: locate_catalog_bootstrap_path(&assets_dir),
+        catalog_remote_url: configured_catalog_remote_url(parse_arg_value(&args, "--catalog-url")),
+        catalog_signature_url: configured_catalog_signature_url(parse_arg_value(&args, "--catalog-signature-url")),
+        catalog_public_key_path: locate_catalog_public_key_path(
+            &assets_dir,
+            parse_arg_value(&args, "--catalog-public-key"),
+        ),
         assets_dir,
         models_dir,
+        catalog_cache_dir,
     };
+    let catalog_status = refresh_or_fallback_catalog_status(&cfg)
+        .context("initialize remote-first runtime catalog")?;
 
     let stdin = io::stdin();
     let stdout = Arc::new(Mutex::new(io::stdout()));
@@ -6279,7 +6925,7 @@ fn main() -> Result<()> {
 
     // Emit a bridge_ready event immediately so the Electron main process can
     // treat this as a drop-in replacement (even while separation is stubbed).
-    let models_count = load_models_with_guide_overrides(&cfg)
+    let models_count = load_catalog_runtime(&cfg)
         .ok()
         .and_then(|v| v.get("models").and_then(|m| m.as_array()).map(|a| a.len()))
         .unwrap_or(0);
@@ -6325,7 +6971,8 @@ fn main() -> Result<()> {
         "backend": {
             "name": "stemsep-backend",
             "version": env!("CARGO_PKG_VERSION")
-        }
+        },
+        "catalog": serde_json::to_value(&catalog_status).unwrap_or(Value::Null)
     });
     write_json_line_locked(&stdout, &ready)?;
 
@@ -6474,8 +7121,24 @@ fn main() -> Result<()> {
             "get_runtime_fingerprint" => {
                 send_ok(&stdout, req.id, runtime_fingerprint.clone())?;
             }
+            "refresh_catalog" => {
+                let status = refresh_remote_catalog(&cfg)?;
+                send_ok(
+                    &stdout,
+                    req.id,
+                    serde_json::to_value(status).unwrap_or(Value::Null),
+                )?;
+            }
+            "get_catalog_status" => {
+                let status = ensure_catalog_runtime_status(&cfg)?;
+                send_ok(
+                    &stdout,
+                    req.id,
+                    serde_json::to_value(status).unwrap_or(Value::Null),
+                )?;
+            }
             "get_catalog" => {
-                let catalog = load_catalog_runtime(&cfg)?;
+                let catalog = hydrated_catalog_runtime(&cfg)?;
                 send_ok(&stdout, req.id, catalog)?;
             }
             "get_selection_installation" => {
@@ -6631,35 +7294,13 @@ fn main() -> Result<()> {
                 }
             }
             "get_models" => {
-                let models_json = load_models_with_guide_overrides(&cfg)?;
-                let models = models_json
+                let catalog = hydrated_catalog_runtime(&cfg)?;
+                let models = catalog
                     .get("models")
                     .and_then(|v| v.as_array())
                     .cloned()
                     .unwrap_or_default();
-
-                let mut out: Vec<Value> = Vec::with_capacity(models.len());
-                for m in models {
-                    let id = m.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                    let (installed, download_value, installation_value) = if !id.is_empty() {
-                        let manifest = resolve_model_download_manifest(&cfg, id, &m);
-                        let installation = resolve_installation_status(&cfg, &manifest);
-                        (
-                            installation.installed,
-                            serde_json::to_value(&manifest).unwrap_or(Value::Null),
-                            serde_json::to_value(&installation).unwrap_or(Value::Null),
-                        )
-                    } else {
-                        (false, Value::Null, Value::Null)
-                    };
-                    let mut obj = m.as_object().cloned().unwrap_or_default();
-                    obj.insert("installed".to_string(), Value::from(installed));
-                    obj.insert("download".to_string(), download_value);
-                    obj.insert("installation".to_string(), installation_value);
-                    out.push(Value::Object(obj));
-                }
-
-                send_ok(&stdout, req.id, Value::Array(out))?;
+                send_ok(&stdout, req.id, Value::Array(models))?;
             }
             "get_recipes" => {
                 let recipes_json = load_catalog_recipes(&cfg)?;
@@ -9119,4 +9760,116 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_source(
+        url: &str,
+        provider: &str,
+        resolver: &str,
+        locator: Option<Value>,
+    ) -> ResolvedArtifactSource {
+        ResolvedArtifactSource {
+            url: url.to_string(),
+            host: url_host(url).unwrap_or_default(),
+            provider: provider.to_string(),
+            resolver: resolver.to_string(),
+            locator,
+            channel: "upstream".to_string(),
+            priority: 0,
+            auth: "public".to_string(),
+            verified: false,
+        }
+    }
+
+    #[test]
+    fn resolves_huggingface_source_urls_without_rewriting() {
+        let source = sample_source(
+            "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/model.ckpt",
+            "huggingface",
+            "huggingface_resolve",
+            Some(serde_json::json!({
+                "repo": "pcunwa/Mel-Band-Roformer-Inst",
+                "revision": "main",
+                "file_path": "model.ckpt"
+            })),
+        );
+        let resolved = resolve_download_source_url(&source).expect("resolve huggingface source");
+        assert_eq!(resolved, source.url);
+    }
+
+    #[test]
+    fn resolves_google_drive_file_from_locator() {
+        let source = sample_source(
+            "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOp/view?usp=sharing",
+            "google_drive",
+            "google_drive_file",
+            Some(serde_json::json!({
+                "file_id": "1AbCdEfGhIjKlMnOp"
+            })),
+        );
+        let resolved = resolve_download_source_url(&source).expect("resolve google drive file");
+        assert!(
+            resolved.contains("drive.usercontent.google.com/download"),
+            "unexpected resolved drive url: {resolved}"
+        );
+        assert!(
+            resolved.contains("id=1AbCdEfGhIjKlMnOp"),
+            "expected drive id in resolved url: {resolved}"
+        );
+    }
+
+    #[test]
+    fn resolves_google_drive_folder_entry_from_locator() {
+        let source = sample_source(
+            "https://drive.google.com/drive/folders/abcdef123456",
+            "google_drive",
+            "google_drive_folder_entry",
+            Some(serde_json::json!({
+                "folder_id": "abcdef123456",
+                "file_id": "1Zyx987",
+                "expected_name": "model.ckpt"
+            })),
+        );
+        let resolved =
+            resolve_download_source_url(&source).expect("resolve google drive folder entry");
+        assert!(resolved.contains("id=1Zyx987"));
+    }
+
+    #[test]
+    fn rejects_proton_share_entries_without_download_locator() {
+        let source = sample_source(
+            "https://drive.proton.me/urls/5XM3PR1M7G#F3UhCU8RDGhX",
+            "proton",
+            "proton_share_entry",
+            Some(serde_json::json!({
+                "share_id": "5XM3PR1M7G",
+                "expected_name": "model.ckpt"
+            })),
+        );
+        let error = resolve_download_source_url(&source).expect_err("expected missing locator failure");
+        assert!(
+            format!("{error:#}").contains("download_url"),
+            "unexpected proton resolver error: {error:#}"
+        );
+    }
+
+    #[test]
+    fn resolves_proton_share_entries_with_download_locator() {
+        let source = sample_source(
+            "https://drive.proton.me/urls/5XM3PR1M7G#F3UhCU8RDGhX",
+            "proton",
+            "proton_share_entry",
+            Some(serde_json::json!({
+                "share_id": "5XM3PR1M7G",
+                "download_url": "https://proton.fake/download/model.ckpt",
+                "expected_name": "model.ckpt"
+            })),
+        );
+        let resolved = resolve_download_source_url(&source).expect("resolve proton share entry");
+        assert_eq!(resolved, "https://proton.fake/download/model.ckpt");
+    }
 }

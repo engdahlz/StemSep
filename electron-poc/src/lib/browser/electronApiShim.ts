@@ -6,6 +6,7 @@ import type {
   StagingDecision,
 } from "@/types/media"
 import type { RemoteResolveProgressPayload } from "@/types/remote"
+import type { CatalogSelectionType, SelectionInstallPlan } from "@/types/modelCatalog"
 
 type DownloadProgressPayload = {
   modelId: string
@@ -256,6 +257,55 @@ export function installBrowserElectronApi() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
+  const previewSelectionInstallation = (
+    selectionType: CatalogSelectionType,
+    selectionId: string,
+  ): SelectionInstallPlan => {
+    const model = selectionType === "model"
+      ? hydrateModelList().find((entry) => entry.id === selectionId)
+      : null
+
+    return {
+      selectionType,
+      selectionId,
+      installed: !!model?.installed,
+      requiredModelIds: model ? [model.id] : [],
+      required_model_ids: model ? [model.id] : [],
+      selectionEnvelope: model?.selection_envelope,
+      installation: model?.installation || { installed: !!model?.installed, missing_artifacts: [] },
+    }
+  }
+
+  const previewInstallModel = async (modelId: string) => {
+    shimModels = shimModels.map((model) =>
+      model.id === modelId ? { ...model, downloading: true, downloadProgress: 10 } : model,
+    )
+    persistModels()
+    for (const progress of [10, 45, 80, 100]) {
+      downloadProgressEmitter.emit({ modelId, progress })
+      await delay(80)
+    }
+    shimModels = shimModels.map((model) =>
+      model.id === modelId
+        ? {
+            ...model,
+            installed: true,
+            downloading: false,
+            downloadProgress: 100,
+            downloadPaused: false,
+            installation: {
+              ...(model.installation || {}),
+              installed: true,
+              missing_artifacts: [],
+            },
+          }
+        : model,
+    )
+    persistModels()
+    downloadCompleteEmitter.emit({ modelId })
+    return true
+  }
+
   const electronAPI: Window["electronAPI"] & {
     resolveMediaUrl?: (filePath: string) => string
   } = {
@@ -403,43 +453,43 @@ export function installBrowserElectronApi() {
       return {
         version: "browser-preview",
         schema_version: "catalog-runtime-v3",
+        catalog_status: {
+          active_revision: "browser-preview",
+          source_url: "browser-preview",
+          fetched_at: null,
+          fallback_kind: "bundled_fallback",
+          stale: true,
+          signature_valid: false,
+          active_path: "browser-preview",
+        },
         models,
         recipes: [],
         workflows: [],
         selection_index: selectionIndex,
       }
     },
+    getCatalogStatus: async () => ({
+      active_revision: "browser-preview",
+      source_url: "browser-preview",
+      fetched_at: null,
+      fallback_kind: "bundled_fallback",
+      stale: true,
+      signature_valid: false,
+      active_path: "browser-preview",
+    }),
+    refreshCatalog: async () => ({
+      active_revision: "browser-preview",
+      source_url: "browser-preview",
+      fetched_at: null,
+      fallback_kind: "bundled_fallback",
+      stale: true,
+      signature_valid: false,
+      active_path: "browser-preview",
+    }),
     getModels: async () => hydrateModelList(),
     getModelTech: async (modelId) => hydrateModelList().find((model) => model.id === modelId) || null,
-    resolveModelDownload: async (modelId) => {
-      const model = hydrateModelList().find((entry) => entry.id === modelId)
-      return model
-        ? {
-            modelId,
-            download: model.download || null,
-            installation:
-              model.installation || { installed: !!model.installed, missing_artifacts: [] },
-          }
-        : null
-    },
-    getModelInstallation: async (modelId) => {
-      const model = hydrateModelList().find((entry) => entry.id === modelId)
-      return model?.installation || { installed: !!model?.installed, missing_artifacts: [] }
-    },
-    getSelectionInstallation: async (selectionType, selectionId) => {
-      const model = selectionType === "model"
-        ? hydrateModelList().find((entry) => entry.id === selectionId)
-        : null
-      return {
-        selectionType,
-        selectionId,
-        installed: !!model?.installed,
-        requiredModelIds: model ? [model.id] : [],
-        required_model_ids: model ? [model.id] : [],
-        selectionEnvelope: model?.selection_envelope,
-        installation: model?.installation || { installed: !!model?.installed, missing_artifacts: [] },
-      }
-    },
+    getSelectionInstallation: async (selectionType, selectionId) =>
+      previewSelectionInstallation(selectionType, selectionId),
     resolveInstallPlan: async (selectionType, selectionId) => {
       const model = selectionType === "model"
         ? hydrateModelList().find((entry) => entry.id === selectionId)
@@ -462,12 +512,12 @@ export function installBrowserElectronApi() {
       if (selectionType !== "model") {
         return { success: false, error: "Browser preview only installs model selections." }
       }
-      const success = await electronAPI.downloadModel(selectionId)
+      const success = await previewInstallModel(selectionId)
       return {
         success,
         selectionType,
         selectionId,
-        installation: await electronAPI.getSelectionInstallation(selectionType, selectionId),
+        installation: previewSelectionInstallation(selectionType, selectionId),
       }
     },
     importSelectionArtifacts: async (selectionType, selectionId, files, allowCopy = true) => {
@@ -707,35 +757,6 @@ export function installBrowserElectronApi() {
       }
       qualityCompleteEmitter.emit(result)
       return result
-    },
-    downloadModel: async (modelId) => {
-      shimModels = shimModels.map((model) =>
-        model.id === modelId ? { ...model, downloading: true, downloadProgress: 10 } : model,
-      )
-      persistModels()
-      for (const progress of [10, 45, 80, 100]) {
-        downloadProgressEmitter.emit({ modelId, progress })
-        await delay(80)
-      }
-      shimModels = shimModels.map((model) =>
-        model.id === modelId
-          ? { ...model, installed: true, downloading: false, downloadProgress: 100, downloadPaused: false }
-          : model,
-      )
-      persistModels()
-      downloadCompleteEmitter.emit({ modelId })
-      return true
-    },
-    pauseDownload: async (modelId) => {
-      shimModels = shimModels.map((model) =>
-        model.id === modelId ? { ...model, downloadPaused: true, downloading: false } : model,
-      )
-      persistModels()
-      downloadPausedEmitter.emit({ modelId })
-      return true
-    },
-    resumeDownload: async (modelId) => {
-      return electronAPI.downloadModel(modelId)
     },
     importModelFiles: async (modelId, files) => {
       const installed = Array.isArray(files) && files.length > 0

@@ -126,7 +126,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mel_band_roformer_4stems_large_ver1.ckpt",
+                  "repo_id": "Aname-Tommy/melbandroformer4stems",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/mel_band_roformer_4stems_large_ver1.ckpt",
                 "verified": false
               }
@@ -149,7 +156,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_large.yaml",
+                  "repo_id": "Aname-Tommy/melbandroformer4stems",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/config_large.yaml",
                 "verified": false
               }
@@ -540,7 +554,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mel_band_roformer_4stems_xl_ver1.ckpt",
+                  "repo_id": "Aname-Tommy/melbandroformer4stems",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/mel_band_roformer_4stems_xl_ver1.ckpt",
                 "verified": false
               }
@@ -563,7 +584,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_xl.yaml",
+                  "repo_id": "Aname-Tommy/melbandroformer4stems",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Aname-Tommy/melbandroformer4stems/resolve/main/config_xl.yaml",
                 "verified": false
               }
@@ -955,7 +983,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "model_vocals.ckpt",
+                  "repo_id": "Aname-Tommy/Mel_Band_Roformer_Full_Scratch",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Aname-Tommy/Mel_Band_Roformer_Full_Scratch/resolve/main/model_vocals.ckpt",
                 "verified": false
               }
@@ -978,7 +1013,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_vocals.yaml",
+                  "repo_id": "Aname-Tommy/Mel_Band_Roformer_Full_Scratch",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Aname-Tommy/Mel_Band_Roformer_Full_Scratch/resolve/main/config_vocals.yaml",
                 "verified": false
               }
@@ -1380,7 +1422,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/experimental/Fullness.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/Fullness.ckpt",
                 "verified": false
               }
@@ -1403,7 +1452,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/instrumental/inst_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
                 "verified": false
               }
@@ -1763,7 +1819,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "FullnessVocalModel.ckpt",
+                  "repo_id": "Aname-Tommy/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Aname-Tommy/MelBandRoformers/resolve/main/FullnessVocalModel.ckpt",
                 "verified": false
               }
@@ -1993,6 +2056,8 @@
                 "channel": "upstream",
                 "host": "",
                 "priority": 0,
+                "provider": "static",
+                "resolver": "static_url",
                 "url": "https://huggingface.co/anvuew/BS_RoFormer_mag",
                 "verified": false
               }
@@ -2016,6 +2081,8 @@
                 "channel": "upstream",
                 "host": "",
                 "priority": 0,
+                "provider": "static",
+                "resolver": "static_url",
                 "url": "https://huggingface.co/anvuew/BS_RoFormer_mag",
                 "verified": false
               }
@@ -2297,7 +2364,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "dereverb_bs_roformer_anvuew_sdr_22.5050.ckpt",
+                  "repo_id": "anvuew/dereverb_bs_roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/dereverb_bs_roformer/resolve/main/dereverb_bs_roformer_anvuew_sdr_22.5050.ckpt",
                 "verified": false
               }
@@ -2320,7 +2394,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config.yaml",
+                  "repo_id": "anvuew/dereverb_bs_roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/dereverb_bs_roformer/resolve/main/config.yaml",
                 "verified": false
               }
@@ -2682,7 +2763,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
+                  "repo_id": "anvuew/dereverb_mel_band_roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_mono_anvuew_sdr_20.4029.ckpt",
                 "verified": false
               }
@@ -2705,7 +2793,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "dereverb_mel_band_roformer_anvuew.yaml",
+                  "repo_id": "anvuew/dereverb_mel_band_roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew.yaml",
                 "verified": false
               }
@@ -3123,7 +3218,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "dereverb_room_anvuew_sdr_13.7432.ckpt",
+                  "repo_id": "anvuew/dereverb_room",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew_sdr_13.7432.ckpt",
                 "verified": false
               }
@@ -3146,7 +3248,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "dereverb_room_anvuew.yaml",
+                  "repo_id": "anvuew/dereverb_room",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew.yaml",
                 "verified": false
               }
@@ -3598,7 +3707,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "dereverb_mel_band_roformer_anvuew_sdr_19.1729.ckpt",
+                  "repo_id": "anvuew/dereverb_mel_band_roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew_sdr_19.1729.ckpt",
                 "verified": false
               }
@@ -3621,7 +3737,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "dereverb_mel_band_roformer_anvuew.yaml",
+                  "repo_id": "anvuew/dereverb_mel_band_roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/dereverb_mel_band_roformer/resolve/main/dereverb_mel_band_roformer_anvuew.yaml",
                 "verified": false
               }
@@ -4030,7 +4153,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "karaoke_bs_roformer_anvuew.ckpt",
+                  "repo_id": "anvuew/karaoke_bs_roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.ckpt",
                 "verified": false
               }
@@ -4053,7 +4183,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "karaoke_bs_roformer_anvuew.yaml",
+                  "repo_id": "anvuew/karaoke_bs_roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.yaml",
                 "verified": false
               }
@@ -4507,7 +4644,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "bs_roformer_anvuew_sdr_12.45.ckpt",
+                  "repo_id": "anvuew/BS-RoFormer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/BS-RoFormer/resolve/main/bs_roformer_anvuew_sdr_12.45.ckpt",
                 "verified": false
               }
@@ -4530,7 +4674,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config.yaml",
+                  "repo_id": "anvuew/BS-RoFormer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/anvuew/BS-RoFormer/resolve/main/config.yaml",
                 "verified": false
               }
@@ -4910,7 +5061,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "pytorch_model.bin",
+                  "repo_id": "JusperLee/Apollo",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/JusperLee/Apollo/resolve/main/pytorch_model.bin",
                 "verified": false
               }
@@ -4933,7 +5091,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "configs/config_apollo.yaml",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_raw",
                 "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_apollo.yaml",
                 "verified": false
               }
@@ -5496,7 +5662,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt",
+                  "repo_id": "jarredou/aufr33_MelBand_Denoise",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/resolve/main/denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt",
                 "verified": false
               }
@@ -5519,7 +5692,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "model_mel_band_roformer_denoise.yaml",
+                  "repo_id": "jarredou/aufr33_MelBand_Denoise",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/resolve/main/model_mel_band_roformer_denoise.yaml",
                 "verified": false
               }
@@ -5926,7 +6106,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt",
+                  "repo_id": "jarredou/aufr33_MelBand_Denoise",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/resolve/main/denoise_mel_band_roformer_aufr33_sdr_27.9959.ckpt",
                 "verified": false
               }
@@ -5949,7 +6136,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "model_mel_band_roformer_denoise.yaml",
+                  "repo_id": "jarredou/aufr33_MelBand_Denoise",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/aufr33_MelBand_Denoise/resolve/main/model_mel_band_roformer_denoise.yaml",
                 "verified": false
               }
@@ -6570,7 +6764,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "model_bandit_plus_dnr_sdr_11.47.chpt",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "tag": "v.1.0.3"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.3/model_bandit_plus_dnr_sdr_11.47.chpt",
                 "verified": false
               }
@@ -6593,7 +6795,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "config_dnr_bandit_bsrnn_multi_mus64.yaml",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "tag": "v.1.0.3"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.3/config_dnr_bandit_bsrnn_multi_mus64.yaml",
                 "verified": false
               }
@@ -7199,7 +7409,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "becruily_guitar.ckpt",
+                  "repo_id": "becruily/mel-band-roformer-guitar",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/becruily/mel-band-roformer-guitar/resolve/main/becruily_guitar.ckpt",
                 "verified": false
               }
@@ -7222,7 +7439,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_guitar_becruily.yaml",
+                  "repo_id": "becruily/mel-band-roformer-guitar",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/becruily/mel-band-roformer-guitar/resolve/main/config_guitar_becruily.yaml",
                 "verified": false
               }
@@ -7604,7 +7828,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mel_band_roformer_instrumental_becruily.ckpt",
+                  "repo_id": "becruily/mel-band-roformer-instrumental",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/becruily/mel-band-roformer-instrumental/resolve/main/mel_band_roformer_instrumental_becruily.ckpt",
                 "verified": false
               }
@@ -7627,7 +7858,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_instrumental_becruily.yaml",
+                  "repo_id": "becruily/mel-band-roformer-instrumental",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/becruily/mel-band-roformer-instrumental/resolve/main/config_instrumental_becruily.yaml",
                 "verified": false
               }
@@ -8049,7 +8287,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mel_band_roformer_vocals_becruily.ckpt",
+                  "repo_id": "becruily/mel-band-roformer-vocals",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/becruily/mel-band-roformer-vocals/resolve/main/mel_band_roformer_vocals_becruily.ckpt",
                 "verified": false
               }
@@ -8072,7 +8317,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_vocals_becruily.yaml",
+                  "repo_id": "becruily/mel-band-roformer-vocals",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/becruily/mel-band-roformer-vocals/resolve/main/config_vocals_becruily.yaml",
                 "verified": false
               }
@@ -8863,7 +9115,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "model_bs_roformer_ep_937_sdr_10.5309.ckpt",
+                  "owner": "TRvlvr",
+                  "repo": "model_repo",
+                  "tag": "all_public_uvr_models"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_937_sdr_10.5309.ckpt",
                 "verified": false
               }
@@ -8886,7 +9146,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mdx_model_data/mdx_c_configs/model_bs_roformer_ep_937_sdr_10.5309.yaml",
+                  "owner": "TRvlvr",
+                  "repo": "application_data",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_raw",
                 "url": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_bs_roformer_ep_937_sdr_10.5309.yaml",
                 "verified": false
               }
@@ -9256,7 +9524,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "bs_roformer_4stems_ft.pth",
+                  "repo_id": "SYH99999/bs_roformer_4stems_ft",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/SYH99999/bs_roformer_4stems_ft/resolve/main/bs_roformer_4stems_ft.pth",
                 "verified": false
               }
@@ -9279,7 +9554,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config.yaml",
+                  "repo_id": "SYH99999/bs_roformer_4stems_ft",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/SYH99999/bs_roformer_4stems_ft/resolve/main/config.yaml",
                 "verified": false
               }
@@ -9879,7 +10161,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "bs_roformer_karaoke_frazer_becruily.ckpt",
+                  "repo_id": "becruily/bs-roformer-karaoke",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/becruily/bs-roformer-karaoke/resolve/main/bs_roformer_karaoke_frazer_becruily.ckpt",
                 "verified": false
               }
@@ -9902,7 +10191,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_karaoke_frazer_becruily.yaml",
+                  "repo_id": "becruily/bs-roformer-karaoke",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/becruily/bs-roformer-karaoke/resolve/main/config_karaoke_frazer_becruily.yaml",
                 "verified": false
               }
@@ -10351,7 +10647,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "bs_large_v2_inst.ckpt",
+                  "repo_id": "pcunwa/BS-Roformer-Large-Inst",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Large-Inst/resolve/main/bs_large_v2_inst.ckpt",
                 "verified": false
               }
@@ -10374,7 +10677,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config.yaml",
+                  "repo_id": "pcunwa/BS-Roformer-Large-Inst",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Large-Inst/resolve/main/config.yaml",
                 "verified": false
               }
@@ -10750,7 +11060,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "model_bs_roformer_ep_368_sdr_12.9628.ckpt",
+                  "owner": "TRvlvr",
+                  "repo": "model_repo",
+                  "tag": "all_public_uvr_models"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_368_sdr_12.9628.ckpt",
                 "verified": false
               }
@@ -10773,7 +11091,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mdx_model_data/mdx_c_configs/model_bs_roformer_ep_368_sdr_12.9628.yaml",
+                  "owner": "TRvlvr",
+                  "repo": "application_data",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_raw",
                 "url": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_bs_roformer_ep_368_sdr_12.9628.yaml",
                 "verified": false
               }
@@ -11163,7 +11489,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+                  "owner": "TRvlvr",
+                  "repo": "model_repo",
+                  "tag": "all_public_uvr_models"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
                 "verified": false
               }
@@ -11186,7 +11520,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_raw",
                 "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
                 "verified": false
               }
@@ -11641,6 +11983,8 @@
                 "channel": "upstream",
                 "host": "",
                 "priority": 0,
+                "provider": "static",
+                "resolver": "static_url",
                 "url": "https://dl.fbaipublicfiles.com/demucs/mdx_final/6b9c2ca1-3fd82607.th",
                 "verified": false
               }
@@ -12110,7 +12454,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "huggingface.co",
+                "locator": {
+                  "file_path": "models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt",
+                  "repo_id": "Politrees/UVR_resources",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt",
                 "verified": true
               }
@@ -12133,7 +12484,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "models/SCnet/config_musdb18_scnet.yaml",
+                  "repo_id": "Politrees/UVR_resources",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/config_musdb18_scnet.yaml",
                 "verified": false
               }
@@ -12535,7 +12893,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melband_roformer_instvoc_duality_v1.ckpt",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-InstVoc-Duality",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/melband_roformer_instvoc_duality_v1.ckpt",
                 "verified": false
               }
@@ -12558,7 +12923,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_melbandroformer_instvoc_duality.yaml",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-InstVoc-Duality",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/config_melbandroformer_instvoc_duality.yaml",
                 "verified": false
               }
@@ -12948,7 +13320,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melband_roformer_instvox_duality_v2.ckpt",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-InstVoc-Duality",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/melband_roformer_instvox_duality_v2.ckpt",
                 "verified": false
               }
@@ -12971,7 +13350,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_melbandroformer_instvoc_duality.yaml",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-InstVoc-Duality",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-InstVoc-Duality/resolve/main/config_melbandroformer_instvoc_duality.yaml",
                 "verified": false
               }
@@ -13383,7 +13769,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/instrumental/denoisedebleed.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/denoisedebleed.ckpt",
                 "verified": false
               }
@@ -13406,7 +13799,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/instrumental/inst_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
                 "verified": false
               }
@@ -13810,7 +14210,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/instrumental/inst_Fv4Noise.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_Fv4Noise.ckpt",
                 "verified": false
               }
@@ -13833,7 +14240,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/instrumental/inst_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
                 "verified": false
               }
@@ -14205,7 +14619,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/experimental/inst_fv7b.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/inst_fv7b.ckpt",
                 "verified": false
               }
@@ -14228,7 +14649,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/instrumental/inst_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
                 "verified": false
               }
@@ -14647,7 +15075,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/instrumental/Inst_GaboxFv7z.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/Inst_GaboxFv7z.ckpt",
                 "verified": false
               }
@@ -14670,7 +15105,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/instrumental/inst_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
                 "verified": false
               }
@@ -15030,7 +15472,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/experimental/Inst_FV8b.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/Inst_FV8b.ckpt",
                 "verified": false
               }
@@ -15053,7 +15502,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/instrumental/inst_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
                 "verified": false
               }
@@ -15620,7 +16076,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/instrumental/INSTV6N.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/INSTV6N.ckpt",
                 "verified": false
               }
@@ -15643,7 +16106,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/instrumental/inst_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/instrumental/inst_gabox.yaml",
                 "verified": false
               }
@@ -16152,6 +16622,8 @@
                 "channel": "upstream",
                 "host": "",
                 "priority": 0,
+                "provider": "static",
+                "resolver": "static_url",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/blob/main/bsroformers/last_bs_roformer.ckpt",
                 "verified": false
               }
@@ -16175,6 +16647,8 @@
                 "channel": "upstream",
                 "host": "huggingface.co",
                 "priority": 0,
+                "provider": "static",
+                "resolver": "static_url",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers",
                 "verified": true
               }
@@ -16480,7 +16954,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/experimental/BS_ResurrectioN.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/BS_ResurrectioN.ckpt",
                 "verified": false
               }
@@ -16503,7 +16984,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "BS-Roformer-Resurrection-Inst-Config.yaml",
+                  "repo_id": "pcunwa/BS-Roformer-Resurrection",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/resolve/main/BS-Roformer-Resurrection-Inst-Config.yaml",
                 "verified": false
               }
@@ -16885,7 +17373,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/voc_gabox.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.ckpt",
                 "verified": false
               }
@@ -16908,7 +17403,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/voc_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
                 "verified": false
               }
@@ -17264,7 +17766,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/voc_fv5.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_fv5.ckpt",
                 "verified": false
               }
@@ -17287,7 +17796,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/voc_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
                 "verified": false
               }
@@ -17643,7 +18159,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/voc_fv6.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_fv6.ckpt",
                 "verified": false
               }
@@ -17666,7 +18189,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/voc_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
                 "verified": false
               }
@@ -18020,7 +18550,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/voc_fv7.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_fv7.ckpt",
                 "verified": false
               }
@@ -18043,7 +18580,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/v7.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/v7.yaml",
                 "verified": false
               }
@@ -18382,7 +18926,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/experimental/vocfv7beta2.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/vocfv7beta2.ckpt",
                 "verified": false
               }
@@ -18405,7 +18956,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/voc_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
                 "verified": false
               }
@@ -18803,7 +19361,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/experimental/vocfv7beta3.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/experimental/vocfv7beta3.ckpt",
                 "verified": false
               }
@@ -18826,7 +19391,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/voc_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
                 "verified": false
               }
@@ -19208,7 +19780,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/voc_gabox2.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox2.ckpt",
                 "verified": false
               }
@@ -19231,7 +19810,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/vocals/voc_gabox.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/vocals/voc_gabox.yaml",
                 "verified": false
               }
@@ -19555,6 +20141,8 @@
                 "channel": "upstream",
                 "host": "",
                 "priority": 0,
+                "provider": "static",
+                "resolver": "static_url",
                 "url": "https://huggingface.co/gilliaaan/Mel-Band-Roformer-MonoStereo-Duality/blob/main/gilliaan_MonoStereo_Dual_Beta2.ckpt",
                 "verified": false
               }
@@ -19578,6 +20166,8 @@
                 "channel": "upstream",
                 "host": "",
                 "priority": 0,
+                "provider": "static",
+                "resolver": "static_url",
                 "url": "https://huggingface.co/gilliaaan/Mel-Band-Roformer-MonoStereo-Duality",
                 "verified": false
               }
@@ -19884,6 +20474,8 @@
                 "channel": "upstream",
                 "host": "",
                 "priority": 0,
+                "provider": "static",
+                "resolver": "static_url",
                 "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
                 "verified": false
               }
@@ -19906,7 +20498,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "configs/config_musdb18_htdemucs.yaml",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_raw",
                 "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
                 "verified": false
               }
@@ -20284,6 +20884,8 @@
                 "channel": "upstream",
                 "host": "",
                 "priority": 0,
+                "provider": "static",
+                "resolver": "static_url",
                 "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th",
                 "verified": false
               }
@@ -20306,7 +20908,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "configs/config_htdemucs_6stems.yaml",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_raw",
                 "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_htdemucs_6stems.yaml",
                 "verified": false
               }
@@ -20932,7 +21542,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "apollo_model.ckpt",
+                  "repo_id": "jarredou/lew_apollo_vocal_enhancer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/apollo_model.ckpt",
                 "verified": false
               }
@@ -20955,7 +21572,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_apollo_vocal.yaml",
+                  "repo_id": "jarredou/lew_apollo_vocal_enhancer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/config_apollo_vocal.yaml",
                 "verified": false
               }
@@ -21366,7 +21990,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "apollo_model_v2.ckpt",
+                  "repo_id": "jarredou/lew_apollo_vocal_enhancer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/apollo_model_v2.ckpt",
                 "verified": false
               }
@@ -21389,7 +22020,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_apollo_vocal.yaml",
+                  "repo_id": "jarredou/lew_apollo_vocal_enhancer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/lew_apollo_vocal_enhancer/resolve/main/config_apollo_vocal.yaml",
                 "verified": false
               }
@@ -21783,7 +22421,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mdx-net/UVR-MDX-NET-Inst_HQ_4.onnx",
+                  "repo_id": "Eddycrack864/audio-separator-models",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/mdx-net/UVR-MDX-NET-Inst_HQ_4.onnx",
                 "verified": false
               }
@@ -21806,7 +22451,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml",
+                  "owner": "TRvlvr",
+                  "repo": "application_data",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_raw",
                 "url": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml",
                 "verified": false
               }
@@ -22210,7 +22863,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mdx-net/UVR-MDX-NET-Inst_HQ_5.onnx",
+                  "repo_id": "Eddycrack864/audio-separator-models",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/mdx-net/UVR-MDX-NET-Inst_HQ_5.onnx",
                 "verified": false
               }
@@ -22233,7 +22893,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml",
+                  "owner": "TRvlvr",
+                  "repo": "application_data",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_raw",
                 "url": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_full_band_8k.yaml",
                 "verified": false
               }
@@ -22634,7 +23302,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "MDX23C_D1581.ckpt",
+                  "owner": "TRvlvr",
+                  "repo": "model_repo",
+                  "tag": "all_public_uvr_models"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/MDX23C_D1581.ckpt",
                 "verified": false
               }
@@ -22657,7 +23333,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mdx_model_data/mdx_c_configs/model_2_stem_061321.yaml",
+                  "owner": "TRvlvr",
+                  "repo": "application_data",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_raw",
                 "url": "https://raw.githubusercontent.com/TRvlvr/application_data/main/mdx_model_data/mdx_c_configs/model_2_stem_061321.yaml",
                 "verified": false
               }
@@ -23069,7 +23753,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "huggingface.co",
+                "locator": {
+                  "file_path": "models/MDX23C/MDX23C-DrumSep-aufr33-jarredou.ckpt",
+                  "repo_id": "Politrees/UVR_resources",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-DrumSep-aufr33-jarredou.ckpt",
                 "verified": true
               }
@@ -23092,7 +23783,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "models/MDX23C/config_drumsep_mdx23c.yaml",
+                  "repo_id": "Politrees/UVR_resources",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/config_drumsep_mdx23c.yaml",
                 "verified": false
               }
@@ -23538,7 +24236,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.ckpt",
+                  "owner": "jarredou",
+                  "repo": "models",
+                  "tag": "aufr33-jarredou_MDX23C_DrumSep_model_v0.1"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/jarredou/models/releases/download/aufr33-jarredou_MDX23C_DrumSep_model_v0.1/aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.ckpt",
                 "verified": false
               }
@@ -23561,7 +24267,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.yaml",
+                  "owner": "jarredou",
+                  "repo": "models",
+                  "tag": "aufr33-jarredou_MDX23C_DrumSep_model_v0.1"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/jarredou/models/releases/download/aufr33-jarredou_MDX23C_DrumSep_model_v0.1/aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.yaml",
                 "verified": false
               }
@@ -23939,7 +24653,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mdx23c/MDX23C-8KFFT-InstVoc_HQ.ckpt",
+                  "repo_id": "Eddycrack864/audio-separator-models",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/mdx23c/MDX23C-8KFFT-InstVoc_HQ.ckpt",
                 "verified": false
               }
@@ -23962,7 +24683,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mdx23c/model_2_stem_full_band_8k.yaml",
+                  "repo_id": "Eddycrack864/audio-separator-models",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Eddycrack864/audio-separator-models/resolve/main/mdx23c/model_2_stem_full_band_8k.yaml",
                 "verified": false
               }
@@ -24359,7 +25087,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "huggingface.co",
+                "locator": {
+                  "file_path": "models/MDX23C/MDX23C-8KFFT-InstVoc_HQ_2.ckpt",
+                  "repo_id": "Politrees/UVR_resources",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-8KFFT-InstVoc_HQ_2.ckpt",
                 "verified": true
               }
@@ -24772,7 +25507,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "UVR-MDX-NET-Inst_HQ_2.onnx",
+                  "owner": "TRvlvr",
+                  "repo": "model_repo",
+                  "tag": "all_public_uvr_models"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_2.onnx",
                 "verified": false
               }
@@ -25000,7 +25743,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "huggingface.co",
+                "locator": {
+                  "file_path": "models/MDXNet/UVR-MDX-NET-Inst_HQ_3.onnx",
+                  "repo_id": "Politrees/UVR_resources",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDXNet/UVR-MDX-NET-Inst_HQ_3.onnx",
                 "verified": true
               }
@@ -25478,7 +26228,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "mel_band_roformer_crowd_aufr33_viperx_sdr_8.7144.ckpt",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "tag": "v.1.0.4"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.4/mel_band_roformer_crowd_aufr33_viperx_sdr_8.7144.ckpt",
                 "verified": false
               }
@@ -25501,7 +26259,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "model_mel_band_roformer_crowd.yaml",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "tag": "v.1.0.4"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.4/model_mel_band_roformer_crowd.yaml",
                 "verified": false
               }
@@ -25918,7 +26684,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
+                  "repo_id": "jarredou/aufr33-viperx-karaoke-melroformer-model",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/aufr33-viperx-karaoke-melroformer-model/resolve/main/mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
                 "verified": false
               }
@@ -25941,7 +26714,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_mel_band_roformer_karaoke.yaml",
+                  "repo_id": "jarredou/aufr33-viperx-karaoke-melroformer-model",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/aufr33-viperx-karaoke-melroformer-model/resolve/main/config_mel_band_roformer_karaoke.yaml",
                 "verified": false
               }
@@ -26341,7 +27121,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mel_band_roformer_karaoke_becruily.ckpt",
+                  "repo_id": "becruily/mel-band-roformer-karaoke",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/becruily/mel-band-roformer-karaoke/resolve/main/mel_band_roformer_karaoke_becruily.ckpt",
                 "verified": false
               }
@@ -26364,7 +27151,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_karaoke_becruily.yaml",
+                  "repo_id": "becruily/mel-band-roformer-karaoke",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/becruily/mel-band-roformer-karaoke/resolve/main/config_karaoke_becruily.yaml",
                 "verified": false
               }
@@ -26778,7 +27572,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "MelBandRoformer.ckpt",
+                  "repo_id": "KimberleyJSN/melbandroformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/KimberleyJSN/melbandroformer/resolve/main/MelBandRoformer.ckpt",
                 "verified": false
               }
@@ -26801,7 +27602,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_raw",
                 "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml",
                 "verified": false
               }
@@ -27199,7 +28008,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "MelBandRoformerSYHFTV3Epsilon.ckpt",
+                  "repo_id": "SYH99999/MelBandRoformerSYHFTV3Epsilon",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/SYH99999/MelBandRoformerSYHFTV3Epsilon/resolve/main/MelBandRoformerSYHFTV3Epsilon.ckpt",
                 "verified": false
               }
@@ -27472,7 +28288,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "rifforge_full_sdr_14.2436.ckpt",
+                  "repo_id": "meskvlla33/rifforge",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/meskvlla33/rifforge/resolve/main/rifforge_full_sdr_14.2436.ckpt",
                 "verified": false
               }
@@ -27495,7 +28318,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_rifforge_full_mesk.yaml",
+                  "repo_id": "meskvlla33/rifforge",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/meskvlla33/rifforge/resolve/main/config_rifforge_full_mesk.yaml",
                 "verified": false
               }
@@ -28446,7 +29276,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "Neo_InstVFX.ckpt",
+                  "repo_id": "natanworkspace/melband_roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/natanworkspace/melband_roformer/resolve/main/Neo_InstVFX.ckpt",
                 "verified": false
               }
@@ -28469,7 +29306,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_neo_inst.yaml",
+                  "repo_id": "natanworkspace/melband_roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/natanworkspace/melband_roformer/resolve/main/config_neo_inst.yaml",
                 "verified": false
               }
@@ -28880,7 +29724,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "SCNet-large_starrytong_fixed.ckpt",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "tag": "v1.0.9"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.9/SCNet-large_starrytong_fixed.ckpt",
                 "verified": false
               }
@@ -28903,7 +29755,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "config_musdb18_scnet_large_starrytong.yaml",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "tag": "v1.0.9"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.9/config_musdb18_scnet_large_starrytong.yaml",
                 "verified": false
               }
@@ -29339,7 +30199,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "model_scnet_masked_ep_111_sdr_9.8286.ckpt",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "tag": "v1.0.17"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/model_scnet_masked_ep_111_sdr_9.8286.ckpt",
                 "verified": false
               }
@@ -29362,7 +30230,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "config_musdb18_scnet_xl_ihf.yaml",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "tag": "v1.0.17"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.17/config_musdb18_scnet_xl_ihf.yaml",
                 "verified": false
               }
@@ -29741,7 +30617,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "scnet_checkpoint_musdb18.ckpt",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "tag": "v.1.0.6"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.6/scnet_checkpoint_musdb18.ckpt",
                 "verified": false
               }
@@ -29764,7 +30648,15 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "asset_name": "config_musdb18_scnet.yaml",
+                  "owner": "ZFTurbo",
+                  "repo": "Music-Source-Separation-Training",
+                  "tag": "v.1.0.6"
+                },
                 "priority": 0,
+                "provider": "github",
+                "resolver": "github_release_asset",
                 "url": "https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.6/config_musdb18_scnet.yaml",
                 "verified": false
               }
@@ -30332,7 +31224,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/karaoke/small_karaoke_gaboxaufr.ckpt",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/karaoke/small_karaoke_gaboxaufr.ckpt",
                 "verified": false
               }
@@ -30355,7 +31254,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melbandroformers/karaoke/config_karaoke_small.yaml",
+                  "repo_id": "GaboxR67/MelBandRoformers",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/GaboxR67/MelBandRoformers/resolve/main/melbandroformers/karaoke/config_karaoke_small.yaml",
                 "verified": false
               }
@@ -30688,7 +31594,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "dereverb_echo_mbr_fused_0.5_v2_0.25_big_0.25_super.ckpt",
+                  "repo_id": "Sucial/Dereverb-Echo_Mel_Band_Roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/dereverb_echo_mbr_fused_0.5_v2_0.25_big_0.25_super.ckpt",
                 "verified": false
               }
@@ -30711,7 +31624,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_dereverb_echo_mbr_v2.yaml",
+                  "repo_id": "Sucial/Dereverb-Echo_Mel_Band_Roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Sucial/Dereverb-Echo_Mel_Band_Roformer/resolve/main/config_dereverb_echo_mbr_v2.yaml",
                 "verified": false
               }
@@ -31112,7 +32032,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "model_chorus_bs_roformer_ep_267_sdr_24.1275.ckpt",
+                  "repo_id": "Sucial/Chorus_Male_Female_BS_Roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Sucial/Chorus_Male_Female_BS_Roformer/resolve/main/model_chorus_bs_roformer_ep_267_sdr_24.1275.ckpt",
                 "verified": false
               }
@@ -31135,7 +32062,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_chorus_male_female_bs_roformer.yaml",
+                  "repo_id": "Sucial/Chorus_Male_Female_BS_Roformer",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Sucial/Chorus_Male_Female_BS_Roformer/resolve/main/config_chorus_male_female_bs_roformer.yaml",
                 "verified": false
               }
@@ -31548,7 +32482,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "big_beta5e.ckpt",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-big",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta5e.ckpt",
                 "verified": false
               }
@@ -31571,7 +32512,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "big_beta5e.yaml",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-big",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta5e.yaml",
                 "verified": false
               }
@@ -31987,7 +32935,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "big_beta6x.ckpt",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-big",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta6x.ckpt",
                 "verified": false
               }
@@ -32010,7 +32965,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "big_beta6x.yaml",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-big",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta6x.yaml",
                 "verified": false
               }
@@ -32364,7 +33326,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "big_beta7.ckpt",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-big",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta7.ckpt",
                 "verified": false
               }
@@ -32387,7 +33356,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "big_beta7.yaml",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-big",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-big/resolve/main/big_beta7.yaml",
                 "verified": false
               }
@@ -32671,6 +33647,8 @@
                 "channel": "upstream",
                 "host": "",
                 "priority": 0,
+                "provider": "static",
+                "resolver": "static_url",
                 "url": "https://huggingface.co/pcunwa/BS-EXP-SiameseRoformer",
                 "verified": false
               }
@@ -32694,6 +33672,8 @@
                 "channel": "upstream",
                 "host": "",
                 "priority": 0,
+                "provider": "static",
+                "resolver": "static_url",
                 "url": "https://huggingface.co/pcunwa/BS-EXP-SiameseRoformer",
                 "verified": false
               }
@@ -32981,7 +33961,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "bleed_suppressor_v1.ckpt",
+                  "repo_id": "jarredou/bleed_suppressor_melband_rofo_by_unwa_97chris",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/bleed_suppressor_melband_rofo_by_unwa_97chris/resolve/main/bleed_suppressor_v1.ckpt",
                 "verified": false
               }
@@ -33004,7 +33991,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_bleed_suppressor_v1.yaml",
+                  "repo_id": "jarredou/bleed_suppressor_melband_rofo_by_unwa_97chris",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/bleed_suppressor_melband_rofo_by_unwa_97chris/resolve/main/config_bleed_suppressor_v1.yaml",
                 "verified": false
               }
@@ -33396,7 +34390,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "kimmel_unwa_ft3_prev.ckpt",
+                  "repo_id": "pcunwa/Kim-Mel-Band-Roformer-FT",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft3_prev.ckpt",
                 "verified": false
               }
@@ -33419,7 +34420,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_kimmel_unwa_ft.yaml",
+                  "repo_id": "pcunwa/Kim-Mel-Band-Roformer-FT",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft.yaml",
                 "verified": false
               }
@@ -33795,7 +34803,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "bs_hyperace.ckpt",
+                  "repo_id": "pcunwa/BS-Roformer-HyperACE",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/bs_hyperace.ckpt",
                 "verified": false
               }
@@ -33818,7 +34833,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config.yaml",
+                  "repo_id": "pcunwa/BS-Roformer-HyperACE",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/config.yaml",
                 "verified": false
               }
@@ -34272,7 +35294,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "v2_inst/bs_roformer_inst_hyperacev2.ckpt",
+                  "repo_id": "pcunwa/BS-Roformer-HyperACE",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_inst/bs_roformer_inst_hyperacev2.ckpt",
                 "verified": false
               }
@@ -34295,7 +35324,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "v2_inst/config.yaml",
+                  "repo_id": "pcunwa/BS-Roformer-HyperACE",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_inst/config.yaml",
                 "verified": false
               }
@@ -34712,7 +35748,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "v2_voc/bs_roformer_voc_hyperacev2.ckpt",
+                  "repo_id": "pcunwa/BS-Roformer-HyperACE",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_voc/bs_roformer_voc_hyperacev2.ckpt",
                 "verified": false
               }
@@ -34735,7 +35778,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "v2_voc/config.yaml",
+                  "repo_id": "pcunwa/BS-Roformer-HyperACE",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-HyperACE/resolve/main/v2_voc/config.yaml",
                 "verified": false
               }
@@ -35127,7 +36177,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "bs_roformer_fno.ckpt",
+                  "repo_id": "pcunwa/BS-Roformer-Inst-FNO",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/bs_roformer_fno.ckpt",
                 "verified": false
               }
@@ -35150,7 +36207,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "bsrofo_fno.yaml",
+                  "repo_id": "pcunwa/BS-Roformer-Inst-FNO",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Inst-FNO/resolve/main/bsrofo_fno.yaml",
                 "verified": false
               }
@@ -35609,7 +36673,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melband_roformer_inst_v1.ckpt",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-Inst",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/melband_roformer_inst_v1.ckpt",
                 "verified": false
               }
@@ -35632,7 +36703,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_melbandroformer_inst.yaml",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-Inst",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/config_melbandroformer_inst.yaml",
                 "verified": false
               }
@@ -36016,7 +37094,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "inst_v1e_plus.ckpt",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-Inst",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/inst_v1e_plus.ckpt",
                 "verified": false
               }
@@ -36039,7 +37124,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_melbandroformer_inst.yaml",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-Inst",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/config_melbandroformer_inst.yaml",
                 "verified": false
               }
@@ -36508,7 +37600,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "melband_roformer_inst_v2.ckpt",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-Inst",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/melband_roformer_inst_v2.ckpt",
                 "verified": false
               }
@@ -36531,7 +37630,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_melbandroformer_inst.yaml",
+                  "repo_id": "pcunwa/Mel-Band-Roformer-Inst",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Mel-Band-Roformer-Inst/resolve/main/config_melbandroformer_inst.yaml",
                 "verified": false
               }
@@ -36894,7 +38000,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "kimmel_unwa_ft2.ckpt",
+                  "repo_id": "pcunwa/Kim-Mel-Band-Roformer-FT",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft2.ckpt",
                 "verified": false
               }
@@ -36917,7 +38030,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_kimmel_unwa_ft.yaml",
+                  "repo_id": "pcunwa/Kim-Mel-Band-Roformer-FT",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft.yaml",
                 "verified": false
               }
@@ -37273,7 +38393,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "kimmel_unwa_ft2_bleedless.ckpt",
+                  "repo_id": "pcunwa/Kim-Mel-Band-Roformer-FT",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/kimmel_unwa_ft2_bleedless.ckpt",
                 "verified": false
               }
@@ -37296,7 +38423,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_kimmel_unwa_ft.yaml",
+                  "repo_id": "pcunwa/Kim-Mel-Band-Roformer-FT",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/Kim-Mel-Band-Roformer-FT/resolve/main/config_kimmel_unwa_ft.yaml",
                 "verified": false
               }
@@ -37652,7 +38786,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "BS-Roformer-Resurrection-Inst.ckpt",
+                  "repo_id": "pcunwa/BS-Roformer-Resurrection",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/resolve/main/BS-Roformer-Resurrection-Inst.ckpt",
                 "verified": false
               }
@@ -37675,7 +38816,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "BS-Roformer-Resurrection-Inst-Config.yaml",
+                  "repo_id": "pcunwa/BS-Roformer-Resurrection",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/resolve/main/BS-Roformer-Resurrection-Inst-Config.yaml",
                 "verified": false
               }
@@ -38043,7 +39191,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "BS-Roformer-Resurrection.ckpt",
+                  "repo_id": "pcunwa/BS-Roformer-Resurrection",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/resolve/main/BS-Roformer-Resurrection.ckpt",
                 "verified": false
               }
@@ -38066,7 +39221,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "BS-Roformer-Resurrection-Config.yaml",
+                  "repo_id": "pcunwa/BS-Roformer-Resurrection",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Resurrection/resolve/main/BS-Roformer-Resurrection-Config.yaml",
                 "verified": false
               }
@@ -38452,7 +39614,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "bs_roformer_revive2.ckpt",
+                  "repo_id": "pcunwa/BS-Roformer-Revive",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Revive/resolve/main/bs_roformer_revive2.ckpt",
                 "verified": false
               }
@@ -38475,7 +39644,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config.yaml",
+                  "repo_id": "pcunwa/BS-Roformer-Revive",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Revive/resolve/main/config.yaml",
                 "verified": false
               }
@@ -38850,7 +40026,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "bs_roformer_revive3e.ckpt",
+                  "repo_id": "pcunwa/BS-Roformer-Revive",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Revive/resolve/main/bs_roformer_revive3e.ckpt",
                 "verified": false
               }
@@ -38873,7 +40056,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config.yaml",
+                  "repo_id": "pcunwa/BS-Roformer-Revive",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/pcunwa/BS-Roformer-Revive/resolve/main/config.yaml",
                 "verified": false
               }
@@ -39212,7 +40402,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "huggingface.co",
+                "locator": {
+                  "file_path": "models/VR_Arch/UVR-DeNoise.pth",
+                  "repo_id": "Politrees/UVR_resources",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/VR_Arch/UVR-DeNoise.pth",
                 "verified": true
               }
@@ -39629,7 +40826,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "huggingface.co",
+                "locator": {
+                  "file_path": "models/MDXNet/UVR_MDXNET_Main.onnx",
+                  "repo_id": "Politrees/UVR_resources",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDXNet/UVR_MDXNET_Main.onnx",
                 "verified": true
               }
@@ -39910,7 +41114,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
+                  "repo_id": "jarredou/aufr33-viperx-karaoke-melroformer-model",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/aufr33-viperx-karaoke-melroformer-model/resolve/main/mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt",
                 "verified": false
               }
@@ -39933,7 +41144,14 @@
                 "auth": "public",
                 "channel": "upstream",
                 "host": "",
+                "locator": {
+                  "file_path": "config_mel_band_roformer_karaoke.yaml",
+                  "repo_id": "jarredou/aufr33-viperx-karaoke-melroformer-model",
+                  "revision": "main"
+                },
                 "priority": 0,
+                "provider": "huggingface",
+                "resolver": "huggingface_resolve",
                 "url": "https://huggingface.co/jarredou/aufr33-viperx-karaoke-melroformer-model/resolve/main/config_mel_band_roformer_karaoke.yaml",
                 "verified": false
               }

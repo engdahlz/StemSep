@@ -34,11 +34,16 @@ export interface ModelDownloadSource {
   role?: string;
   url: string;
   host?: string;
+  provider?: string;
+  resolver?: string;
+  locator?: Record<string, unknown> | null;
   manual?: boolean;
   channel?: "upstream" | "mirror" | string;
   priority?: number;
-  auth?: "none" | "hf_token" | string;
+  auth?: "none" | "public" | "hf_token" | string;
   verified?: boolean;
+  size_bytes?: number | null;
+  sha256?: string | null;
 }
 
 export interface ModelArtifactStatus {

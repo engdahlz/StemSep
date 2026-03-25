@@ -111,9 +111,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Model operations
   getModels: () => ipcRenderer.invoke('get-models'),
   getModelTech: (modelId: string) => ipcRenderer.invoke('get-model-tech', modelId),
-  resolveModelDownload: (modelId: string) => ipcRenderer.invoke('resolve-model-download', modelId),
-  getModelInstallation: (modelId: string) => ipcRenderer.invoke('get-model-installation', modelId),
   getCatalog: () => ipcRenderer.invoke('get-catalog'),
+  getCatalogStatus: () => ipcRenderer.invoke('get-catalog-status'),
+  refreshCatalog: () => ipcRenderer.invoke('refresh-catalog'),
   getSelectionInstallation: (selectionType: string, selectionId: string) =>
     ipcRenderer.invoke('get-selection-installation', { selectionType, selectionId }),
   resolveInstallPlan: (selectionType: string, selectionId: string) =>
@@ -143,9 +143,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('quality-baseline-create', payload),
   qualityCompare: (payload: Record<string, any>) =>
     ipcRenderer.invoke('quality-compare', payload),
-  downloadModel: (modelId: string) => ipcRenderer.invoke('download-model', modelId),
-  pauseDownload: (modelId: string) => ipcRenderer.invoke('pause-download', modelId),
-  resumeDownload: (modelId: string) => ipcRenderer.invoke('resume-download', modelId),
   importModelFiles: (modelId: string, files: Array<{ kind?: string, path: string }>, allowCopy = true) =>
     ipcRenderer.invoke('import-model-files', { modelId, files, allowCopy }),
   removeModel: (modelId: string) => ipcRenderer.invoke('remove-model', modelId),

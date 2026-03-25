@@ -23,12 +23,9 @@ type PlaybackCapturePrepareResult = import('./types/remote').PlaybackCapturePrep
 type PlaybackCaptureCompleteResult = import('./types/remote').PlaybackCaptureCompleteResult
 type PlaybackCaptureProgressPayload = import('./types/remote').PlaybackCaptureProgressPayload
 type CatalogRuntimeManifest = import('./types/modelCatalog').CatalogRuntimeManifest
+type CatalogStatus = import('./types/modelCatalog').CatalogStatus
 type CatalogSelectionType = import('./types/modelCatalog').CatalogSelectionType
 type SelectionInstallPlan = import('./types/modelCatalog').SelectionInstallPlan
-type ModelSelectionEnvelope = import('./types/modelCatalog').ModelSelectionEnvelope
-type CatalogRuntimeManifest = import('./types/modelCatalog').CatalogRuntimeManifest
-type SelectionInstallPlan = import('./types/modelCatalog').SelectionInstallPlan
-type CatalogSelectionType = import('./types/modelCatalog').CatalogSelectionType
 type ModelSelectionEnvelope = import('./types/modelCatalog').ModelSelectionEnvelope
 
 type MissingAudioCode = 'MISSING_CACHE_FILE' | 'STALE_SESSION' | 'MISSING_SOURCE_FILE'
@@ -129,10 +126,10 @@ interface ElectronAPI {
 
     // Model operations
     getCatalog: () => Promise<CatalogRuntimeManifest>
+    getCatalogStatus: () => Promise<CatalogStatus>
+    refreshCatalog: () => Promise<CatalogStatus>
     getModels: () => Promise<any[]>
     getModelTech: (modelId: string) => Promise<any>
-    resolveModelDownload: (modelId: string) => Promise<any>
-    getModelInstallation: (modelId: string) => Promise<any>
     getSelectionInstallation: (
         selectionType: CatalogSelectionType,
         selectionId: string
@@ -171,9 +168,6 @@ interface ElectronAPI {
     getRecipes: () => Promise<Recipe[]>
     qualityBaselineCreate: (payload: Record<string, any>) => Promise<any>
     qualityCompare: (payload: Record<string, any>) => Promise<any>
-    downloadModel: (modelId: string) => Promise<boolean>
-    pauseDownload: (modelId: string) => Promise<any>
-    resumeDownload: (modelId: string) => Promise<any>
     removeModel: (modelId: string) => Promise<any>
     importCustomModel: (filePath: string, modelName: string, architecture?: string) => Promise<any>
     openFolder: (folderPath: string) => Promise<void>

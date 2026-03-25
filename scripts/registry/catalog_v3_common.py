@@ -6,7 +6,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -16,8 +16,13 @@ DEFAULT_V2_SOURCE = REGISTRY_DIR / "models.v2.source.json"
 DEFAULT_RECIPES = ASSETS_DIR / "recipes.json"
 DEFAULT_PRESETS = ASSETS_DIR / "presets.json"
 DEFAULT_CATALOG_V3_SOURCE = REGISTRY_DIR / "catalog.v3.source.json"
+DEFAULT_CATALOG_FRAGMENTS_ROOT = REGISTRY_DIR / "catalog-fragments"
 DEFAULT_CATALOG_RUNTIME = ASSETS_DIR / "catalog.runtime.json"
+DEFAULT_BOOTSTRAP_RUNTIME = ASSETS_DIR / "catalog.runtime.bootstrap.json"
 DEFAULT_LEGACY_RUNTIME = ASSETS_DIR / "models.json.bak"
+DEFAULT_REMOTE_RUNTIME = REGISTRY_DIR / "remote" / "catalog.runtime.remote.json"
+DEFAULT_REMOTE_SIGNATURE = REGISTRY_DIR / "remote" / "catalog.runtime.remote.json.sig"
+DEFAULT_REMOTE_PUBLIC_KEY = REGISTRY_DIR / "remote" / "catalog.public.ed25519.txt"
 DEFAULT_EXTERNAL_MARKDOWN = Path(
     r"C:\Users\engdahlz\Downloads\uvr_modelllista_ralankar.md"
 )
@@ -109,6 +114,101 @@ def is_direct_artifact_url(url: str) -> bool:
         return False
     ext = artifact_extension(basename)
     return ext in ARTIFACT_EXTENSIONS
+
+
+def _path_parts(url: str) -> list[str]:
+    return [part for part in (urlparse(url).path or "").split("/") if part]
+
+
+def github_release_locator(url: str) -> dict[str, Any] | None:
+    parsed = urlparse(url)
+    parts = _path_parts(url)
+    if "github.com" not in (parsed.netloc or "").lower():
+        return None
+    if len(parts) < 6 or parts[2:4] != ["releases", "download"]:
+        return None
+    return {
+        "owner": parts[0],
+        "repo": parts[1],
+        "tag": parts[4],
+        "asset_name": "/".join(parts[5:]),
+    }
+
+
+def github_raw_locator(url: str) -> dict[str, Any] | None:
+    parsed = urlparse(url)
+    parts = _path_parts(url)
+    host = (parsed.netloc or "").lower()
+    if host == "raw.githubusercontent.com" and len(parts) >= 4:
+        return {
+            "owner": parts[0],
+            "repo": parts[1],
+            "revision": parts[2],
+            "file_path": "/".join(parts[3:]),
+        }
+    if host == "github.com" and len(parts) >= 5 and parts[2] == "raw":
+        return {
+            "owner": parts[0],
+            "repo": parts[1],
+            "revision": parts[3],
+            "file_path": "/".join(parts[4:]),
+        }
+    return None
+
+
+def huggingface_resolve_locator(url: str) -> dict[str, Any] | None:
+    parsed = urlparse(url)
+    parts = _path_parts(url)
+    if (parsed.netloc or "").lower() != "huggingface.co":
+        return None
+    if len(parts) < 5 or parts[2] != "resolve":
+        return None
+    return {
+        "repo_id": f"{parts[0]}/{parts[1]}",
+        "revision": parts[3],
+        "file_path": "/".join(parts[4:]),
+    }
+
+
+def google_drive_file_id(url: str) -> str | None:
+    parsed = urlparse(url)
+    host = (parsed.netloc or "").lower()
+    if "drive.google.com" not in host and "drive.usercontent.google.com" not in host:
+        return None
+    query_id = parse_qs(parsed.query or "").get("id", [None])[0]
+    if query_id:
+        return query_id
+    parts = _path_parts(url)
+    for index, part in enumerate(parts):
+        if part in {"d", "folders"} and index + 1 < len(parts):
+            return parts[index + 1]
+    return None
+
+
+def proton_share_locator(url: str) -> dict[str, Any] | None:
+    parsed = urlparse(url)
+    host = (parsed.netloc or "").lower()
+    if "drive.proton.me" not in host:
+        return None
+    locator: dict[str, Any] = {"share_url": url}
+    if parsed.fragment:
+        locator["share_token"] = parsed.fragment
+    return locator
+
+
+def infer_source_provider_resolver(url: str) -> tuple[str, str, dict[str, Any] | None]:
+    if locator := huggingface_resolve_locator(url):
+        return ("huggingface", "huggingface_resolve", locator)
+    if locator := github_release_locator(url):
+        return ("github", "github_release_asset", locator)
+    if locator := github_raw_locator(url):
+        return ("github", "github_raw", locator)
+    if file_id := google_drive_file_id(url):
+        resolver = "google_drive_folder_entry" if "/folders/" in url else "google_drive_file"
+        return ("google_drive", resolver, {"file_id": file_id})
+    if locator := proton_share_locator(url):
+        return ("proton_drive", "proton_share_entry", locator)
+    return ("static", "static_url", None)
 
 
 def infer_source_kind_from_urls(urls: Iterable[str]) -> str:

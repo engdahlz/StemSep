@@ -6,17 +6,98 @@ from pathlib import Path
 from typing import Any
 
 from registry.catalog_v3_common import (
+    DEFAULT_BOOTSTRAP_RUNTIME,
+    DEFAULT_CATALOG_FRAGMENTS_ROOT,
     DEFAULT_CATALOG_RUNTIME,
     DEFAULT_CATALOG_V3_SOURCE,
     DEFAULT_LEGACY_RUNTIME,
     coerce_dict,
     coerce_list,
     deep_copy_json,
+    infer_source_provider_resolver,
     load_json,
     now_rfc3339,
     selection_envelope,
     write_json,
 )
+
+
+def _load_fragment_entries(root: Path, subdir: str) -> list[dict[str, Any]]:
+    target = root / subdir
+    if not target.exists():
+        return []
+    entries: list[dict[str, Any]] = []
+    for path in sorted(target.rglob("*.json")):
+        loaded = load_json(path)
+        if isinstance(loaded, dict):
+            entries.append(loaded)
+    return entries
+
+
+def _merge_entries(
+    base_entries: list[dict[str, Any]],
+    fragment_entries: list[dict[str, Any]],
+    id_keys: tuple[str, ...],
+) -> list[dict[str, Any]]:
+    merged = [deep_copy_json(entry) for entry in base_entries if isinstance(entry, dict)]
+    key_to_index: dict[str, int] = {}
+    for index, entry in enumerate(merged):
+        for key in id_keys:
+            value = str(entry.get(key) or "").strip()
+            if value:
+                key_to_index[value] = index
+                break
+
+    for entry in fragment_entries:
+        if not isinstance(entry, dict):
+            continue
+        fragment = deep_copy_json(entry)
+        resolved_key = ""
+        for key in id_keys:
+            value = str(fragment.get(key) or "").strip()
+            if value:
+                resolved_key = value
+                break
+        if resolved_key and resolved_key in key_to_index:
+            merged[key_to_index[resolved_key]] = fragment
+        else:
+            if resolved_key:
+                key_to_index[resolved_key] = len(merged)
+            merged.append(fragment)
+    return merged
+
+
+def _merged_source_payload(source: dict[str, Any], fragments_root: Path | None) -> dict[str, Any]:
+    merged = deep_copy_json(source)
+    if not fragments_root or not fragments_root.exists():
+        return merged
+
+    merged["models"] = _merge_entries(
+        coerce_list(merged.get("models")),
+        _load_fragment_entries(fragments_root, "models"),
+        ("model_id", "id"),
+    )
+    merged["recipes"] = _merge_entries(
+        coerce_list(merged.get("recipes")),
+        _load_fragment_entries(fragments_root, "recipes"),
+        ("selection_id", "id"),
+    )
+    merged["workflows"] = _merge_entries(
+        coerce_list(merged.get("workflows")),
+        _load_fragment_entries(fragments_root, "workflows"),
+        ("selection_id", "id"),
+    )
+    merged["sources"] = _merge_entries(
+        coerce_list(merged.get("sources")),
+        _load_fragment_entries(fragments_root, "sources"),
+        ("source_id", "id"),
+    )
+    merged["external_records"] = _merge_entries(
+        coerce_list(merged.get("external_records")),
+        _load_fragment_entries(fragments_root, "external-records"),
+        ("record_id", "id"),
+    )
+    return merged
 
 
 def _source_generated_at(source: dict[str, Any]) -> str:
@@ -106,10 +187,25 @@ def _compile_model(model: dict[str, Any]) -> dict[str, Any]:
         relative_path = str(entry.get("canonical_path") or entry.get("relative_path") or "")
         entry["relative_path"] = relative_path
         entry["canonical_path"] = relative_path
+        normalized_sources = []
+        for source in coerce_list(entry.get("sources")):
+            if not isinstance(source, dict):
+                continue
+            url = str(source.get("url") or "").strip()
+            if not url:
+                continue
+            provider, resolver, locator = infer_source_provider_resolver(url)
+            normalized = deep_copy_json(source)
+            normalized.setdefault("provider", provider)
+            normalized.setdefault("resolver", resolver)
+            if locator and "locator" not in normalized:
+                normalized["locator"] = locator
+            normalized_sources.append(normalized)
+        entry["sources"] = normalized_sources
         entry["source"] = next(
             (
                 source.get("url")
-                for source in coerce_list(entry.get("sources"))
+                for source in normalized_sources
                 if isinstance(source, dict) and source.get("url")
             ),
             None,
@@ -117,7 +213,7 @@ def _compile_model(model: dict[str, Any]) -> dict[str, Any]:
         entry["source_host"] = next(
             (
                 source.get("host")
-                for source in coerce_list(entry.get("sources"))
+                for source in normalized_sources
                 if isinstance(source, dict) and source.get("host")
             ),
             None,
@@ -158,10 +254,12 @@ def _compile_selection_entry(entry: dict[str, Any], selection_type: str) -> dict
 def compile_catalog_v3(
     *,
     source_path: Path,
+    fragments_root: Path | None,
     runtime_path: Path,
+    bootstrap_runtime_path: Path,
     legacy_runtime_path: Path,
 ) -> dict[str, Any]:
-    source = load_json(source_path)
+    source = _merged_source_payload(load_json(source_path), fragments_root)
     compiled_at = _source_generated_at(source)
     compiled_models = [
         _compile_model(model)
@@ -223,12 +321,14 @@ def compile_catalog_v3(
         "generated_at": compiled_at,
         "source": {
             "compiled_from": str(source_path),
+            "fragments_root": str(fragments_root) if fragments_root else None,
             "source_generated_at": source.get("generated_at"),
         },
         "summary": {
             "models": len(compiled_models),
             "recipes": len(compiled_recipes),
             "workflows": len(compiled_workflows),
+            "sources": len(coerce_list(source.get("sources"))),
             "external_records": len(coerce_list(source.get("external_records"))),
             "verified_models": sum(1 for model in compiled_models if model.get("catalog_tier") == "verified"),
             "advanced_manual_models": sum(1 for model in compiled_models if model.get("catalog_tier") != "verified"),
@@ -236,6 +336,7 @@ def compile_catalog_v3(
         "models": compiled_models,
         "recipes": compiled_recipes,
         "workflows": compiled_workflows,
+        "sources": coerce_list(source.get("sources")),
         "external_records": coerce_list(source.get("external_records")),
         "selection_index": selection_index,
     }
@@ -252,6 +353,7 @@ def compile_catalog_v3(
     }
 
     write_json(runtime_path, runtime)
+    write_json(bootstrap_runtime_path, runtime)
     write_json(legacy_runtime_path, legacy)
     return runtime
 
@@ -259,13 +361,17 @@ def compile_catalog_v3(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Compile catalog.v3.source.json into runtime manifests.")
     parser.add_argument("--source", default=str(DEFAULT_CATALOG_V3_SOURCE))
+    parser.add_argument("--fragments-root", default=str(DEFAULT_CATALOG_FRAGMENTS_ROOT))
     parser.add_argument("--runtime-out", default=str(DEFAULT_CATALOG_RUNTIME))
+    parser.add_argument("--bootstrap-out", default=str(DEFAULT_BOOTSTRAP_RUNTIME))
     parser.add_argument("--legacy-out", default=str(DEFAULT_LEGACY_RUNTIME))
     args = parser.parse_args()
 
     runtime = compile_catalog_v3(
         source_path=Path(args.source),
+        fragments_root=Path(args.fragments_root) if args.fragments_root else None,
         runtime_path=Path(args.runtime_out),
+        bootstrap_runtime_path=Path(args.bootstrap_out),
         legacy_runtime_path=Path(args.legacy_out),
     )
     print(

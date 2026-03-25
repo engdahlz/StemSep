@@ -340,8 +340,8 @@ export default function SeparatePage({
   const handleDownloadModel = async (modelId: string) => {
     startDownload(modelId);
     try {
-      if (window.electronAPI?.downloadModel)
-        await window.electronAPI.downloadModel(modelId);
+      if (window.electronAPI?.installSelection)
+        await window.electronAPI.installSelection("model", modelId);
     } catch (error) {
       setDownloadError(modelId, String(error));
     }

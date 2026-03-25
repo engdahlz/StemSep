@@ -668,8 +668,24 @@ export function ModelDetails({
                             <div className="font-medium text-foreground/90">
                               {source.role}
                             </div>
-                            <div className="text-xs text-muted-foreground break-all">
-                              {source.host}
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                              <span>{source.host}</span>
+                              {source.provider && (
+                                <span className="rounded-full border border-border/50 bg-background/70 px-2 py-0.5">
+                                  {source.provider}
+                                </span>
+                              )}
+                              {source.channel && (
+                                <span className="rounded-full border border-border/50 bg-background/70 px-2 py-0.5">
+                                  {source.channel}
+                                </span>
+                              )}
+                              <span className="rounded-full border border-border/50 bg-background/70 px-2 py-0.5">
+                                {source.verified ? "verified" : "unverified"}
+                              </span>
+                            </div>
+                            <div className="mt-1 text-xs text-muted-foreground break-all">
+                              {source.url}
                             </div>
                           </div>
                           <Button

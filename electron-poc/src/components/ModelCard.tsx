@@ -6,9 +6,7 @@ import {
   Guitar,
   HardDrive,
   Mic,
-  Pause,
   Piano,
-  Play,
   Sparkles,
 } from "lucide-react";
 
@@ -25,8 +23,6 @@ interface ModelCardProps {
   model: Model;
   machineFit?: ModelMachineFit;
   onDownload: (id: string) => void;
-  onPause: (id: string) => void;
-  onResume: (id: string) => void;
   onDetails: (model: Model) => void;
   isSelected: boolean;
   onToggleSelection: (id: string) => void;
@@ -171,8 +167,6 @@ const getToneClasses = (model: Model) => {
 const getAction = (
   model: Model,
   onDownload: (id: string) => void,
-  onPause: (id: string) => void,
-  onResume: (id: string) => void,
   onDetails: (model: Model) => void,
 ) => {
   const downloadMode = model.download?.mode;
@@ -188,22 +182,22 @@ const getAction = (
   }
   if (model.downloadPaused) {
     return {
-      label: "Resume",
-      icon: Play,
+      label: "Queued",
+      icon: Download,
       className:
-        "border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-900",
-      disabled: false,
-      onClick: () => onResume(model.id),
+        "border border-sky-200 bg-sky-50 text-sky-700",
+      disabled: true,
+      onClick: () => {},
     };
   }
   if (model.downloading) {
     return {
-      label: "Pause",
-      icon: Pause,
+      label: "Installing",
+      icon: Download,
       className:
-        "border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-900",
-      disabled: false,
-      onClick: () => onPause(model.id),
+        "border border-sky-200 bg-sky-50 text-sky-700",
+      disabled: true,
+      onClick: () => {},
     };
   }
   if (downloadMode === "manual") {
@@ -342,8 +336,6 @@ export function ModelCard({
   model,
   machineFit,
   onDownload,
-  onPause,
-  onResume,
   onDetails,
 }: ModelCardProps) {
   const Icon = getModelIcon(model);
@@ -364,8 +356,6 @@ export function ModelCard({
   const action = getAction(
     model,
     onDownload,
-    onPause,
-    onResume,
     onDetails,
   );
   const ActionIcon = action.icon;

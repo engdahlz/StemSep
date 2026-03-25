@@ -9,22 +9,23 @@ export function useModels() {
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-    const loadModels = async () => {
-            if (!window.electronAPI?.getModels && !window.electronAPI?.getCatalog) {
+        const loadModels = async () => {
+            if (!window.electronAPI?.getCatalog && !window.electronAPI?.getModels) {
                 console.log('Electron API not available')
                 setLoading(false)
                 return
             }
 
             try {
-                const backendModels = window.electronAPI?.getModels
-                    ? await window.electronAPI.getModels()
-                    : window.electronAPI?.getCatalog
-                        ? await window.electronAPI.getCatalog()
+                const catalog = window.electronAPI?.getCatalog
+                    ? await window.electronAPI.getCatalog()
+                    : null
+                const backendModels = Array.isArray(catalog?.models)
+                    ? catalog.models
+                    : window.electronAPI?.getModels
+                        ? await window.electronAPI.getModels()
                         : []
 
-                // Convert backend models to store format
-                // We assume backendModels is an array based on usage in other files
                 const modelsArray = Array.isArray(backendModels) ? backendModels : Object.values(backendModels)
 
                 const convertedModels = modelsArray.map(normalizeModel)

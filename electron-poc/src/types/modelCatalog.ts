@@ -81,11 +81,22 @@ export interface CatalogRuntimeManifest {
   generated_at?: string;
   source?: Record<string, unknown>;
   summary?: Record<string, unknown>;
+  catalog_status?: CatalogStatus;
   models?: Record<string, unknown>[];
   recipes?: Record<string, unknown>[];
   workflows?: Record<string, unknown>[];
   external_records?: Record<string, unknown>[];
   selection_index?: CatalogSelectionRecord[];
+}
+
+export interface CatalogStatus {
+  active_revision?: string;
+  source_url?: string;
+  fetched_at?: string | null;
+  fallback_kind?: string;
+  stale?: boolean;
+  signature_valid?: boolean;
+  active_path?: string;
 }
 
 export interface SelectionInstallPlan {

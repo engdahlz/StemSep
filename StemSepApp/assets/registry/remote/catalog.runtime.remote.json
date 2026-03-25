@@ -54966,16 +54966,13 @@
   ],
   "source": {
     "compiled_from": "C:\\Users\\engdahlz\\StemSep\\StemSepApp\\assets\\registry\\catalog.v3.source.json",
-    "fragments_root": "C:\\Users\\engdahlz\\StemSep\\StemSepApp\\assets\\registry\\catalog-fragments",
     "source_generated_at": "2026-03-21T22:17:21.169936Z"
   },
-  "sources": [],
   "summary": {
     "advanced_manual_models": 106,
     "external_records": 299,
     "models": 114,
     "recipes": 14,
-    "sources": 0,
     "verified_models": 8,
     "workflows": 35
   },

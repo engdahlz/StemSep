@@ -24,6 +24,7 @@ import {
 import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
 import { RuntimeDoctorCard } from "./RuntimeDoctorCard";
 import { normalizeModel } from "../lib/models/normalizeModel";
+import type { CatalogStatus } from "../types/modelCatalog";
 
 type Tab = "general" | "audio" | "advanced";
 type CudaDevice = { id: string; name?: string; index?: number };
@@ -32,6 +33,7 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("general");
   const [hfTokenInput, setHfTokenInput] = useState("");
   const [hasHfToken, setHasHfToken] = useState(false);
+  const [catalogStatus, setCatalogStatus] = useState<CatalogStatus | null>(null);
   const { info: runtimeInfo } = useSystemRuntimeInfo();
 
   const { theme, setTheme } = useTheme();
@@ -66,8 +68,11 @@ export function SettingsPage() {
         const cfg = await window.electronAPI.getAppConfig?.();
         const token = cfg?.hfToken;
         setHasHfToken(typeof token === "string" && token.trim().length > 0);
+        const status = await window.electronAPI.getCatalogStatus?.();
+        setCatalogStatus(status || null);
       } catch {
         setHasHfToken(false);
+        setCatalogStatus(null);
       }
     };
 
@@ -101,10 +106,10 @@ export function SettingsPage() {
         setModelsDir(newPath);
         if (Array.isArray(applied?.models)) {
           setModels(applied.models.map(normalizeModel));
-        } else if (window.electronAPI?.getModels) {
-          const refreshed = await window.electronAPI.getModels();
-          if (Array.isArray(refreshed)) {
-            setModels(refreshed.map(normalizeModel));
+        } else if (window.electronAPI?.getCatalog) {
+          const refreshed = await window.electronAPI.getCatalog();
+          if (Array.isArray(refreshed?.models)) {
+            setModels(refreshed.models.map(normalizeModel));
           }
         }
       }
@@ -364,6 +369,66 @@ export function SettingsPage() {
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Reset
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5" />
+                    Remote Catalog
+                  </CardTitle>
+                  <CardDescription>
+                    StemSep refreshes the signed remote runtime catalog at startup and falls back to cache or the bundled bootstrap catalog if needed.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-xl border border-border p-4">
+                      <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                        Status
+                      </div>
+                      <div className="mt-2 text-sm font-medium">
+                        {catalogStatus?.fallback_kind || "Unavailable"}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {catalogStatus?.stale
+                          ? "Using a fallback catalog snapshot."
+                          : "Using the latest verified remote catalog."}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-border p-4">
+                      <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                        Signature
+                      </div>
+                      <div className="mt-2 text-sm font-medium">
+                        {catalogStatus?.signature_valid ? "Verified" : "Not verified"}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground break-all">
+                        {catalogStatus?.source_url || "No active catalog source"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border p-4 text-xs text-muted-foreground space-y-1">
+                    <div>Revision: <span className="font-mono">{catalogStatus?.active_revision || "n/a"}</span></div>
+                    <div>Fetched: <span className="font-mono">{catalogStatus?.fetched_at || "n/a"}</span></div>
+                    <div>Active path: <span className="font-mono break-all">{catalogStatus?.active_path || "n/a"}</span></div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        const status = await window.electronAPI.refreshCatalog?.();
+                        setCatalogStatus(status || null);
+                        const refreshed = await window.electronAPI.getCatalog?.();
+                        if (Array.isArray(refreshed?.models)) {
+                          setModels(refreshed.models.map(normalizeModel));
+                        }
+                      }}
+                    >
+                      Refresh Catalog
                     </Button>
                   </div>
                 </CardContent>
