@@ -61,6 +61,18 @@ export function SettingsPage() {
   const hasCuda = useMemo(() => {
     return !!gpuInfo?.has_cuda || cudaDevices.length > 0;
   }, [cudaDevices.length, gpuInfo?.has_cuda]);
+  const catalogStatusLabel = useMemo(() => {
+    switch (catalogStatus?.fallback_kind) {
+      case "remote_current":
+        return "Remote current";
+      case "cached_fallback":
+        return "Cached fallback";
+      case "bundled_fallback":
+        return "Bundled fallback";
+      default:
+        return "Unavailable";
+    }
+  }, [catalogStatus?.fallback_kind]);
 
   useEffect(() => {
     const load = async () => {
@@ -391,7 +403,7 @@ export function SettingsPage() {
                         Status
                       </div>
                       <div className="mt-2 text-sm font-medium">
-                        {catalogStatus?.fallback_kind || "Unavailable"}
+                        {catalogStatusLabel}
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
                         {catalogStatus?.stale
@@ -414,6 +426,7 @@ export function SettingsPage() {
                   <div className="rounded-xl border border-border p-4 text-xs text-muted-foreground space-y-1">
                     <div>Revision: <span className="font-mono">{catalogStatus?.active_revision || "n/a"}</span></div>
                     <div>Fetched: <span className="font-mono">{catalogStatus?.fetched_at || "n/a"}</span></div>
+                    <div>Stale: <span className="font-mono">{catalogStatus?.stale ? "yes" : "no"}</span></div>
                     <div>Active path: <span className="font-mono break-all">{catalogStatus?.active_path || "n/a"}</span></div>
                   </div>
                   <div className="flex gap-2">

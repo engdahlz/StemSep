@@ -33,12 +33,4 @@ export function registerModelIpcHandlers({
   ipcMain.handle("get-model-tech", async (_event, modelId: string) => {
     return sendBackendCommandWithRetry("get_model_tech", { model_id: modelId }, 20_000);
   });
-
-  ipcMain.handle("resolve-model-download", async (_event, modelId: string) => {
-    return sendBackendCommandWithRetry("resolve_model_download", { model_id: modelId }, 20_000);
-  });
-
-  ipcMain.handle("get-model-installation", async (_event, modelId: string) => {
-    return sendBackendCommandWithRetry("get_model_installation", { model_id: modelId }, 20_000);
-  });
 }

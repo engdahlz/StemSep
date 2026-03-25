@@ -196,6 +196,80 @@ def proton_share_locator(url: str) -> dict[str, Any] | None:
     return locator
 
 
+def source_id_for(
+    *,
+    url: str | None,
+    provider: str | None,
+    resolver: str | None,
+    locator: dict[str, Any] | None = None,
+    filename: str | None = None,
+    explicit_id: str | None = None,
+) -> str:
+    if explicit_id and explicit_id.strip():
+        return slugify(explicit_id.strip())
+    pieces: list[str] = []
+    if provider:
+        pieces.append(provider)
+    if resolver and resolver not in pieces:
+        pieces.append(resolver)
+    if locator:
+        for key in ("repo_id", "asset_name", "file_path", "file_id", "folder_id", "item_id", "expected_name", "download_url", "share_token"):
+            value = locator.get(key)
+            if isinstance(value, str) and value.strip():
+                pieces.append(value.strip())
+                break
+    if filename:
+        pieces.append(filename)
+    elif url:
+        basename = url_basename(url)
+        if basename:
+            pieces.append(basename)
+    if not pieces and url:
+        pieces.append(url)
+    return slugify("-".join(pieces or ["source"]))
+
+
+def normalize_source_entry(
+    source: dict[str, Any],
+    *,
+    fallback_url: str | None = None,
+    fallback_filename: str | None = None,
+) -> dict[str, Any]:
+    normalized = deep_copy_json(source)
+    url = str(normalized.get("url") or fallback_url or "").strip()
+    locator = normalized.get("locator")
+    if not isinstance(locator, dict):
+        locator = None
+    provider = str(normalized.get("provider") or "").strip().lower()
+    resolver = str(normalized.get("resolver") or "").strip().lower()
+    inferred_provider, inferred_resolver, inferred_locator = infer_source_provider_resolver(url) if url else ("static", "static_url", None)
+    normalized["url"] = url or None
+    normalized["provider"] = provider or inferred_provider
+    normalized["resolver"] = resolver or inferred_resolver
+    normalized["locator"] = locator or inferred_locator
+    normalized["host"] = str(normalized.get("host") or url_host(url) or "").strip().lower() or None
+    normalized["channel"] = str(normalized.get("channel") or "upstream").strip().lower()
+    normalized["auth"] = str(normalized.get("auth") or "public").strip().lower()
+    normalized["priority"] = int(normalized.get("priority") or 0)
+    normalized["verified"] = bool(normalized.get("verified"))
+    normalized["manual"] = bool(normalized.get("manual"))
+    normalized["size_bytes"] = normalized.get("size_bytes")
+    normalized["sha256"] = normalized.get("sha256")
+    normalized["last_checked"] = normalized.get("last_checked") or normalized.get("checked_at")
+    normalized["final_url"] = normalized.get("final_url")
+    normalized["content_type"] = normalized.get("content_type")
+    normalized["resolver_viable"] = normalized.get("resolver_viable")
+    normalized["source_id"] = source_id_for(
+        url=url or None,
+        provider=normalized.get("provider"),
+        resolver=normalized.get("resolver"),
+        locator=normalized.get("locator") if isinstance(normalized.get("locator"), dict) else None,
+        filename=fallback_filename,
+        explicit_id=str(normalized.get("source_id") or normalized.get("id") or "").strip() or None,
+    )
+    return normalized
+
+
 def infer_source_provider_resolver(url: str) -> tuple[str, str, dict[str, Any] | None]:
     if locator := huggingface_resolve_locator(url):
         return ("huggingface", "huggingface_resolve", locator)

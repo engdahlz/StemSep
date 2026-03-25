@@ -361,9 +361,9 @@ fn home_dir() -> Option<PathBuf> {
 }
 
 const DEFAULT_REMOTE_CATALOG_URL: &str =
-    "https://raw.githubusercontent.com/engdahlz/StemSep/main/StemSepApp/assets/registry/remote/catalog.runtime.remote.json";
+    "https://raw.githubusercontent.com/engdahlz/StemSep-catalog/main/catalog.runtime.remote.json";
 const DEFAULT_REMOTE_CATALOG_SIG_URL: &str =
-    "https://raw.githubusercontent.com/engdahlz/StemSep/main/StemSepApp/assets/registry/remote/catalog.runtime.remote.json.sig";
+    "https://raw.githubusercontent.com/engdahlz/StemSep-catalog/main/catalog.runtime.remote.json.sig";
 
 fn locate_assets_dir(cli_assets: Option<String>) -> Result<PathBuf> {
     if let Some(p) = cli_assets {
@@ -2811,7 +2811,6 @@ struct DownloadFile {
 
 #[derive(Clone)]
 struct DownloadTask {
-    files: Vec<DownloadFile>,
     cancel: Arc<AtomicBool>,
 }
 
@@ -2823,10 +2822,7 @@ struct DownloadManager {
 impl DownloadManager {
     fn start(&self, model_id: &str, files: Vec<DownloadFile>, stdout: Arc<Mutex<io::Stdout>>) -> bool {
         let cancel = Arc::new(AtomicBool::new(false));
-        let task = DownloadTask {
-            files: files.clone(),
-            cancel: cancel.clone(),
-        };
+        let task = DownloadTask { cancel: cancel.clone() };
         {
             let mut map = self.tasks.lock().expect("downloads lock");
             if map.contains_key(model_id) {
@@ -2962,33 +2958,6 @@ impl DownloadManager {
         if let Some(task) = map.get(model_id) {
             task.cancel.store(true, Ordering::Relaxed);
             true
-        } else {
-            false
-        }
-    }
-
-    fn resume(&self, model_id: &str, stdout: Arc<Mutex<io::Stdout>>) -> bool {
-        let files = {
-            let mut map = self.tasks.lock().expect("downloads lock");
-            if let Some(task) = map.get(model_id) {
-                let files = task.files.clone();
-                // Replace task with a fresh cancel flag.
-                map.insert(
-                    model_id.to_string(),
-                    DownloadTask {
-                        files: files.clone(),
-                        cancel: Arc::new(AtomicBool::new(false)),
-                    },
-                );
-                Some(files)
-            } else {
-                None
-            }
-        };
-
-        if let Some(files) = files {
-            self.clear_task(model_id);
-            self.start(model_id, files, stdout)
         } else {
             false
         }
@@ -7006,10 +6975,7 @@ fn main() -> Result<()> {
         let should_proxy = enable_py_proxy
             && matches!(
                 req.command.as_str(),
-                "download_model"
-                    | "pause_download"
-                    | "resume_download"
-                    | "remove_model"
+                "remove_model"
                     | "import_custom_model"
                     | "model_preflight"
                     | "separation_preflight"
@@ -7032,7 +6998,6 @@ fn main() -> Result<()> {
                     "separation_preflight"
                         | "separate_audio"
                         | "model_preflight"
-                        | "download_model"
                 )
         } else {
             should_proxy
@@ -7758,106 +7723,6 @@ fn main() -> Result<()> {
                 match resolve_youtube_native(url, &stdout) {
                     Ok(result) => send_ok(&stdout, req.id, result)?,
                     Err(e) => send_err(&stdout, req.id, "YOUTUBE_FAILED", &format!("{e:#}"))?,
-                }
-            }
-            "download_model" => {
-                // Rust-native model download (background), emits {type:progress|complete|error} events.
-                // IMPORTANT: never crash the backend on bad inputs; return an error response instead.
-                let req_id = req.id.clone();
-                let result: Result<()> = (|| {
-                    let model_id = req
-                        .extra
-                        .get("model_id")
-                        .and_then(|v| v.as_str())
-                        .ok_or_else(|| anyhow!("model_id is required"))?
-                        .to_string();
-
-                    let models_json = load_models_with_guide_overrides(&cfg)?;
-                    let model_obj = find_model_object(&models_json, &model_id)
-                        .ok_or_else(|| anyhow!("Unknown model_id: {model_id}"))?;
-                    let response = schedule_model_download_for_object(
-                        &cfg,
-                        &downloads,
-                        stdout.clone(),
-                        &model_id,
-                        &model_obj,
-                    )?;
-                    send_ok(&stdout, req_id, response)?;
-                    Ok(())
-                })();
-
-                if let Err(e) = result {
-                    let _ = send_err(&stdout, req.id, "DOWNLOAD_FAILED", &format!("{e:#}"));
-                }
-            }
-            "pause_download" => {
-                let model_id = req
-                    .extra
-                    .get("model_id")
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| anyhow!("model_id is required"))?;
-                let requested = downloads.request_pause(model_id);
-                send_ok(
-                    &stdout,
-                    req.id,
-                    serde_json::json!({
-                        "model_id": model_id,
-                        "requested": requested
-                    }),
-                )?;
-            }
-            "resume_download" => {
-                // IMPORTANT: never crash the backend on bad inputs; return an error response instead.
-                let req_id = req.id.clone();
-                let result: Result<()> = (|| {
-                    let model_id = req
-                        .extra
-                        .get("model_id")
-                        .and_then(|v| v.as_str())
-                        .ok_or_else(|| anyhow!("model_id is required"))?
-                        .to_string();
-
-                    let resumed = downloads.resume(&model_id, stdout.clone());
-                    if !resumed {
-                        // Fresh start
-                        let models_json = load_models_with_guide_overrides(&cfg)?;
-                        let model_obj = find_model_object(&models_json, &model_id)
-                            .ok_or_else(|| anyhow!("Unknown model_id: {model_id}"))?;
-                        let manifest = resolve_model_download_manifest(&cfg, &model_id, &model_obj);
-                        let files: Vec<DownloadFile> = manifest
-                            .artifacts
-                            .iter()
-                            .filter(|artifact| artifact.required && !artifact.manual && artifact.source.is_some())
-                            .map(|artifact| DownloadFile {
-                                dest_path: cfg.models_dir.join(artifact.relative_path.replace('/', "\\")),
-                                relative_path: artifact.relative_path.clone(),
-                                filename: artifact.filename.clone(),
-                                sources: artifact_download_sources(artifact),
-                                sha256: artifact.sha256.clone(),
-                                size_bytes: artifact.size_bytes,
-                            })
-                            .collect();
-                        if files.is_empty() {
-                            return Err(anyhow!(
-                                "Model {model_id} does not expose downloadable artifacts for resume"
-                            ));
-                        }
-                        let _ = downloads.start(&model_id, files, stdout.clone());
-                    }
-
-                    send_ok(
-                        &stdout,
-                        req_id,
-                        serde_json::json!({
-                            "model_id": model_id,
-                            "scheduled": true
-                        }),
-                    )?;
-                    Ok(())
-                })();
-
-                if let Err(e) = result {
-                    let _ = send_err(&stdout, req.id, "DOWNLOAD_FAILED", &format!("{e:#}"));
                 }
             }
             "import_model_files" => {
@@ -9684,60 +9549,6 @@ fn main() -> Result<()> {
                             "installation": serde_json::to_value(&installation).unwrap_or(Value::Null),
                             "installed": installation.installed
                         }),
-                    )?;
-                } else {
-                    send_err(
-                        &stdout,
-                        req.id,
-                        "NOT_FOUND",
-                        &format!("Unknown model_id: {model_id}"),
-                    )?;
-                }
-            }
-            "resolve_model_download" => {
-                let model_id = req.extra.get("model_id").and_then(|v| v.as_str());
-                if model_id.is_none() {
-                    send_err(&stdout, req.id, "INVALID", "model_id is required")?;
-                    continue;
-                }
-                let model_id = model_id.unwrap();
-                let models_json = load_models_with_guide_overrides(&cfg)?;
-                if let Some(model_obj) = find_model_object(&models_json, model_id) {
-                    let manifest = resolve_model_download_manifest(&cfg, model_id, &model_obj);
-                    let installation = resolve_installation_status(&cfg, &manifest);
-                    send_ok(
-                        &stdout,
-                        req.id,
-                        serde_json::json!({
-                            "model_id": model_id,
-                            "download": serde_json::to_value(&manifest).unwrap_or(Value::Null),
-                            "installation": serde_json::to_value(&installation).unwrap_or(Value::Null)
-                        }),
-                    )?;
-                } else {
-                    send_err(
-                        &stdout,
-                        req.id,
-                        "NOT_FOUND",
-                        &format!("Unknown model_id: {model_id}"),
-                    )?;
-                }
-            }
-            "get_model_installation" => {
-                let model_id = req.extra.get("model_id").and_then(|v| v.as_str());
-                if model_id.is_none() {
-                    send_err(&stdout, req.id, "INVALID", "model_id is required")?;
-                    continue;
-                }
-                let model_id = model_id.unwrap();
-                let models_json = load_models_with_guide_overrides(&cfg)?;
-                if let Some(model_obj) = find_model_object(&models_json, model_id) {
-                    let manifest = resolve_model_download_manifest(&cfg, model_id, &model_obj);
-                    let installation = resolve_installation_status(&cfg, &manifest);
-                    send_ok(
-                        &stdout,
-                        req.id,
-                        serde_json::to_value(&installation).unwrap_or(Value::Null),
                     )?;
                 } else {
                     send_err(

@@ -44,6 +44,7 @@ export interface ModelDownloadSource {
   verified?: boolean;
   size_bytes?: number | null;
   sha256?: string | null;
+  last_checked?: string | null;
 }
 
 export interface ModelArtifactStatus {
@@ -290,8 +291,15 @@ export interface Model {
   };
   installation?: {
     installed?: boolean;
+    canonical_ready?: boolean;
+    verified_hashes?: boolean;
     missing_artifacts?: string[];
     relative_paths?: string[];
+    source_resolution?: Array<{
+      filename?: string;
+      relative_path?: string;
+      selected_source?: string | null;
+    }>;
     artifacts?: Array<{
       kind?: string;
       filename?: string;

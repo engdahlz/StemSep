@@ -162,7 +162,6 @@ export function registerAppIpcHandlers({
 
   registerDownloadIpcHandlers({
     ipcMain,
-    sendBackendCommand,
     sendBackendCommandWithRetry,
     removeModelLocal,
     log,

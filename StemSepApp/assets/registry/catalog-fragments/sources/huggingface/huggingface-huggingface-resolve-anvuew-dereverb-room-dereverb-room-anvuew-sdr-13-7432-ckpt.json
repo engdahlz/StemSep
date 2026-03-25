@@ -1,0 +1,37 @@
+{
+  "auth": "public",
+  "catalog_tier": "verified",
+  "channel": "upstream",
+  "classification": "artifact",
+  "content_type": null,
+  "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68c0023a751aae98294f2a03/5010d1be5e4aae67c2553576f63721180bdd411dc7e4b3dd47e1493940d2c32d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T151437Z&X-Amz-Expires=3600&X-Amz-Signature=b8d97d680cf4d5245ea42d1f2640cd92f08c62ba2a5639334e9eae6b6c4da1c6&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_room_anvuew_sdr_13.7432.ckpt%3B+filename%3D%22dereverb_room_anvuew_sdr_13.7432.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774455277&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ1NTI3N319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGMwMDIzYTc1MWFhZTk4Mjk0ZjJhMDMvNTAxMGQxYmU1ZTRhYWU2N2MyNTUzNTc2ZjYzNzIxMTgwYmRkNDExZGM3ZTRiM2RkNDdlMTQ5Mzk0MGQyYzMyZCoifV19&Signature=YPnEtsnpqX4lje8Vh-veKSX4V4JUnvefsXv7fMgc5W1aPyv9OjPte8PaaeqXs9pk-L9RMvdv7fezQ0eT-xZu1KvAKnmToAUAcAbgleTJ-pP7KBWokahuCGXKwO-tROBlnFvhJ5YknXms-lUwt0oZ3ssM2jM4NfW0MRdPs1uozDp9BLDJdFrU1YHdL38DABiwa3zTovvH-xD9PXFM8WmpewW19vEvtmsbsTqh~hh-j3mKFRedtrGjyHa---9J7MHMVBi0J9-7tsHSyAVpGRCFfJ51bTmYHiIqUHLF2g8EqCpm7Jk29Jazc34Bx3QVfmounAyR3qflMSmYJSYuXg~Qcg__&Key-Pair-Id=K2L8F4GPSG1IFC",
+  "host": "huggingface.co",
+  "install_policy": "direct",
+  "last_checked": "2026-03-25T15:14:39.553111Z",
+  "locator": {
+    "file_path": "dereverb_room_anvuew_sdr_13.7432.ckpt",
+    "repo_id": "anvuew/dereverb_room",
+    "revision": "main"
+  },
+  "manual": false,
+  "priority": 0,
+  "provider": "huggingface",
+  "resolver": "huggingface_resolve",
+  "resolver_viable": true,
+  "sha256": null,
+  "size_bytes": 118128452,
+  "source_id": "huggingface-huggingface-resolve-anvuew-dereverb-room-dereverb-room-anvuew-sdr-13-7432-ckpt",
+  "status": 200,
+  "suggested_artifact": {
+    "canonical_path": null,
+    "filename": "dereverb_room_anvuew_sdr_13.7432.ckpt",
+    "kind": ".ckpt",
+    "source_ids": [
+      "huggingface-huggingface-resolve-anvuew-dereverb-room-dereverb-room-anvuew-sdr-13-7432-ckpt"
+    ]
+  },
+  "suggested_fragment_path": "sources/huggingface/huggingface-huggingface-resolve-anvuew-dereverb-room-dereverb-room-anvuew-sdr-13-7432-ckpt.json",
+  "suggested_model_id": "dereverb-room-anvuew-sdr-13-7432",
+  "url": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew_sdr_13.7432.ckpt",
+  "verified": true
+}

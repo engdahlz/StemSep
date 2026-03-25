@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Headless model downloader for stemsep-backend (JSONL protocol).
+"""Headless selection installer for stemsep-backend (JSONL protocol).
 
-Purpose: download a single model without Electron UI, with clear progress + log capture.
+Purpose: install a single model selection without Electron UI, with clear progress + log capture.
 
 Usage (PowerShell):
   python scripts\backend_headless_download.py \
-    --model-id anvuew-dereverb-room \
+    --selection-id anvuew-dereverb-room \
     --models-dir "D:\\StemSep Models"
 """
 
@@ -42,7 +42,8 @@ def _json_dumps(obj: Any) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-id", required=True, help="Model ID to download")
+    parser.add_argument("--selection-id", required=True, help="Selection ID to install")
+    parser.add_argument("--selection-type", default="model", help="Selection type (default: model)")
     parser.add_argument("--models-dir", required=False, help="Models directory")
     parser.add_argument("--assets-dir", required=False, help="Assets directory (StemSepApp/assets)")
     parser.add_argument("--output-dir", required=False, help="Directory for logs")
@@ -65,7 +66,7 @@ def main() -> int:
         output_dir = pathlib.Path(args.output_dir)
     else:
         stamp = time.strftime("%Y%m%d-%H%M%S")
-        output_dir = _repo_root() / "_backend_out" / f"download-{args.model_id}-{stamp}"
+        output_dir = _repo_root() / "_backend_out" / f"install-{args.selection_type}-{args.selection_id}-{stamp}"
 
     _safe_mkdir(output_dir)
 
@@ -82,7 +83,7 @@ def main() -> int:
         cmd += ["--assets-dir", str(args.assets_dir)]
 
     child_env = os.environ.copy()
-    # Force Rust-native code paths for download_model in stemsep-backend.
+    # Force Rust-native code paths for installation in stemsep-backend.
     # This avoids needing python-bridge.py (the Python proxy) for downloads.
     child_env.setdefault("STEMSEP_PREFER_RUST_SEPARATION", "1")
     child_env.setdefault("STEMSEP_PROXY_PYTHON", "0")
@@ -140,7 +141,12 @@ def main() -> int:
     threading.Thread(target=_pump_stdout, daemon=True).start()
     threading.Thread(target=_pump_stderr, daemon=True).start()
 
-    req = {"id": 1, "command": "download_model", "model_id": args.model_id}
+    req = {
+        "id": 1,
+        "command": "install_selection",
+        "selection_type": args.selection_type,
+        "selection_id": args.selection_id,
+    }
     proc.stdin.write(_json_dumps(req) + "\n")
     proc.stdin.flush()
 
@@ -166,7 +172,7 @@ def main() -> int:
                 now = time.time()
                 if now - last_print >= 10.0:
                     last_print = now
-                    print(f"...downloading {args.model_id} (elapsed {now - started_at:.0f}s)")
+                    print(f"...installing {args.selection_type}/{args.selection_id} (elapsed {now - started_at:.0f}s)")
                 continue
 
             line = line.strip()
@@ -195,18 +201,18 @@ def main() -> int:
                 continue
 
             mtype = msg.get("type")
-            if mtype in ("download_progress", "progress") and msg.get("model_id") == args.model_id:
+            if mtype in ("download_progress", "progress") and msg.get("model_id") == args.selection_id:
                 progress = msg.get("progress")
                 if progress is not None:
-                    print(f"{args.model_id}: {progress}%")
+                    print(f"{args.selection_id}: {progress}%")
                 continue
 
-            if mtype in ("download_complete", "complete") and msg.get("model_id") == args.model_id:
-                print("Download complete")
+            if mtype in ("download_complete", "complete") and msg.get("model_id") == args.selection_id:
+                print("Install complete")
                 print(f"Logs: {output_dir}")
                 return 0
 
-            if mtype in ("download_error", "error") and msg.get("model_id") == args.model_id:
+            if mtype in ("download_error", "error") and msg.get("model_id") == args.selection_id:
                 raise RuntimeError(msg.get("error") or "download_error")
 
     except Exception as e:

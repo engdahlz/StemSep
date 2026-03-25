@@ -14,8 +14,8 @@ from registry.catalog_v3_common import (
     coerce_dict,
     coerce_list,
     deep_copy_json,
-    infer_source_provider_resolver,
     load_json,
+    normalize_source_entry,
     now_rfc3339,
     selection_envelope,
     write_json,
@@ -152,7 +152,56 @@ def _legacy_artifacts_from_array(artifacts: list[dict[str, Any]]) -> dict[str, A
     }
 
 
-def _compile_model(model: dict[str, Any]) -> dict[str, Any]:
+def _index_authored_sources(source_entries: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    indexed: dict[str, dict[str, Any]] = {}
+    for entry in source_entries:
+        if not isinstance(entry, dict):
+            continue
+        normalized = normalize_source_entry(entry)
+        indexed[normalized["source_id"]] = normalized
+    return indexed
+
+
+def _materialize_artifact_sources(
+    artifact: dict[str, Any],
+    source_registry: dict[str, dict[str, Any]],
+) -> tuple[list[str], list[dict[str, Any]]]:
+    resolved_source_ids: list[str] = []
+    resolved_sources: list[dict[str, Any]] = []
+
+    for source_id in coerce_list(artifact.get("source_ids")):
+        source_key = str(source_id or "").strip()
+        if not source_key:
+            continue
+        source_entry = source_registry.get(source_key)
+        if source_entry:
+            resolved_source_ids.append(source_key)
+            resolved_sources.append(deep_copy_json(source_entry))
+
+    for inline_source in coerce_list(artifact.get("sources")):
+        if not isinstance(inline_source, dict):
+            continue
+        normalized = normalize_source_entry(
+            inline_source,
+            fallback_filename=str(artifact.get("filename") or "").strip() or None,
+        )
+        source_registry.setdefault(normalized["source_id"], normalized)
+        resolved_source_ids.append(normalized["source_id"])
+        resolved_sources.append(deep_copy_json(source_registry[normalized["source_id"]]))
+
+    deduped_ids: list[str] = []
+    deduped_sources: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for source_id, source in zip(resolved_source_ids, resolved_sources):
+        if source_id in seen:
+            continue
+        seen.add(source_id)
+        deduped_ids.append(source_id)
+        deduped_sources.append(source)
+    return deduped_ids, deduped_sources
+
+
+def _compile_model(model: dict[str, Any], source_registry: dict[str, dict[str, Any]]) -> dict[str, Any]:
     compiled = deep_copy_json(model)
     model_id = str(compiled.get("model_id") or compiled.get("id") or "").strip()
     compiled["id"] = model_id
@@ -187,21 +236,10 @@ def _compile_model(model: dict[str, Any]) -> dict[str, Any]:
         relative_path = str(entry.get("canonical_path") or entry.get("relative_path") or "")
         entry["relative_path"] = relative_path
         entry["canonical_path"] = relative_path
-        normalized_sources = []
-        for source in coerce_list(entry.get("sources")):
-            if not isinstance(source, dict):
-                continue
-            url = str(source.get("url") or "").strip()
-            if not url:
-                continue
-            provider, resolver, locator = infer_source_provider_resolver(url)
-            normalized = deep_copy_json(source)
-            normalized.setdefault("provider", provider)
-            normalized.setdefault("resolver", resolver)
-            if locator and "locator" not in normalized:
-                normalized["locator"] = locator
-            normalized_sources.append(normalized)
+        source_ids, normalized_sources = _materialize_artifact_sources(entry, source_registry)
+        entry["source_ids"] = source_ids
         entry["sources"] = normalized_sources
+        entry["primary_source_id"] = source_ids[0] if source_ids else None
         entry["source"] = next(
             (
                 source.get("url")
@@ -261,8 +299,11 @@ def compile_catalog_v3(
 ) -> dict[str, Any]:
     source = _merged_source_payload(load_json(source_path), fragments_root)
     compiled_at = _source_generated_at(source)
+    source_registry = _index_authored_sources(
+        [entry for entry in coerce_list(source.get("sources")) if isinstance(entry, dict)]
+    )
     compiled_models = [
-        _compile_model(model)
+        _compile_model(model, source_registry)
         for model in coerce_list(source.get("models"))
         if isinstance(model, dict)
     ]
@@ -276,6 +317,11 @@ def compile_catalog_v3(
         for workflow in coerce_list(source.get("workflows"))
         if isinstance(workflow, dict)
     ]
+
+    compiled_sources = sorted(
+        (deep_copy_json(entry) for entry in source_registry.values()),
+        key=lambda entry: str(entry.get("source_id") or ""),
+    )
 
     selection_index = []
     for model in compiled_models:
@@ -316,8 +362,8 @@ def compile_catalog_v3(
         )
 
     runtime = {
-        "version": "3",
-        "schema_version": "catalog-runtime-v3",
+        "version": "4.1",
+        "schema_version": "catalog-runtime-v4",
         "generated_at": compiled_at,
         "source": {
             "compiled_from": str(source_path),
@@ -328,7 +374,7 @@ def compile_catalog_v3(
             "models": len(compiled_models),
             "recipes": len(compiled_recipes),
             "workflows": len(compiled_workflows),
-            "sources": len(coerce_list(source.get("sources"))),
+            "sources": len(compiled_sources),
             "external_records": len(coerce_list(source.get("external_records"))),
             "verified_models": sum(1 for model in compiled_models if model.get("catalog_tier") == "verified"),
             "advanced_manual_models": sum(1 for model in compiled_models if model.get("catalog_tier") != "verified"),
@@ -336,14 +382,14 @@ def compile_catalog_v3(
         "models": compiled_models,
         "recipes": compiled_recipes,
         "workflows": compiled_workflows,
-        "sources": coerce_list(source.get("sources")),
+        "sources": compiled_sources,
         "external_records": coerce_list(source.get("external_records")),
         "selection_index": selection_index,
     }
 
     legacy = {
-        "version": "3-legacy-compat",
-        "schema_version": "catalog-runtime-legacy-v3",
+        "version": "4.1-legacy-compat",
+        "schema_version": "catalog-runtime-legacy-v4",
         "generated_at": compiled_at,
         "source": {
             "compiled_from": str(source_path),

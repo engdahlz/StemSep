@@ -101,6 +101,22 @@ export function ModelDetails({
     downloadInfo?.mode === "manual" ||
     isManualCatalogModel(resolvedModel);
   const manualDownloadMode = downloadInfo?.mode === "manual" || isManualCatalogModel(resolvedModel);
+  const missingArtifacts = Array.isArray(installation?.missing_artifacts)
+    ? installation.missing_artifacts
+    : [];
+  const sourceResolution = Array.isArray(installation?.source_resolution)
+    ? installation.source_resolution
+    : [];
+  const primarySource = downloadSources[0] || null;
+  const fallbackSources = downloadSources.slice(1);
+  const advancedReason =
+    blockedModel
+      ? "Unavailable upstream or non-public artifact."
+      : manualDownloadMode
+        ? "Manual import or volatile source is still required."
+        : verification?.lastVerified
+          ? null
+          : "This model is not yet fully operationally verified.";
 
   const handleImportFiles = async () => {
     try {
@@ -616,7 +632,37 @@ export function ModelDetails({
                       </span>
                     </div>
                   )}
+                  {typeof installation?.canonical_ready === "boolean" && (
+                    <div className="flex justify-between py-1 border-b border-border/30">
+                      <span className="text-muted-foreground">Canonical Ready</span>
+                      <span className="font-medium text-foreground/90">
+                        {installation.canonical_ready ? "Yes" : "No"}
+                      </span>
+                    </div>
+                  )}
+                  {typeof installation?.verified_hashes === "boolean" && (
+                    <div className="flex justify-between py-1 border-b border-border/30">
+                      <span className="text-muted-foreground">Verified Hashes</span>
+                      <span className="font-medium text-foreground/90">
+                        {installation.verified_hashes ? "Yes" : "No"}
+                      </span>
+                    </div>
+                  )}
+                  {!!missingArtifacts.length && (
+                    <div className="flex justify-between py-1 border-b border-border/30">
+                      <span className="text-muted-foreground">Missing Artifacts</span>
+                      <span className="font-medium text-foreground/90">
+                        {missingArtifacts.length}
+                      </span>
+                    </div>
+                  )}
                 </div>
+
+                {advancedReason && (
+                  <div className="rounded-md border border-amber-200/70 bg-amber-50/70 px-3 py-2 text-sm text-amber-800">
+                    {advancedReason}
+                  </div>
+                )}
 
                 {downloadArtifacts.length > 0 && (
                   <div className="space-y-2">
@@ -642,6 +688,11 @@ export function ModelDetails({
                           <div className="mt-1 text-xs text-muted-foreground break-all">
                             {artifact.relative_path}
                           </div>
+                          {artifact.sha256 && (
+                            <div className="mt-1 text-[11px] text-muted-foreground break-all">
+                              SHA256: {artifact.sha256}
+                            </div>
+                          )}
                           {artifact.source_host && (
                             <div className="mt-1 text-xs text-muted-foreground">
                               Source: {artifact.source_host}
@@ -656,8 +707,19 @@ export function ModelDetails({
                 {downloadSources.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Sources
+                      Provenance
                     </h4>
+                    {primarySource && (
+                      <div className="rounded-md border border-emerald-200/60 bg-emerald-50/60 px-3 py-2 text-sm text-emerald-900">
+                        <div className="font-medium">Primary source</div>
+                        <div className="mt-1 text-xs break-all">{primarySource.url}</div>
+                      </div>
+                    )}
+                    {fallbackSources.length > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        {fallbackSources.length} fallback source{fallbackSources.length === 1 ? "" : "s"} available.
+                      </div>
+                    )}
                     <div className="space-y-2">
                       {downloadSources.map((source) => (
                         <div
@@ -675,6 +737,11 @@ export function ModelDetails({
                                   {source.provider}
                                 </span>
                               )}
+                              {source.manual && (
+                                <span className="rounded-full border border-amber-200/70 bg-amber-50/70 px-2 py-0.5 text-amber-800">
+                                  manual
+                                </span>
+                              )}
                               {source.channel && (
                                 <span className="rounded-full border border-border/50 bg-background/70 px-2 py-0.5">
                                   {source.channel}
@@ -683,6 +750,11 @@ export function ModelDetails({
                               <span className="rounded-full border border-border/50 bg-background/70 px-2 py-0.5">
                                 {source.verified ? "verified" : "unverified"}
                               </span>
+                              {source.last_checked && (
+                                <span className="rounded-full border border-border/50 bg-background/70 px-2 py-0.5">
+                                  checked {source.last_checked}
+                                </span>
+                              )}
                             </div>
                             <div className="mt-1 text-xs text-muted-foreground break-all">
                               {source.url}
@@ -697,6 +769,36 @@ export function ModelDetails({
                             <ExternalLink className="h-3.5 w-3.5" />
                             Open
                           </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {sourceResolution.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Source Resolution
+                    </h4>
+                    <div className="space-y-2">
+                      {sourceResolution.map((entry: any, index: number) => (
+                        <div
+                          key={`${entry?.filename || entry?.relative_path || "artifact"}:${index}`}
+                          className="rounded-md border border-border/40 bg-background/60 px-3 py-2 text-sm"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-medium text-foreground/90">
+                              {entry?.filename || entry?.relative_path || `Artifact ${index + 1}`}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {entry?.selected_source ? "resolved" : "unresolved"}
+                            </span>
+                          </div>
+                          {entry?.selected_source && (
+                            <div className="mt-1 text-xs text-muted-foreground break-all">
+                              {entry.selected_source}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

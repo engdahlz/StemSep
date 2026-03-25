@@ -1,11 +1,5 @@
 import type { IpcMain } from "electron";
 
-type SendBackendCommand = (
-  command: string,
-  payload?: Record<string, any>,
-  timeoutMs?: number,
-) => Promise<any>;
-
 type SendBackendCommandWithRetry = (
   command: string,
   payload?: Record<string, any>,
@@ -20,7 +14,6 @@ type RemoveModelLocal = (modelId: string) => {
 
 type RegisterDownloadIpcHandlersArgs = {
   ipcMain: IpcMain;
-  sendBackendCommand: SendBackendCommand;
   sendBackendCommandWithRetry: SendBackendCommandWithRetry;
   removeModelLocal: RemoveModelLocal;
   log: (message: string, ...args: any[]) => void;
@@ -28,23 +21,10 @@ type RegisterDownloadIpcHandlersArgs = {
 
 export function registerDownloadIpcHandlers({
   ipcMain,
-  sendBackendCommand,
   sendBackendCommandWithRetry,
   removeModelLocal,
   log,
 }: RegisterDownloadIpcHandlersArgs) {
-  ipcMain.handle("download-model", async (_event, modelId: string) => {
-    return sendBackendCommand("download_model", { model_id: modelId });
-  });
-
-  ipcMain.handle("pause-download", async (_event, modelId: string) => {
-    return sendBackendCommand("pause_download", { model_id: modelId });
-  });
-
-  ipcMain.handle("resume-download", async (_event, modelId: string) => {
-    return sendBackendCommand("resume_download", { model_id: modelId });
-  });
-
   ipcMain.handle(
     "import-model-files",
     async (
@@ -73,11 +53,11 @@ export function registerDownloadIpcHandlers({
         architecture,
       }: { filePath: string; modelName: string; architecture?: string },
     ) => {
-      return sendBackendCommand("import_custom_model", {
+      return sendBackendCommandWithRetry("import_custom_model", {
         file_path: filePath,
         model_name: modelName,
         architecture: architecture || "Custom",
-      });
+      }, 60_000);
     },
   );
 
