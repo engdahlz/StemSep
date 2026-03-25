@@ -1185,51 +1185,12 @@ class ModelManager:
             "installed": bool(m.installed),
         }
 
-    async def download_model(self, model_id: str) -> bool:
-        """Best-effort download of the checkpoint/config declared in registry.
-
-        NOTE: This is kept minimal; the full downloader lives in other parts of the project.
-        """
-        m = self.models.get(model_id)
-        if not m:
-            return False
-
-        try:
-            import urllib.request
-
-            self.models_dir.mkdir(parents=True, exist_ok=True)
-
-            manifest = self.resolve_download_manifest(model_id)
-            direct_artifacts = [
-                artifact
-                for artifact in (manifest.get("artifacts") or [])
-                if isinstance(artifact, dict)
-                and not bool(artifact.get("manual"))
-                and str(artifact.get("source") or "").strip()
-            ]
-
-            if not direct_artifacts:
-                log.warning("download_model called for non-direct model %s", model_id)
-                return False
-
-            def download(artifact: Dict[str, Any]) -> bool:
-                url = str(artifact.get("source") or "").strip()
-                rel = str(artifact.get("relative_path") or "").strip()
-                if not url or not rel:
-                    return False
-                dest = self.models_dir / Path(rel)
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                if dest.exists():
-                    return True
-                self._emit_download_progress(model_id, 0.0)
-                urllib.request.urlretrieve(url, dest)
-                self._emit_download_progress(model_id, 1.0)
-                return dest.exists()
-
-            ok = all(download(artifact) for artifact in direct_artifacts)
-
-            self._refresh_install_flags()
-            return bool(ok and self.is_model_installed(model_id))
-        except Exception as e:
-            log.error(f"download_model failed for {model_id}: {e}")
-            return False
+    async def download_model(self, model_id: str, session: Any | None = None) -> bool:
+        """Legacy download API has been retired in favor of Rust selection installs."""
+        _ = session
+        log.warning(
+            "Legacy ModelManager.download_model(%s) is deprecated. "
+            "Use the Electron/Rust selection-first install flow instead.",
+            model_id,
+        )
+        return False

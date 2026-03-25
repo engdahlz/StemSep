@@ -1,14 +1,14 @@
 """
-Models page for downloading and managing models
+Models page for inspecting legacy model metadata.
+
+Downloads have moved to the Electron/Rust catalog pipeline and are intentionally
+disabled here to avoid reintroducing the deprecated Python downloader.
 """
 
-import asyncio
-import threading
 import tkinter as tk
 from tkinter import messagebox
 from typing import Dict, List
 
-import aiohttp
 import customtkinter as ctk
 
 from stemsep.models.model_manager import ModelInfo
@@ -66,7 +66,7 @@ class ModelsPage(ctk.CTkFrame):
 
         self.install_all_button = ctk.CTkButton(
             filter_frame,
-            text="Install All",
+            text="Install All (Moved)",
             width=120,
             command=self._on_install_all_clicked,
         )
@@ -120,19 +120,15 @@ class ModelsPage(ctk.CTkFrame):
         self._refresh_model_list()
 
     def _on_install_clicked(self, model_id: str):
-        """Handle install button click"""
-
-        # Start download in background
-        def download():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(self.model_manager.download_model(model_id))
-            loop.close()
-
-        thread = threading.Thread(target=download, daemon=True)
-        thread.start()
-
-        messagebox.showinfo("Download Started", f"Downloading {model_id}...")
+        """Handle install button click."""
+        messagebox.showinfo(
+            "Managed in Electron",
+            (
+                "Legacy model downloads have been retired.\n\n"
+                "Install models from the Electron app so Rust can verify sources, "
+                "checksums and canonical paths."
+            ),
+        )
 
     def _on_remove_clicked(self, model_id: str):
         """Handle remove button click"""
@@ -145,52 +141,14 @@ class ModelsPage(ctk.CTkFrame):
             self._refresh_model_list()
 
     def _on_install_all_clicked(self):
-        """Install all missing models"""
-        if self.batch_install_running:
-            return
-
-        missing_models = [
-            m.id for m in self.model_manager.get_available_models() if not m.installed
-        ]
-
-        if not missing_models:
-            messagebox.showinfo(
-                "All Installed", "All available models are already installed."
-            )
-            return
-
-        self.batch_install_running = True
-        self.batch_total_count = len(missing_models)
-        self.batch_results_success.clear()
-        self.batch_results_fail.clear()
-        self.batch_results_errors.clear()
-        self.install_all_button.configure(state=tk.DISABLED, text="Installing...")
-        self.install_progress_var.set(
-            f"Starting batch ({len(missing_models)} models)..."
+        """Install all missing models."""
+        messagebox.showinfo(
+            "Managed in Electron",
+            (
+                "Batch installs are now handled by the Electron app.\n\n"
+                "Open StemSep's Electron UI and use the selection-first model catalog there."
+            ),
         )
-
-        def download_all():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-            async def runner():
-                try:
-                    async with aiohttp.ClientSession() as session:
-                        for index, model_id in enumerate(missing_models, start=1):
-                            self._update_batch_status(index, len(missing_models))
-                            await self.model_manager.download_model(
-                                model_id, session=session
-                            )
-                finally:
-                    self._end_batch_status()
-
-            try:
-                loop.run_until_complete(runner())
-            finally:
-                loop.close()
-
-        threading.Thread(target=download_all, daemon=True).start()
-        messagebox.showinfo("Batch Download", "Started downloading all missing models.")
 
     def _update_batch_status(self, current: int, total: int):
         self.after(
@@ -357,7 +315,7 @@ class ModelCard(ctk.CTkFrame):
             # Install button
             self.install_button = ctk.CTkButton(
                 self.button_frame,
-                text="Download",
+                text="Install in Electron",
                 width=100,
                 command=self._on_install_clicked,
             )

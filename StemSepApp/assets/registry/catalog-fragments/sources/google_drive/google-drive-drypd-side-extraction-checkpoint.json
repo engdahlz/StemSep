@@ -1,0 +1,29 @@
+{
+  "artifact_filename": "model.pth",
+  "auth": "public",
+  "channel": "upstream",
+  "classification": "artifact",
+  "content_type": "application/octet-stream",
+  "final_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
+  "host": "drive.usercontent.google.com",
+  "install_policy": "direct",
+  "last_checked": "2026-03-25T17:16:43.308236Z",
+  "locator": {
+    "download_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
+    "expected_name": "model_scnet_ep_30_sdr_15.1291.ckpt",
+    "file_id": "19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3",
+    "folder_id": "1ZSUw6ZuhJusv7HE5eMa-MORKA0XbSEht"
+  },
+  "manual": false,
+  "model_id": "drypd-side-extraction",
+  "priority": 20,
+  "provider": "google_drive",
+  "resolver": "google_drive_folder_entry",
+  "resolver_viable": true,
+  "sha256": "1f9a8671b338ef136afe0deb812737537264b1f42d8e5bc3fcc656e2c778a4e4",
+  "size_bytes": 42422170,
+  "source_id": "google-drive-drypd-side-extraction-checkpoint",
+  "status": 200,
+  "url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
+  "verified": true
+}

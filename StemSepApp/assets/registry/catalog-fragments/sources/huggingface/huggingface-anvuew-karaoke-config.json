@@ -1,0 +1,28 @@
+{
+  "artifact_filename": "karaoke_bs_roformer_anvuew.yaml",
+  "auth": "public",
+  "channel": "upstream",
+  "classification": "artifact",
+  "content_type": "text/plain; charset=utf-8",
+  "final_url": "https://huggingface.co/api/resolve-cache/models/anvuew/karaoke_bs_roformer/0d4423d42e12cf2ba39ae09171028507b8a2a7be/karaoke_bs_roformer_anvuew.yaml?%2Fanvuew%2Fkaraoke_bs_roformer%2Fresolve%2Fmain%2Fkaraoke_bs_roformer_anvuew.yaml=&etag=%228c0683aef3b4664f783b0803b7e2e9e6ca7250c5%22",
+  "host": "huggingface.co",
+  "install_policy": "direct",
+  "last_checked": "2026-03-25T17:16:53.913278Z",
+  "locator": {
+    "file_path": "karaoke_bs_roformer_anvuew.yaml",
+    "repo_id": "anvuew/karaoke_bs_roformer",
+    "revision": "main"
+  },
+  "manual": false,
+  "model_id": "anvuew-karaoke",
+  "priority": 10,
+  "provider": "huggingface",
+  "resolver": "huggingface_resolve",
+  "resolver_viable": true,
+  "sha256": "5cb3f127ecbc6a8e37f31ea7e05f60f360a44da43e857bde805b7b68558f6338",
+  "size_bytes": 1973,
+  "source_id": "huggingface-anvuew-karaoke-config",
+  "status": 200,
+  "url": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.yaml",
+  "verified": true
+}

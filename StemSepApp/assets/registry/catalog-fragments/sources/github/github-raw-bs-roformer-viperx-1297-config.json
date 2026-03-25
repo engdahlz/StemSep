@@ -1,0 +1,29 @@
+{
+  "artifact_filename": "model_bs_roformer_ep_317_sdr_12.9755.yaml",
+  "auth": "public",
+  "channel": "upstream",
+  "classification": "artifact",
+  "content_type": "text/plain; charset=utf-8",
+  "final_url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+  "host": "raw.githubusercontent.com",
+  "install_policy": "direct",
+  "last_checked": "2026-03-25T17:16:25.317133Z",
+  "locator": {
+    "file_path": "configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+    "owner": "ZFTurbo",
+    "repo": "Music-Source-Separation-Training",
+    "revision": "main"
+  },
+  "manual": false,
+  "model_id": "bs-roformer-viperx-1297",
+  "priority": 10,
+  "provider": "github",
+  "resolver": "github_raw",
+  "resolver_viable": true,
+  "sha256": "42e5635ceab7287b83d9591c9880966f0b61cff26a0a40a29d236bacb32e5f2c",
+  "size_bytes": 1881,
+  "source_id": "github-raw-bs-roformer-viperx-1297-config",
+  "status": 200,
+  "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+  "verified": true
+}

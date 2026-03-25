@@ -1,0 +1,59 @@
+{
+  "model_id": "drypd-side-extraction",
+  "artifacts": [
+    {
+      "canonical_path": "msst/drypd-side-extraction/model.pth",
+      "filename": "model.pth",
+      "kind": "checkpoint",
+      "manual": false,
+      "relative_path": "msst/drypd-side-extraction/model.pth",
+      "required": true,
+      "source_ids": [
+        "google-drive-drypd-side-extraction-checkpoint"
+      ]
+    },
+    {
+      "canonical_path": "msst/drypd-side-extraction/config_musdb18_scnet.yaml",
+      "filename": "config_musdb18_scnet.yaml",
+      "kind": "config",
+      "manual": false,
+      "relative_path": "msst/drypd-side-extraction/config_musdb18_scnet.yaml",
+      "required": true,
+      "source_ids": [
+        "google-drive-drypd-side-extraction-config"
+      ]
+    }
+  ],
+  "catalog_tier": "advanced_manual",
+  "install": {
+    "mode": "direct",
+    "notes": [
+      "StemSep downloads the curated Google Drive bundle entry directly into the canonical model store.",
+      "Keep this model in Advanced until side-extraction quality smoke is documented."
+    ]
+  },
+  "install_policy": "direct",
+  "links": {
+    "checkpoint": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
+    "config": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
+    "homepage": "https://drive.google.com/drive/folders/1ZSUw6ZuhJusv7HE5eMa-MORKA0XbSEht?usp=sharing"
+  },
+  "requirements": {
+    "manual_steps": []
+  },
+  "runtime": {
+    "install_mode": "direct",
+    "required_files": [
+      "model.pth",
+      "config_musdb18_scnet.yaml"
+    ],
+    "requires_manual_assets": false
+  },
+  "status": {
+    "blocking_reason": "Operational Google Drive source is verified, but side-extraction quality smoke is still pending before Verified promotion.",
+    "curated": false,
+    "readiness": "manual",
+    "simple_allowed": false,
+    "support_tier": "supported_advanced"
+  }
+}

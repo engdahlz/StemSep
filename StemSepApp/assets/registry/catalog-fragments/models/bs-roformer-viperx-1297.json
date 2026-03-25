@@ -1,0 +1,40 @@
+{
+  "model_id": "bs-roformer-viperx-1297",
+  "artifacts": [
+    {
+      "canonical_path": "msst/bs-roformer-viperx-1297/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+      "filename": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+      "kind": "checkpoint",
+      "manual": false,
+      "relative_path": "msst/bs-roformer-viperx-1297/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+      "required": true,
+      "source_ids": [
+        "github-release-bs-roformer-viperx-1297-checkpoint"
+      ]
+    },
+    {
+      "canonical_path": "msst/bs-roformer-viperx-1297/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+      "filename": "model_bs_roformer_ep_317_sdr_12.9755.yaml",
+      "kind": "config",
+      "manual": false,
+      "relative_path": "msst/bs-roformer-viperx-1297/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+      "required": true,
+      "source_ids": [
+        "github-raw-bs-roformer-viperx-1297-config"
+      ]
+    }
+  ],
+  "catalog_tier": "verified",
+  "status": {
+    "curated": true,
+    "readiness": "verified",
+    "simple_allowed": true,
+    "support_tier": "curated"
+  },
+  "verification": {
+    "operational_smoke": {
+      "performed_at": "2026-03-25T00:00:00Z",
+      "scope": "direct install path verified for GitHub release + raw config"
+    }
+  }
+}

@@ -298,7 +298,18 @@ export interface Model {
     source_resolution?: Array<{
       filename?: string;
       relative_path?: string;
-      selected_source?: string | null;
+      selected_source?:
+        | string
+        | {
+            url?: string | null;
+            provider?: string | null;
+            resolver?: string | null;
+            locator?: Record<string, unknown> | null;
+            priority?: number | null;
+            channel?: string | null;
+            verified?: boolean | null;
+          }
+        | null;
     }>;
     artifacts?: Array<{
       kind?: string;

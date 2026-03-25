@@ -1,0 +1,41 @@
+{
+  "model_id": "htdemucs",
+  "artifacts": [
+    {
+      "canonical_path": "demucs/htdemucs/955717e8-8726e21a.th",
+      "filename": "955717e8-8726e21a.th",
+      "kind": "checkpoint",
+      "manual": false,
+      "relative_path": "demucs/htdemucs/955717e8-8726e21a.th",
+      "required": true,
+      "source_ids": [
+        "static-htdemucs-checkpoint"
+      ]
+    },
+    {
+      "canonical_path": "demucs/htdemucs/config_musdb18_htdemucs.yaml",
+      "filename": "config_musdb18_htdemucs.yaml",
+      "kind": "config",
+      "manual": false,
+      "relative_path": "demucs/htdemucs/config_musdb18_htdemucs.yaml",
+      "required": true,
+      "source_ids": [
+        "github-raw-htdemucs-config"
+      ]
+    }
+  ],
+  "catalog_tier": "verified",
+  "status": {
+    "blocking_reason": "Verified as an advanced multistem fallback; keep it out of Simple and Guided presets by default.",
+    "curated": true,
+    "readiness": "verified",
+    "simple_allowed": false,
+    "support_tier": "curated"
+  },
+  "verification": {
+    "operational_smoke": {
+      "performed_at": "2026-03-25T00:00:00Z",
+      "scope": "direct install path verified for demucs fallback role"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "artifact_filename": "config_musdb18_htdemucs.yaml",
+  "auth": "public",
+  "channel": "upstream",
+  "classification": "artifact",
+  "content_type": "text/plain; charset=utf-8",
+  "final_url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
+  "host": "raw.githubusercontent.com",
+  "install_policy": "direct",
+  "last_checked": "2026-03-25T17:16:25.329272Z",
+  "locator": {
+    "file_path": "configs/config_musdb18_htdemucs.yaml",
+    "owner": "ZFTurbo",
+    "repo": "Music-Source-Separation-Training",
+    "revision": "main"
+  },
+  "manual": false,
+  "model_id": "htdemucs",
+  "priority": 10,
+  "provider": "github",
+  "resolver": "github_raw",
+  "resolver_viable": true,
+  "sha256": "3c7198ee7bd023cdd5650439b951fa9631be05fbb6e9a1a047a0df2bc221073b",
+  "size_bytes": 2670,
+  "source_id": "github-raw-htdemucs-config",
+  "status": 200,
+  "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
+  "verified": true
+}

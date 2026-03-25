@@ -15,6 +15,7 @@ from catalog_v3_common import (
     is_direct_artifact_url,
     normalize_source_entry,
     slugify,
+    source_locator_is_deterministic,
     url_basename,
     write_json,
 )
@@ -24,8 +25,8 @@ CHUNK_SIZE = 1024 * 256
 
 def classify_url(url: str) -> str:
     provider, resolver, locator = infer_source_provider_resolver(url)
-    if provider in {"google_drive", "proton_drive"} and locator and (
-        locator.get("file_id") or locator.get("download_url") or locator.get("expected_name") or locator.get("item_id")
+    if provider in {"google_drive", "proton_drive"} and source_locator_is_deterministic(
+        provider, resolver, locator, url
     ):
         return "folder_entry" if resolver.endswith("_entry") else "artifact"
     if is_direct_artifact_url(url):
@@ -67,7 +68,9 @@ def build_source_fragment(url: str, compute_sha256: bool) -> dict[str, Any]:
     classification = classify_url(url)
     basename = url_basename(url)
     probe = {}
-    resolver_viable = classification in {"artifact", "folder_entry"}
+    resolver_viable = classification in {"artifact", "folder_entry"} and source_locator_is_deterministic(
+        provider, resolver, locator, url
+    )
     verified = False
     try:
         probe = probe_url(url, compute_sha256=compute_sha256)
@@ -76,7 +79,7 @@ def build_source_fragment(url: str, compute_sha256: bool) -> dict[str, Any]:
         probe = {"error": str(exc)}
         verified = False
 
-    install_policy = "direct" if classification in {"artifact", "folder_entry"} and verified else "manual"
+    install_policy = "direct" if resolver_viable and verified else "manual"
     catalog_tier = "verified" if install_policy == "direct" and verified else "advanced_manual"
 
     fragment = normalize_source_entry(

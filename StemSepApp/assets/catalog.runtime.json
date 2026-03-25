@@ -13723,8 +13723,8 @@
             "primary_source_id": "huggingface-huggingface-resolve-anvuew-dereverb-room-dereverb-room-anvuew-sdr-13-7432-ckpt",
             "relative_path": "msst/anvuew-dereverb-room/dereverb_room_anvuew_sdr_13.7432.ckpt",
             "required": true,
-            "sha256": null,
-            "size_bytes": null,
+            "sha256": "2edec521f09e26341c1923dc82c8c52dbc86478b42b9999f679535743c970cb3",
+            "size_bytes": 118128452,
             "source": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew_sdr_13.7432.ckpt",
             "source_host": "huggingface.co",
             "source_ids": [
@@ -13737,10 +13737,10 @@
                 "channel": "upstream",
                 "classification": "artifact",
                 "content_type": null,
-                "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68c0023a751aae98294f2a03/5010d1be5e4aae67c2553576f63721180bdd411dc7e4b3dd47e1493940d2c32d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T151437Z&X-Amz-Expires=3600&X-Amz-Signature=b8d97d680cf4d5245ea42d1f2640cd92f08c62ba2a5639334e9eae6b6c4da1c6&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_room_anvuew_sdr_13.7432.ckpt%3B+filename%3D%22dereverb_room_anvuew_sdr_13.7432.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774455277&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ1NTI3N319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGMwMDIzYTc1MWFhZTk4Mjk0ZjJhMDMvNTAxMGQxYmU1ZTRhYWU2N2MyNTUzNTc2ZjYzNzIxMTgwYmRkNDExZGM3ZTRiM2RkNDdlMTQ5Mzk0MGQyYzMyZCoifV19&Signature=YPnEtsnpqX4lje8Vh-veKSX4V4JUnvefsXv7fMgc5W1aPyv9OjPte8PaaeqXs9pk-L9RMvdv7fezQ0eT-xZu1KvAKnmToAUAcAbgleTJ-pP7KBWokahuCGXKwO-tROBlnFvhJ5YknXms-lUwt0oZ3ssM2jM4NfW0MRdPs1uozDp9BLDJdFrU1YHdL38DABiwa3zTovvH-xD9PXFM8WmpewW19vEvtmsbsTqh~hh-j3mKFRedtrGjyHa---9J7MHMVBi0J9-7tsHSyAVpGRCFfJ51bTmYHiIqUHLF2g8EqCpm7Jk29Jazc34Bx3QVfmounAyR3qflMSmYJSYuXg~Qcg__&Key-Pair-Id=K2L8F4GPSG1IFC",
+                "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68c0023a751aae98294f2a03/5010d1be5e4aae67c2553576f63721180bdd411dc7e4b3dd47e1493940d2c32d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T171652Z&X-Amz-Expires=3600&X-Amz-Signature=0b544f0608f20f0529102fec27a543e9424bff644f18139a3b5d0ccefaafe936&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_room_anvuew_sdr_13.7432.ckpt%3B+filename%3D%22dereverb_room_anvuew_sdr_13.7432.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774462612&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ2MjYxMn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGMwMDIzYTc1MWFhZTk4Mjk0ZjJhMDMvNTAxMGQxYmU1ZTRhYWU2N2MyNTUzNTc2ZjYzNzIxMTgwYmRkNDExZGM3ZTRiM2RkNDdlMTQ5Mzk0MGQyYzMyZCoifV19&Signature=W3h-BjtS4iWJEMZrJjV-b5f-K2wJCIs-4dKhIb-O1PDhHZnoRhdGcRDDh2NNgcv8b5A6FyyDprT5gR9EH~sYIJfApPAyc-rBl~A~-jXQtpGYhhsUUpp02zYkYH-1EUGa-ZHuII83Jlce-KTGGODRrtmkWaTdd5k~8WbWRsG7l-kFW~3kbf~rKCBsAl4J1u69wB~jybhOdWhiwaZYbQYsppaBV0ZzTEhYt0v32tfKm121zSwVyPANnmWRGTNfgdbfLuMsnwrQHFU~0Vygo1Hd5lW-Ljd1K5HP6hNgKE47aIsbItlAF3UbcRz-RyldQtKFn7tU3jyfvUUXC8FuKpXOrQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
                 "host": "huggingface.co",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T15:14:39.553111Z",
+                "last_checked": "2026-03-25T17:16:54.254064Z",
                 "locator": {
                   "file_path": "dereverb_room_anvuew_sdr_13.7432.ckpt",
                   "repo_id": "anvuew/dereverb_room",
@@ -13751,7 +13751,7 @@
                 "provider": "huggingface",
                 "resolver": "huggingface_resolve",
                 "resolver_viable": true,
-                "sha256": null,
+                "sha256": "2edec521f09e26341c1923dc82c8c52dbc86478b42b9999f679535743c970cb3",
                 "size_bytes": 118128452,
                 "source_id": "huggingface-huggingface-resolve-anvuew-dereverb-room-dereverb-room-anvuew-sdr-13-7432-ckpt",
                 "status": 200,
@@ -13779,8 +13779,8 @@
             "primary_source_id": "huggingface-huggingface-resolve-anvuew-dereverb-room-dereverb-room-anvuew-yaml",
             "relative_path": "msst/anvuew-dereverb-room/dereverb_room_anvuew.yaml",
             "required": true,
-            "sha256": null,
-            "size_bytes": null,
+            "sha256": "c37e3039521d79cd1daff129857f69fa80c6a1f383a0fe8cda757f2dfc5032f8",
+            "size_bytes": 1991,
             "source": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew.yaml",
             "source_host": "huggingface.co",
             "source_ids": [
@@ -13796,7 +13796,7 @@
                 "final_url": "https://huggingface.co/api/resolve-cache/models/anvuew/dereverb_room/0b85f5b80b7f779b2dfe80f33a1b35b38af9376d/dereverb_room_anvuew.yaml?%2Fanvuew%2Fdereverb_room%2Fresolve%2Fmain%2Fdereverb_room_anvuew.yaml=&etag=%220dd9f9c519c46feafaf0aeb5926db0180fc1111d%22",
                 "host": "huggingface.co",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T15:14:39.749106Z",
+                "last_checked": "2026-03-25T17:16:57.145473Z",
                 "locator": {
                   "file_path": "dereverb_room_anvuew.yaml",
                   "repo_id": "anvuew/dereverb_room",
@@ -13807,7 +13807,7 @@
                 "provider": "huggingface",
                 "resolver": "huggingface_resolve",
                 "resolver_viable": true,
-                "sha256": null,
+                "sha256": "c37e3039521d79cd1daff129857f69fa80c6a1f383a0fe8cda757f2dfc5032f8",
                 "size_bytes": 1991,
                 "source_id": "huggingface-huggingface-resolve-anvuew-dereverb-room-dereverb-room-anvuew-yaml",
                 "status": 200,
@@ -14657,7 +14657,7 @@
       "catalog": {
         "installPolicy": "direct",
         "sourceKind": "vendor",
-        "tier": "advanced_manual",
+        "tier": "verified",
         "verification": {
           "artifact_count": 2,
           "checked_at": "2026-03-21T22:18:34.636631Z",
@@ -14706,12 +14706,16 @@
             "Runtime adapter inferred as msst_builtin.",
             "Source URLs checked: 3."
           ],
+          "operational_smoke": {
+            "performed_at": "2026-03-25T00:00:00Z",
+            "scope": "direct install path verified for curated karaoke role"
+          },
           "reachable": true,
           "source": "models.v2.source.json"
         }
       },
-      "catalog_status": "candidate",
-      "catalog_tier": "advanced_manual",
+      "catalog_status": "verified",
+      "catalog_tier": "verified",
       "compatibility": {
         "audio_separator_compatible": false,
         "known_issues": [],
@@ -14731,84 +14735,92 @@
             "filename": "karaoke_bs_roformer_anvuew.ckpt",
             "kind": "checkpoint",
             "manual": false,
-            "primary_source_id": "huggingface-huggingface-resolve-anvuew-karaoke-bs-roformer-karaoke-bs-roformer-anvuew-ckpt",
+            "primary_source_id": "huggingface-anvuew-karaoke-checkpoint",
             "relative_path": "msst/anvuew-karaoke/karaoke_bs_roformer_anvuew.ckpt",
             "required": true,
-            "sha256": null,
-            "size_bytes": null,
+            "sha256": "206d04757cb5f75ca3b55f8a0a48f5c26aa2351d4ff3c7adbfc9affa30ea3ae4",
+            "size_bytes": 204486925,
             "source": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.ckpt",
             "source_host": "huggingface.co",
             "source_ids": [
-              "huggingface-huggingface-resolve-anvuew-karaoke-bs-roformer-karaoke-bs-roformer-anvuew-ckpt"
+              "huggingface-anvuew-karaoke-checkpoint"
             ],
             "sources": [
               {
+                "artifact_filename": "karaoke_bs_roformer_anvuew.ckpt",
                 "auth": "public",
                 "channel": "upstream",
+                "classification": "artifact",
                 "content_type": null,
-                "final_url": null,
+                "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68f1e40deecaf38d56ba3897/749e8fbd422ad0f408ca6e748630257b32a41d13a15c8566cefe222102638d75?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T171647Z&X-Amz-Expires=3600&X-Amz-Signature=344851e4209d103ee48038b55d029ae072aa33b1312c8c64592f84abb6bb2e58&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27karaoke_bs_roformer_anvuew.ckpt%3B+filename%3D%22karaoke_bs_roformer_anvuew.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774462607&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ2MjYwN319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGYxZTQwZGVlY2FmMzhkNTZiYTM4OTcvNzQ5ZThmYmQ0MjJhZDBmNDA4Y2E2ZTc0ODYzMDI1N2IzMmE0MWQxM2ExNWM4NTY2Y2VmZTIyMjEwMjYzOGQ3NSoifV19&Signature=a3nkYg6TK4~venImLJo9jpL4vizDotjMFLMLaFjKPk8IdNaJHSCBv-McGkfL60Dc-PdLOZhNPD36PjEBme34CfmtrcA1Ci0RsQlKRfTi9~MsNcuiKKK5w7mL1jG1wKJVTRHYVIsjJrHsvOv2zTb0Ms-gHGnfCajKqrkraBXpaHmY6EOmTy4ECkApPYej7Obe8AaHarxcPXuqU-09sbiP7FHzqr9FUqOEjzXoGONVX35tyuUt9LCcBKbK67dj0uVdItjTxgYda-YwU-7lhv70EDZXKugnMs7Qe3asmpffrLGYf5~ka2Uq9ORlqNJeMgJLneskioaCfBJdbb2BcE9LiA__&Key-Pair-Id=K2L8F4GPSG1IFC",
                 "host": "huggingface.co",
-                "last_checked": null,
+                "install_policy": "direct",
+                "last_checked": "2026-03-25T17:16:49.047808Z",
                 "locator": {
                   "file_path": "karaoke_bs_roformer_anvuew.ckpt",
                   "repo_id": "anvuew/karaoke_bs_roformer",
                   "revision": "main"
                 },
                 "manual": false,
-                "priority": 0,
+                "model_id": "anvuew-karaoke",
+                "priority": 10,
                 "provider": "huggingface",
                 "resolver": "huggingface_resolve",
-                "resolver_viable": null,
-                "sha256": null,
-                "size_bytes": null,
-                "source_id": "huggingface-huggingface-resolve-anvuew-karaoke-bs-roformer-karaoke-bs-roformer-anvuew-ckpt",
+                "resolver_viable": true,
+                "sha256": "206d04757cb5f75ca3b55f8a0a48f5c26aa2351d4ff3c7adbfc9affa30ea3ae4",
+                "size_bytes": 204486925,
+                "source_id": "huggingface-anvuew-karaoke-checkpoint",
+                "status": 200,
                 "url": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.ckpt",
-                "verified": false
+                "verified": true
               }
-            ],
-            "verified": false
+            ]
           },
           {
             "canonical_path": "msst/anvuew-karaoke/karaoke_bs_roformer_anvuew.yaml",
             "filename": "karaoke_bs_roformer_anvuew.yaml",
             "kind": "config",
             "manual": false,
-            "primary_source_id": "huggingface-huggingface-resolve-anvuew-karaoke-bs-roformer-karaoke-bs-roformer-anvuew-yaml",
+            "primary_source_id": "huggingface-anvuew-karaoke-config",
             "relative_path": "msst/anvuew-karaoke/karaoke_bs_roformer_anvuew.yaml",
             "required": true,
-            "sha256": null,
-            "size_bytes": null,
+            "sha256": "5cb3f127ecbc6a8e37f31ea7e05f60f360a44da43e857bde805b7b68558f6338",
+            "size_bytes": 1973,
             "source": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.yaml",
             "source_host": "huggingface.co",
             "source_ids": [
-              "huggingface-huggingface-resolve-anvuew-karaoke-bs-roformer-karaoke-bs-roformer-anvuew-yaml"
+              "huggingface-anvuew-karaoke-config"
             ],
             "sources": [
               {
+                "artifact_filename": "karaoke_bs_roformer_anvuew.yaml",
                 "auth": "public",
                 "channel": "upstream",
-                "content_type": null,
-                "final_url": null,
+                "classification": "artifact",
+                "content_type": "text/plain; charset=utf-8",
+                "final_url": "https://huggingface.co/api/resolve-cache/models/anvuew/karaoke_bs_roformer/0d4423d42e12cf2ba39ae09171028507b8a2a7be/karaoke_bs_roformer_anvuew.yaml?%2Fanvuew%2Fkaraoke_bs_roformer%2Fresolve%2Fmain%2Fkaraoke_bs_roformer_anvuew.yaml=&etag=%228c0683aef3b4664f783b0803b7e2e9e6ca7250c5%22",
                 "host": "huggingface.co",
-                "last_checked": null,
+                "install_policy": "direct",
+                "last_checked": "2026-03-25T17:16:53.913278Z",
                 "locator": {
                   "file_path": "karaoke_bs_roformer_anvuew.yaml",
                   "repo_id": "anvuew/karaoke_bs_roformer",
                   "revision": "main"
                 },
                 "manual": false,
-                "priority": 0,
+                "model_id": "anvuew-karaoke",
+                "priority": 10,
                 "provider": "huggingface",
                 "resolver": "huggingface_resolve",
-                "resolver_viable": null,
-                "sha256": null,
-                "size_bytes": null,
-                "source_id": "huggingface-huggingface-resolve-anvuew-karaoke-bs-roformer-karaoke-bs-roformer-anvuew-yaml",
+                "resolver_viable": true,
+                "sha256": "5cb3f127ecbc6a8e37f31ea7e05f60f360a44da43e857bde805b7b68558f6338",
+                "size_bytes": 1973,
+                "source_id": "huggingface-anvuew-karaoke-config",
+                "status": 200,
                 "url": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.yaml",
-                "verified": false
+                "verified": true
               }
-            ],
-            "verified": false
+            ]
           }
         ],
         "manual_instructions": [],
@@ -14987,7 +14999,7 @@
       "runtime_adapter": "msst_builtin",
       "sdr": 0.0,
       "selection_envelope": {
-        "catalogTier": "advanced_manual",
+        "catalogTier": "verified",
         "installPolicy": "direct",
         "selectionId": "anvuew-karaoke",
         "selectionType": "model",
@@ -15040,6 +15052,10 @@
             "Runtime adapter inferred as msst_builtin.",
             "Source URLs checked: 3."
           ],
+          "operational_smoke": {
+            "performed_at": "2026-03-25T00:00:00Z",
+            "scope": "direct install path verified for curated karaoke role"
+          },
           "reachable": true,
           "source": "models.v2.source.json"
         }
@@ -15058,9 +15074,11 @@
       },
       "source_kind": "vendor",
       "status": {
-        "blocking_reason": "Expose through curated karaoke workflows.",
+        "blocking_reason": "Verified for curated karaoke workflows; keep it out of Simple until karaoke workflow polish is complete.",
+        "curated": true,
         "readiness": "verified",
-        "simple_allowed": false
+        "simple_allowed": false,
+        "support_tier": "curated"
       },
       "stems": [],
       "tags": [
@@ -15115,6 +15133,10 @@
           "Runtime adapter inferred as msst_builtin.",
           "Source URLs checked: 3."
         ],
+        "operational_smoke": {
+          "performed_at": "2026-03-25T00:00:00Z",
+          "scope": "direct install path verified for curated karaoke role"
+        },
         "reachable": true,
         "source": "models.v2.source.json"
       },
@@ -22327,7 +22349,7 @@
       "catalog": {
         "installPolicy": "direct",
         "sourceKind": "community",
-        "tier": "advanced_manual",
+        "tier": "verified",
         "verification": {
           "artifact_count": 2,
           "checked_at": "2026-03-21T22:18:34.636631Z",
@@ -22377,12 +22399,16 @@
             "Runtime adapter inferred as msst_builtin.",
             "Source URLs checked: 3."
           ],
+          "operational_smoke": {
+            "performed_at": "2026-03-25T00:00:00Z",
+            "scope": "direct install path verified for GitHub release + raw config"
+          },
           "reachable": true,
           "source": "models.v2.source.json"
         }
       },
-      "catalog_status": "candidate",
-      "catalog_tier": "advanced_manual",
+      "catalog_status": "verified",
+      "catalog_tier": "verified",
       "compatibility": {
         "audio_separator_compatible": false,
         "known_issues": [],
@@ -22403,24 +22429,27 @@
             "filename": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
             "kind": "checkpoint",
             "manual": false,
-            "primary_source_id": "github-github-release-asset-model-bs-roformer-ep-317-sdr-12-9755-ckpt-model-bs-roformer-ep-317-sdr-12-9755-ckpt",
+            "primary_source_id": "github-release-bs-roformer-viperx-1297-checkpoint",
             "relative_path": "msst/bs-roformer-viperx-1297/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
             "required": true,
-            "sha256": null,
-            "size_bytes": null,
+            "sha256": "5b84f37e8d444c8cb30c79d77f613a41c05868ff9c9ac6c7049c00aefae115aa",
+            "size_bytes": 639331213,
             "source": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
             "source_host": "github.com",
             "source_ids": [
-              "github-github-release-asset-model-bs-roformer-ep-317-sdr-12-9755-ckpt-model-bs-roformer-ep-317-sdr-12-9755-ckpt"
+              "github-release-bs-roformer-viperx-1297-checkpoint"
             ],
             "sources": [
               {
+                "artifact_filename": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
                 "auth": "public",
                 "channel": "upstream",
-                "content_type": null,
-                "final_url": null,
+                "classification": "artifact",
+                "content_type": "application/octet-stream",
+                "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/514182217/af41da2e-b2db-49ef-a830-3fc626bd0fad?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-03-25T18%3A03%3A40Z&rscd=attachment%3B+filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-03-25T17%3A02%3A41Z&ske=2026-03-25T18%3A03%3A40Z&sks=b&skv=2018-11-09&sig=GmwTHE3ixy6c3Kn9u9aAUmAPPt2NVQpEPiB7MOafGGU%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc3NDQ2MjUzNywibmJmIjoxNzc0NDU4OTM3LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.A8DzwtZ52ulCqPimhXbh-Znav8tO5hflGD10qgBxy7A&response-content-disposition=attachment%3B%20filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&response-content-type=application%2Foctet-stream",
                 "host": "github.com",
-                "last_checked": null,
+                "install_policy": "direct",
+                "last_checked": "2026-03-25T17:16:26.180945Z",
                 "locator": {
                   "asset_name": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
                   "owner": "TRvlvr",
@@ -22428,42 +22457,46 @@
                   "tag": "all_public_uvr_models"
                 },
                 "manual": false,
-                "priority": 0,
+                "model_id": "bs-roformer-viperx-1297",
+                "priority": 10,
                 "provider": "github",
                 "resolver": "github_release_asset",
-                "resolver_viable": null,
-                "sha256": null,
-                "size_bytes": null,
-                "source_id": "github-github-release-asset-model-bs-roformer-ep-317-sdr-12-9755-ckpt-model-bs-roformer-ep-317-sdr-12-9755-ckpt",
+                "resolver_viable": true,
+                "sha256": "5b84f37e8d444c8cb30c79d77f613a41c05868ff9c9ac6c7049c00aefae115aa",
+                "size_bytes": 639331213,
+                "source_id": "github-release-bs-roformer-viperx-1297-checkpoint",
+                "status": 200,
                 "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
-                "verified": false
+                "verified": true
               }
-            ],
-            "verified": false
+            ]
           },
           {
             "canonical_path": "msst/bs-roformer-viperx-1297/model_bs_roformer_ep_317_sdr_12.9755.yaml",
             "filename": "model_bs_roformer_ep_317_sdr_12.9755.yaml",
             "kind": "config",
             "manual": false,
-            "primary_source_id": "github-github-raw-configs-viperx-model-bs-roformer-ep-317-sdr-12-9755-yaml-model-bs-roformer-ep-317-sdr-12-9755-yaml",
+            "primary_source_id": "github-raw-bs-roformer-viperx-1297-config",
             "relative_path": "msst/bs-roformer-viperx-1297/model_bs_roformer_ep_317_sdr_12.9755.yaml",
             "required": true,
-            "sha256": null,
-            "size_bytes": null,
+            "sha256": "42e5635ceab7287b83d9591c9880966f0b61cff26a0a40a29d236bacb32e5f2c",
+            "size_bytes": 1881,
             "source": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
             "source_host": "raw.githubusercontent.com",
             "source_ids": [
-              "github-github-raw-configs-viperx-model-bs-roformer-ep-317-sdr-12-9755-yaml-model-bs-roformer-ep-317-sdr-12-9755-yaml"
+              "github-raw-bs-roformer-viperx-1297-config"
             ],
             "sources": [
               {
+                "artifact_filename": "model_bs_roformer_ep_317_sdr_12.9755.yaml",
                 "auth": "public",
                 "channel": "upstream",
-                "content_type": null,
-                "final_url": null,
+                "classification": "artifact",
+                "content_type": "text/plain; charset=utf-8",
+                "final_url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
                 "host": "raw.githubusercontent.com",
-                "last_checked": null,
+                "install_policy": "direct",
+                "last_checked": "2026-03-25T17:16:25.317133Z",
                 "locator": {
                   "file_path": "configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
                   "owner": "ZFTurbo",
@@ -22471,18 +22504,19 @@
                   "revision": "main"
                 },
                 "manual": false,
-                "priority": 0,
+                "model_id": "bs-roformer-viperx-1297",
+                "priority": 10,
                 "provider": "github",
                 "resolver": "github_raw",
-                "resolver_viable": null,
-                "sha256": null,
-                "size_bytes": null,
-                "source_id": "github-github-raw-configs-viperx-model-bs-roformer-ep-317-sdr-12-9755-yaml-model-bs-roformer-ep-317-sdr-12-9755-yaml",
+                "resolver_viable": true,
+                "sha256": "42e5635ceab7287b83d9591c9880966f0b61cff26a0a40a29d236bacb32e5f2c",
+                "size_bytes": 1881,
+                "source_id": "github-raw-bs-roformer-viperx-1297-config",
+                "status": 200,
                 "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
-                "verified": false
+                "verified": true
               }
-            ],
-            "verified": false
+            ]
           }
         ],
         "manual_instructions": [],
@@ -22716,7 +22750,7 @@
       "runtime_adapter": "msst_builtin",
       "sdr": 12.97,
       "selection_envelope": {
-        "catalogTier": "advanced_manual",
+        "catalogTier": "verified",
         "installPolicy": "direct",
         "selectionId": "bs-roformer-viperx-1297",
         "selectionType": "model",
@@ -22770,6 +22804,10 @@
             "Runtime adapter inferred as msst_builtin.",
             "Source URLs checked: 3."
           ],
+          "operational_smoke": {
+            "performed_at": "2026-03-25T00:00:00Z",
+            "scope": "direct install path verified for GitHub release + raw config"
+          },
           "reachable": true,
           "source": "models.v2.source.json"
         }
@@ -22788,8 +22826,10 @@
       },
       "source_kind": "community",
       "status": {
+        "curated": true,
         "readiness": "verified",
-        "simple_allowed": true
+        "simple_allowed": true,
+        "support_tier": "curated"
       },
       "stems": [],
       "tags": [
@@ -22846,6 +22886,10 @@
           "Runtime adapter inferred as msst_builtin.",
           "Source URLs checked: 3."
         ],
+        "operational_smoke": {
+          "performed_at": "2026-03-25T00:00:00Z",
+          "scope": "direct install path verified for GitHub release + raw config"
+        },
         "reachable": true,
         "source": "models.v2.source.json"
       },
@@ -23303,7 +23347,7 @@
         }
       },
       "availability": {
-        "class": "manual_import",
+        "class": "direct",
         "reason": "Install policy inferred as manual."
       },
       "bleedless": null,
@@ -23334,7 +23378,7 @@
         ]
       },
       "catalog": {
-        "installPolicy": "manual",
+        "installPolicy": "direct",
         "sourceKind": "vendor",
         "tier": "advanced_manual",
         "verification": {
@@ -23389,7 +23433,7 @@
           "source": "models.v2.source.json"
         }
       },
-      "catalog_status": "manual_only",
+      "catalog_status": "candidate",
       "catalog_tier": "advanced_manual",
       "compatibility": {
         "audio_separator_compatible": null,
@@ -23405,84 +23449,94 @@
             "filename": "model.pth",
             "kind": "checkpoint",
             "manual": false,
-            "primary_source_id": "huggingface-huggingface-resolve-politrees-uvr-resources-model-pth",
+            "primary_source_id": "google-drive-drypd-side-extraction-checkpoint",
             "relative_path": "msst/drypd-side-extraction/model.pth",
             "required": true,
-            "sha256": null,
-            "size_bytes": null,
-            "source": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt",
-            "source_host": "huggingface.co",
+            "sha256": "1f9a8671b338ef136afe0deb812737537264b1f42d8e5bc3fcc656e2c778a4e4",
+            "size_bytes": 42422170,
+            "source": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
+            "source_host": "drive.usercontent.google.com",
             "source_ids": [
-              "huggingface-huggingface-resolve-politrees-uvr-resources-model-pth"
+              "google-drive-drypd-side-extraction-checkpoint"
             ],
             "sources": [
               {
+                "artifact_filename": "model.pth",
                 "auth": "public",
                 "channel": "upstream",
-                "content_type": null,
-                "final_url": null,
-                "host": "huggingface.co",
-                "last_checked": null,
+                "classification": "artifact",
+                "content_type": "application/octet-stream",
+                "final_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
+                "host": "drive.usercontent.google.com",
+                "install_policy": "direct",
+                "last_checked": "2026-03-25T17:16:43.308236Z",
                 "locator": {
-                  "file_path": "models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt",
-                  "repo_id": "Politrees/UVR_resources",
-                  "revision": "main"
+                  "download_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
+                  "expected_name": "model_scnet_ep_30_sdr_15.1291.ckpt",
+                  "file_id": "19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3",
+                  "folder_id": "1ZSUw6ZuhJusv7HE5eMa-MORKA0XbSEht"
                 },
                 "manual": false,
-                "priority": 0,
-                "provider": "huggingface",
-                "resolver": "huggingface_resolve",
-                "resolver_viable": null,
-                "sha256": null,
-                "size_bytes": null,
-                "source_id": "huggingface-huggingface-resolve-politrees-uvr-resources-model-pth",
-                "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt",
+                "model_id": "drypd-side-extraction",
+                "priority": 20,
+                "provider": "google_drive",
+                "resolver": "google_drive_folder_entry",
+                "resolver_viable": true,
+                "sha256": "1f9a8671b338ef136afe0deb812737537264b1f42d8e5bc3fcc656e2c778a4e4",
+                "size_bytes": 42422170,
+                "source_id": "google-drive-drypd-side-extraction-checkpoint",
+                "status": 200,
+                "url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
                 "verified": true
               }
-            ],
-            "verified": true
+            ]
           },
           {
             "canonical_path": "msst/drypd-side-extraction/config_musdb18_scnet.yaml",
             "filename": "config_musdb18_scnet.yaml",
             "kind": "config",
             "manual": false,
-            "primary_source_id": "huggingface-huggingface-resolve-politrees-uvr-resources-config-musdb18-scnet-yaml",
+            "primary_source_id": "google-drive-drypd-side-extraction-config",
             "relative_path": "msst/drypd-side-extraction/config_musdb18_scnet.yaml",
             "required": true,
-            "sha256": null,
-            "size_bytes": null,
-            "source": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/config_musdb18_scnet.yaml",
-            "source_host": "huggingface.co",
+            "sha256": "7048394df90d28b8c6429a1e68937dbc8587acee5abc7a6badb15ff89d38bec5",
+            "size_bytes": 1941,
+            "source": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
+            "source_host": "drive.usercontent.google.com",
             "source_ids": [
-              "huggingface-huggingface-resolve-politrees-uvr-resources-config-musdb18-scnet-yaml"
+              "google-drive-drypd-side-extraction-config"
             ],
             "sources": [
               {
+                "artifact_filename": "config_musdb18_scnet.yaml",
                 "auth": "public",
                 "channel": "upstream",
-                "content_type": null,
-                "final_url": null,
-                "host": "huggingface.co",
-                "last_checked": null,
+                "classification": "artifact",
+                "content_type": "application/octet-stream",
+                "final_url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
+                "host": "drive.usercontent.google.com",
+                "install_policy": "direct",
+                "last_checked": "2026-03-25T17:16:47.651600Z",
                 "locator": {
-                  "file_path": "models/SCnet/config_musdb18_scnet.yaml",
-                  "repo_id": "Politrees/UVR_resources",
-                  "revision": "main"
+                  "download_url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
+                  "expected_name": "config_scnet_difference.yaml",
+                  "file_id": "1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ",
+                  "folder_id": "1ZSUw6ZuhJusv7HE5eMa-MORKA0XbSEht"
                 },
                 "manual": false,
-                "priority": 0,
-                "provider": "huggingface",
-                "resolver": "huggingface_resolve",
-                "resolver_viable": null,
-                "sha256": null,
-                "size_bytes": null,
-                "source_id": "huggingface-huggingface-resolve-politrees-uvr-resources-config-musdb18-scnet-yaml",
-                "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/config_musdb18_scnet.yaml",
-                "verified": false
+                "model_id": "drypd-side-extraction",
+                "priority": 20,
+                "provider": "google_drive",
+                "resolver": "google_drive_folder_entry",
+                "resolver_viable": true,
+                "sha256": "7048394df90d28b8c6429a1e68937dbc8587acee5abc7a6badb15ff89d38bec5",
+                "size_bytes": 1941,
+                "source_id": "google-drive-drypd-side-extraction-config",
+                "status": 200,
+                "url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
+                "verified": true
               }
-            ],
-            "verified": false
+            ]
           }
         ],
         "manual_instructions": [
@@ -23490,7 +23544,7 @@
           "Import the original checkpoint manually if you have access to the Drive folder.",
           "Place the file under scnet/drypd-side-extraction/ inside the configured model root."
         ],
-        "mode": "manual",
+        "mode": "direct",
         "sources": [
           {
             "manual": true,
@@ -23515,14 +23569,13 @@
       "homepage": "https://huggingface.co/drypd/scnet-side-extraction",
       "id": "drypd-side-extraction",
       "install": {
-        "mode": "manual",
+        "mode": "direct",
         "notes": [
-          "Side/difference extraction is distributed as a Drive bundle in the source report.",
-          "Import the original checkpoint manually if you have access to the Drive folder.",
-          "Place the file under scnet/drypd-side-extraction/ inside the configured model root."
+          "StemSep downloads the curated Google Drive bundle entry directly into the canonical model store.",
+          "Keep this model in Advanced until side-extraction quality smoke is documented."
         ]
       },
-      "install_policy": "manual",
+      "install_policy": "direct",
       "legacy_artifacts": {
         "additional": [],
         "config": null,
@@ -23533,8 +23586,8 @@
         }
       },
       "links": {
-        "checkpoint": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt",
-        "config": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/config_musdb18_scnet.yaml",
+        "checkpoint": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
+        "config": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
         "homepage": "https://drive.google.com/drive/folders/1ZSUw6ZuhJusv7HE5eMa-MORKA0XbSEht?usp=sharing"
       },
       "metrics": {
@@ -23602,11 +23655,7 @@
           "expects": [],
           "provides": []
         },
-        "manual_steps": [
-          "The upstream Hugging Face repository currently requires authentication and does not expose a public direct-download link.",
-          "Use the drypd/scnet-side-extraction upstream page and install the checkpoint manually if you have access.",
-          "Place the file under scnet/drypd-side-extraction/ inside the configured model root."
-        ],
+        "manual_steps": [],
         "pip": {
           "packages": []
         },
@@ -23626,18 +23675,19 @@
           "stemsep-legacy"
         ],
         "blocking_reason": null,
-        "install_mode": "manual",
+        "install_mode": "direct",
         "preferred": "stemsep-legacy",
         "required_files": [
-          "model.pth"
+          "model.pth",
+          "config_musdb18_scnet.yaml"
         ],
-        "requires_manual_assets": true
+        "requires_manual_assets": false
       },
       "runtime_adapter": "stemsep-legacy",
       "sdr": 0.0,
       "selection_envelope": {
         "catalogTier": "advanced_manual",
-        "installPolicy": "manual",
+        "installPolicy": "direct",
         "selectionId": "drypd-side-extraction",
         "selectionType": "model",
         "sourceKind": "vendor",
@@ -23706,6 +23756,13 @@
         }
       },
       "source_kind": "vendor",
+      "status": {
+        "blocking_reason": "Operational Google Drive source is verified, but side-extraction quality smoke is still pending before Verified promotion.",
+        "curated": false,
+        "readiness": "manual",
+        "simple_allowed": false,
+        "support_tier": "supported_advanced"
+      },
       "stems": [],
       "tags": [],
       "type": "Drums / Bass / Guitar / Other (Stem Separation)",
@@ -31784,12 +31841,12 @@
         "config": {
           "filename": "config_musdb18_htdemucs.yaml",
           "kind": "config",
-          "sha256": null
+          "sha256": "3c7198ee7bd023cdd5650439b951fa9631be05fbb6e9a1a047a0df2bc221073b"
         },
         "primary": {
           "filename": "955717e8-8726e21a.th",
           "kind": "checkpoint",
-          "sha256": null
+          "sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4"
         }
       },
       "artifacts_risk": [
@@ -31808,7 +31865,7 @@
       "catalog": {
         "installPolicy": "direct",
         "sourceKind": "community",
-        "tier": "advanced_manual",
+        "tier": "verified",
         "verification": {
           "artifact_count": 2,
           "checked_at": "2026-03-21T22:18:34.636631Z",
@@ -31858,12 +31915,16 @@
             "Runtime adapter inferred as demucs_native.",
             "Source URLs checked: 3."
           ],
+          "operational_smoke": {
+            "performed_at": "2026-03-25T00:00:00Z",
+            "scope": "direct install path verified for demucs fallback role"
+          },
           "reachable": true,
           "source": "models.v2.source.json"
         }
       },
-      "catalog_status": "candidate",
-      "catalog_tier": "advanced_manual",
+      "catalog_status": "verified",
+      "catalog_tier": "verified",
       "chunk_overlap_policy": {
         "default_overlap": 4,
         "default_segment_size": 352800,
@@ -31884,62 +31945,69 @@
             "filename": "955717e8-8726e21a.th",
             "kind": "checkpoint",
             "manual": false,
-            "primary_source_id": "static-static-url-955717e8-8726e21a-th",
+            "primary_source_id": "static-htdemucs-checkpoint",
             "relative_path": "demucs/htdemucs/955717e8-8726e21a.th",
             "required": true,
-            "sha256": null,
-            "size_bytes": null,
+            "sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",
+            "size_bytes": 84141911,
             "source": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
             "source_host": "dl.fbaipublicfiles.com",
             "source_ids": [
-              "static-static-url-955717e8-8726e21a-th"
+              "static-htdemucs-checkpoint"
             ],
             "sources": [
               {
+                "artifact_filename": "955717e8-8726e21a.th",
                 "auth": "public",
                 "channel": "upstream",
-                "content_type": null,
-                "final_url": null,
+                "classification": "artifact",
+                "content_type": "application/zip",
+                "final_url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
                 "host": "dl.fbaipublicfiles.com",
-                "last_checked": null,
+                "install_policy": "direct",
+                "last_checked": "2026-03-25T17:16:58.377081Z",
                 "locator": null,
                 "manual": false,
-                "priority": 0,
+                "model_id": "htdemucs",
+                "priority": 10,
                 "provider": "static",
                 "resolver": "static_url",
-                "resolver_viable": null,
-                "sha256": null,
-                "size_bytes": null,
-                "source_id": "static-static-url-955717e8-8726e21a-th",
+                "resolver_viable": true,
+                "sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",
+                "size_bytes": 84141911,
+                "source_id": "static-htdemucs-checkpoint",
+                "status": 200,
                 "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
-                "verified": false
+                "verified": true
               }
-            ],
-            "verified": false
+            ]
           },
           {
             "canonical_path": "demucs/htdemucs/config_musdb18_htdemucs.yaml",
             "filename": "config_musdb18_htdemucs.yaml",
             "kind": "config",
             "manual": false,
-            "primary_source_id": "github-github-raw-configs-config-musdb18-htdemucs-yaml-config-musdb18-htdemucs-yaml",
+            "primary_source_id": "github-raw-htdemucs-config",
             "relative_path": "demucs/htdemucs/config_musdb18_htdemucs.yaml",
             "required": true,
-            "sha256": null,
-            "size_bytes": null,
+            "sha256": "3c7198ee7bd023cdd5650439b951fa9631be05fbb6e9a1a047a0df2bc221073b",
+            "size_bytes": 2670,
             "source": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
             "source_host": "raw.githubusercontent.com",
             "source_ids": [
-              "github-github-raw-configs-config-musdb18-htdemucs-yaml-config-musdb18-htdemucs-yaml"
+              "github-raw-htdemucs-config"
             ],
             "sources": [
               {
+                "artifact_filename": "config_musdb18_htdemucs.yaml",
                 "auth": "public",
                 "channel": "upstream",
-                "content_type": null,
-                "final_url": null,
+                "classification": "artifact",
+                "content_type": "text/plain; charset=utf-8",
+                "final_url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
                 "host": "raw.githubusercontent.com",
-                "last_checked": null,
+                "install_policy": "direct",
+                "last_checked": "2026-03-25T17:16:25.329272Z",
                 "locator": {
                   "file_path": "configs/config_musdb18_htdemucs.yaml",
                   "owner": "ZFTurbo",
@@ -31947,18 +32015,19 @@
                   "revision": "main"
                 },
                 "manual": false,
-                "priority": 0,
+                "model_id": "htdemucs",
+                "priority": 10,
                 "provider": "github",
                 "resolver": "github_raw",
-                "resolver_viable": null,
-                "sha256": null,
-                "size_bytes": null,
-                "source_id": "github-github-raw-configs-config-musdb18-htdemucs-yaml-config-musdb18-htdemucs-yaml",
+                "resolver_viable": true,
+                "sha256": "3c7198ee7bd023cdd5650439b951fa9631be05fbb6e9a1a047a0df2bc221073b",
+                "size_bytes": 2670,
+                "source_id": "github-raw-htdemucs-config",
+                "status": 200,
                 "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
-                "verified": false
+                "verified": true
               }
-            ],
-            "verified": false
+            ]
           }
         ],
         "manual_instructions": [
@@ -32074,7 +32143,7 @@
       },
       "runtime_adapter": "demucs_native",
       "selection_envelope": {
-        "catalogTier": "advanced_manual",
+        "catalogTier": "verified",
         "installPolicy": "direct",
         "selectionId": "htdemucs",
         "selectionType": "model",
@@ -32128,6 +32197,10 @@
             "Runtime adapter inferred as demucs_native.",
             "Source URLs checked: 3."
           ],
+          "operational_smoke": {
+            "performed_at": "2026-03-25T00:00:00Z",
+            "scope": "direct install path verified for demucs fallback role"
+          },
           "reachable": true,
           "source": "models.v2.source.json"
         }
@@ -32136,11 +32209,11 @@
       "selection_type": "model",
       "source_kind": "community",
       "status": {
-        "blocking_reason": "Manual Demucs assets required before this runtime can be used.",
-        "curated": false,
-        "readiness": "manual",
+        "blocking_reason": "Verified as an advanced multistem fallback; keep it out of Simple and Guided presets by default.",
+        "curated": true,
+        "readiness": "verified",
         "simple_allowed": false,
-        "support_tier": "supported_advanced"
+        "support_tier": "curated"
       },
       "stems": [
         "vocals",
@@ -32199,6 +32272,10 @@
           "Runtime adapter inferred as demucs_native.",
           "Source URLs checked: 3."
         ],
+        "operational_smoke": {
+          "performed_at": "2026-03-25T00:00:00Z",
+          "scope": "direct install path verified for demucs fallback role"
+        },
         "reachable": true,
         "source": "models.v2.source.json"
       },
@@ -55422,7 +55499,7 @@
       "selection_type": "model"
     },
     {
-      "catalog_tier": "advanced_manual",
+      "catalog_tier": "verified",
       "install_policy": "direct",
       "name": "BS-Roformer Karaoke (Anvuew)",
       "required_model_ids": [
@@ -55642,7 +55719,7 @@
       "selection_type": "model"
     },
     {
-      "catalog_tier": "advanced_manual",
+      "catalog_tier": "verified",
       "install_policy": "direct",
       "name": "BS-Roformer-Viperx-1297",
       "required_model_ids": [
@@ -55676,7 +55753,7 @@
     },
     {
       "catalog_tier": "advanced_manual",
-      "install_policy": "manual",
+      "install_policy": "direct",
       "name": "DryPD Side Extraction",
       "required_model_ids": [
         "drypd-side-extraction"
@@ -55906,7 +55983,7 @@
       "selection_type": "model"
     },
     {
-      "catalog_tier": "advanced_manual",
+      "catalog_tier": "verified",
       "install_policy": "direct",
       "name": "HTDemucs",
       "required_model_ids": [
@@ -57201,30 +57278,6 @@
       "host": "raw.githubusercontent.com",
       "last_checked": null,
       "locator": {
-        "file_path": "configs/config_musdb18_htdemucs.yaml",
-        "owner": "ZFTurbo",
-        "repo": "Music-Source-Separation-Training",
-        "revision": "main"
-      },
-      "manual": false,
-      "priority": 0,
-      "provider": "github",
-      "resolver": "github_raw",
-      "resolver_viable": null,
-      "sha256": null,
-      "size_bytes": null,
-      "source_id": "github-github-raw-configs-config-musdb18-htdemucs-yaml-config-musdb18-htdemucs-yaml",
-      "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
-      "verified": false
-    },
-    {
-      "auth": "public",
-      "channel": "upstream",
-      "content_type": null,
-      "final_url": null,
-      "host": "raw.githubusercontent.com",
-      "last_checked": null,
-      "locator": {
         "file_path": "configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml",
         "owner": "ZFTurbo",
         "repo": "Music-Source-Separation-Training",
@@ -57239,30 +57292,6 @@
       "size_bytes": null,
       "source_id": "github-github-raw-configs-kimberleyjensen-config-vocals-mel-band-roformer-kj-yaml-mel-band-roformer-kim-yaml",
       "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml",
-      "verified": false
-    },
-    {
-      "auth": "public",
-      "channel": "upstream",
-      "content_type": null,
-      "final_url": null,
-      "host": "raw.githubusercontent.com",
-      "last_checked": null,
-      "locator": {
-        "file_path": "configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
-        "owner": "ZFTurbo",
-        "repo": "Music-Source-Separation-Training",
-        "revision": "main"
-      },
-      "manual": false,
-      "priority": 0,
-      "provider": "github",
-      "resolver": "github_raw",
-      "resolver_viable": null,
-      "sha256": null,
-      "size_bytes": null,
-      "source_id": "github-github-raw-configs-viperx-model-bs-roformer-ep-317-sdr-12-9755-yaml-model-bs-roformer-ep-317-sdr-12-9755-yaml",
-      "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
       "verified": false
     },
     {
@@ -57585,30 +57614,6 @@
       "host": "github.com",
       "last_checked": null,
       "locator": {
-        "asset_name": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
-        "owner": "TRvlvr",
-        "repo": "model_repo",
-        "tag": "all_public_uvr_models"
-      },
-      "manual": false,
-      "priority": 0,
-      "provider": "github",
-      "resolver": "github_release_asset",
-      "resolver_viable": null,
-      "sha256": null,
-      "size_bytes": null,
-      "source_id": "github-github-release-asset-model-bs-roformer-ep-317-sdr-12-9755-ckpt-model-bs-roformer-ep-317-sdr-12-9755-ckpt",
-      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
-      "verified": false
-    },
-    {
-      "auth": "public",
-      "channel": "upstream",
-      "content_type": null,
-      "final_url": null,
-      "host": "github.com",
-      "last_checked": null,
-      "locator": {
         "asset_name": "model_bs_roformer_ep_368_sdr_12.9628.ckpt",
         "owner": "TRvlvr",
         "repo": "model_repo",
@@ -57768,6 +57773,207 @@
       "source_id": "github-github-release-asset-uvr-mdx-net-inst-hq-2-onnx-uvr-mdx-net-inst-hq-2-onnx",
       "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/UVR-MDX-NET-Inst_HQ_2.onnx",
       "verified": false
+    },
+    {
+      "artifact_filename": "model_bs_roformer_ep_317_sdr_12.9755.yaml",
+      "auth": "public",
+      "channel": "upstream",
+      "classification": "artifact",
+      "content_type": "text/plain; charset=utf-8",
+      "final_url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+      "host": "raw.githubusercontent.com",
+      "install_policy": "direct",
+      "last_checked": "2026-03-25T17:16:25.317133Z",
+      "locator": {
+        "file_path": "configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+        "owner": "ZFTurbo",
+        "repo": "Music-Source-Separation-Training",
+        "revision": "main"
+      },
+      "manual": false,
+      "model_id": "bs-roformer-viperx-1297",
+      "priority": 10,
+      "provider": "github",
+      "resolver": "github_raw",
+      "resolver_viable": true,
+      "sha256": "42e5635ceab7287b83d9591c9880966f0b61cff26a0a40a29d236bacb32e5f2c",
+      "size_bytes": 1881,
+      "source_id": "github-raw-bs-roformer-viperx-1297-config",
+      "status": 200,
+      "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
+      "verified": true
+    },
+    {
+      "artifact_filename": "config_musdb18_htdemucs.yaml",
+      "auth": "public",
+      "channel": "upstream",
+      "classification": "artifact",
+      "content_type": "text/plain; charset=utf-8",
+      "final_url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
+      "host": "raw.githubusercontent.com",
+      "install_policy": "direct",
+      "last_checked": "2026-03-25T17:16:25.329272Z",
+      "locator": {
+        "file_path": "configs/config_musdb18_htdemucs.yaml",
+        "owner": "ZFTurbo",
+        "repo": "Music-Source-Separation-Training",
+        "revision": "main"
+      },
+      "manual": false,
+      "model_id": "htdemucs",
+      "priority": 10,
+      "provider": "github",
+      "resolver": "github_raw",
+      "resolver_viable": true,
+      "sha256": "3c7198ee7bd023cdd5650439b951fa9631be05fbb6e9a1a047a0df2bc221073b",
+      "size_bytes": 2670,
+      "source_id": "github-raw-htdemucs-config",
+      "status": 200,
+      "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
+      "verified": true
+    },
+    {
+      "artifact_filename": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+      "auth": "public",
+      "channel": "upstream",
+      "classification": "artifact",
+      "content_type": "application/octet-stream",
+      "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/514182217/af41da2e-b2db-49ef-a830-3fc626bd0fad?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-03-25T18%3A03%3A40Z&rscd=attachment%3B+filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-03-25T17%3A02%3A41Z&ske=2026-03-25T18%3A03%3A40Z&sks=b&skv=2018-11-09&sig=GmwTHE3ixy6c3Kn9u9aAUmAPPt2NVQpEPiB7MOafGGU%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc3NDQ2MjUzNywibmJmIjoxNzc0NDU4OTM3LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.A8DzwtZ52ulCqPimhXbh-Znav8tO5hflGD10qgBxy7A&response-content-disposition=attachment%3B%20filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&response-content-type=application%2Foctet-stream",
+      "host": "github.com",
+      "install_policy": "direct",
+      "last_checked": "2026-03-25T17:16:26.180945Z",
+      "locator": {
+        "asset_name": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+        "owner": "TRvlvr",
+        "repo": "model_repo",
+        "tag": "all_public_uvr_models"
+      },
+      "manual": false,
+      "model_id": "bs-roformer-viperx-1297",
+      "priority": 10,
+      "provider": "github",
+      "resolver": "github_release_asset",
+      "resolver_viable": true,
+      "sha256": "5b84f37e8d444c8cb30c79d77f613a41c05868ff9c9ac6c7049c00aefae115aa",
+      "size_bytes": 639331213,
+      "source_id": "github-release-bs-roformer-viperx-1297-checkpoint",
+      "status": 200,
+      "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+      "verified": true
+    },
+    {
+      "artifact_filename": "model.pth",
+      "auth": "public",
+      "channel": "upstream",
+      "classification": "artifact",
+      "content_type": "application/octet-stream",
+      "final_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
+      "host": "drive.usercontent.google.com",
+      "install_policy": "direct",
+      "last_checked": "2026-03-25T17:16:43.308236Z",
+      "locator": {
+        "download_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
+        "expected_name": "model_scnet_ep_30_sdr_15.1291.ckpt",
+        "file_id": "19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3",
+        "folder_id": "1ZSUw6ZuhJusv7HE5eMa-MORKA0XbSEht"
+      },
+      "manual": false,
+      "model_id": "drypd-side-extraction",
+      "priority": 20,
+      "provider": "google_drive",
+      "resolver": "google_drive_folder_entry",
+      "resolver_viable": true,
+      "sha256": "1f9a8671b338ef136afe0deb812737537264b1f42d8e5bc3fcc656e2c778a4e4",
+      "size_bytes": 42422170,
+      "source_id": "google-drive-drypd-side-extraction-checkpoint",
+      "status": 200,
+      "url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
+      "verified": true
+    },
+    {
+      "artifact_filename": "config_musdb18_scnet.yaml",
+      "auth": "public",
+      "channel": "upstream",
+      "classification": "artifact",
+      "content_type": "application/octet-stream",
+      "final_url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
+      "host": "drive.usercontent.google.com",
+      "install_policy": "direct",
+      "last_checked": "2026-03-25T17:16:47.651600Z",
+      "locator": {
+        "download_url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
+        "expected_name": "config_scnet_difference.yaml",
+        "file_id": "1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ",
+        "folder_id": "1ZSUw6ZuhJusv7HE5eMa-MORKA0XbSEht"
+      },
+      "manual": false,
+      "model_id": "drypd-side-extraction",
+      "priority": 20,
+      "provider": "google_drive",
+      "resolver": "google_drive_folder_entry",
+      "resolver_viable": true,
+      "sha256": "7048394df90d28b8c6429a1e68937dbc8587acee5abc7a6badb15ff89d38bec5",
+      "size_bytes": 1941,
+      "source_id": "google-drive-drypd-side-extraction-config",
+      "status": 200,
+      "url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
+      "verified": true
+    },
+    {
+      "artifact_filename": "karaoke_bs_roformer_anvuew.ckpt",
+      "auth": "public",
+      "channel": "upstream",
+      "classification": "artifact",
+      "content_type": null,
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68f1e40deecaf38d56ba3897/749e8fbd422ad0f408ca6e748630257b32a41d13a15c8566cefe222102638d75?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T171647Z&X-Amz-Expires=3600&X-Amz-Signature=344851e4209d103ee48038b55d029ae072aa33b1312c8c64592f84abb6bb2e58&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27karaoke_bs_roformer_anvuew.ckpt%3B+filename%3D%22karaoke_bs_roformer_anvuew.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774462607&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ2MjYwN319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGYxZTQwZGVlY2FmMzhkNTZiYTM4OTcvNzQ5ZThmYmQ0MjJhZDBmNDA4Y2E2ZTc0ODYzMDI1N2IzMmE0MWQxM2ExNWM4NTY2Y2VmZTIyMjEwMjYzOGQ3NSoifV19&Signature=a3nkYg6TK4~venImLJo9jpL4vizDotjMFLMLaFjKPk8IdNaJHSCBv-McGkfL60Dc-PdLOZhNPD36PjEBme34CfmtrcA1Ci0RsQlKRfTi9~MsNcuiKKK5w7mL1jG1wKJVTRHYVIsjJrHsvOv2zTb0Ms-gHGnfCajKqrkraBXpaHmY6EOmTy4ECkApPYej7Obe8AaHarxcPXuqU-09sbiP7FHzqr9FUqOEjzXoGONVX35tyuUt9LCcBKbK67dj0uVdItjTxgYda-YwU-7lhv70EDZXKugnMs7Qe3asmpffrLGYf5~ka2Uq9ORlqNJeMgJLneskioaCfBJdbb2BcE9LiA__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "host": "huggingface.co",
+      "install_policy": "direct",
+      "last_checked": "2026-03-25T17:16:49.047808Z",
+      "locator": {
+        "file_path": "karaoke_bs_roformer_anvuew.ckpt",
+        "repo_id": "anvuew/karaoke_bs_roformer",
+        "revision": "main"
+      },
+      "manual": false,
+      "model_id": "anvuew-karaoke",
+      "priority": 10,
+      "provider": "huggingface",
+      "resolver": "huggingface_resolve",
+      "resolver_viable": true,
+      "sha256": "206d04757cb5f75ca3b55f8a0a48f5c26aa2351d4ff3c7adbfc9affa30ea3ae4",
+      "size_bytes": 204486925,
+      "source_id": "huggingface-anvuew-karaoke-checkpoint",
+      "status": 200,
+      "url": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.ckpt",
+      "verified": true
+    },
+    {
+      "artifact_filename": "karaoke_bs_roformer_anvuew.yaml",
+      "auth": "public",
+      "channel": "upstream",
+      "classification": "artifact",
+      "content_type": "text/plain; charset=utf-8",
+      "final_url": "https://huggingface.co/api/resolve-cache/models/anvuew/karaoke_bs_roformer/0d4423d42e12cf2ba39ae09171028507b8a2a7be/karaoke_bs_roformer_anvuew.yaml?%2Fanvuew%2Fkaraoke_bs_roformer%2Fresolve%2Fmain%2Fkaraoke_bs_roformer_anvuew.yaml=&etag=%228c0683aef3b4664f783b0803b7e2e9e6ca7250c5%22",
+      "host": "huggingface.co",
+      "install_policy": "direct",
+      "last_checked": "2026-03-25T17:16:53.913278Z",
+      "locator": {
+        "file_path": "karaoke_bs_roformer_anvuew.yaml",
+        "repo_id": "anvuew/karaoke_bs_roformer",
+        "revision": "main"
+      },
+      "manual": false,
+      "model_id": "anvuew-karaoke",
+      "priority": 10,
+      "provider": "huggingface",
+      "resolver": "huggingface_resolve",
+      "resolver_viable": true,
+      "sha256": "5cb3f127ecbc6a8e37f31ea7e05f60f360a44da43e857bde805b7b68558f6338",
+      "size_bytes": 1973,
+      "source_id": "huggingface-anvuew-karaoke-config",
+      "status": 200,
+      "url": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.yaml",
+      "verified": true
     },
     {
       "auth": "public",
@@ -58097,10 +58303,10 @@
       "channel": "upstream",
       "classification": "artifact",
       "content_type": null,
-      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68c0023a751aae98294f2a03/5010d1be5e4aae67c2553576f63721180bdd411dc7e4b3dd47e1493940d2c32d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T151437Z&X-Amz-Expires=3600&X-Amz-Signature=b8d97d680cf4d5245ea42d1f2640cd92f08c62ba2a5639334e9eae6b6c4da1c6&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_room_anvuew_sdr_13.7432.ckpt%3B+filename%3D%22dereverb_room_anvuew_sdr_13.7432.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774455277&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ1NTI3N319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGMwMDIzYTc1MWFhZTk4Mjk0ZjJhMDMvNTAxMGQxYmU1ZTRhYWU2N2MyNTUzNTc2ZjYzNzIxMTgwYmRkNDExZGM3ZTRiM2RkNDdlMTQ5Mzk0MGQyYzMyZCoifV19&Signature=YPnEtsnpqX4lje8Vh-veKSX4V4JUnvefsXv7fMgc5W1aPyv9OjPte8PaaeqXs9pk-L9RMvdv7fezQ0eT-xZu1KvAKnmToAUAcAbgleTJ-pP7KBWokahuCGXKwO-tROBlnFvhJ5YknXms-lUwt0oZ3ssM2jM4NfW0MRdPs1uozDp9BLDJdFrU1YHdL38DABiwa3zTovvH-xD9PXFM8WmpewW19vEvtmsbsTqh~hh-j3mKFRedtrGjyHa---9J7MHMVBi0J9-7tsHSyAVpGRCFfJ51bTmYHiIqUHLF2g8EqCpm7Jk29Jazc34Bx3QVfmounAyR3qflMSmYJSYuXg~Qcg__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68c0023a751aae98294f2a03/5010d1be5e4aae67c2553576f63721180bdd411dc7e4b3dd47e1493940d2c32d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T171652Z&X-Amz-Expires=3600&X-Amz-Signature=0b544f0608f20f0529102fec27a543e9424bff644f18139a3b5d0ccefaafe936&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_room_anvuew_sdr_13.7432.ckpt%3B+filename%3D%22dereverb_room_anvuew_sdr_13.7432.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774462612&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ2MjYxMn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGMwMDIzYTc1MWFhZTk4Mjk0ZjJhMDMvNTAxMGQxYmU1ZTRhYWU2N2MyNTUzNTc2ZjYzNzIxMTgwYmRkNDExZGM3ZTRiM2RkNDdlMTQ5Mzk0MGQyYzMyZCoifV19&Signature=W3h-BjtS4iWJEMZrJjV-b5f-K2wJCIs-4dKhIb-O1PDhHZnoRhdGcRDDh2NNgcv8b5A6FyyDprT5gR9EH~sYIJfApPAyc-rBl~A~-jXQtpGYhhsUUpp02zYkYH-1EUGa-ZHuII83Jlce-KTGGODRrtmkWaTdd5k~8WbWRsG7l-kFW~3kbf~rKCBsAl4J1u69wB~jybhOdWhiwaZYbQYsppaBV0ZzTEhYt0v32tfKm121zSwVyPANnmWRGTNfgdbfLuMsnwrQHFU~0Vygo1Hd5lW-Ljd1K5HP6hNgKE47aIsbItlAF3UbcRz-RyldQtKFn7tU3jyfvUUXC8FuKpXOrQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
       "host": "huggingface.co",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T15:14:39.553111Z",
+      "last_checked": "2026-03-25T17:16:54.254064Z",
       "locator": {
         "file_path": "dereverb_room_anvuew_sdr_13.7432.ckpt",
         "repo_id": "anvuew/dereverb_room",
@@ -58111,7 +58317,7 @@
       "provider": "huggingface",
       "resolver": "huggingface_resolve",
       "resolver_viable": true,
-      "sha256": null,
+      "sha256": "2edec521f09e26341c1923dc82c8c52dbc86478b42b9999f679535743c970cb3",
       "size_bytes": 118128452,
       "source_id": "huggingface-huggingface-resolve-anvuew-dereverb-room-dereverb-room-anvuew-sdr-13-7432-ckpt",
       "status": 200,
@@ -58137,7 +58343,7 @@
       "final_url": "https://huggingface.co/api/resolve-cache/models/anvuew/dereverb_room/0b85f5b80b7f779b2dfe80f33a1b35b38af9376d/dereverb_room_anvuew.yaml?%2Fanvuew%2Fdereverb_room%2Fresolve%2Fmain%2Fdereverb_room_anvuew.yaml=&etag=%220dd9f9c519c46feafaf0aeb5926db0180fc1111d%22",
       "host": "huggingface.co",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T15:14:39.749106Z",
+      "last_checked": "2026-03-25T17:16:57.145473Z",
       "locator": {
         "file_path": "dereverb_room_anvuew.yaml",
         "repo_id": "anvuew/dereverb_room",
@@ -58148,7 +58354,7 @@
       "provider": "huggingface",
       "resolver": "huggingface_resolve",
       "resolver_viable": true,
-      "sha256": null,
+      "sha256": "c37e3039521d79cd1daff129857f69fa80c6a1f383a0fe8cda757f2dfc5032f8",
       "size_bytes": 1991,
       "source_id": "huggingface-huggingface-resolve-anvuew-dereverb-room-dereverb-room-anvuew-yaml",
       "status": 200,
@@ -58164,52 +58370,6 @@
       "suggested_model_id": "dereverb-room-anvuew",
       "url": "https://huggingface.co/anvuew/dereverb_room/resolve/main/dereverb_room_anvuew.yaml",
       "verified": true
-    },
-    {
-      "auth": "public",
-      "channel": "upstream",
-      "content_type": null,
-      "final_url": null,
-      "host": "huggingface.co",
-      "last_checked": null,
-      "locator": {
-        "file_path": "karaoke_bs_roformer_anvuew.ckpt",
-        "repo_id": "anvuew/karaoke_bs_roformer",
-        "revision": "main"
-      },
-      "manual": false,
-      "priority": 0,
-      "provider": "huggingface",
-      "resolver": "huggingface_resolve",
-      "resolver_viable": null,
-      "sha256": null,
-      "size_bytes": null,
-      "source_id": "huggingface-huggingface-resolve-anvuew-karaoke-bs-roformer-karaoke-bs-roformer-anvuew-ckpt",
-      "url": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.ckpt",
-      "verified": false
-    },
-    {
-      "auth": "public",
-      "channel": "upstream",
-      "content_type": null,
-      "final_url": null,
-      "host": "huggingface.co",
-      "last_checked": null,
-      "locator": {
-        "file_path": "karaoke_bs_roformer_anvuew.yaml",
-        "repo_id": "anvuew/karaoke_bs_roformer",
-        "revision": "main"
-      },
-      "manual": false,
-      "priority": 0,
-      "provider": "huggingface",
-      "resolver": "huggingface_resolve",
-      "resolver_viable": null,
-      "sha256": null,
-      "size_bytes": null,
-      "source_id": "huggingface-huggingface-resolve-anvuew-karaoke-bs-roformer-karaoke-bs-roformer-anvuew-yaml",
-      "url": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.yaml",
-      "verified": false
     },
     {
       "auth": "public",
@@ -60151,29 +60311,6 @@
       "host": "huggingface.co",
       "last_checked": null,
       "locator": {
-        "file_path": "models/SCnet/config_musdb18_scnet.yaml",
-        "repo_id": "Politrees/UVR_resources",
-        "revision": "main"
-      },
-      "manual": false,
-      "priority": 0,
-      "provider": "huggingface",
-      "resolver": "huggingface_resolve",
-      "resolver_viable": null,
-      "sha256": null,
-      "size_bytes": null,
-      "source_id": "huggingface-huggingface-resolve-politrees-uvr-resources-config-musdb18-scnet-yaml",
-      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/config_musdb18_scnet.yaml",
-      "verified": false
-    },
-    {
-      "auth": "public",
-      "channel": "upstream",
-      "content_type": null,
-      "final_url": null,
-      "host": "huggingface.co",
-      "last_checked": null,
-      "locator": {
         "file_path": "models/MDX23C/MDX23C-DrumSep-aufr33-jarredou.ckpt",
         "repo_id": "Politrees/UVR_resources",
         "revision": "main"
@@ -60210,29 +60347,6 @@
       "size_bytes": null,
       "source_id": "huggingface-huggingface-resolve-politrees-uvr-resources-mdx23c-8kfft-instvoc-hq-2-ckpt",
       "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/MDX23C/MDX23C-8KFFT-InstVoc_HQ_2.ckpt",
-      "verified": true
-    },
-    {
-      "auth": "public",
-      "channel": "upstream",
-      "content_type": null,
-      "final_url": null,
-      "host": "huggingface.co",
-      "last_checked": null,
-      "locator": {
-        "file_path": "models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt",
-        "repo_id": "Politrees/UVR_resources",
-        "revision": "main"
-      },
-      "manual": false,
-      "priority": 0,
-      "provider": "huggingface",
-      "resolver": "huggingface_resolve",
-      "resolver_viable": null,
-      "sha256": null,
-      "size_bytes": null,
-      "source_id": "huggingface-huggingface-resolve-politrees-uvr-resources-model-pth",
-      "url": "https://huggingface.co/Politrees/UVR_resources/resolve/main/models/SCnet/model_scnet_ep_54_sdr_9.8051.ckpt",
       "verified": true
     },
     {
@@ -60467,6 +60581,59 @@
     },
     {
       "auth": "public",
+      "catalog_tier": "advanced_manual",
+      "channel": "upstream",
+      "classification": "reference",
+      "content_type": "text/html; charset=UTF-8",
+      "final_url": "https://drive.proton.me/urls/5XM3PR1M7G#F3UhCU8RDGhX",
+      "host": "drive.proton.me",
+      "install_policy": "manual",
+      "last_checked": "2026-03-25T17:16:57.747075Z",
+      "locator": {
+        "share_token": "F3UhCU8RDGhX"
+      },
+      "manual": true,
+      "notes": [
+        "Upstream Proton share currently returns not-found and is kept only as a reference until a live deterministic download locator exists.",
+        "Resolver is not deterministic enough for auto-download."
+      ],
+      "priority": 1,
+      "provider": "proton_drive",
+      "resolver": "proton_share_entry",
+      "resolver_viable": false,
+      "sha256": "5d087de95360ea889787aab589ab0e9457b1cffeb37e1fe18d14d312bf5af0e7",
+      "size_bytes": 7390,
+      "source_id": "proton-rifforge-metal-roformer-reference",
+      "status": 200,
+      "url": "https://drive.proton.me/urls/5XM3PR1M7G#F3UhCU8RDGhX",
+      "verified": false
+    },
+    {
+      "artifact_filename": "955717e8-8726e21a.th",
+      "auth": "public",
+      "channel": "upstream",
+      "classification": "artifact",
+      "content_type": "application/zip",
+      "final_url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
+      "host": "dl.fbaipublicfiles.com",
+      "install_policy": "direct",
+      "last_checked": "2026-03-25T17:16:58.377081Z",
+      "locator": null,
+      "manual": false,
+      "model_id": "htdemucs",
+      "priority": 10,
+      "provider": "static",
+      "resolver": "static_url",
+      "resolver_viable": true,
+      "sha256": "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4",
+      "size_bytes": 84141911,
+      "source_id": "static-htdemucs-checkpoint",
+      "status": 200,
+      "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
+      "verified": true
+    },
+    {
+      "auth": "public",
       "channel": "upstream",
       "content_type": null,
       "final_url": null,
@@ -60501,25 +60668,6 @@
       "size_bytes": null,
       "source_id": "static-static-url-6b9c2ca1-3fd82607-th",
       "url": "https://dl.fbaipublicfiles.com/demucs/mdx_final/6b9c2ca1-3fd82607.th",
-      "verified": false
-    },
-    {
-      "auth": "public",
-      "channel": "upstream",
-      "content_type": null,
-      "final_url": null,
-      "host": "dl.fbaipublicfiles.com",
-      "last_checked": null,
-      "locator": null,
-      "manual": false,
-      "priority": 0,
-      "provider": "static",
-      "resolver": "static_url",
-      "resolver_viable": null,
-      "sha256": null,
-      "size_bytes": null,
-      "source_id": "static-static-url-955717e8-8726e21a-th",
-      "url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
       "verified": false
     },
     {
@@ -60638,12 +60786,12 @@
     }
   ],
   "summary": {
-    "advanced_manual_models": 106,
+    "advanced_manual_models": 103,
     "external_records": 299,
     "models": 114,
     "recipes": 14,
-    "sources": 151,
-    "verified_models": 8,
+    "sources": 152,
+    "verified_models": 11,
     "workflows": 35
   },
   "version": "4.1",

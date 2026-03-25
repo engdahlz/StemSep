@@ -80,6 +80,18 @@ def deep_copy_json(value: Any) -> Any:
     return deepcopy(value)
 
 
+def merge_json_patch(base: Any, overlay: Any) -> Any:
+    if isinstance(base, dict) and isinstance(overlay, dict):
+        merged = {key: deep_copy_json(value) for key, value in base.items()}
+        for key, value in overlay.items():
+            if key in merged:
+                merged[key] = merge_json_patch(merged[key], value)
+            else:
+                merged[key] = deep_copy_json(value)
+        return merged
+    return deep_copy_json(overlay)
+
+
 def url_host(url: str) -> str:
     try:
         return (urlparse(url).netloc or "").lower()
@@ -194,6 +206,62 @@ def proton_share_locator(url: str) -> dict[str, Any] | None:
     if parsed.fragment:
         locator["share_token"] = parsed.fragment
     return locator
+
+
+def source_locator_is_deterministic(
+    provider: str | None,
+    resolver: str | None,
+    locator: dict[str, Any] | None,
+    url: str | None = None,
+) -> bool:
+    normalized_provider = str(provider or "").strip().lower()
+    normalized_resolver = str(resolver or "").strip().lower()
+    normalized_locator = locator if isinstance(locator, dict) else {}
+    normalized_url = str(url or "").strip()
+
+    if normalized_resolver in {
+        "static_url",
+        "huggingface_resolve",
+        "github_release_asset",
+        "github_raw",
+    }:
+        return bool(normalized_url)
+
+    if normalized_provider == "google_drive":
+        if normalized_resolver == "google_drive_file":
+            return bool(
+                normalized_locator.get("download_url")
+                or normalized_locator.get("file_id")
+                or google_drive_file_id(normalized_url)
+            )
+        if normalized_resolver == "google_drive_folder_entry":
+            return bool(
+                normalized_locator.get("download_url")
+                or normalized_locator.get("file_id")
+                or (
+                    normalized_locator.get("folder_id")
+                    and (
+                        normalized_locator.get("item_id")
+                        or normalized_locator.get("expected_name")
+                    )
+                )
+                or google_drive_file_id(normalized_url)
+            )
+        return False
+
+    if normalized_provider == "proton_drive":
+        return bool(
+            normalized_locator.get("download_url")
+            or (
+                normalized_locator.get("share_id")
+                and (
+                    normalized_locator.get("item_id")
+                    or normalized_locator.get("expected_name")
+                )
+            )
+        )
+
+    return bool(normalized_url)
 
 
 def source_id_for(

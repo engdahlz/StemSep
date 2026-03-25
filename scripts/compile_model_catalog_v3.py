@@ -14,6 +14,7 @@ from registry.catalog_v3_common import (
     coerce_dict,
     coerce_list,
     deep_copy_json,
+    merge_json_patch,
     load_json,
     normalize_source_entry,
     now_rfc3339,
@@ -59,7 +60,10 @@ def _merge_entries(
                 resolved_key = value
                 break
         if resolved_key and resolved_key in key_to_index:
-            merged[key_to_index[resolved_key]] = fragment
+            merged[key_to_index[resolved_key]] = merge_json_patch(
+                merged[key_to_index[resolved_key]],
+                fragment,
+            )
         else:
             if resolved_key:
                 key_to_index[resolved_key] = len(merged)
@@ -239,6 +243,24 @@ def _compile_model(model: dict[str, Any], source_registry: dict[str, dict[str, A
         source_ids, normalized_sources = _materialize_artifact_sources(entry, source_registry)
         entry["source_ids"] = source_ids
         entry["sources"] = normalized_sources
+        if entry.get("sha256") in (None, ""):
+            entry["sha256"] = next(
+                (
+                    source.get("sha256")
+                    for source in normalized_sources
+                    if isinstance(source, dict) and source.get("sha256")
+                ),
+                None,
+            )
+        if entry.get("size_bytes") in (None, ""):
+            entry["size_bytes"] = next(
+                (
+                    source.get("size_bytes")
+                    for source in normalized_sources
+                    if isinstance(source, dict) and source.get("size_bytes") not in (None, "")
+                ),
+                None,
+            )
         entry["primary_source_id"] = source_ids[0] if source_ids else None
         entry["source"] = next(
             (

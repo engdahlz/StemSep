@@ -1,0 +1,28 @@
+{
+  "artifact_filename": "karaoke_bs_roformer_anvuew.ckpt",
+  "auth": "public",
+  "channel": "upstream",
+  "classification": "artifact",
+  "content_type": null,
+  "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68f1e40deecaf38d56ba3897/749e8fbd422ad0f408ca6e748630257b32a41d13a15c8566cefe222102638d75?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T171647Z&X-Amz-Expires=3600&X-Amz-Signature=344851e4209d103ee48038b55d029ae072aa33b1312c8c64592f84abb6bb2e58&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27karaoke_bs_roformer_anvuew.ckpt%3B+filename%3D%22karaoke_bs_roformer_anvuew.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774462607&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ2MjYwN319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGYxZTQwZGVlY2FmMzhkNTZiYTM4OTcvNzQ5ZThmYmQ0MjJhZDBmNDA4Y2E2ZTc0ODYzMDI1N2IzMmE0MWQxM2ExNWM4NTY2Y2VmZTIyMjEwMjYzOGQ3NSoifV19&Signature=a3nkYg6TK4~venImLJo9jpL4vizDotjMFLMLaFjKPk8IdNaJHSCBv-McGkfL60Dc-PdLOZhNPD36PjEBme34CfmtrcA1Ci0RsQlKRfTi9~MsNcuiKKK5w7mL1jG1wKJVTRHYVIsjJrHsvOv2zTb0Ms-gHGnfCajKqrkraBXpaHmY6EOmTy4ECkApPYej7Obe8AaHarxcPXuqU-09sbiP7FHzqr9FUqOEjzXoGONVX35tyuUt9LCcBKbK67dj0uVdItjTxgYda-YwU-7lhv70EDZXKugnMs7Qe3asmpffrLGYf5~ka2Uq9ORlqNJeMgJLneskioaCfBJdbb2BcE9LiA__&Key-Pair-Id=K2L8F4GPSG1IFC",
+  "host": "huggingface.co",
+  "install_policy": "direct",
+  "last_checked": "2026-03-25T17:16:49.047808Z",
+  "locator": {
+    "file_path": "karaoke_bs_roformer_anvuew.ckpt",
+    "repo_id": "anvuew/karaoke_bs_roformer",
+    "revision": "main"
+  },
+  "manual": false,
+  "model_id": "anvuew-karaoke",
+  "priority": 10,
+  "provider": "huggingface",
+  "resolver": "huggingface_resolve",
+  "resolver_viable": true,
+  "sha256": "206d04757cb5f75ca3b55f8a0a48f5c26aa2351d4ff3c7adbfc9affa30ea3ae4",
+  "size_bytes": 204486925,
+  "source_id": "huggingface-anvuew-karaoke-checkpoint",
+  "status": 200,
+  "url": "https://huggingface.co/anvuew/karaoke_bs_roformer/resolve/main/karaoke_bs_roformer_anvuew.ckpt",
+  "verified": true
+}

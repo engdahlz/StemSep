@@ -1,0 +1,29 @@
+{
+  "auth": "public",
+  "catalog_tier": "advanced_manual",
+  "channel": "upstream",
+  "classification": "reference",
+  "content_type": "text/html; charset=UTF-8",
+  "final_url": "https://drive.proton.me/urls/5XM3PR1M7G#F3UhCU8RDGhX",
+  "host": "drive.proton.me",
+  "install_policy": "manual",
+  "last_checked": "2026-03-25T17:16:57.747075Z",
+  "locator": {
+    "share_token": "F3UhCU8RDGhX"
+  },
+  "manual": true,
+  "notes": [
+    "Upstream Proton share currently returns not-found and is kept only as a reference until a live deterministic download locator exists.",
+    "Resolver is not deterministic enough for auto-download."
+  ],
+  "priority": 1,
+  "provider": "proton_drive",
+  "resolver": "proton_share_entry",
+  "resolver_viable": false,
+  "sha256": "5d087de95360ea889787aab589ab0e9457b1cffeb37e1fe18d14d312bf5af0e7",
+  "size_bytes": 7390,
+  "source_id": "proton-rifforge-metal-roformer-reference",
+  "status": 200,
+  "url": "https://drive.proton.me/urls/5XM3PR1M7G#F3UhCU8RDGhX",
+  "verified": false
+}

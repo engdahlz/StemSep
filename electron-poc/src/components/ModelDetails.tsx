@@ -111,12 +111,16 @@ export function ModelDetails({
   const fallbackSources = downloadSources.slice(1);
   const advancedReason =
     blockedModel
-      ? "Unavailable upstream or non-public artifact."
+      ? resolvedModel.status?.blocking_reason || "Unavailable upstream or non-public artifact."
       : manualDownloadMode
-        ? "Manual import or volatile source is still required."
+        ? resolvedModel.status?.blocking_reason ||
+          manualInstructions[0] ||
+          "Manual import or volatile source is still required."
         : verification?.lastVerified
           ? null
-          : "This model is not yet fully operationally verified.";
+          : resolvedModel.status?.blocking_reason ||
+            installation?.missing_artifacts?.[0] ||
+            "This model is not yet fully operationally verified.";
 
   const handleImportFiles = async () => {
     try {
@@ -795,9 +799,34 @@ export function ModelDetails({
                             </span>
                           </div>
                           {entry?.selected_source && (
-                            <div className="mt-1 text-xs text-muted-foreground break-all">
-                              {entry.selected_source}
-                            </div>
+                            typeof entry.selected_source === "string" ? (
+                              <div className="mt-1 text-xs text-muted-foreground break-all">
+                                {entry.selected_source}
+                              </div>
+                            ) : (
+                              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                                <div className="flex flex-wrap gap-2">
+                                  {entry.selected_source?.provider && (
+                                    <span className="rounded-full border border-border/50 bg-background/70 px-2 py-0.5">
+                                      {entry.selected_source.provider}
+                                    </span>
+                                  )}
+                                  {entry.selected_source?.resolver && (
+                                    <span className="rounded-full border border-border/50 bg-background/70 px-2 py-0.5">
+                                      {entry.selected_source.resolver}
+                                    </span>
+                                  )}
+                                  {typeof entry.selected_source?.verified === "boolean" && (
+                                    <span className="rounded-full border border-border/50 bg-background/70 px-2 py-0.5">
+                                      {entry.selected_source.verified ? "verified" : "unverified"}
+                                    </span>
+                                  )}
+                                </div>
+                                {entry.selected_source?.url && (
+                                  <div className="break-all">{entry.selected_source.url}</div>
+                                )}
+                              </div>
+                            )
                           )}
                         </div>
                       ))}

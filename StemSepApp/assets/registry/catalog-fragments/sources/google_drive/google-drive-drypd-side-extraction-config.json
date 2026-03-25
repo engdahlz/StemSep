@@ -1,0 +1,29 @@
+{
+  "artifact_filename": "config_musdb18_scnet.yaml",
+  "auth": "public",
+  "channel": "upstream",
+  "classification": "artifact",
+  "content_type": "application/octet-stream",
+  "final_url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
+  "host": "drive.usercontent.google.com",
+  "install_policy": "direct",
+  "last_checked": "2026-03-25T17:16:47.651600Z",
+  "locator": {
+    "download_url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
+    "expected_name": "config_scnet_difference.yaml",
+    "file_id": "1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ",
+    "folder_id": "1ZSUw6ZuhJusv7HE5eMa-MORKA0XbSEht"
+  },
+  "manual": false,
+  "model_id": "drypd-side-extraction",
+  "priority": 20,
+  "provider": "google_drive",
+  "resolver": "google_drive_folder_entry",
+  "resolver_viable": true,
+  "sha256": "7048394df90d28b8c6429a1e68937dbc8587acee5abc7a6badb15ff89d38bec5",
+  "size_bytes": 1941,
+  "source_id": "google-drive-drypd-side-extraction-config",
+  "status": 200,
+  "url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
+  "verified": true
+}

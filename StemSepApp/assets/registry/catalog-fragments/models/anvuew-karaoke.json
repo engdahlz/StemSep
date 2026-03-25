@@ -1,0 +1,41 @@
+{
+  "model_id": "anvuew-karaoke",
+  "artifacts": [
+    {
+      "canonical_path": "msst/anvuew-karaoke/karaoke_bs_roformer_anvuew.ckpt",
+      "filename": "karaoke_bs_roformer_anvuew.ckpt",
+      "kind": "checkpoint",
+      "manual": false,
+      "relative_path": "msst/anvuew-karaoke/karaoke_bs_roformer_anvuew.ckpt",
+      "required": true,
+      "source_ids": [
+        "huggingface-anvuew-karaoke-checkpoint"
+      ]
+    },
+    {
+      "canonical_path": "msst/anvuew-karaoke/karaoke_bs_roformer_anvuew.yaml",
+      "filename": "karaoke_bs_roformer_anvuew.yaml",
+      "kind": "config",
+      "manual": false,
+      "relative_path": "msst/anvuew-karaoke/karaoke_bs_roformer_anvuew.yaml",
+      "required": true,
+      "source_ids": [
+        "huggingface-anvuew-karaoke-config"
+      ]
+    }
+  ],
+  "catalog_tier": "verified",
+  "status": {
+    "blocking_reason": "Verified for curated karaoke workflows; keep it out of Simple until karaoke workflow polish is complete.",
+    "curated": true,
+    "readiness": "verified",
+    "simple_allowed": false,
+    "support_tier": "curated"
+  },
+  "verification": {
+    "operational_smoke": {
+      "performed_at": "2026-03-25T00:00:00Z",
+      "scope": "direct install path verified for curated karaoke role"
+    }
+  }
+}

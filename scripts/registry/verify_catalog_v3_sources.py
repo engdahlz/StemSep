@@ -17,6 +17,7 @@ from catalog_v3_common import (
     load_json,
     normalize_source_entry,
     now_rfc3339,
+    source_locator_is_deterministic,
     write_json,
 )
 
@@ -28,7 +29,7 @@ CHUNK_SIZE = 1024 * 256
 def _head_or_get(session: requests.Session, url: str, *, compute_sha256: bool) -> dict[str, Any]:
     try:
         response = session.head(url, allow_redirects=True, timeout=20)
-        if response.status_code >= 400 or response.status_code == 405:
+        if compute_sha256 or response.status_code >= 400 or response.status_code == 405:
             response = session.get(url, allow_redirects=True, timeout=20, stream=compute_sha256)
         result = {
             "url": url,
@@ -99,12 +100,19 @@ def _collect_inline_source_entries(catalog: dict[str, Any]) -> list[dict[str, An
     return entries
 
 
-def _collect_urls(catalog: dict[str, Any], source_entries: list[dict[str, Any]]) -> list[str]:
+def _collect_urls(
+    catalog: dict[str, Any],
+    source_entries: list[dict[str, Any]],
+    *,
+    include_catalog_urls: bool = True,
+) -> list[str]:
     urls: list[str] = []
     for item in source_entries:
         value = str(item.get("url") or "").strip()
         if value:
             urls.append(value)
+    if not include_catalog_urls:
+        return list(dict.fromkeys(urls))
     for model in coerce_list(catalog.get("models")):
         if not isinstance(model, dict):
             continue
@@ -127,8 +135,15 @@ def _update_source_fragments(
         report = report_map.get(str(normalized.get("url") or "").strip())
         if not report:
             continue
-        normalized["verified"] = bool(report.get("ok"))
-        normalized["resolver_viable"] = bool(report.get("ok"))
+        deterministic = source_locator_is_deterministic(
+            normalized.get("provider"),
+            normalized.get("resolver"),
+            normalized.get("locator") if isinstance(normalized.get("locator"), dict) else None,
+            normalized.get("url"),
+        )
+        resolved_ok = bool(report.get("ok")) and deterministic
+        normalized["verified"] = resolved_ok and not bool(normalized.get("manual"))
+        normalized["resolver_viable"] = resolved_ok
         normalized["size_bytes"] = (
             int(report["content_length"])
             if str(report.get("content_length") or "").isdigit()
@@ -139,6 +154,14 @@ def _update_source_fragments(
         normalized["final_url"] = report.get("final_url")
         normalized["content_type"] = report.get("content_type")
         normalized["status"] = report.get("status")
+        if not deterministic:
+            normalized["verified"] = False
+            normalized["resolver_viable"] = False
+            notes = coerce_list(normalized.get("notes"))
+            msg = "Resolver is not deterministic enough for auto-download."
+            if msg not in notes:
+                notes.append(msg)
+            normalized["notes"] = notes
         write_json(path, normalized)
 
 
@@ -149,12 +172,22 @@ def verify_catalog_sources(
     update_source: bool,
     update_source_fragments: bool,
     compute_sha256: bool,
+    source_ids: set[str] | None = None,
 ) -> dict[str, Any]:
     catalog = load_json(source_path)
     fragment_entries = _load_fragment_entries(fragments_root, "sources")
+    if source_ids:
+        filtered_entries: list[tuple[Path, dict[str, Any]]] = []
+        for path, entry in fragment_entries:
+            normalized = normalize_source_entry(entry)
+            source_id = str(normalized.get("source_id") or "").strip()
+            if source_id in source_ids:
+                filtered_entries.append((path, entry))
+        fragment_entries = filtered_entries
     source_entries = [normalize_source_entry(entry) for _, entry in fragment_entries]
-    source_entries.extend(_collect_inline_source_entries(catalog))
-    urls = _collect_urls(catalog, source_entries)
+    if not source_ids:
+        source_entries.extend(_collect_inline_source_entries(catalog))
+    urls = _collect_urls(catalog, source_entries, include_catalog_urls=not bool(source_ids))
 
     session = requests.Session()
     session.headers.update({"User-Agent": "StemSepCatalogVerifier/4.1"})
@@ -222,6 +255,12 @@ def main() -> int:
     parser.add_argument("--update-source", action="store_true")
     parser.add_argument("--update-source-fragments", action="store_true")
     parser.add_argument("--compute-sha256", action="store_true")
+    parser.add_argument(
+        "--source-id",
+        action="append",
+        dest="source_ids",
+        help="Restrict verification to one or more authored source fragments by source_id.",
+    )
     args = parser.parse_args()
 
     payload = verify_catalog_sources(
@@ -231,6 +270,7 @@ def main() -> int:
         args.update_source,
         args.update_source_fragments,
         args.compute_sha256,
+        set(args.source_ids or []) or None,
     )
     print(
         f"Verified {payload['summary']['total']} URLs "

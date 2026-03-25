@@ -1,0 +1,29 @@
+{
+  "artifact_filename": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+  "auth": "public",
+  "channel": "upstream",
+  "classification": "artifact",
+  "content_type": "application/octet-stream",
+  "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/514182217/af41da2e-b2db-49ef-a830-3fc626bd0fad?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-03-25T18%3A03%3A40Z&rscd=attachment%3B+filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-03-25T17%3A02%3A41Z&ske=2026-03-25T18%3A03%3A40Z&sks=b&skv=2018-11-09&sig=GmwTHE3ixy6c3Kn9u9aAUmAPPt2NVQpEPiB7MOafGGU%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc3NDQ2MjUzNywibmJmIjoxNzc0NDU4OTM3LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.A8DzwtZ52ulCqPimhXbh-Znav8tO5hflGD10qgBxy7A&response-content-disposition=attachment%3B%20filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&response-content-type=application%2Foctet-stream",
+  "host": "github.com",
+  "install_policy": "direct",
+  "last_checked": "2026-03-25T17:16:26.180945Z",
+  "locator": {
+    "asset_name": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+    "owner": "TRvlvr",
+    "repo": "model_repo",
+    "tag": "all_public_uvr_models"
+  },
+  "manual": false,
+  "model_id": "bs-roformer-viperx-1297",
+  "priority": 10,
+  "provider": "github",
+  "resolver": "github_release_asset",
+  "resolver_viable": true,
+  "sha256": "5b84f37e8d444c8cb30c79d77f613a41c05868ff9c9ac6c7049c00aefae115aa",
+  "size_bytes": 639331213,
+  "source_id": "github-release-bs-roformer-viperx-1297-checkpoint",
+  "status": 200,
+  "url": "https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_317_sdr_12.9755.ckpt",
+  "verified": true
+}
