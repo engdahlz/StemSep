@@ -1039,6 +1039,66 @@ class SeparationEngine:
             notify(0.0, f"Error: {e}")
             raise
 
+    def _model_manager_is_installed(
+        self,
+        model_id: str,
+        resolved_bundle: Optional[Dict] = None,
+    ) -> bool:
+        if not self.model_manager:
+            return False
+        try:
+            return bool(
+                self.model_manager.is_model_installed(
+                    model_id,
+                    resolved_bundle=resolved_bundle,
+                )
+            )
+        except TypeError:
+            return bool(self.model_manager.is_model_installed(model_id))
+
+    def _model_manager_ensure_ready(
+        self,
+        model_id: str,
+        resolved_bundle: Optional[Dict] = None,
+    ) -> None:
+        if not self.model_manager:
+            return
+        try:
+            self.model_manager.ensure_model_ready(
+                model_id,
+                resolved_bundle=resolved_bundle,
+            )
+        except TypeError:
+            self.model_manager.ensure_model_ready(model_id)
+
+    def _resolve_legacy_local_artifact_path(
+        self,
+        model_id: str,
+        *,
+        kinds: tuple[str, ...],
+    ) -> Optional[Path]:
+        """Best-effort compatibility fallback for older managers/test doubles.
+
+        The remote-first control plane should normally resolve canonical artifacts via
+        `resolved_bundle`. Some older managers and tests only expose `models_dir` plus
+        conventional filenames like `<model_id>.ckpt` and `<model_id>.yaml`. This helper
+        lets those environments continue to work without reintroducing legacy download logic.
+        """
+        models_dir = getattr(self, "models_dir", None)
+        if models_dir is None:
+            return None
+        base_dir = Path(models_dir)
+        extension_map = {
+            "checkpoint": (".ckpt", ".safetensors", ".pth", ".pt", ".onnx", ".bin"),
+            "config": (".yaml", ".yml", ".json"),
+        }
+        for kind in kinds:
+            for extension in extension_map.get(kind, ()):
+                candidate = base_dir / f"{model_id}{extension}"
+                if candidate.exists():
+                    return candidate
+        return None
+
     async def _load_model(
         self,
         model_id: str,
@@ -1090,12 +1150,12 @@ class SeparationEngine:
                         availability.get("reason")
                         or f"Model '{model_id}' is blocked and cannot be loaded."
                     )
-                if availability_class == "manual_import" and not self.model_manager.is_model_installed(model_id, resolved_bundle=resolved_bundle):
+                if availability_class == "manual_import" and not self._model_manager_is_installed(model_id, resolved_bundle=resolved_bundle):
                     raise FileNotFoundError(
                         availability.get("reason")
                         or f"Model '{model_id}' requires manual asset import before it can run."
                     )
-                if not self.model_manager.is_model_installed(
+                if not self._model_manager_is_installed(
                     model_id, resolved_bundle=resolved_bundle
                 ):
                     # IMPORTANT: Do not silently substitute a different model.
@@ -1110,7 +1170,7 @@ class SeparationEngine:
                 # legacy loaders can always find the config/checkpoint regardless of
                 # registry basenames.
                 try:
-                    self.model_manager.ensure_model_ready(
+                    self._model_manager_ensure_ready(
                         model_id, resolved_bundle=resolved_bundle
                     )
                 except Exception:
@@ -1119,6 +1179,13 @@ class SeparationEngine:
                 checkpoint_path = bundle.get("checkpoint_path") if bundle else None
                 if checkpoint_path is None and model_id in self.model_manager.installed_models:
                     checkpoint_path = self.model_manager.installed_models[model_id]
+                if checkpoint_path is None:
+                    legacy_checkpoint = self._resolve_legacy_local_artifact_path(
+                        model_id,
+                        kinds=("checkpoint",),
+                    )
+                    if legacy_checkpoint is not None:
+                        checkpoint_path = legacy_checkpoint
                 if checkpoint_path is None:
                     raise FileNotFoundError(
                         f"Resolved checkpoint path is missing for model '{model_id}'. "
@@ -1138,6 +1205,13 @@ class SeparationEngine:
             config_path = None
             if self.model_manager:
                 config_path = bundle.get("config_path") if bundle else None
+                if config_path is None:
+                    legacy_config_path = self._resolve_legacy_local_artifact_path(
+                        model_id,
+                        kinds=("config",),
+                    )
+                    if legacy_config_path is not None:
+                        config_path = legacy_config_path
                 if config_path is not None:
                     config_path = Path(config_path)
                 if config_path is not None and config_path.exists():

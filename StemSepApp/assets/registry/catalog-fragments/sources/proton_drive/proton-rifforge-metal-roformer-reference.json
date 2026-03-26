@@ -7,7 +7,7 @@
   "final_url": "https://drive.proton.me/urls/5XM3PR1M7G#F3UhCU8RDGhX",
   "host": "drive.proton.me",
   "install_policy": "manual",
-  "last_checked": "2026-03-25T17:16:57.747075Z",
+  "last_checked": "2026-03-26T10:57:34.866741Z",
   "locator": {
     "share_token": "F3UhCU8RDGhX"
   },
@@ -21,7 +21,7 @@
   "resolver": "proton_share_entry",
   "resolver_viable": false,
   "sha256": "5d087de95360ea889787aab589ab0e9457b1cffeb37e1fe18d14d312bf5af0e7",
-  "size_bytes": 7390,
+  "size_bytes": 2968,
   "source_id": "proton-rifforge-metal-roformer-reference",
   "status": 200,
   "url": "https://drive.proton.me/urls/5XM3PR1M7G#F3UhCU8RDGhX",

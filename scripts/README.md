@@ -30,7 +30,8 @@ Everything else should prefer a subfolder.
 ## Common commands
 
 ```powershell
-.\scripts\run_py.ps1 .\scripts\registry\validate_model_registry.py
+.\scripts\run_py.ps1 .\scripts\registry\validate_runtime_catalog.py
+npm run registry:legacy-audit
 .\scripts\run_pytest.ps1 -q StemSepApp/tests
 ```
 
@@ -38,5 +39,6 @@ Everything else should prefer a subfolder.
 
 - Run scripts from the repo root unless a script says otherwise.
 - Many registry/download tools mutate files under `StemSepApp/assets/`.
+- The remote-first v4 catalog is the blocking runtime registry. `models.json.bak` is legacy audit input only.
 - External guide research is manual; it is not part of CI or the default quality gate.
 - Generated reports belong under ignored output folders, not in git.

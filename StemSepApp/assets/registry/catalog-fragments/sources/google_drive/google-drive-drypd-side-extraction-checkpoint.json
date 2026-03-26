@@ -7,7 +7,7 @@
   "final_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
   "host": "drive.usercontent.google.com",
   "install_policy": "direct",
-  "last_checked": "2026-03-25T17:16:43.308236Z",
+  "last_checked": "2026-03-26T10:57:31.777207Z",
   "locator": {
     "download_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
     "expected_name": "model_scnet_ep_30_sdr_15.1291.ckpt",

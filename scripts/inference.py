@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Single-shot inference script for StemSep Rust Backend.
-Accepts a JSON configuration string as the first argument.
+Accepts either a JSON configuration string or ``--config-file <path>``.
 Outputs newline-delimited JSON events to stdout.
 """
 
@@ -183,6 +183,17 @@ class SeparationWorkerRequest:
         return cls.from_config(raw_config)
 
     @classmethod
+    def from_config_file(cls, path: str) -> "SeparationWorkerRequest":
+        config_path = Path(path).expanduser()
+        try:
+            raw_json = config_path.read_text(encoding="utf-8")
+        except FileNotFoundError as exc:
+            raise ValueError(f"Config file not found: {config_path}") from exc
+        except OSError as exc:
+            raise ValueError(f"Failed to read config file {config_path}: {exc}") from exc
+        return cls.from_json_arg(raw_json)
+
+    @classmethod
     def from_config(cls, raw_config: dict[str, Any]) -> "SeparationWorkerRequest":
         protocol = WorkerProtocol.from_config(
             raw_config.get("worker_protocol") if isinstance(raw_config, dict) else None
@@ -246,9 +257,27 @@ class SeparationWorkerRequest:
                 if isinstance(raw, str) and raw.strip():
                     selection_id = raw.strip()
 
+        resolved_model_id = str(config.get("model_id") or "").strip() or None
+        if not resolved_model_id and selection_type == "model" and selection_id:
+            resolved_model_id = selection_id
+        if not resolved_model_id and isinstance(execution_plan, dict):
+            candidate = execution_plan.get("model_id") or execution_plan.get(
+                "effective_model_id"
+            )
+            if isinstance(candidate, str) and candidate.strip():
+                resolved_model_id = candidate.strip()
+        if not resolved_model_id and isinstance(resolved_step, dict):
+            candidate = resolved_step.get("model_id")
+            if isinstance(candidate, str) and candidate.strip():
+                resolved_model_id = candidate.strip()
+        if not resolved_model_id and pipeline_config:
+            resolved_model_id = "pipeline"
+        if not resolved_model_id and config.get("ensemble_config") is not None:
+            resolved_model_id = "ensemble"
+
         job_kwargs = {
             "file_path": file_path,
-            "model_id": config.get("model_id"),
+            "model_id": resolved_model_id,
             "output_dir": output_dir,
             "device": device,
             "stems": stems,
@@ -276,14 +305,7 @@ class SeparationWorkerRequest:
             "selection_id": config.get("selection_id"),
             "execution_plan": execution_plan,
             "resolved_bundle": resolved_bundle,
-            "worker_protocol": {
-                "kind": protocol.kind,
-                "version": protocol.version,
-            },
-            "resolved_step": resolved_step,
         }
-        if workflow is not None:
-            job_kwargs["workflow"] = workflow
 
         return cls(
             protocol=protocol,
@@ -1057,12 +1079,21 @@ def _audio_sanity_check(input_path: str, output_files: dict) -> tuple[dict, str]
 
 
 async def main():
+    usage = "Usage: inference.py <json_config> | --config-file <path> | @<path>"
     if len(sys.argv) < 2:
-        send_ipc({"type": "error", "error": "Usage: inference.py <json_config>"})
+        send_ipc({"type": "error", "error": usage})
         sys.exit(1)
 
     try:
-        request = SeparationWorkerRequest.from_json_arg(sys.argv[1])
+        arg = sys.argv[1]
+        if arg == "--config-file":
+            if len(sys.argv) < 3:
+                raise ValueError(usage)
+            request = SeparationWorkerRequest.from_config_file(sys.argv[2])
+        elif arg.startswith("@") and len(arg) > 1:
+            request = SeparationWorkerRequest.from_config_file(arg[1:])
+        else:
+            request = SeparationWorkerRequest.from_json_arg(arg)
     except ValueError as e:
         send_ipc({"type": "error", "error": str(e)})
         sys.exit(1)

@@ -105,22 +105,10 @@ class FakeSeparationManager:
     def __init__(self, *args, **kwargs):
         self.job = FakeJob()
 
-    def create_pipeline_job(self, **kwargs):
+    async def run_worker_job(self, **kwargs):
         captured["pipeline_config"] = kwargs.get("pipeline_config")
-        return self.job.job_id
-
-    def create_job(self, **kwargs):
-        captured["create_job"] = kwargs
-        return self.job.job_id
-
-    def get_job(self, job_id):
+        captured["worker_job"] = kwargs
         return self.job
-
-    def start_job(self, job_id):
-        return True
-
-    def cancel_job(self, job_id):
-        return True
 
 class FakeModelManager:
     def __init__(self, *args, **kwargs):
@@ -158,6 +146,7 @@ sys.argv = ['inference.py', json.dumps(cfg)]
 asyncio.run(main())
 
 assert "create_job" not in captured, captured
+assert "worker_job" in captured, captured
 assert captured["pipeline_config"][0]["step_name"] == "explicit_step", captured
 assert captured["pipeline_config"][0]["model_id"] == "explicit-model", captured
 '''

@@ -14,7 +14,11 @@ function Invoke-Step {
 
     Write-Host ""
     Write-Host "==> $Name" -ForegroundColor Cyan
+    $global:LASTEXITCODE = 0
     & $Action
+    if ($LASTEXITCODE -ne 0) {
+        throw "Step failed with exit code ${LASTEXITCODE}: $Name"
+    }
 }
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -24,8 +28,8 @@ if ($SkipGuideSync) {
     Write-Host "SkipGuideSync is deprecated; guide sync is no longer part of the quality gate." -ForegroundColor Yellow
 }
 
-Invoke-Step "Registry validation" {
-    & powershell -ExecutionPolicy Bypass -File .\scripts\run_py.ps1 .\scripts\registry\validate_model_registry.py --check-verified-urls
+Invoke-Step "Runtime catalog validation" {
+    & powershell -ExecutionPolicy Bypass -File .\scripts\run_py.ps1 .\scripts\registry\validate_runtime_catalog.py
 }
 
 Invoke-Step "Recipe promotion policy validation" {

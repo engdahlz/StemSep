@@ -24,6 +24,22 @@
       ]
     }
   ],
+  "card_metrics": {
+    "kind": "special",
+    "labels": [
+      "STEMS",
+      "ROLE",
+      "VRAM"
+    ],
+    "last_verified": "2026-03-25",
+    "primary_target": "multistem",
+    "source": "Operational smoke 2026-03-25",
+    "values": [
+      4,
+      "Fallback",
+      "8 GB"
+    ]
+  },
   "catalog_tier": "verified",
   "status": {
     "blocking_reason": "Verified as an advanced multistem fallback; keep it out of Simple and Guided presets by default.",

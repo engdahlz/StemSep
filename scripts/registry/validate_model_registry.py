@@ -1,8 +1,8 @@
 """
-Validate StemSep model registry consistency.
+Legacy audit for StemSep's historical models.json(.bak) registry.
 
 This script validates:
-- The aggregate registry file under StemSepApp/assets/models.json or models.json.bak (preferred)
+- The aggregate legacy registry file under StemSepApp/assets/models.json or models.json.bak (preferred)
 - Or, legacy per-model JSON entries under StemSepApp/assets/models/*.json
 - Architecture strings are recognized (canonical allow-list + aliases)
 - Link fields (checkpoint/config) are present/valid where expected
@@ -23,6 +23,8 @@ Notes:
 - This script intentionally does NOT download anything.
 - It reads registry JSON directly from StemSepApp/assets/models.json(.bak) or
     StemSepApp/assets/models/*.json to avoid relying on runtime initialization side-effects.
+- This validator is now a non-blocking legacy audit helper. The default quality gate
+  validates the remote-first v4 runtime catalog via `validate_runtime_catalog.py`.
 - Architecture handling is intentionally tolerant: registries may use aliases such as
   "MDXNet", "MDX-Net", "mdx_net", "HTDemucs", etc. These are normalized to canonical
   strings to match runtime loaders.

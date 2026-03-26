@@ -26,6 +26,7 @@ import { useSystemRuntimeInfo } from "../hooks/useSystemRuntimeInfo";
 import { modelRequiresFnoRuntime } from "../lib/systemRuntime/modelRuntime";
 import { recommendWorkflowPreset } from "@/lib/policy/recommendationPolicy";
 import { SeparationPlanCard } from "./SeparationPlanCard";
+import { CollapsibleSection } from "./ui/collapsible-section";
 import type { SeparationPreflightReport } from "@/types/preflight";
 import {
   buildSeparationBackendPayload,
@@ -998,6 +999,7 @@ export function ConfigurePage({
           <button
             type="button"
             onClick={onBack}
+            aria-label="Back"
             className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] border border-white/60 bg-white/68 text-slate-600 transition-all hover:bg-white/84 hover:text-slate-900"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -1395,6 +1397,42 @@ export function ConfigurePage({
                     Above use the second (High).
                   </p>
                 </Card>
+              )}
+
+              {!isEnsembleMode && (
+                <CollapsibleSection
+                  title="Enhancements (Optional)"
+                  buttonLabel="Enhancements"
+                  icon={<Zap className="h-4 w-4" />}
+                  className="border-white/55 bg-[rgba(255,255,255,0.5)]"
+                >
+                  <div className="space-y-3">
+                    <div className="text-xs leading-[1.5] text-slate-500">
+                      Optional helpers for export polish and safer gain staging.
+                    </div>
+                    <div className="flex items-center gap-3 rounded-[1.1rem] border border-white/60 bg-white/62 p-3">
+                      <input
+                        type="checkbox"
+                        id="configure-volume-comp-enabled"
+                        checked={volumeCompEnabled}
+                        onChange={(e) => setVolumeCompEnabled(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <div>
+                        <label
+                          htmlFor="configure-volume-comp-enabled"
+                          className="cursor-pointer text-sm font-medium text-slate-800"
+                        >
+                          Enable VC
+                        </label>
+                        <p className="text-xs text-slate-500">
+                          Applies the best default volume compensation profile
+                          to reduce clipping risk when exporting stems.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleSection>
               )}
 
               {/* Advanced Parameters */}

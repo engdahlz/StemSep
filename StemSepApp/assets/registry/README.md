@@ -1,49 +1,52 @@
-# StemSep Model Registry (v2)
+# StemSep Remote-First Catalog
 
-This directory contains the **source-of-truth** model registry in a robust v2 format, plus its JSON Schema.
+This directory contains the authored source for StemSep's remote-first runtime catalog.
 
-The running app currently reads the legacy registry file:
+The running app and Rust backend now operate on the v4 runtime chain:
 
-- `StemSepApp/assets/models.json.bak`
+- `StemSepApp/assets/catalog.runtime.json`
+- `StemSepApp/assets/catalog.runtime.bootstrap.json`
+- `StemSepApp/assets/registry/remote/catalog.runtime.remote.json`
 
-…but that file is **generated** from the v2 source to keep the system maintainable long-term.
+The dedicated `StemSep-catalog` repo is the operational publication target for the signed
+remote payload. The copies under `StemSepApp/assets/registry/remote/` exist so the app repo
+can validate and bootstrap the same signed payload locally.
 
 ## Files
 
-- `models.v2.source.json`
-  - **Edit this** when adding/updating models.
-  - Designed to express:
-    - deterministic runtime routing (which engine is allowed to run a model)
-    - compatibility constraints (e.g. “MSST-only”, “incompatible with UVR/audio-separator”)
-    - special requirements (pinned Python deps, manual steps, file expectations)
-    - phase-fix metadata (e.g. which models are valid phase-fix references)
-    - recommended settings with explicit semantics
+- `catalog-fragments/`
+  - Authoritative fragments for models, recipes, workflows, sources and external records.
+  - Add/update catalog entries here; do not hardcode new download links in app code.
 
-- `models.v2.schema.json`
-  - JSON Schema for `models.v2.source.json`.
-  - Used for validation to prevent drift and silent breakage.
+- `catalog.v3.source.json`
+  - Base source document merged with fragments during compilation.
+
+- `remote/`
+  - App-repo mirror of the currently signed remote runtime payload, signature and public key.
+  - These files must stay byte-for-byte in sync with `StemSep-catalog`.
 
 ## Generator workflow (single source of truth)
 
-1) Update the v2 registry source:
-- Edit `models.v2.source.json`
+1) Update or ingest fragments:
+- edit `catalog-fragments/...` directly, or
+- run an ingest helper under `scripts/registry/`
 
-2) (Optional) Validate against schema:
-- Validation is supported by the generator script when a JSON Schema validator is available in your Python environment.
+2) Verify sources:
+- `python scripts/registry/verify_catalog_v3_sources.py --update-source-fragments`
 
-3) Generate the legacy registry used by the app:
-- Run from repo root:
-  - `python scripts/generate_model_registry.py --pretty`
+3) Compile runtime outputs:
+- `python scripts/compile_model_catalog_v3.py`
 
-This writes:
-- `StemSepApp/assets/models.json.bak`
+4) Publish and sign:
+- `python scripts/registry/release_catalog.py --private-key <pem> --catalog-repo-root ..\\StemSep-catalog`
 
 ## Important rules
 
-- Do **not** hand-edit `StemSepApp/assets/models.json.bak`.
-- Prefer **additive** changes to keep backward compatibility.
-- If the guide/recommendations mention a constraint (e.g. MSST-only, special inference script, dependency pin), encode it explicitly in the v2 source registry so it can be enforced by preflight/routing and surfaced in the UI.
+- Do **not** hand-edit `catalog.runtime*.json` or `remote/catalog.runtime.remote.json`.
+- Keep authored changes in fragments/source inputs and regenerate.
+- `StemSepApp/assets/models.json.bak` is legacy audit input only. It is no longer the operational runtime registry and no longer blocks the default quality gate.
+- If a source cannot be resolved deterministically (for example raw Proton/Drive folder shares), mark it `manual` or `reference` instead of forcing it into auto-download.
 
 ## Notes
 
-The project keeps external guide findings as manual research input, not as a synced runtime dependency. The v2 registry exists so vetted recommendations can be encoded locally in a deterministic, machine-checkable way, instead of relying on ad-hoc code paths or live external document sync.
+The project still keeps external guide findings as research input, but the shipping runtime truth is now the signed v4 catalog. Selection-first installation, provenance, fallback and verification all flow from that remote-first catalog chain.

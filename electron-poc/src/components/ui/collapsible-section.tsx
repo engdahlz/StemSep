@@ -9,6 +9,7 @@ interface CollapsibleSectionProps {
     children: React.ReactNode
     className?: string
     badge?: React.ReactNode
+    buttonLabel?: string
 }
 
 export function CollapsibleSection({
@@ -17,7 +18,8 @@ export function CollapsibleSection({
     defaultOpen = false,
     children,
     className,
-    badge
+    badge,
+    buttonLabel,
 }: CollapsibleSectionProps) {
     const [isOpen, setIsOpen] = useState(defaultOpen)
 
@@ -30,6 +32,8 @@ export function CollapsibleSection({
         >
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                aria-label={buttonLabel || title}
+                aria-expanded={isOpen}
                 className={cn(
                     "stemsep-config-row flex w-full items-center justify-between px-4 py-3.5 text-left transition-all duration-300",
                     isOpen && "border-b border-white/45 bg-white/46"

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { ConfigurePage } from '../components/ConfigurePage'
@@ -93,15 +93,15 @@ describe('Volume Compensation UI config wiring', () => {
       />
     )
 
-    // VC is now under Enhancements (Optional)
-    await user.click(screen.getByRole('button', { name: /enhancements/i }))
+    await user.click(screen.getByRole('button', { name: /advanced mode/i }))
+    await user.click(await screen.findByRole('button', { name: /enhancements/i }))
 
     // Toggle VC ON
-    await user.click(screen.getByText(/enable vc/i))
+    await user.click(screen.getByLabelText(/enable vc/i))
 
     await user.click(screen.getByRole('button', { name: /save configuration/i }))
 
-    expect(confirmed).not.toBeNull()
+    await waitFor(() => expect(confirmed).not.toBeNull())
     expect((confirmed as any)?.volumeCompensation).toEqual({
       enabled: true,
       stage: 'both',

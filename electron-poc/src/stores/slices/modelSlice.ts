@@ -47,13 +47,18 @@ export const createModelSlice: StateCreator<AppState, [["zustand/immer", never]]
     completeDownload: (modelId) => set((state) => {
         const model = state.models.find(m => m.id === modelId)
         if (model) {
+            model.installed = true
+            model.installation = {
+                ...(model.installation || {}),
+                installed: true,
+            }
             model.downloading = false
             model.downloadProgress = 100
             model.downloadSpeed = undefined
             model.downloadEta = undefined
             model.downloadError = undefined
             model.downloadPaused = false
-            model.downloadState = "verifying"
+            model.downloadState = "installed"
             model.downloadStage = "installed"
             model.downloadVerified = true
         }

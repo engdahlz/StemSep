@@ -7,7 +7,7 @@
   "final_url": "https://huggingface.co/api/resolve-cache/models/anvuew/dereverb_room/0b85f5b80b7f779b2dfe80f33a1b35b38af9376d/dereverb_room_anvuew.yaml?%2Fanvuew%2Fdereverb_room%2Fresolve%2Fmain%2Fdereverb_room_anvuew.yaml=&etag=%220dd9f9c519c46feafaf0aeb5926db0180fc1111d%22",
   "host": "huggingface.co",
   "install_policy": "direct",
-  "last_checked": "2026-03-25T17:16:57.145473Z",
+  "last_checked": "2026-03-26T10:57:34.383995Z",
   "locator": {
     "file_path": "dereverb_room_anvuew.yaml",
     "repo_id": "anvuew/dereverb_room",

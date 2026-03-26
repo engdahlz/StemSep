@@ -911,10 +911,6 @@ class SeparationManager:
             vc_enabled=vc_enabled,
             vc_stage=vc_stage,
             vc_db_per_extra_model=vc_db_per_extra_model,
-            selection_type=normalized_selection_type,
-            selection_id=normalized_selection_id,
-            execution_plan=plan,
-            resolved_bundle=resolved_bundle,
             on_complete=on_complete,
         )
 
@@ -1178,11 +1174,19 @@ class SeparationManager:
         control plane can own lifecycle, cancellation and retry policy while
         still reusing the proven execution paths inside SeparationManager.
         """
-        job_id = self.create_job(**job_kwargs)
+        progress_callback = job_kwargs.pop("progress_callback", None)
+        on_complete = job_kwargs.pop("on_complete", None)
+        job_id = self.create_job(on_complete=on_complete, **job_kwargs)
         if external_job_id:
             with self.job_lock:
                 if job_id in self.jobs:
                     self.jobs[job_id].job_id = external_job_id
+                    self.jobs[job_id].id = external_job_id
+        with self.job_lock:
+            if job_id in self.jobs:
+                self.jobs[job_id].progress_callback = progress_callback
+                if on_complete is not None:
+                    self.jobs[job_id].on_complete = on_complete
         return await self.execute_worker_job(job_id)
 
     async def execute_worker_job(self, job_id: str) -> SeparationJob:

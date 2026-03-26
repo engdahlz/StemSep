@@ -7,6 +7,8 @@
     "ui:dev": "npm --prefix electron-poc run dev",
     "ui:typecheck": "npm --prefix electron-poc run typecheck",
     "ui:test": "npm --prefix electron-poc run test:run",
+    "registry:validate-runtime": "powershell -ExecutionPolicy Bypass -File .\\scripts\\run_py.ps1 .\\scripts\\registry\\validate_runtime_catalog.py",
+    "registry:legacy-audit": "powershell -ExecutionPolicy Bypass -File .\\scripts\\run_py.ps1 .\\scripts\\registry\\validate_model_registry.py",
     "python:test": "powershell -ExecutionPolicy Bypass -File .\\scripts\\run_pytest.ps1",
     "quality:gate": "powershell -ExecutionPolicy Bypass -File .\\scripts\\qa\\run_quality_gate.ps1",
     "electron:dev": "npm --prefix electron-poc run electron:dev",

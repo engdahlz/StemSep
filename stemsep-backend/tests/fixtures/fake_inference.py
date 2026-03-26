@@ -1,7 +1,7 @@
 """Deterministic fake inference script for backend protocol tests.
 
 Contract:
-- Accepts a single JSON config argument (ignored).
+- Accepts either a single JSON config argument or --config-file <path> (ignored).
 - Writes newline-delimited JSON events to stdout.
 - Does not require any ML/audio dependencies.
 """
@@ -12,6 +12,7 @@ import json
 import sys
 import time
 import os
+from pathlib import Path
 
 
 def emit(obj: dict) -> None:
@@ -19,12 +20,33 @@ def emit(obj: dict) -> None:
     sys.stdout.flush()
 
 
-def main() -> int:
-    raw_config = sys.argv[1] if len(sys.argv) > 1 else "{}"
+def load_config() -> dict:
+    if len(sys.argv) < 2:
+        return {}
+
+    if sys.argv[1] == "--config-file" and len(sys.argv) > 2:
+        config_path = Path(sys.argv[2])
+        try:
+            return json.loads(config_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {"_error": "failed_to_read_config_file", "path": str(config_path)}
+
+    raw_config = sys.argv[1]
+    if raw_config.startswith("@") and len(raw_config) > 1:
+        config_path = Path(raw_config[1:])
+        try:
+            return json.loads(config_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {"_error": "failed_to_read_config_file", "path": str(config_path)}
+
     try:
-        parsed_config = json.loads(raw_config)
+        return json.loads(raw_config)
     except Exception:
-        parsed_config = {"_error": "failed_to_parse_config", "raw": raw_config}
+        return {"_error": "failed_to_parse_config", "raw": raw_config}
+
+
+def main() -> int:
+    parsed_config = load_config()
 
     # Intentionally emit a conflicting job_id to ensure the Rust backend
     # rewrites/normalizes job_id for renderer-side filtering.

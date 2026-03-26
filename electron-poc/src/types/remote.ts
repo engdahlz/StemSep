@@ -199,6 +199,11 @@ export interface PlaybackCaptureProgressPayload {
   elapsedSec?: number;
   remainingSec?: number;
   error?: string;
+  code?: string;
+  failureKind?: string;
+  hint?: string;
+  attempt?: number;
+  maxAttempts?: number;
 }
 
 export interface RemoteResolveProgressPayload {

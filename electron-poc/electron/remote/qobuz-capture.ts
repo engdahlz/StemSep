@@ -3,6 +3,10 @@ import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { computeCaptureQualityMode } from "../playback/capture-metadata";
+import {
+  buildQobuzCaptureFailurePlan,
+  type QobuzCaptureFailureKind,
+} from "./qobuz-capture-failure";
 
 type ActiveLibraryProvider = "spotify" | "qobuz";
 
@@ -61,6 +65,11 @@ export type PlaybackCaptureProgressPayload = {
   elapsedSec?: number;
   remainingSec?: number;
   error?: string;
+  code?: string;
+  failureKind?: QobuzCaptureFailureKind;
+  hint?: string;
+  attempt?: number;
+  maxAttempts?: number;
 };
 
 export type QobuzPlaybackVerification = {
@@ -806,6 +815,11 @@ export function createQobuzCaptureController({
           existing = {};
         }
       }
+      const history = Array.isArray(existing.history) ? [...existing.history] : [];
+      history.push({
+        recordedAt: new Date().toISOString(),
+        ...payload,
+      });
       fs.writeFileSync(
         session.diagnosticsPath,
         JSON.stringify(
@@ -817,6 +831,7 @@ export function createQobuzCaptureController({
             outputPath: session.outputPath,
             selectedItem: session.item,
             startedAt: session.startedAt,
+            history,
             ...payload,
           },
           null,
@@ -1679,254 +1694,339 @@ export function createQobuzCaptureController({
             );
           }, autoCancelAfterMs)
         : null;
-    let partialCaptureResult: any = null;
-    let partialProbeProfile: any = null;
-    let partialQuality: any = null;
-    let playbackHealth: any = null;
-    let playbackWarmupAttempts: Array<Record<string, any>> = [];
-
-    emitPlaybackCaptureProgress({
-      provider: "qobuz",
-      captureId,
-      status: "launching",
-      detail: "Preparing hidden Qobuz playback...",
-    });
+    const maxCaptureAttempts = 2;
 
     try {
-      await stopHiddenQobuzPlayback();
+      for (let attempt = 1; attempt <= maxCaptureAttempts; attempt += 1) {
+        let partialCaptureResult: any = null;
+        let partialProbeProfile: any = null;
+        let partialQuality: any = null;
+        let playbackHealth: any = null;
+        let playbackWarmupAttempts: Array<Record<string, any>> = [];
 
-      emitPlaybackCaptureProgress({
-        provider: "qobuz",
-        captureId,
-        status: "verifying",
-        detail: "Verifying hidden Qobuz playback...",
-      });
-      const preparedPlayback = await prepareQobuzPlaybackForCapture(
-        item,
-        deviceId,
-        captureId,
-      );
-      const playbackReady = preparedPlayback.playbackReady;
-      const session = playbackCaptureSessions.get(captureId);
-      const effectiveCaptureDevice = preparedPlayback.effectiveCaptureDevice;
-      playbackWarmupAttempts = preparedPlayback.attempts;
-      if (session) {
-        session.deviceId = effectiveCaptureDevice.deviceId;
-        session.verification = playbackReady.playbackResult || null;
-        writePlaybackCaptureDiagnostics(session, {
-          stage: "playback_verified",
-          verification: playbackReady.playbackResult || null,
-          sinkId: playbackReady.sinkId || null,
-          requestedDeviceId: deviceId,
-          effectiveDeviceId: effectiveCaptureDevice.deviceId,
-          captureFallbackReason: effectiveCaptureDevice.reason,
-          deviceProbes: effectiveCaptureDevice.probes,
-          playbackWarmupAttempts,
-        });
-      }
-
-      if (cancelledPlaybackCaptureIds.has(captureId)) {
-        throw new Error("Capture cancelled");
-      }
-
-      if (effectiveCaptureDevice.reason) {
         emitPlaybackCaptureProgress({
           provider: "qobuz",
           captureId,
-          status: "awaiting_audio",
-          detail: effectiveCaptureDevice.reason,
+          status: attempt === 1 ? "launching" : "retrying",
+          detail:
+            attempt === 1
+              ? "Preparing hidden Qobuz playback..."
+              : `Retrying hidden Qobuz playback (${attempt}/${maxCaptureAttempts})...`,
+          attempt,
+          maxAttempts: maxCaptureAttempts,
         });
-      }
 
-      emitPlaybackCaptureProgress({
-        provider: "qobuz",
-        captureId,
-        status: "awaiting_audio",
-        detail: "Verified target track. Starting capture...",
-      });
-      if (session) {
-        session.backendCaptureStarted = true;
-      }
+        try {
+          await stopHiddenQobuzPlayback();
+          const session = playbackCaptureSessions.get(captureId);
+          if (session) {
+            session.backendCaptureStarted = false;
+          }
 
-      const capturePromise: Promise<
-        | { ok: true; value: any }
-        | { ok: false; error: any }
-      > = sendBackendCommand(
-        "capture_playback_loopback",
-        {
-          capture_id: captureId,
-          device_id: effectiveCaptureDevice.deviceId,
-          output_path: outputPath,
-          expected_duration_sec: getExpectedCaptureDurationSec(item),
-          start_timeout_ms: 22_000,
-          trailing_silence_ms: getQobuzTrailingSilenceMs(),
-          min_active_rms: 0.003,
-        },
-        Math.max(300_000, Math.round(((item.durationSec || 180) + 30) * 1000)),
-      ).then(
-        (value) => ({ ok: true as const, value }),
-        (error) => ({ ok: false as const, error }),
-      );
+          emitPlaybackCaptureProgress({
+            provider: "qobuz",
+            captureId,
+            status: "verifying",
+            detail: "Verifying hidden Qobuz playback...",
+            attempt,
+            maxAttempts: maxCaptureAttempts,
+          });
+          const preparedPlayback = await prepareQobuzPlaybackForCapture(
+            item,
+            deviceId,
+            captureId,
+          );
+          const playbackReady = preparedPlayback.playbackReady;
+          const effectiveCaptureDevice = preparedPlayback.effectiveCaptureDevice;
+          playbackWarmupAttempts = preparedPlayback.attempts;
+          if (session) {
+            session.deviceId = effectiveCaptureDevice.deviceId;
+            session.verification = playbackReady.playbackResult || null;
+            writePlaybackCaptureDiagnostics(session, {
+              stage: "playback_verified",
+              attempt,
+              maxAttempts: maxCaptureAttempts,
+              verification: playbackReady.playbackResult || null,
+              sinkId: playbackReady.sinkId || null,
+              requestedDeviceId: deviceId,
+              effectiveDeviceId: effectiveCaptureDevice.deviceId,
+              captureFallbackReason: effectiveCaptureDevice.reason,
+              deviceProbes: effectiveCaptureDevice.probes,
+              playbackWarmupAttempts,
+            });
+          }
 
-      const captureOutcome = await capturePromise;
-      if (!captureOutcome.ok) {
-        throw (captureOutcome as { ok: false; error: any }).error;
-      }
-      const captureResult = captureOutcome.value;
-      partialCaptureResult = captureResult;
-      const profile = await probeAudioFile(captureResult.file_path);
-      partialProbeProfile = profile;
-      const quality = computeCaptureQualityMode(
-        "qobuz",
-        item,
-        captureResult.capture_sample_rate || profile.sampleRate || undefined,
-        captureResult.capture_channels || profile.channels || undefined,
-      );
-      partialQuality = quality;
-      const playbackWindow =
-        getExistingQobuzAutomationWindow() || getQobuzAutomationWindow();
-      const expectedDurationSec = getExpectedCaptureDurationSec(item);
-      const actualDurationSec =
-        captureResult.duration_sec || profile.durationSeconds || 0;
-      playbackHealth = await readQobuzPlaybackHealth(playbackWindow);
-      const minimumAcceptableDurationSec =
-        typeof expectedDurationSec === "number"
-          ? getMinimumAcceptableCaptureDurationSec(expectedDurationSec)
-          : 0;
-      const endedTooEarly =
-        typeof expectedDurationSec === "number" &&
-        expectedDurationSec > 0 &&
-        actualDurationSec > 0 &&
-        actualDurationSec < minimumAcceptableDurationSec;
-      if (session) {
-        writePlaybackCaptureDiagnostics(session, {
-          stage: "completed",
-          verification: session.verification || null,
-          captureResult,
-          probedFile: profile,
-          quality,
-          playbackHealth,
-        });
-      }
-      if (
-        playbackHealth?.hasPlaybackError &&
-        typeof expectedDurationSec === "number" &&
-        expectedDurationSec > 0 &&
-        actualDurationSec + 5 < expectedDurationSec
-      ) {
-        throw new Error(
-          `Qobuz playback ended early after ${actualDurationSec.toFixed(1)}s of expected ${expectedDurationSec.toFixed(1)}s.`,
-        );
-      }
-      if (endedTooEarly) {
-        throw new Error(
-          `Captured audio ended too early after ${actualDurationSec.toFixed(1)}s of expected ${expectedDurationSec!.toFixed(1)}s.`,
-        );
-      }
+          if (cancelledPlaybackCaptureIds.has(captureId)) {
+            throw new Error("Capture cancelled");
+          }
 
-      return {
-        success: true as const,
-        provider: "qobuz" as const,
-        file_path: captureResult.file_path,
-        display_name:
-          [item.artist, item.title].filter(Boolean).join(" - ") || item.title,
-        source_url:
-          item.playbackUrl || item.canonicalUrl || item.pageUrl || undefined,
-        canonical_url:
-          item.canonicalUrl || item.playbackUrl || item.pageUrl || undefined,
-        artist: item.artist,
-        album: item.album,
-        artwork_url: item.artworkUrl,
-        duration_sec:
-          captureResult.duration_sec ||
-          item.durationSec ||
-          profile.durationSeconds ||
-          undefined,
-        quality_label:
-          quality.verified
-            ? "Verified Lossless"
-            : item.qualityLabel || "Lossless Source Capture",
-        is_lossless: quality.verified,
-        provider_track_id: item.trackId,
-        ingest_mode: "desktop_capture" as const,
-        playback_surface: "browser" as const,
-        quality_mode: quality.qualityMode,
-        verified_lossless: quality.verified,
-        capture_device_id: effectiveCaptureDevice.deviceId,
-        capture_sample_rate:
-          captureResult.capture_sample_rate || profile.sampleRate || undefined,
-        capture_channels:
-          captureResult.capture_channels || profile.channels || undefined,
-        capture_bits_per_sample:
-          captureResult.capture_bits_per_sample || undefined,
-        capture_sample_format:
-          captureResult.capture_sample_format || undefined,
-        capture_start_at: captureResult.capture_start_at || startedAt,
-        capture_end_at: captureResult.capture_end_at || new Date().toISOString(),
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : String(error || "Playback capture failed");
-      const session = playbackCaptureSessions.get(captureId);
-      if (session?.backendCaptureStarted) {
-        await sendBackendCommandWithRetry(
-          "cancel_playback_capture",
-          { capture_id: captureId },
-          10_000,
-          0,
-        ).catch(() => null);
-      }
-      if (session) {
-        writePlaybackCaptureDiagnostics(session, {
-          stage: cancelledPlaybackCaptureIds.has(captureId) ? "cancelled" : "failed",
-          verification: session.verification || null,
-          playbackWarmupAttempts,
-          captureResult: partialCaptureResult,
-          probedFile: partialProbeProfile,
-          quality: partialQuality,
-          playbackHealth,
-          error: errorMessage,
-          details:
+          if (effectiveCaptureDevice.reason) {
+            emitPlaybackCaptureProgress({
+              provider: "qobuz",
+              captureId,
+              status: "awaiting_audio",
+              detail: effectiveCaptureDevice.reason,
+              attempt,
+              maxAttempts: maxCaptureAttempts,
+            });
+          }
+
+          emitPlaybackCaptureProgress({
+            provider: "qobuz",
+            captureId,
+            status: "awaiting_audio",
+            detail: "Verified target track. Starting capture...",
+            attempt,
+            maxAttempts: maxCaptureAttempts,
+          });
+          if (session) {
+            session.backendCaptureStarted = true;
+          }
+
+          const capturePromise: Promise<
+            | { ok: true; value: any }
+            | { ok: false; error: any }
+          > = sendBackendCommand(
+            "capture_playback_loopback",
+            {
+              capture_id: captureId,
+              device_id: effectiveCaptureDevice.deviceId,
+              output_path: outputPath,
+              expected_duration_sec: getExpectedCaptureDurationSec(item),
+              start_timeout_ms: 22_000,
+              trailing_silence_ms: getQobuzTrailingSilenceMs(),
+              min_active_rms: 0.003,
+            },
+            Math.max(300_000, Math.round(((item.durationSec || 180) + 30) * 1000)),
+          ).then(
+            (value) => ({ ok: true as const, value }),
+            (error) => ({ ok: false as const, error }),
+          );
+
+          const captureOutcome = await capturePromise;
+          if (!captureOutcome.ok) {
+            throw (captureOutcome as { ok: false; error: any }).error;
+          }
+          const captureResult = captureOutcome.value;
+          partialCaptureResult = captureResult;
+          const profile = await probeAudioFile(captureResult.file_path);
+          partialProbeProfile = profile;
+          const quality = computeCaptureQualityMode(
+            "qobuz",
+            item,
+            captureResult.capture_sample_rate || profile.sampleRate || undefined,
+            captureResult.capture_channels || profile.channels || undefined,
+          );
+          partialQuality = quality;
+          const playbackWindow =
+            getExistingQobuzAutomationWindow() || getQobuzAutomationWindow();
+          const expectedDurationSec = getExpectedCaptureDurationSec(item);
+          const actualDurationSec =
+            captureResult.duration_sec || profile.durationSeconds || 0;
+          playbackHealth = await readQobuzPlaybackHealth(playbackWindow);
+          const minimumAcceptableDurationSec =
+            typeof expectedDurationSec === "number"
+              ? getMinimumAcceptableCaptureDurationSec(expectedDurationSec)
+              : 0;
+          const endedTooEarly =
+            typeof expectedDurationSec === "number" &&
+            expectedDurationSec > 0 &&
+            actualDurationSec > 0 &&
+            actualDurationSec < minimumAcceptableDurationSec;
+          if (session) {
+            writePlaybackCaptureDiagnostics(session, {
+              stage: "completed",
+              attempt,
+              maxAttempts: maxCaptureAttempts,
+              verification: session.verification || null,
+              captureResult,
+              probedFile: profile,
+              quality,
+              playbackHealth,
+            });
+          }
+          if (
+            playbackHealth?.hasPlaybackError &&
+            typeof expectedDurationSec === "number" &&
+            expectedDurationSec > 0 &&
+            actualDurationSec + 5 < expectedDurationSec
+          ) {
+            throw new Error(
+              `Qobuz playback ended early after ${actualDurationSec.toFixed(1)}s of expected ${expectedDurationSec.toFixed(1)}s.`,
+            );
+          }
+          if (endedTooEarly) {
+            throw new Error(
+              `Captured audio ended too early after ${actualDurationSec.toFixed(1)}s of expected ${expectedDurationSec!.toFixed(1)}s.`,
+            );
+          }
+
+          return {
+            success: true as const,
+            provider: "qobuz" as const,
+            file_path: captureResult.file_path,
+            display_name:
+              [item.artist, item.title].filter(Boolean).join(" - ") || item.title,
+            source_url:
+              item.playbackUrl || item.canonicalUrl || item.pageUrl || undefined,
+            canonical_url:
+              item.canonicalUrl || item.playbackUrl || item.pageUrl || undefined,
+            artist: item.artist,
+            album: item.album,
+            artwork_url: item.artworkUrl,
+            duration_sec:
+              captureResult.duration_sec ||
+              item.durationSec ||
+              profile.durationSeconds ||
+              undefined,
+            quality_label:
+              quality.verified
+                ? "Verified Lossless"
+                : item.qualityLabel || "Lossless Source Capture",
+            is_lossless: quality.verified,
+            provider_track_id: item.trackId,
+            ingest_mode: "desktop_capture" as const,
+            playback_surface: "browser" as const,
+            quality_mode: quality.qualityMode,
+            verified_lossless: quality.verified,
+            capture_device_id: effectiveCaptureDevice.deviceId,
+            capture_sample_rate:
+              captureResult.capture_sample_rate || profile.sampleRate || undefined,
+            capture_channels:
+              captureResult.capture_channels || profile.channels || undefined,
+            capture_bits_per_sample:
+              captureResult.capture_bits_per_sample || undefined,
+            capture_sample_format:
+              captureResult.capture_sample_format || undefined,
+            capture_start_at: captureResult.capture_start_at || startedAt,
+            capture_end_at: captureResult.capture_end_at || new Date().toISOString(),
+          };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : String(error || "Playback capture failed");
+          const errorDetails =
             error && typeof error === "object" && "details" in error
-              ? (error as any).details
-              : null,
-        });
-      }
-      const partialFilePath =
-        partialCaptureResult?.file_path && typeof partialCaptureResult.file_path === "string"
-          ? partialCaptureResult.file_path
-          : outputPath;
-      try {
-        if (
-          partialFilePath &&
-          fs.existsSync(partialFilePath) &&
-          !cancelledPlaybackCaptureIds.has(captureId)
-        ) {
-          fs.unlinkSync(partialFilePath);
+              ? ((error as any).details as Record<string, any> | null | undefined)
+              : null;
+          const session = playbackCaptureSessions.get(captureId);
+          if (session?.backendCaptureStarted) {
+            await sendBackendCommandWithRetry(
+              "cancel_playback_capture",
+              { capture_id: captureId },
+              10_000,
+              0,
+            ).catch(() => null);
+            session.backendCaptureStarted = false;
+          }
+
+          const failurePlan = buildQobuzCaptureFailurePlan({
+            message: errorMessage,
+            details: errorDetails,
+            cancelled: cancelledPlaybackCaptureIds.has(captureId),
+            attempt,
+            maxAttempts: maxCaptureAttempts,
+          });
+
+          if (session) {
+            writePlaybackCaptureDiagnostics(session, {
+              stage: failurePlan.status,
+              attempt,
+              maxAttempts: maxCaptureAttempts,
+              verification: session.verification || null,
+              playbackWarmupAttempts,
+              captureResult: partialCaptureResult,
+              probedFile: partialProbeProfile,
+              quality: partialQuality,
+              playbackHealth,
+              error: errorMessage,
+              failureKind: failurePlan.kind,
+              failureCode: failurePlan.code,
+              hint: failurePlan.hint,
+              details: errorDetails,
+            });
+          }
+
+          const partialFilePath =
+            partialCaptureResult?.file_path && typeof partialCaptureResult.file_path === "string"
+              ? partialCaptureResult.file_path
+              : outputPath;
+          try {
+            if (
+              failurePlan.cleanupPartialCapture &&
+              partialFilePath &&
+              fs.existsSync(partialFilePath)
+            ) {
+              fs.unlinkSync(partialFilePath);
+            }
+          } catch {
+            // ignore cleanup failures for partial captures
+          }
+
+          if (failurePlan.willRetry) {
+            emitPlaybackCaptureProgress({
+              provider: "qobuz",
+              captureId,
+              status: "retrying",
+              detail:
+                failurePlan.hint ||
+                "Qobuz playback stalled mid-capture. Retrying once...",
+              error: errorMessage,
+              code: failurePlan.code,
+              failureKind: failurePlan.kind,
+              hint: failurePlan.hint,
+              attempt,
+              maxAttempts: maxCaptureAttempts,
+            });
+            await stopHiddenQobuzPlayback();
+            await sleep(1_400);
+            continue;
+          }
+
+          if (failurePlan.status === "cancelled") {
+            emitPlaybackCaptureProgress({
+              provider: "qobuz",
+              captureId,
+              status: "cancelled",
+              detail: "Capture cancelled.",
+              error: "Capture cancelled",
+              code: failurePlan.code,
+              failureKind: failurePlan.kind,
+              attempt,
+              maxAttempts: maxCaptureAttempts,
+            });
+            throw new Error("Capture cancelled");
+          }
+
+          const typedError =
+            error instanceof Error ? error : new Error(errorMessage);
+          (typedError as Error & { captureFailureCode?: string }).captureFailureCode =
+            failurePlan.code;
+          (
+            typedError as Error & {
+              captureFailureKind?: QobuzCaptureFailureKind;
+            }
+          ).captureFailureKind = failurePlan.kind;
+          (typedError as Error & { captureFailureHint?: string }).captureFailureHint =
+            failurePlan.hint;
+
+          emitPlaybackCaptureProgress({
+            provider: "qobuz",
+            captureId,
+            status: "failed",
+            detail: errorMessage,
+            error: errorMessage,
+            code: failurePlan.code,
+            failureKind: failurePlan.kind,
+            hint: failurePlan.hint,
+            attempt,
+            maxAttempts: maxCaptureAttempts,
+          });
+          throw typedError;
         }
-      } catch {
-        // ignore cleanup failures for partial captures
       }
-      if (cancelledPlaybackCaptureIds.has(captureId)) {
-        emitPlaybackCaptureProgress({
-          provider: "qobuz",
-          captureId,
-          status: "cancelled",
-          detail: "Capture cancelled.",
-          error: "Capture cancelled",
-        });
-        throw new Error("Capture cancelled");
-      }
-      emitPlaybackCaptureProgress({
-        provider: "qobuz",
-        captureId,
-        status: "failed",
-        detail: errorMessage,
-        error: errorMessage,
-      });
-      throw error;
+      throw new Error("Playback capture failed after exhausting retries.");
     } finally {
       if (autoCancelTimer) {
         clearTimeout(autoCancelTimer);

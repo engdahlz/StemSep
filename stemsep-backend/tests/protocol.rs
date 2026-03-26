@@ -10,23 +10,31 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde_json::Value;
 
 fn spawn_backend() -> std::process::Child {
-    let exe = assert_cmd_path();
-    Command::new(exe)
-        .arg("--assets-dir")
-        .arg(r"c:\Users\engdahlz\StemSep\StemSepApp\assets")
-        .arg("--models-dir")
-        .arg(r"c:\Users\engdahlz\StemSep\StemSepApp\dev_samples") // doesn't need to exist
-        // Tests should exercise Rust-native handlers by default (no Python runtime required).
-        .env("STEMSEP_PROXY_PYTHON", "0")
-        .env("STEMSEP_PREFER_RUST_SEPARATION", "1")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("spawn backend")
+    spawn_backend_with_env(&[])
 }
 
 fn spawn_backend_with_env(envs: &[(&str, &str)]) -> std::process::Child {
+    let fixture_dir = remote_catalog_fixture_dir();
+    let runtime_bytes =
+        std::fs::read(fixture_dir.join("catalog.runtime.remote.json")).expect("read remote runtime");
+    let signature_bytes =
+        std::fs::read(fixture_dir.join("catalog.runtime.remote.json.sig")).expect("read remote signature");
+    let (base_url, _server) = spawn_static_http_server(
+        vec![
+            (
+                "/catalog.runtime.remote.json",
+                runtime_bytes,
+                "application/json",
+            ),
+            (
+                "/catalog.runtime.remote.json.sig",
+                signature_bytes,
+                "text/plain",
+            ),
+        ],
+        8,
+    );
+    let catalog_cache_dir = temp_test_dir("catalog_cache");
     let exe = assert_cmd_path();
     let mut cmd = Command::new(exe);
     cmd.arg("--assets-dir")
@@ -35,7 +43,18 @@ fn spawn_backend_with_env(envs: &[(&str, &str)]) -> std::process::Child {
         .arg(r"c:\Users\engdahlz\StemSep\StemSepApp\dev_samples")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .stderr(Stdio::piped())
+        // Default all protocol tests to a local signed catalog fixture so they do not
+        // depend on the live GitHub remote or on whether the catalog repo has been pushed yet.
+        .env(
+            "STEMSEP_CATALOG_URL",
+            format!("{base_url}/catalog.runtime.remote.json"),
+        )
+        .env(
+            "STEMSEP_CATALOG_SIG_URL",
+            format!("{base_url}/catalog.runtime.remote.json.sig"),
+        )
+        .env("STEMSEP_CATALOG_CACHE_DIR", &catalog_cache_dir);
 
     for (k, v) in envs {
         cmd.env(k, v);

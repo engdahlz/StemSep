@@ -13737,10 +13737,10 @@
                 "channel": "upstream",
                 "classification": "artifact",
                 "content_type": null,
-                "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68c0023a751aae98294f2a03/5010d1be5e4aae67c2553576f63721180bdd411dc7e4b3dd47e1493940d2c32d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T171652Z&X-Amz-Expires=3600&X-Amz-Signature=0b544f0608f20f0529102fec27a543e9424bff644f18139a3b5d0ccefaafe936&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_room_anvuew_sdr_13.7432.ckpt%3B+filename%3D%22dereverb_room_anvuew_sdr_13.7432.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774462612&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ2MjYxMn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGMwMDIzYTc1MWFhZTk4Mjk0ZjJhMDMvNTAxMGQxYmU1ZTRhYWU2N2MyNTUzNTc2ZjYzNzIxMTgwYmRkNDExZGM3ZTRiM2RkNDdlMTQ5Mzk0MGQyYzMyZCoifV19&Signature=W3h-BjtS4iWJEMZrJjV-b5f-K2wJCIs-4dKhIb-O1PDhHZnoRhdGcRDDh2NNgcv8b5A6FyyDprT5gR9EH~sYIJfApPAyc-rBl~A~-jXQtpGYhhsUUpp02zYkYH-1EUGa-ZHuII83Jlce-KTGGODRrtmkWaTdd5k~8WbWRsG7l-kFW~3kbf~rKCBsAl4J1u69wB~jybhOdWhiwaZYbQYsppaBV0ZzTEhYt0v32tfKm121zSwVyPANnmWRGTNfgdbfLuMsnwrQHFU~0Vygo1Hd5lW-Ljd1K5HP6hNgKE47aIsbItlAF3UbcRz-RyldQtKFn7tU3jyfvUUXC8FuKpXOrQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
+                "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68c0023a751aae98294f2a03/5010d1be5e4aae67c2553576f63721180bdd411dc7e4b3dd47e1493940d2c32d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260326%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260326T105733Z&X-Amz-Expires=3600&X-Amz-Signature=229d576c7838ef494766d4f58d9e9c32b631ea6ca526f4b03c3571e5cf51eaf1&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_room_anvuew_sdr_13.7432.ckpt%3B+filename%3D%22dereverb_room_anvuew_sdr_13.7432.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774526253&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDUyNjI1M319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGMwMDIzYTc1MWFhZTk4Mjk0ZjJhMDMvNTAxMGQxYmU1ZTRhYWU2N2MyNTUzNTc2ZjYzNzIxMTgwYmRkNDExZGM3ZTRiM2RkNDdlMTQ5Mzk0MGQyYzMyZCoifV19&Signature=UICtLbe9y1rhomnjN6JslPqHWSYaW~e0P-l1dlVPR80TDquC0eqyDtufzn~AQ0eW1nZqEHKyh3FCvFuqbzY6VZWQomKmN2XEb2mJhFbV9EsltQV9wd~BRNuw8jgpKJx-gX2jlycO9PUThtgDvbIQq1CppKRAVy7nMxISJvTd~k51X7QpAjRMv-w5OvRH7fEIO6JDJUsxzWHmvTU-UU0qVdfvVJDBlDKmqF7peNjCnaaeuG7c0DQu4hSnB2tD9e-ljPRsIctMN5k9SufLOW6LAGD-Lw4U08vvObAaBhT2q~1yS2LDrPscVVPYnAg~msSD5uvC0yBwzxnVwcwy0lCdeg__&Key-Pair-Id=K2L8F4GPSG1IFC",
                 "host": "huggingface.co",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T17:16:54.254064Z",
+                "last_checked": "2026-03-26T10:57:34.239112Z",
                 "locator": {
                   "file_path": "dereverb_room_anvuew_sdr_13.7432.ckpt",
                   "repo_id": "anvuew/dereverb_room",
@@ -13796,7 +13796,7 @@
                 "final_url": "https://huggingface.co/api/resolve-cache/models/anvuew/dereverb_room/0b85f5b80b7f779b2dfe80f33a1b35b38af9376d/dereverb_room_anvuew.yaml?%2Fanvuew%2Fdereverb_room%2Fresolve%2Fmain%2Fdereverb_room_anvuew.yaml=&etag=%220dd9f9c519c46feafaf0aeb5926db0180fc1111d%22",
                 "host": "huggingface.co",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T17:16:57.145473Z",
+                "last_checked": "2026-03-26T10:57:34.383995Z",
                 "locator": {
                   "file_path": "dereverb_room_anvuew.yaml",
                   "repo_id": "anvuew/dereverb_room",
@@ -14752,10 +14752,10 @@
                 "channel": "upstream",
                 "classification": "artifact",
                 "content_type": null,
-                "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68f1e40deecaf38d56ba3897/749e8fbd422ad0f408ca6e748630257b32a41d13a15c8566cefe222102638d75?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T171647Z&X-Amz-Expires=3600&X-Amz-Signature=344851e4209d103ee48038b55d029ae072aa33b1312c8c64592f84abb6bb2e58&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27karaoke_bs_roformer_anvuew.ckpt%3B+filename%3D%22karaoke_bs_roformer_anvuew.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774462607&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ2MjYwN319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGYxZTQwZGVlY2FmMzhkNTZiYTM4OTcvNzQ5ZThmYmQ0MjJhZDBmNDA4Y2E2ZTc0ODYzMDI1N2IzMmE0MWQxM2ExNWM4NTY2Y2VmZTIyMjEwMjYzOGQ3NSoifV19&Signature=a3nkYg6TK4~venImLJo9jpL4vizDotjMFLMLaFjKPk8IdNaJHSCBv-McGkfL60Dc-PdLOZhNPD36PjEBme34CfmtrcA1Ci0RsQlKRfTi9~MsNcuiKKK5w7mL1jG1wKJVTRHYVIsjJrHsvOv2zTb0Ms-gHGnfCajKqrkraBXpaHmY6EOmTy4ECkApPYej7Obe8AaHarxcPXuqU-09sbiP7FHzqr9FUqOEjzXoGONVX35tyuUt9LCcBKbK67dj0uVdItjTxgYda-YwU-7lhv70EDZXKugnMs7Qe3asmpffrLGYf5~ka2Uq9ORlqNJeMgJLneskioaCfBJdbb2BcE9LiA__&Key-Pair-Id=K2L8F4GPSG1IFC",
+                "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68f1e40deecaf38d56ba3897/749e8fbd422ad0f408ca6e748630257b32a41d13a15c8566cefe222102638d75?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260326%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260326T105732Z&X-Amz-Expires=3600&X-Amz-Signature=5352d553dbb36e95e004c23882c72f6ad7e1bdc189e3b0dc1e701c905f817293&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27karaoke_bs_roformer_anvuew.ckpt%3B+filename%3D%22karaoke_bs_roformer_anvuew.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774526252&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDUyNjI1Mn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGYxZTQwZGVlY2FmMzhkNTZiYTM4OTcvNzQ5ZThmYmQ0MjJhZDBmNDA4Y2E2ZTc0ODYzMDI1N2IzMmE0MWQxM2ExNWM4NTY2Y2VmZTIyMjEwMjYzOGQ3NSoifV19&Signature=ccDV5xfAkUrVEWbd6UxrXmlFX-JJ6pXpogqfbkKE6OvA-D3ERq80zvZmP6qazh7OGf4tpuKYalgDbxNYjYMHU3JGKy~4vZ~uoKPkX9zvwmDKE8GRhjofqdCEu03dRZm0VzzbUQJw~8iB9zG9sH0qRsmO4mZl0NtIXEqk~8xHIDQ4mynlzGAEQpYk-cBWvI331BcZ0ANnH9ki2n~J6CSWajC9Jyk3OqPAWCidGwJlAkRFzZ2GIvjAGqjawozYClCmgxrkGxHIPkhj2NOV~Xnr1d1f86mKod0yz4PBi-8ESAb3KuL0ZRMDyhvZ8R3GcRmR32e9E~kU~zg4VUAGkxg-RQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
                 "host": "huggingface.co",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T17:16:49.047808Z",
+                "last_checked": "2026-03-26T10:57:33.636797Z",
                 "locator": {
                   "file_path": "karaoke_bs_roformer_anvuew.ckpt",
                   "repo_id": "anvuew/karaoke_bs_roformer",
@@ -14801,7 +14801,7 @@
                 "final_url": "https://huggingface.co/api/resolve-cache/models/anvuew/karaoke_bs_roformer/0d4423d42e12cf2ba39ae09171028507b8a2a7be/karaoke_bs_roformer_anvuew.yaml?%2Fanvuew%2Fkaraoke_bs_roformer%2Fresolve%2Fmain%2Fkaraoke_bs_roformer_anvuew.yaml=&etag=%228c0683aef3b4664f783b0803b7e2e9e6ca7250c5%22",
                 "host": "huggingface.co",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T17:16:53.913278Z",
+                "last_checked": "2026-03-26T10:57:33.789875Z",
                 "locator": {
                   "file_path": "karaoke_bs_roformer_anvuew.yaml",
                   "repo_id": "anvuew/karaoke_bs_roformer",
@@ -22446,10 +22446,10 @@
                 "channel": "upstream",
                 "classification": "artifact",
                 "content_type": "application/octet-stream",
-                "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/514182217/af41da2e-b2db-49ef-a830-3fc626bd0fad?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-03-25T18%3A03%3A40Z&rscd=attachment%3B+filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-03-25T17%3A02%3A41Z&ske=2026-03-25T18%3A03%3A40Z&sks=b&skv=2018-11-09&sig=GmwTHE3ixy6c3Kn9u9aAUmAPPt2NVQpEPiB7MOafGGU%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc3NDQ2MjUzNywibmJmIjoxNzc0NDU4OTM3LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.A8DzwtZ52ulCqPimhXbh-Znav8tO5hflGD10qgBxy7A&response-content-disposition=attachment%3B%20filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&response-content-type=application%2Foctet-stream",
+                "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/514182217/af41da2e-b2db-49ef-a830-3fc626bd0fad?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-03-26T11%3A34%3A59Z&rscd=attachment%3B+filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-03-26T10%3A34%3A26Z&ske=2026-03-26T11%3A34%3A59Z&sks=b&skv=2018-11-09&sig=fEjmD0V9dtbV1fcrx%2FKwsssQcsT1yjFeNX3iq6Gvt9g%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc3NDUyNjEyMiwibmJmIjoxNzc0NTIyNTIyLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ._pCzblNpRFZwNs2OcmArPtz7pc89EAXoaam0yMIUwfE&response-content-disposition=attachment%3B%20filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&response-content-type=application%2Foctet-stream",
                 "host": "github.com",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T17:16:26.180945Z",
+                "last_checked": "2026-03-26T10:57:30.547975Z",
                 "locator": {
                   "asset_name": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
                   "owner": "TRvlvr",
@@ -22480,7 +22480,7 @@
             "relative_path": "msst/bs-roformer-viperx-1297/model_bs_roformer_ep_317_sdr_12.9755.yaml",
             "required": true,
             "sha256": "42e5635ceab7287b83d9591c9880966f0b61cff26a0a40a29d236bacb32e5f2c",
-            "size_bytes": 1881,
+            "size_bytes": 702,
             "source": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
             "source_host": "raw.githubusercontent.com",
             "source_ids": [
@@ -22496,7 +22496,7 @@
                 "final_url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
                 "host": "raw.githubusercontent.com",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T17:16:25.317133Z",
+                "last_checked": "2026-03-26T10:57:29.710009Z",
                 "locator": {
                   "file_path": "configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
                   "owner": "ZFTurbo",
@@ -22510,7 +22510,7 @@
                 "resolver": "github_raw",
                 "resolver_viable": true,
                 "sha256": "42e5635ceab7287b83d9591c9880966f0b61cff26a0a40a29d236bacb32e5f2c",
-                "size_bytes": 1881,
+                "size_bytes": 702,
                 "source_id": "github-raw-bs-roformer-viperx-1297-config",
                 "status": 200,
                 "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
@@ -23469,7 +23469,7 @@
                 "final_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
                 "host": "drive.usercontent.google.com",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T17:16:43.308236Z",
+                "last_checked": "2026-03-26T10:57:31.777207Z",
                 "locator": {
                   "download_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
                   "expected_name": "model_scnet_ep_30_sdr_15.1291.ckpt",
@@ -23516,7 +23516,7 @@
                 "final_url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
                 "host": "drive.usercontent.google.com",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T17:16:47.651600Z",
+                "last_checked": "2026-03-26T10:57:32.666732Z",
                 "locator": {
                   "download_url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
                   "expected_name": "config_scnet_difference.yaml",
@@ -31862,6 +31862,22 @@
         "fallback separation",
         "broad accompaniment recovery"
       ],
+      "card_metrics": {
+        "kind": "special",
+        "labels": [
+          "STEMS",
+          "ROLE",
+          "VRAM"
+        ],
+        "last_verified": "2026-03-25",
+        "primary_target": "multistem",
+        "source": "Operational smoke 2026-03-25",
+        "values": [
+          4,
+          "Fallback",
+          "8 GB"
+        ]
+      },
       "catalog": {
         "installPolicy": "direct",
         "sourceKind": "community",
@@ -31965,7 +31981,7 @@
                 "final_url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
                 "host": "dl.fbaipublicfiles.com",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T17:16:58.377081Z",
+                "last_checked": "2026-03-26T10:57:35.401044Z",
                 "locator": null,
                 "manual": false,
                 "model_id": "htdemucs",
@@ -31991,7 +32007,7 @@
             "relative_path": "demucs/htdemucs/config_musdb18_htdemucs.yaml",
             "required": true,
             "sha256": "3c7198ee7bd023cdd5650439b951fa9631be05fbb6e9a1a047a0df2bc221073b",
-            "size_bytes": 2670,
+            "size_bytes": 1229,
             "source": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
             "source_host": "raw.githubusercontent.com",
             "source_ids": [
@@ -32007,7 +32023,7 @@
                 "final_url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
                 "host": "raw.githubusercontent.com",
                 "install_policy": "direct",
-                "last_checked": "2026-03-25T17:16:25.329272Z",
+                "last_checked": "2026-03-26T10:57:29.715435Z",
                 "locator": {
                   "file_path": "configs/config_musdb18_htdemucs.yaml",
                   "owner": "ZFTurbo",
@@ -32021,7 +32037,7 @@
                 "resolver": "github_raw",
                 "resolver_viable": true,
                 "sha256": "3c7198ee7bd023cdd5650439b951fa9631be05fbb6e9a1a047a0df2bc221073b",
-                "size_bytes": 2670,
+                "size_bytes": 1229,
                 "source_id": "github-raw-htdemucs-config",
                 "status": 200,
                 "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
@@ -57783,7 +57799,7 @@
       "final_url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
       "host": "raw.githubusercontent.com",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T17:16:25.317133Z",
+      "last_checked": "2026-03-26T10:57:29.710009Z",
       "locator": {
         "file_path": "configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
         "owner": "ZFTurbo",
@@ -57797,7 +57813,7 @@
       "resolver": "github_raw",
       "resolver_viable": true,
       "sha256": "42e5635ceab7287b83d9591c9880966f0b61cff26a0a40a29d236bacb32e5f2c",
-      "size_bytes": 1881,
+      "size_bytes": 702,
       "source_id": "github-raw-bs-roformer-viperx-1297-config",
       "status": 200,
       "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml",
@@ -57812,7 +57828,7 @@
       "final_url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
       "host": "raw.githubusercontent.com",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T17:16:25.329272Z",
+      "last_checked": "2026-03-26T10:57:29.715435Z",
       "locator": {
         "file_path": "configs/config_musdb18_htdemucs.yaml",
         "owner": "ZFTurbo",
@@ -57826,7 +57842,7 @@
       "resolver": "github_raw",
       "resolver_viable": true,
       "sha256": "3c7198ee7bd023cdd5650439b951fa9631be05fbb6e9a1a047a0df2bc221073b",
-      "size_bytes": 2670,
+      "size_bytes": 1229,
       "source_id": "github-raw-htdemucs-config",
       "status": 200,
       "url": "https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/config_musdb18_htdemucs.yaml",
@@ -57838,10 +57854,10 @@
       "channel": "upstream",
       "classification": "artifact",
       "content_type": "application/octet-stream",
-      "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/514182217/af41da2e-b2db-49ef-a830-3fc626bd0fad?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-03-25T18%3A03%3A40Z&rscd=attachment%3B+filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-03-25T17%3A02%3A41Z&ske=2026-03-25T18%3A03%3A40Z&sks=b&skv=2018-11-09&sig=GmwTHE3ixy6c3Kn9u9aAUmAPPt2NVQpEPiB7MOafGGU%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc3NDQ2MjUzNywibmJmIjoxNzc0NDU4OTM3LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.A8DzwtZ52ulCqPimhXbh-Znav8tO5hflGD10qgBxy7A&response-content-disposition=attachment%3B%20filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&response-content-type=application%2Foctet-stream",
+      "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/514182217/af41da2e-b2db-49ef-a830-3fc626bd0fad?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-03-26T11%3A34%3A59Z&rscd=attachment%3B+filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-03-26T10%3A34%3A26Z&ske=2026-03-26T11%3A34%3A59Z&sks=b&skv=2018-11-09&sig=fEjmD0V9dtbV1fcrx%2FKwsssQcsT1yjFeNX3iq6Gvt9g%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc3NDUyNjEyMiwibmJmIjoxNzc0NTIyNTIyLCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ._pCzblNpRFZwNs2OcmArPtz7pc89EAXoaam0yMIUwfE&response-content-disposition=attachment%3B%20filename%3Dmodel_bs_roformer_ep_317_sdr_12.9755.ckpt&response-content-type=application%2Foctet-stream",
       "host": "github.com",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T17:16:26.180945Z",
+      "last_checked": "2026-03-26T10:57:30.547975Z",
       "locator": {
         "asset_name": "model_bs_roformer_ep_317_sdr_12.9755.ckpt",
         "owner": "TRvlvr",
@@ -57870,7 +57886,7 @@
       "final_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
       "host": "drive.usercontent.google.com",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T17:16:43.308236Z",
+      "last_checked": "2026-03-26T10:57:31.777207Z",
       "locator": {
         "download_url": "https://drive.usercontent.google.com/download?id=19DTg9xA1NwhLCv_JvMhYmLtdrHp9oZD3&export=download&confirm=t",
         "expected_name": "model_scnet_ep_30_sdr_15.1291.ckpt",
@@ -57899,7 +57915,7 @@
       "final_url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
       "host": "drive.usercontent.google.com",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T17:16:47.651600Z",
+      "last_checked": "2026-03-26T10:57:32.666732Z",
       "locator": {
         "download_url": "https://drive.usercontent.google.com/download?id=1t6xuo5841F5FnaXKKdacUSDP4kxnt9rZ&export=download&confirm=t",
         "expected_name": "config_scnet_difference.yaml",
@@ -57925,10 +57941,10 @@
       "channel": "upstream",
       "classification": "artifact",
       "content_type": null,
-      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68f1e40deecaf38d56ba3897/749e8fbd422ad0f408ca6e748630257b32a41d13a15c8566cefe222102638d75?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T171647Z&X-Amz-Expires=3600&X-Amz-Signature=344851e4209d103ee48038b55d029ae072aa33b1312c8c64592f84abb6bb2e58&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27karaoke_bs_roformer_anvuew.ckpt%3B+filename%3D%22karaoke_bs_roformer_anvuew.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774462607&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ2MjYwN319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGYxZTQwZGVlY2FmMzhkNTZiYTM4OTcvNzQ5ZThmYmQ0MjJhZDBmNDA4Y2E2ZTc0ODYzMDI1N2IzMmE0MWQxM2ExNWM4NTY2Y2VmZTIyMjEwMjYzOGQ3NSoifV19&Signature=a3nkYg6TK4~venImLJo9jpL4vizDotjMFLMLaFjKPk8IdNaJHSCBv-McGkfL60Dc-PdLOZhNPD36PjEBme34CfmtrcA1Ci0RsQlKRfTi9~MsNcuiKKK5w7mL1jG1wKJVTRHYVIsjJrHsvOv2zTb0Ms-gHGnfCajKqrkraBXpaHmY6EOmTy4ECkApPYej7Obe8AaHarxcPXuqU-09sbiP7FHzqr9FUqOEjzXoGONVX35tyuUt9LCcBKbK67dj0uVdItjTxgYda-YwU-7lhv70EDZXKugnMs7Qe3asmpffrLGYf5~ka2Uq9ORlqNJeMgJLneskioaCfBJdbb2BcE9LiA__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68f1e40deecaf38d56ba3897/749e8fbd422ad0f408ca6e748630257b32a41d13a15c8566cefe222102638d75?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260326%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260326T105732Z&X-Amz-Expires=3600&X-Amz-Signature=5352d553dbb36e95e004c23882c72f6ad7e1bdc189e3b0dc1e701c905f817293&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27karaoke_bs_roformer_anvuew.ckpt%3B+filename%3D%22karaoke_bs_roformer_anvuew.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774526252&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDUyNjI1Mn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGYxZTQwZGVlY2FmMzhkNTZiYTM4OTcvNzQ5ZThmYmQ0MjJhZDBmNDA4Y2E2ZTc0ODYzMDI1N2IzMmE0MWQxM2ExNWM4NTY2Y2VmZTIyMjEwMjYzOGQ3NSoifV19&Signature=ccDV5xfAkUrVEWbd6UxrXmlFX-JJ6pXpogqfbkKE6OvA-D3ERq80zvZmP6qazh7OGf4tpuKYalgDbxNYjYMHU3JGKy~4vZ~uoKPkX9zvwmDKE8GRhjofqdCEu03dRZm0VzzbUQJw~8iB9zG9sH0qRsmO4mZl0NtIXEqk~8xHIDQ4mynlzGAEQpYk-cBWvI331BcZ0ANnH9ki2n~J6CSWajC9Jyk3OqPAWCidGwJlAkRFzZ2GIvjAGqjawozYClCmgxrkGxHIPkhj2NOV~Xnr1d1f86mKod0yz4PBi-8ESAb3KuL0ZRMDyhvZ8R3GcRmR32e9E~kU~zg4VUAGkxg-RQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
       "host": "huggingface.co",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T17:16:49.047808Z",
+      "last_checked": "2026-03-26T10:57:33.636797Z",
       "locator": {
         "file_path": "karaoke_bs_roformer_anvuew.ckpt",
         "repo_id": "anvuew/karaoke_bs_roformer",
@@ -57956,7 +57972,7 @@
       "final_url": "https://huggingface.co/api/resolve-cache/models/anvuew/karaoke_bs_roformer/0d4423d42e12cf2ba39ae09171028507b8a2a7be/karaoke_bs_roformer_anvuew.yaml?%2Fanvuew%2Fkaraoke_bs_roformer%2Fresolve%2Fmain%2Fkaraoke_bs_roformer_anvuew.yaml=&etag=%228c0683aef3b4664f783b0803b7e2e9e6ca7250c5%22",
       "host": "huggingface.co",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T17:16:53.913278Z",
+      "last_checked": "2026-03-26T10:57:33.789875Z",
       "locator": {
         "file_path": "karaoke_bs_roformer_anvuew.yaml",
         "repo_id": "anvuew/karaoke_bs_roformer",
@@ -58303,10 +58319,10 @@
       "channel": "upstream",
       "classification": "artifact",
       "content_type": null,
-      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68c0023a751aae98294f2a03/5010d1be5e4aae67c2553576f63721180bdd411dc7e4b3dd47e1493940d2c32d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260325%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260325T171652Z&X-Amz-Expires=3600&X-Amz-Signature=0b544f0608f20f0529102fec27a543e9424bff644f18139a3b5d0ccefaafe936&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_room_anvuew_sdr_13.7432.ckpt%3B+filename%3D%22dereverb_room_anvuew_sdr_13.7432.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774462612&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDQ2MjYxMn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGMwMDIzYTc1MWFhZTk4Mjk0ZjJhMDMvNTAxMGQxYmU1ZTRhYWU2N2MyNTUzNTc2ZjYzNzIxMTgwYmRkNDExZGM3ZTRiM2RkNDdlMTQ5Mzk0MGQyYzMyZCoifV19&Signature=W3h-BjtS4iWJEMZrJjV-b5f-K2wJCIs-4dKhIb-O1PDhHZnoRhdGcRDDh2NNgcv8b5A6FyyDprT5gR9EH~sYIJfApPAyc-rBl~A~-jXQtpGYhhsUUpp02zYkYH-1EUGa-ZHuII83Jlce-KTGGODRrtmkWaTdd5k~8WbWRsG7l-kFW~3kbf~rKCBsAl4J1u69wB~jybhOdWhiwaZYbQYsppaBV0ZzTEhYt0v32tfKm121zSwVyPANnmWRGTNfgdbfLuMsnwrQHFU~0Vygo1Hd5lW-Ljd1K5HP6hNgKE47aIsbItlAF3UbcRz-RyldQtKFn7tU3jyfvUUXC8FuKpXOrQ__&Key-Pair-Id=K2L8F4GPSG1IFC",
+      "final_url": "https://cas-bridge.xethub.hf.co/xet-bridge-us/68c0023a751aae98294f2a03/5010d1be5e4aae67c2553576f63721180bdd411dc7e4b3dd47e1493940d2c32d?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cas%2F20260326%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260326T105733Z&X-Amz-Expires=3600&X-Amz-Signature=229d576c7838ef494766d4f58d9e9c32b631ea6ca526f4b03c3571e5cf51eaf1&X-Amz-SignedHeaders=host&X-Xet-Cas-Uid=public&response-content-disposition=inline%3B+filename*%3DUTF-8%27%27dereverb_room_anvuew_sdr_13.7432.ckpt%3B+filename%3D%22dereverb_room_anvuew_sdr_13.7432.ckpt%22%3B&x-amz-checksum-mode=ENABLED&x-id=GetObject&Expires=1774526253&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc3NDUyNjI1M319LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2FzLWJyaWRnZS54ZXRodWIuaGYuY28veGV0LWJyaWRnZS11cy82OGMwMDIzYTc1MWFhZTk4Mjk0ZjJhMDMvNTAxMGQxYmU1ZTRhYWU2N2MyNTUzNTc2ZjYzNzIxMTgwYmRkNDExZGM3ZTRiM2RkNDdlMTQ5Mzk0MGQyYzMyZCoifV19&Signature=UICtLbe9y1rhomnjN6JslPqHWSYaW~e0P-l1dlVPR80TDquC0eqyDtufzn~AQ0eW1nZqEHKyh3FCvFuqbzY6VZWQomKmN2XEb2mJhFbV9EsltQV9wd~BRNuw8jgpKJx-gX2jlycO9PUThtgDvbIQq1CppKRAVy7nMxISJvTd~k51X7QpAjRMv-w5OvRH7fEIO6JDJUsxzWHmvTU-UU0qVdfvVJDBlDKmqF7peNjCnaaeuG7c0DQu4hSnB2tD9e-ljPRsIctMN5k9SufLOW6LAGD-Lw4U08vvObAaBhT2q~1yS2LDrPscVVPYnAg~msSD5uvC0yBwzxnVwcwy0lCdeg__&Key-Pair-Id=K2L8F4GPSG1IFC",
       "host": "huggingface.co",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T17:16:54.254064Z",
+      "last_checked": "2026-03-26T10:57:34.239112Z",
       "locator": {
         "file_path": "dereverb_room_anvuew_sdr_13.7432.ckpt",
         "repo_id": "anvuew/dereverb_room",
@@ -58343,7 +58359,7 @@
       "final_url": "https://huggingface.co/api/resolve-cache/models/anvuew/dereverb_room/0b85f5b80b7f779b2dfe80f33a1b35b38af9376d/dereverb_room_anvuew.yaml?%2Fanvuew%2Fdereverb_room%2Fresolve%2Fmain%2Fdereverb_room_anvuew.yaml=&etag=%220dd9f9c519c46feafaf0aeb5926db0180fc1111d%22",
       "host": "huggingface.co",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T17:16:57.145473Z",
+      "last_checked": "2026-03-26T10:57:34.383995Z",
       "locator": {
         "file_path": "dereverb_room_anvuew.yaml",
         "repo_id": "anvuew/dereverb_room",
@@ -60588,7 +60604,7 @@
       "final_url": "https://drive.proton.me/urls/5XM3PR1M7G#F3UhCU8RDGhX",
       "host": "drive.proton.me",
       "install_policy": "manual",
-      "last_checked": "2026-03-25T17:16:57.747075Z",
+      "last_checked": "2026-03-26T10:57:34.866741Z",
       "locator": {
         "share_token": "F3UhCU8RDGhX"
       },
@@ -60602,7 +60618,7 @@
       "resolver": "proton_share_entry",
       "resolver_viable": false,
       "sha256": "5d087de95360ea889787aab589ab0e9457b1cffeb37e1fe18d14d312bf5af0e7",
-      "size_bytes": 7390,
+      "size_bytes": 2968,
       "source_id": "proton-rifforge-metal-roformer-reference",
       "status": 200,
       "url": "https://drive.proton.me/urls/5XM3PR1M7G#F3UhCU8RDGhX",
@@ -60617,7 +60633,7 @@
       "final_url": "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th",
       "host": "dl.fbaipublicfiles.com",
       "install_policy": "direct",
-      "last_checked": "2026-03-25T17:16:58.377081Z",
+      "last_checked": "2026-03-26T10:57:35.401044Z",
       "locator": null,
       "manual": false,
       "model_id": "htdemucs",

@@ -17,7 +17,7 @@ describe('Simple Mode UX (multi-step + details)', () => {
     mockElectronApi()
   })
 
-  it('SimplePresetPicker can hide/show multi-step presets', async () => {
+  it('SimplePresetPicker groups non-recommended presets under More options', async () => {
     const user = userEvent.setup()
 
     const normal: Preset = {
@@ -57,11 +57,14 @@ describe('Simple Mode UX (multi-step + details)', () => {
     )
 
     // More options is open by default when there are no recommended presets.
+    const moreOptionsButton = screen.getByRole('button', { name: /more options/i })
+    expect(moreOptionsButton).toBeInTheDocument()
+    expect(moreOptionsButton).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText('Recipe preset')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /multi-step\s+on/i }))
+    await user.click(moreOptionsButton)
 
-    expect(screen.queryByText('Recipe preset')).not.toBeInTheDocument()
+    expect(moreOptionsButton).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('Preset cards use an info icon tooltip (no Details button)', async () => {

@@ -409,19 +409,22 @@ export function registerLibraryCaptureIpcHandlers({
         return await startQobuzPlaybackCaptureForItem(item, deviceId);
       } catch (error: any) {
         const message = error?.message || String(error);
+        const code =
+          /cancelled/i.test(message)
+            ? "CAPTURE_CANCELLED"
+            : error?.captureFailureCode || "CAPTURE_START_FAILED";
         const hint =
-          /Qobuz playback ended early/i.test(message)
+          error?.captureFailureHint ||
+          (/Qobuz playback ended early/i.test(message)
             ? "Qobuz started the track but the web player lost the stream before capture finished. Try the same track again or test another track."
             : /no playback activity reached any capture device/i.test(message)
               ? "Qobuz accepted the track selection but never produced stable audio on the selected playback device. Re-run Capture Setup or try the track again."
-              : undefined;
+              : undefined);
         return {
           success: false,
           provider,
           error: /cancelled/i.test(message) ? "Capture cancelled" : message,
-          code: /cancelled/i.test(message)
-            ? "CAPTURE_CANCELLED"
-            : "CAPTURE_START_FAILED",
+          code,
           hint,
         };
       }

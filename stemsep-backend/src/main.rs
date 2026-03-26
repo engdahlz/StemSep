@@ -2498,6 +2498,7 @@ fn download_with_progress_cancellable(
         dest_path.with_file_name(format!("{fname}.part"))
     };
     let metadata_path = part_metadata_path(&tmp_path);
+    let enforce_size = expected_sha256.is_none();
 
     let part_metadata = PartMetadata {
         model_id: model_id.clone(),
@@ -2578,13 +2579,15 @@ fn download_with_progress_cancellable(
     if existing_len > 0 && resp.status() == reqwest::StatusCode::RANGE_NOT_SATISFIABLE {
         // Best-effort: promote the partial file to final.
         if tmp_path.exists() {
-            if let Some(expected) = expected_size {
-                let actual = std::fs::metadata(&tmp_path).map(|m| m.len()).unwrap_or(0);
-                if actual != expected {
-                    return Err(anyhow!(
-                        "partial file size mismatch for {}: expected {expected} bytes, got {actual}",
-                        current_relative_path
-                    ));
+            if enforce_size {
+                if let Some(expected) = expected_size {
+                    let actual = std::fs::metadata(&tmp_path).map(|m| m.len()).unwrap_or(0);
+                    if actual != expected {
+                        return Err(anyhow!(
+                            "partial file size mismatch for {}: expected {expected} bytes, got {actual}",
+                            current_relative_path
+                        ));
+                    }
                 }
             }
             if let Some(expected_sha256) = expected_sha256.as_deref() {
@@ -2774,17 +2777,19 @@ fn download_with_progress_cancellable(
         }),
     );
 
-    if let Some(expected) = expected_size {
-        let actual = std::fs::metadata(&tmp_path)
-            .with_context(|| format!("stat {}", tmp_path.display()))?
-            .len();
-        if actual != expected {
-            let _ = std::fs::remove_file(&tmp_path);
-            remove_part_metadata(&metadata_path);
-            return Err(anyhow!(
-                "size mismatch for {}: expected {expected} bytes, got {actual}",
-                current_relative_path
-            ));
+    if enforce_size {
+        if let Some(expected) = expected_size {
+            let actual = std::fs::metadata(&tmp_path)
+                .with_context(|| format!("stat {}", tmp_path.display()))?
+                .len();
+            if actual != expected {
+                let _ = std::fs::remove_file(&tmp_path);
+                remove_part_metadata(&metadata_path);
+                return Err(anyhow!(
+                    "size mismatch for {}: expected {expected} bytes, got {actual}",
+                    current_relative_path
+                ));
+            }
         }
     }
     if let Some(expected_sha256) = expected_sha256.as_deref() {
@@ -5528,6 +5533,26 @@ fn locate_python_exe() -> String {
     "python3".to_string()
 }
 
+fn worker_config_dir(cfg: &BackendConfig) -> PathBuf {
+    cfg.catalog_cache_dir.join("worker-configs")
+}
+
+fn write_worker_config_file(cfg: &BackendConfig, job_id: &str, config: &Value) -> Result<PathBuf> {
+    let dir = worker_config_dir(cfg);
+    std::fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;
+    let file_name = format!("selection-job-{}-{}.json", job_id, Uuid::new_v4());
+    let path = dir.join(file_name);
+    let payload = serde_json::to_vec_pretty(config).context("serialize job config")?;
+    std::fs::write(&path, payload).with_context(|| format!("write {}", path.display()))?;
+    Ok(path)
+}
+
+fn remove_worker_config_file(path: Option<&Path>) {
+    if let Some(path) = path {
+        let _ = std::fs::remove_file(path);
+    }
+}
+
 fn check_neuralop_available() -> Result<()> {
     let python = locate_python_exe();
     let code = r#"import sys
@@ -5721,6 +5746,7 @@ struct SeparationJob {
     process: Child,
     state: Arc<Mutex<SelectionJobSnapshot>>,
     signature: String,
+    config_path: Option<PathBuf>,
 }
 
 struct PendingSelectionJob {
@@ -6373,29 +6399,41 @@ impl SeparationManager {
         let script = locate_inference_script()
             .ok_or_else(|| anyhow!("inference.py not found (set STEMSEP_INFERENCE_SCRIPT)"))?;
         let python = locate_python_exe();
+        let config_path = write_worker_config_file(cfg, &job_id, &config)?;
 
-        let config_str = serde_json::to_string(&config).context("serialize job config")?;
-
-        let mut child = Command::new(python)
+        let spawn_result = Command::new(python)
             .arg("-u")
             .arg(script)
-            .arg(config_str)
+            .arg("--config-file")
+            .arg(&config_path)
             .env("STEMSEP_MODELS_DIR", &cfg.models_dir) // Ensure subprocess sees correct models dir
             .env("PYTHONUNBUFFERED", "1")
             .stdin(Stdio::piped()) // Not really used but good practice
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .spawn()
-            .context("spawn inference process")?;
+            .spawn();
+        let mut child = match spawn_result {
+            Ok(child) => child,
+            Err(error) => {
+                remove_worker_config_file(Some(&config_path));
+                return Err(error).context("spawn inference process");
+            }
+        };
 
         let child_stdout = child
             .stdout
             .take()
-            .ok_or_else(|| anyhow!("inference stdout missing"))?;
+            .ok_or_else(|| {
+                remove_worker_config_file(Some(&config_path));
+                anyhow!("inference stdout missing")
+            })?;
         let child_stderr = child
             .stderr
             .take()
-            .ok_or_else(|| anyhow!("inference stderr missing"))?;
+            .ok_or_else(|| {
+                remove_worker_config_file(Some(&config_path));
+                anyhow!("inference stderr missing")
+            })?;
 
         // Store job process for cancellation and state inspection
         {
@@ -6406,6 +6444,7 @@ impl SeparationManager {
                     process: child,
                     state: state.clone(),
                     signature,
+                    config_path: Some(config_path),
                 },
             );
         }
@@ -6718,6 +6757,7 @@ impl SeparationManager {
     fn clear_job(&self, job_id: &str) {
         let mut map = self.jobs.lock().expect("jobs lock");
         if let Some(job) = map.remove(job_id) {
+            let config_path = job.config_path.clone();
             if let Ok(mut state) = job.state.lock() {
                 if state.finished_at.is_none()
                     && matches!(state.status.as_str(), "running" | "starting" | "cancelling")
@@ -6736,6 +6776,7 @@ impl SeparationManager {
                 }
                 self.store_finished_snapshot(state.clone());
             }
+            remove_worker_config_file(config_path.as_deref());
         }
         drop(map);
         self.start_next_pending();
@@ -7110,7 +7151,6 @@ fn main() -> Result<()> {
                 "remove_model"
                     | "import_custom_model"
                     | "model_preflight"
-                    | "separation_preflight"
                     // "separate_audio"  <-- Handled natively now
                     // "cancel_job"      <-- Handled natively now
                     | "pause_queue"
@@ -7127,9 +7167,7 @@ fn main() -> Result<()> {
             should_proxy
                 && !matches!(
                     req.command.as_str(),
-                    "separation_preflight"
-                        | "separate_audio"
-                        | "model_preflight"
+                    "separate_audio" | "model_preflight"
                 )
         } else {
             should_proxy
@@ -7972,7 +8010,54 @@ fn main() -> Result<()> {
                 // Contract-compatible preflight: returns a report object even when inputs are
                 // missing/invalid. (Matches Python bridge behavior: success=true with can_proceed=false.)
                 let file_path = req.extra.get("file_path").and_then(|v| v.as_str());
-                let model_id = req.extra.get("model_id").and_then(|v| v.as_str());
+                let explicit_model_id = req.extra.get("model_id").and_then(|v| v.as_str());
+                let selection_type_req = req
+                    .extra
+                    .get("selection_type")
+                    .or_else(|| req.extra.get("selectionType"))
+                    .and_then(|v| v.as_str())
+                    .and_then(normalize_selection_type);
+                let selection_id_req = req
+                    .extra
+                    .get("selection_id")
+                    .or_else(|| req.extra.get("selectionId"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty());
+                let runtime_for_selection = if explicit_model_id.is_none() && selection_id_req.is_some()
+                {
+                    load_catalog_runtime(&cfg).ok()
+                } else {
+                    None
+                };
+                let resolved_selection_type = selection_type_req.clone().or_else(|| {
+                    selection_id_req.as_ref().and_then(|selection_id| {
+                        runtime_for_selection.as_ref().and_then(|runtime| {
+                            runtime
+                                .get("selection_index")
+                                .and_then(|v| v.as_array())
+                                .and_then(|entries| {
+                                    entries.iter().find(|entry| {
+                                        entry.get("selection_id").and_then(|v| v.as_str())
+                                            == Some(selection_id.as_str())
+                                    })
+                                })
+                                .and_then(|entry| entry.get("selection_type").and_then(|v| v.as_str()))
+                                .and_then(normalize_selection_type)
+                        })
+                    })
+                });
+                let catalog_selection = match (
+                    runtime_for_selection.as_ref(),
+                    resolved_selection_type.as_deref(),
+                    selection_id_req.as_deref(),
+                ) {
+                    (Some(runtime), Some(selection_type), Some(selection_id)) => {
+                        catalog_selection_entry(runtime, selection_type, selection_id)
+                    }
+                    _ => None,
+                };
+                let model_id = explicit_model_id.or_else(|| selection_id_req.as_deref());
                 let stems_val = req.extra.get("stems").cloned().unwrap_or(Value::Null);
                 let device_req = req
                     .extra
@@ -8025,7 +8110,15 @@ fn main() -> Result<()> {
                     .extra
                     .get("ensemble_config")
                     .or_else(|| req.extra.get("ensembleConfig"));
-                let workflow_val = req.extra.get("workflow").cloned().unwrap_or(Value::Null);
+                let workflow_val = req
+                    .extra
+                    .get("workflow")
+                    .cloned()
+                    .or_else(|| match resolved_selection_type.as_deref() {
+                        Some("workflow") => catalog_selection.clone(),
+                        _ => None,
+                    })
+                    .unwrap_or(Value::Null);
 
                 let (ensemble_algorithm, phase_fix_enabled, phase_fix_params) =
                     match ensemble_cfg_val {
